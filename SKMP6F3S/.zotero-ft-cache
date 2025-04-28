@@ -8,12 +8,12 @@ Unsupervised learning with generative adversarial networks (GANs) has proven hug
 arXiv:1611.04076v3 [cs.CV] 5 Apr 2017
 
 
-1 Introduction
+ 1 Introduction
 Deep learning has launched a profound reformation and even been applied to many real-world tasks, such as image classification [1], object detection [2] and segmentation [3]. These tasks obviously fall into the scope of supervised learning, which means that a lot of labeled data are provided for the learning processes. Compared with supervised learning, however, unsupervised learning tasks, such as generative models, obtain limited impact from deep learning. Although some deep generative models, e.g. RBM [4], DBM [5] and VAE [6], have been proposed, these models face the difficulty of intractable functions or the difficulty of intractable inference, which in turn restricts the effectiveness of these models. Recently, Generative adversarial networks (GANs) [7] have demonstrated impressive performance for unsupervised learning tasks. Unlike other deep generative models which usually adopt approximation methods for intractable functions or inference, GANs do not require any approximation and can be trained end-to-end through the differentiable networks. The basic idea of GANs is to simultaneously train a discriminator and a generator: the discriminator aims to distinguish between real samples and generated samples; while the generator tries to generate fake samples as real as possible, making the discriminator believe that the fake samples are from real data. So far, plenty of works have shown that GANs can play a significant role in various tasks, such as image generation [8], image super-resolution [9], and semi-supervised learning [10]. In spite of the great progress for GANs in image generation, the quality of generated images by GANs is still limited for some realistic tasks. Regular GANs adopt the sigmoid cross entropy loss function for the discriminator [7]. We argue that this loss function, however, will lead to the problem of vanishing gradients when updating the generator using the fake samples that are on the correct side of the decision boundary, but are still far from the real data. As Figure 1(b) shows, when we use the fake samples (in magenta) to update the generator by making the discriminator believe they are from real data, it will cause almost no error because they are on the correct side, i.e., the real data side, of the decision boundary. However, these samples are still far from the real data and we want to pull them close to the real data. Based on this observation, we propose the Least Squares Generative Adversarial Networks (LSGANs) which adopt the least squares loss function for the discriminator. The idea is simple yet powerful: the least squares loss function is able to move the fake samples toward the decision boundary, because the least squares loss function penalizes samples that lie in a long way on the correct side of the decision boundary. As Figure 1(c) shows, the least squares loss function will penalize the fake samples (in magenta) and pull them toward the decision boundary even though they are correctly classified. Based on this property, LSGANs are able to generate samples that are closer to real data. Another benefit of LSGANs is the improved stability of learning process. Generally speaking, training GANs is a difficult issue in practice because of the
 2
 
 
--10 -8 -6 -4 -2 0 2 4 6 8 10
+ -10 -8 -6 -4 -2 0 2 4 6 8 10
 -10
 -8
 -6
@@ -58,13 +58,13 @@ The rest of this paper is organized as follows. Section 2 briefly reviews relate
 3
 
 
-work of generative adversarial networks. The proposed method is introduced in Section 3, and experimental results are presented in Section 4. Finally, we conclude the paper in Section 5.
+ work of generative adversarial networks. The proposed method is introduced in Section 3, and experimental results are presented in Section 4. Finally, we conclude the paper in Section 5.
 2 Related Work
 Deep generative models attempt to capture the probability distributions over the given data. Restricted Boltzmann Machines (RBMs) are the basis of many other deep generative models, and they have been used to model the distributions of images [16] and documents [17]. Deep Belief Networks (DBNs) [18] and Deep Boltzmann Machines (DBMs) [5] are extended from the RBMs. The most successful application of DBNs is for image classification [18], where DBNs are used to extract feature representations. However, RBMs, DBNs and DBMs all have the difficulties of intractable partition functions or intractable posterior distributions, which thus use the approximation methods to learn the models. Another important deep generative model is Variational Autoencoders (VAE) [6], a directed model, which can be trained with gradient-based optimization methods. But VAEs are trained by maximizing the variational lower bound, which may lead to the blurry problem of generated images. Recently, Generative Adversarial Networks (GANs) have been proposed by Goodfellow et al. [7], who explained the theory of GANs learning based on a game theoretic scenario. Compared with the above models, training GANs does not require any approximation method. Like VAEs, GANs also can be trained through differentiable networks. Showing the powerful capability for unsupervised tasks, GANs have been applied to many specific tasks, like image generation [19], image super-resolution [9], text to image synthesis [20] and image to image translation [21]. By combining the traditional content loss and the adversarial loss, super-resolution generative adversarial networks [9] achieve stateof-the-art performance for the task of image super-resolution. Reed et al. [20] proposed a model to synthesize images given text descriptions based on the conditional GANs [22]. Isola et al. [21] also used the conditional GANs to transfer images from one representation to another. In addition to unsupervised learning tasks, GANs also show potential for semi-supervised learning tasks. Salimans et al. [10] proposed a GAN-based framework for semi-supervised learning, in which the discriminator not only outputs the probability that an input image is from real data but also outputs the probabilities of belonging to each class. Despite the great successes GANs have achieved, improving the quality of generated images is still a challenge. A lot of works have been proposed to improve the quality of images for GANs. Radford et al. [11] first introduced convolutional layers to GANs architecture, and proposed a network architecture called deep convolutional generative adversarial networks (DCGANs). Denton et al. [23] proposed another framework called Laplacian pyramid of generative adversarial networks (LAPGANs). They constructed a Laplacian pyramid to generate high-resolution images starting from low-resolution images. Further, Salimans et al. [10] proposed a technique called feature matching to get better
 4
 
 
--10 -8 -6 -4 -2 0 2 4 6 8 10
+ -10 -8 -6 -4 -2 0 2 4 6 8 10
 x
 0
 2
@@ -96,7 +96,7 @@ The learning process of the GANs is to train a discriminator D and a generator G
 5
 
 
-G starts from sampling input variables z from a uniform or Gaussian distribution pz(z), then maps the input variables z to data space G(z; θg) through a differentiable network. On the other hand, D is a classifier D(x; θd) that aims to recognize whether an image is from training data or from G. The minimax objective for GANs can be formulated as follows:
+ G starts from sampling input variables z from a uniform or Gaussian distribution pz(z), then maps the input variables z to data space G(z; θg) through a differentiable network. On the other hand, D is a classifier D(x; θd) that aims to recognize whether an image is from training data or from G. The minimax objective for GANs can be formulated as follows:
 mGin mDax VGAN(D, G) = Ex∼pdata(x)[log D(x)] + Ez∼pz(z)[log(1 − D(G(z)))].
 (1)
 3.2 Least Squares Generative Adversarial Networks
@@ -116,7 +116,7 @@ The benefits of LSGANs can be derived from two aspects. First, unlike regular GA
 6
 
 
-perspective: as shown in Figure 2, the least squares loss function is flat only at one point, while the sigmoid cross entropy loss function will saturate when x is relatively large.
+ perspective: as shown in Figure 2, the least squares loss function is flat only at one point, while the sigmoid cross entropy loss function will saturate when x is relatively large.
 3.2.2 Reltation to f-divergence
 In the original GAN paper [7], the authors has shown that minimizing Equation 1 yields minimizing the Jensen-Shannon divergence:
 C(G) = KL
@@ -199,7 +199,7 @@ minimizing the Pearson χ2 divergence between pd + pg and 2pg if a, b, and c sat
 7
 
 
-3×3 deconv, 256, stride=1, BN
+ 3×3 deconv, 256, stride=1, BN
 3×3, deconv, 256, stride=2, BN
 fc, 7×7×256, BN
 z, 1024
@@ -243,7 +243,7 @@ The first model we have designed is shown in Figure 3, which is motivated by the
 8
 
 
-5×5 deconv, 1, stride=2
+ 5×5 deconv, 1, stride=2
 5×5, deconv, 128, stride=2, BN
 fc, 7×7×128, BN
 z, 1024
@@ -276,7 +276,7 @@ where Φ(·) denotes the linear mapping function and y denotes the label vectors
 9
 
 
-(a) Generated by LSGANs.
+ (a) Generated by LSGANs.
 (b) Generated by DCGANs (Reported in [11]).
 (c) Generated by EBGANs (Reported in [26]).
 Figure 5: Generated images on LSUN-bedroom.
@@ -290,7 +290,7 @@ We evaluate LSGANs on two datasets, LSUN [31] and HWDB1.0 [32]. The details of t
 10
 
 
-(a) Church outdoor. (b) Dining room.
+ (a) Church outdoor. (b) Dining room.
 (c) Kitchen. (d) Conference room.
 Figure 6: Generated images on different scene datasets.
 to 0.001 and 0.0002, respectively. Following DCGANs, β1 for Adam optimizer is set to 0.5. All the codes of our implementation will be public available soon.
@@ -301,14 +301,14 @@ As stated in Section 3.2, one benefit of LSGANs is the improved stability. Here 
 11
 
 
-(a) LSGANs. (b) Regular GANs.
+ (a) LSGANs. (b) Regular GANs.
 (c) LSGANs. (d) Regular GANs.
 Figure 7: Comparison experiments by excluding batch normalization (BN). (a): LSGANs without BN in G using Adam. (b): Regular GANs without BN in G using Adam. (c): LSGANs without BN in G and D using RMSProp. (d): Regular GANs without BN in G and D using RMSProp.
 short), and the second one is to exclude the batch normalization for both the generator and the discriminator (BNGD for short). As pointed out in [12], the selection of optimizer is critical to the model performance. Thus we evaluate the two architectures with two optimizers, Adam [34] and RMSProp [35]. In summary, we have four training settings, BNG with Adam, BNG with RMSProp, BNGD with Adam, and BNGD with RMSProp. We train these models on LSUN bedroom dataset using regular GANs and LSGANs separately and have the following four major observations. First, for BNG with Adam, there is a chance for LSGANs to generate relatively good quality images. We test 10 times, and 5 of them succeeds to generate relatively good quality images. But for regular GANs, we never observe successful learning. Regular GANs suffer from a severe degree of mode collapse. The generated images by LSGANs and regular GANs are shown in Figure 7. Second, for BNGD with RMSProp, as Figure 7 shows, LSGANs generate higher quality images than regular GANs which have a slight degree of mode collapse. Third, LSGANs and regular GANs have similar performances for BNG with RMSProp and BNGD with Adam. Specifically, for BNG with RMSProp, both LSGANs and regular GANs learn the data distribution successfully, and for BNGD with Adam, both the ones have a slight degree of mode collapse. Last, RMSProp performs more stable than Adam since regular GANs are able to learn the data distribution for BNG with RMSProp, but fail to learn with Adam. Another experiment is to evaluate on a Gaussian mixture distribution dataset, which is designed in literature [13]. We train LSGANs and regular GANs on a 2D mixture of 8 Gaussian dataset using a simple architecture, where both the generator and the discriminator contain three fully-connected layers. Figure 8 shows the dynamic results of Gaussian kernel density estimation. We can see that regular GANs suffer from mode collapse starting at step 15k. They generate samples around a single valid mode of the data distribution. But LSGANs learn the Gaussian mixture distribution successfully.
 12
 
 
-Step 0 Step 5k Step 15k Step 25k Step 40k Target
+ Step 0 Step 5k Step 15k Step 25k Step 40k Target
 Regular GANs
 LSGANs
 Figure 8: Dynamic results of Gaussian kernel estimation for LSGANs and regular GANs. The final column shows the real data distribution.
@@ -321,7 +321,7 @@ In this paper, we have proposed the Least Squares Generative Adversarial Network
 13
 
 
-real data directly is also worth our further investigation.
+ real data directly is also worth our further investigation.
 References
 [1] K. He, X. Zhang, S. Ren, and J. Sun, “Deep residual learning for image recognition,” in Computer Vision and Pattern Recognition (CVPR), 2016.
 [2] S. Ren, K. He, R. Girshick, and J. Sun, “Faster r-cnn: Towards real-time object detection with region proposal networks,” in Advances in Neural Information Processing Systems 28, pp. 91–99, 2015.
@@ -338,7 +338,7 @@ References
 14
 
 
-[13] L. Metz, B. Poole, D. Pfau, and J. Sohl-Dickstein, “Unrolled generative adversarial networks,” arXiv:1611.02163, 2016.
+ [13] L. Metz, B. Poole, D. Pfau, and J. Sohl-Dickstein, “Unrolled generative adversarial networks,” arXiv:1611.02163, 2016.
 [14] G.-J. Qi, “Loss-sensitive generative adversarial networks on lipschitz densities,” arXiv:1701.06264, 2017.
 [15] S. Ioffe and C. Szegedy, “Generative adversarial text-to-image synthesis,” in Proceedings of The 33rd International Conference on Machine Learning (ICML), 2015.
 [16] G. W. Taylor, R. Fergus, Y. LeCun, and C. Bregler, “Convolutional learning of spatio-temporal features,” in European Conference on Computer Vision (ECCV), pp. 140–153, 2010.
@@ -355,7 +355,7 @@ References
 15
 
 
-[27] X. Nguyen, M. J. Wainwright, and M. I. Jordan, “Estimating divergence functionals and the likelihood ratio by convex risk minimization,” IEEE Transactions on Information Theory, vol. 56, no. 11, pp. 5847–5861, 2010.
+ [27] X. Nguyen, M. J. Wainwright, and M. I. Jordan, “Estimating divergence functionals and the likelihood ratio by convex risk minimization,” IEEE Transactions on Information Theory, vol. 56, no. 11, pp. 5847–5861, 2010.
 [28] S. Mohamed and B. Lakshminarayanan, “Learning in implicit generative models,” arXiv:1610.03483, 2016.
 [29] K. Simonyan and A. Zisserman, “Very deep convolutional networks for large-scale image recognition,” in International Conference on Learning Representations (ICLR), 2015.
 [30] K. Hornik, M. Stinchcombe, and H. White, “Multilayer feedforward networks are universal approximators,” Neural Networks, vol. 2, pp. 359–366, July 1989.

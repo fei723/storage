@@ -13,7 +13,7 @@ We propose a family of policy gradient estimators that significantly reduce vari
 arXiv:1506.02438v6 [cs.LG] 20 Oct 2018
 
 
-Published as a conference paper at ICLR 2016
+ Published as a conference paper at ICLR 2016
 λ ∈ [0, 1], the generalized advantage estimator (GAE). Related methods have been proposed in the context of online actor-critic methods (Kimura & Kobayashi, 1998; Wawrzyn ́ski, 2009). We provide a more general analysis, which is applicable in both the online and batch settings, and discuss an interpretation of our method as an instance of reward shaping (Ng et al., 1999), where the approximate value function is used to shape the reward.
 We present experimental results on a number of highly challenging 3D locomotion tasks, where we show that our approach can learn complex gaits using high-dimensional, general purpose neural network function approximators for both the policy and the value function, each with over 104 parameters. The policies perform torque-level control of simulated 3D robots with up to 33 state dimensions and 10 actuators.
 The contributions of this paper are summarized as follows:
@@ -63,7 +63,7 @@ Aπ(st, at) := Qπ(st, at) − V π(st), (Advantage function). (3)
 2
 
 
-Published as a conference paper at ICLR 2016
+ Published as a conference paper at ICLR 2016
 Here, the subscript of E enumerates the variables being integrated over, where states and actions are sampled sequentially from the dynamics model P (st+1 | st, at) and policy π(at | st), respectively. The colon notation a : b refers to the inclusive range (a, a + 1, . . . , b). These formulas are well known and straightforward to obtain; they follow directly from Proposition 1, which will be stated shortly.
 The choice Ψt = Aπ(st, at) yields almost the lowest possible variance, though in practice, the advantage function is not known and must be estimated. This statement can be intuitively justified by the following interpretation of the policy gradient: that a step in the policy gradient direction should increase the probability of better-than-average actions and decrease the probability of worse-thanaverage actions. The advantage function, by it’s definition Aπ(s, a) = Qπ(s, a) − V π(s), measures whether or not the action is better or worse than the policy’s default behavior. Hence, we should choose Ψt to be the advantage function Aπ(st, at), so that the gradient term Ψt∇θ log πθ(at | st)
 points in the direction of increased πθ(at | st) if and only if Aπ(st, at) > 0. See Greensmith et al. (2004) for a more rigorous analysis of the variance of policy gradient estimators and the effect of using a baseline.
@@ -112,7 +112,7 @@ Then Aˆ is γ-just.
 3
 
 
-Published as a conference paper at ICLR 2016
+ Published as a conference paper at ICLR 2016
 The proof is provided in Appendix B. It is easy to verify that the following expressions are γ-just advantage estimators for Aˆt:
 •
 ∑∞
@@ -191,7 +191,7 @@ which is simply the empirical returns minus the value function baseline.
 4
 
 
-Published as a conference paper at ICLR 2016
+ Published as a conference paper at ICLR 2016
 The generalized advantage estimator GAE(γ, λ) is defined as the exponentially-weighted average of these k-step estimators:
 AˆGAE(γ,λ)
 t := (1 − λ)
@@ -277,7 +277,7 @@ r ̃(s, a, s′) = r(s, a, s′) + γΦ(s′) − Φ(s), (20)
 5
 
 
-Published as a conference paper at ICLR 2016
+ Published as a conference paper at ICLR 2016
 which in turn defines a transformed MDP. This transformation leaves the discounted advantage function Aπ,γ unchanged for any policy π. To see this, consider the discounted sum of rewards of a trajectory starting with state st:
 ∞
 ∑
@@ -325,7 +325,7 @@ t+l where l 1/(1 − γλ).
 6
 
 
-Published as a conference paper at ICLR 2016
+ Published as a conference paper at ICLR 2016
 5 VALUE FUNCTION ESTIMATION
 A variety of different methods can be used to estimate the value function (see, e.g., Bertsekas (2012)). When using a nonlinear function approximator to represent the value function, the simplest approach is to solve a nonlinear regression problem:
 minimize
@@ -383,7 +383,7 @@ the λ = 1 estimator in Equation (28).
 7
 
 
-Published as a conference paper at ICLR 2016
+ Published as a conference paper at ICLR 2016
 6.1 POLICY OPTIMIZATION ALGORITHM
 While generalized advantage estimation can be used along with a variety of different policy gradient methods, for these experiments, we performed the policy updates using trust region policy optimization (TRPO) (Schulman et al., 2015). TRPO updates the policy by approximately solving the following constrained optimization problem each iteration:
 minimize
@@ -422,7 +422,7 @@ We used the same neural network architecture for all of the 3D robot tasks, whic
 8
 
 
-Published as a conference paper at ICLR 2016
+ Published as a conference paper at ICLR 2016
 Figure 1: Top figures: robot models used for 3D locomotion. Bottom figures: a sequence of frames from the learned gaits. Videos are available at https://sites.google.com/site/ gaepapersupp.
 6.2.2 TASK DETAILS
 For the cart-pole balancing task, we collected 20 trajectories per batch, with a maximum length of 1000 timesteps, using the physical parameters from Barto et al. (1983).
@@ -438,7 +438,7 @@ The results are averaged across 21 experiments with different random seeds. Resu
 9
 
 
-Published as a conference paper at ICLR 2016
+ Published as a conference paper at ICLR 2016
 0 10 20 30 40 50 number of policy iterations
 10
 8
@@ -481,7 +481,7 @@ The other two motor behaviors considered are quadrupedal locomotion and getting 
 10
 
 
-Published as a conference paper at ICLR 2016
+ Published as a conference paper at ICLR 2016
 0 100 200 300 400 500 number of policy iterations
 0.0
 0.5
@@ -504,7 +504,7 @@ We thank Emo Todorov for providing the simulator as well as insightful discussio
 11
 
 
-Published as a conference paper at ICLR 2016
+ Published as a conference paper at ICLR 2016
 Investigator Award and under grant number N00014-11-1-0688, DARPA through a Young Faculty Award, by the Army Research Office through the MAST program.
 A FREQUENTLY ASKED QUESTIONS
 A.1 WHAT’S THE RELATIONSHIP WITH COMPATIBLE FEATURES?
@@ -527,7 +527,7 @@ Es0:∞,a0:∞ [∇θ log πθ(at | st)(Qt(s0:∞, a0:∞) − bt(s0:t, a0:t−1
 12
 
 
-Published as a conference paper at ICLR 2016
+ Published as a conference paper at ICLR 2016
 We’ll consider the terms with Q and b in turn.
 Es0:∞,a0:∞ [∇θ log πθ(at | st)Qt(s0:∞, a0:∞)]
 = Es0:t,a0:t
@@ -564,7 +564,7 @@ Peters, Jan and Schaal, Stefan. Natural actor-critic. Neurocomputing, 71(7):1180
 13
 
 
-Published as a conference paper at ICLR 2016
+ Published as a conference paper at ICLR 2016
 Schulman, John, Levine, Sergey, Moritz, Philipp, Jordan, Michael I, and Abbeel, Pieter. Trust region policy optimization. arXiv preprint arXiv:1502.05477, 2015.
 Sutton, Richard S and Barto, Andrew G. Introduction to reinforcement learning. MIT Press, 1998.
 Sutton, Richard S, McAllester, David A, Singh, Satinder P, and Mansour, Yishay. Policy gradient methods for reinforcement learning with function approximation. In NIPS, volume 99, pp. 1057–1063. Citeseer, 1999.

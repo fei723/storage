@@ -15,7 +15,7 @@ Then, we instantiate our framework in Sections 4 and 5 with a new model-free imi
 arXiv:1606.03476v1 [cs.LG] 10 Jun 2016
 
 
-networks [9], a technique from the deep learning community that has led to recent successes in modeling distributions of natural images: our algorithm harnesses generative adversarial training to fit distributions of states and actions defining expert behavior. We test our algorithm in Section 6, where we find that it outperforms competing methods by a wide margin in training policies for complex, high-dimensional physics-based control tasks over various amounts of expert data.
+ networks [9], a technique from the deep learning community that has led to recent successes in modeling distributions of natural images: our algorithm harnesses generative adversarial training to fit distributions of states and actions defining expert behavior. We test our algorithm in Section 6, where we find that it outperforms competing methods by a wide margin in training policies for complex, high-dimensional physics-based control tasks over various amounts of expert data.
 2 Background
 Preliminaries R will denote the extended real numbers R ∪ {∞}. Section 3 will work with finite state and action spaces S and A to avoid technical machinery out of the scope of this paper (concerning compactness of certain sets of functions), but our algorithms and experiments later in the paper will run in high-dimensional continuous environments. Π is the set of all stationary stochastic policies that take actions in A given states in S; successor states are drawn from the dynamics model P (s′|s, a). We work in the γ-discounted infinite horizon setting, and we will use an expectation with respect a policy π ∈ Π to denote an expectation with respect to the trajectory it generates: Eπ[c(s, a)] , E [∑∞
 t=0 γtc(st, at)], where s0 ∼ p0, at ∼ π(·|st), and st+1 ∼ P (·|st, at) for t ≥ 0.
@@ -48,7 +48,7 @@ min
 2
 
 
-Now let c ̃ ∈ IRLψ(πE). We are interested in a policy given by RL(c ̃)—this is the policy given by running reinforcement learning on the output of IRL.
+ Now let c ̃ ∈ IRLψ(πE). We are interested in a policy given by RL(c ̃)—this is the policy given by running reinforcement learning on the output of IRL.
 To characterize RL(c ̃), it will be useful to transform optimization problems over policies into convex problems. For a policy π ∈ Π, define its occupancy measure ρπ : S × A → R as ρπ(s, a) =
 π(a|s) ∑∞
 t=0 γtP (st = s|π). The occupancy measure can be interpreted as the distribution of
@@ -107,7 +107,7 @@ L ̄(ρ, c). (6)
 3
 
 
-This is the dual of the optimization problem
+ This is the dual of the optimization problem
 minimize
 ρ∈D −H ̄ (ρ) subject to ρ(s, a) = ρE(s, a) ∀ s ∈ S, a ∈ A (7)
 with Lagrangian L ̄, for which the costs c(s, a) serve as dual variables for equality constraints. Thus,
@@ -138,7 +138,7 @@ iwi = 1, wi ≥ 0 ∀i} . (10)
 4
 
 
-Clinear leads to feature expectation matching [1], which minimizes `2 distance between expected feature vectors: maxc∈Clinear Eπ[c(s, a)]−EπE [c(s, a)] = ‖Eπ[f (s, a)]−EπE [f (s, a)]‖2. Meanwhile, Cconvex leads to MWAL [28] and LPAL [29], which minimize worst-case excess cost among the individual basis functions, as maxc∈Cconvex Eπ[c(s, a)] − EπE [c(s, a)] = maxi∈{1,...,d} Eπ[fi(s, a)] − EπE [fi(s, a)].
+ Clinear leads to feature expectation matching [1], which minimizes `2 distance between expected feature vectors: maxc∈Clinear Eπ[c(s, a)]−EπE [c(s, a)] = ‖Eπ[f (s, a)]−EπE [f (s, a)]‖2. Meanwhile, Cconvex leads to MWAL [28] and LPAL [29], which minimize worst-case excess cost among the individual basis functions, as maxc∈Cconvex Eπ[c(s, a)] − EπE [c(s, a)] = maxi∈{1,...,d} Eπ[fi(s, a)] − EπE [fi(s, a)].
 We now show how Eq. (9) is a special case of Eq. (8) with a certain setting of ψ. With the indicator function δC : RS×A → R, defined by δC(c) = 0 if c ∈ C and +∞ otherwise, we can write the apprenticeship learning objective (9) as
 max
 c∈C Eπ[c(s, a)]−EπE [c(s, a)] = max
@@ -170,7 +170,7 @@ With the TRPO step scheme, Ho et al. were able train large neural network polici
 5
 
 
-5 Generative adversarial imitation learning
+ 5 Generative adversarial imitation learning
 As discussed in Section 4, the constant regularizer leads to an imitation learning algorithm that exactly matches occupancy measures, but is intractable in large environments. The indicator regularizers for the linear cost function classes (10), on the other hand, lead to algorithms incapable of exactly matching occupancy measures without careful tuning, but are tractable in large environments. We propose the following new cost regularizer that combines the best of both worlds, as we will show in the coming sections:
 ψGA(c) ,
 {EπE [g(c(s, a))] if c < 0
@@ -194,7 +194,7 @@ To do so, we first introduce function approximation for π and D: we will fit a 
 6
 
 
-Algorithm 1 Generative adversarial imitation learning
+ Algorithm 1 Generative adversarial imitation learning
 1: Input: Expert trajectories τE ∼ πE, initial policy and discriminator parameters θ0, w0 2: for i = 0, 1, 2, . . . do
 3: Sample trajectories τi ∼ πθi 4: Update the discriminator parameters from wi to wi+1 with the gradient
 ˆEτi [∇w log(Dw(s, a))] + ˆEτE [∇w log(1 − Dw(s, a))] (17)
@@ -215,7 +215,7 @@ On the other MuJoCo environments, we saw a large performance boost for our algor
 7
 
 
-1 4 7 10
+ 1 4 7 10
 0.0
 0.2
 0.4
@@ -309,7 +309,7 @@ References
 8
 
 
-[3] M. Bloem and N. Bambos. Infinite time horizon maximum causal entropy inverse reinforcement learning. In Decision and Control (CDC), 2014 IEEE 53rd Annual Conference on, pages 4911–4916. IEEE, 2014. [4] S. Boyd and L. Vandenberghe. Convex optimization. Cambridge university press, 2004. [5] G. Brockman, V. Cheung, L. Pettersson, J. Schneider, J. Schulman, J. Tang, and W. Zaremba. OpenAI Gym. arXiv preprint arXiv:1606.01540, 2016.
+ [3] M. Bloem and N. Bambos. Infinite time horizon maximum causal entropy inverse reinforcement learning. In Decision and Control (CDC), 2014 IEEE 53rd Annual Conference on, pages 4911–4916. IEEE, 2014. [4] S. Boyd and L. Vandenberghe. Convex optimization. Cambridge university press, 2004. [5] G. Brockman, V. Cheung, L. Pettersson, J. Schneider, J. Schulman, J. Tang, and W. Zaremba. OpenAI Gym. arXiv preprint arXiv:1606.01540, 2016.
 [6] T. M. Cover and J. A. Thomas. Elements of information theory. John Wiley & Sons, 2012. [7] C. Finn, S. Levine, and P. Abbeel. Guided cost learning: Deep inverse optimal control via policy optimization. In Proceedings of the 33rd International Conference on Machine Learning, 2016.
 [8] A. Geramifard, C. Dann, R. H. Klein, W. Dabney, and J. P. How. Rlpy: A value-function-based reinforcement learning framework for education and research. JMLR, 2015. [9] I. Goodfellow, J. Pouget-Abadie, M. Mirza, B. Xu, D. Warde-Farley, S. Ozair, A. Courville, and Y. Bengio. Generative adversarial nets. In NIPS, pages 2672–2680, 2014. [10] J.-B. Hiriart-Urruty and C. Lemaréchal. Convex Analysis and Minimization Algorithms, volume 305. Springer, 1996. [11] J. Ho, J. K. Gupta, and S. Ermon. Model-free imitation learning with policy optimization. In Proceedings of the 33rd International Conference on Machine Learning, 2016.
 [12] D. Kingma and J. Ba. Adam: A method for stochastic optimization. arXiv preprint arXiv:1412.6980, 2014. [13] S. Levine and P. Abbeel. Learning neural network policies with guided policy search under unknown dynamics. In Advances in Neural Information Processing Systems, pages 1071–1079, 2014.
@@ -324,7 +324,7 @@ References
 9
 
 
-A Proofs
+ A Proofs
 A.1 Proofs for Section 3
 Proof of Lemma 3.1. First, we show strict concavity of H ̄ . Let ρ and ρ′ be occupancy measures, and suppose λ ∈ [0, 1]. For all s and a, the log-sum inequality [6] implies:
 −(λρ(s, a) + (1 − λ)ρ′(s, a)) log λρ(s, a) + (1 − λ)ρ′(s, a)
@@ -408,7 +408,7 @@ s,a
 10
 
 
-The following relationships then hold, due to Proposition 3.1:
+ The following relationships then hold, due to Proposition 3.1:
 ρA ∈ arg min
 ρ∈D
 mcax
@@ -462,7 +462,7 @@ Proof. To verify the first claim, it suffices to check that gφ(x) = −x + φ(�
 11
 
 
-Now, we verify the second claim. By Proposition 3.2, all we need to check is that −Rφ(ρπ, ρπE ) =
+ Now, we verify the second claim. By Proposition 3.2, all we need to check is that −Rφ(ρπ, ρπE ) =
 ψ∗
 φ(ρπ − ρπE ):
 ψ∗
@@ -563,7 +563,7 @@ where Qlog(s ̄,  ̄a) = Eπθ [− log πθ(a|s) | s0 = s ̄, a0 =  ̄a]. (54)
 12
 
 
-Proof. For an occupancy measure ρ(s, a), define ρ(s) = ∑
+ Proof. For an occupancy measure ρ(s, a), define ρ(s) = ∑
 a ρ(s, a). Next,
 ∇θEπθ [− log πθ(a|s)] = −∇θ
 ∑
@@ -610,7 +610,7 @@ Cartpole 300 5000 Mountain Car 300 5000 Acrobot 300 5000 Reacher 200 50000 HalfC
 13
 
 
-Table 3: Learned policy performance
+ Table 3: Learned policy performance
 Task Dataset size Behavioral cloning FEM GTAL Ours
 Cartpole 1 72.02 ± 35.82 200.00 ± 0.00 200.00 ± 0.00 200.00 ± 0.00 4 169.18 ± 59.81 200.00 ± 0.00 200.00 ± 0.00 200.00 ± 0.00 7 188.60 ± 29.61 200.00 ± 0.00 199.94 ± 1.14 200.00 ± 0.00 10 177.19 ± 52.83 199.75 ± 3.50 200.00 ± 0.00 200.00 ± 0.00 Acrobot 1 −130.60 ± 55.08 −133.14 ± 60.80 −81.35 ± 22.40 −77.26 ± 18.03 4 −93.20 ± 32.58 −94.21 ± 47.20 −94.80 ± 46.08 −83.12 ± 23.31 7 −96.92 ± 34.51 −95.08 ± 46.67 −95.75 ± 46.57 −82.56 ± 20.95 10 −95.09 ± 33.33 −77.22 ± 18.51 −94.32 ± 46.51 −78.91 ± 15.76 Mountain Car 1 −136.76 ± 34.44 −100.97 ± 12.54 −115.48 ± 36.35 −101.55 ± 10.32 4 −133.25 ± 29.97 −99.29 ± 8.33 −143.58 ± 50.08 −101.35 ± 10.63 7 −127.34 ± 29.15 −100.65 ± 9.36 −128.96 ± 46.13 −99.90 ± 7.97 10 −123.14 ± 28.26 −100.48 ± 8.14 −120.05 ± 36.66 −100.83 ± 11.40 HalfCheetah 4 −493.62 ± 246.58 734.01 ± 84.59 1008.14 ± 280.42 4515.70 ± 549.49 11 637.57 ± 1708.10 −375.22 ± 291.13 226.06 ± 307.87 4280.65 ± 1119.93 18 2705.01 ± 2273.00 343.58 ± 159.66 1084.26 ± 317.02 4749.43 ± 149.04 25 3718.58 ± 1856.22 502.29 ± 375.78 869.55 ± 447.90 4840.07 ± 95.36 Hopper 4 50.57 ± 0.95 3571.98 ± 6.35 3065.21 ± 147.79 3614.22 ± 7.17 11 1025.84 ± 266.86 3572.30 ± 12.03 3502.71 ± 14.54 3615.00 ± 4.32 18 1949.09 ± 500.61 3230.68 ± 4.58 3201.05 ± 6.74 3600.70 ± 4.24 25 3383.96 ± 657.61 3331.05 ± 3.55 3458.82 ± 5.40 3560.85 ± 3.09 Walker 4 32.18 ± 1.25 3648.17 ± 327.41 4945.90 ± 65.97 4877.98 ± 2848.37 11 5946.81 ± 1733.73 4723.44 ± 117.18 6139.29 ± 91.48 6850.27 ± 39.19 18 1263.82 ± 1347.74 4184.34 ± 485.54 5288.68 ± 37.29 6964.68 ± 46.30 25 1599.36 ± 1456.59 4368.15 ± 267.17 4687.80 ± 186.22 6832.01 ± 254.64 Ant 4 1611.75 ± 359.54 −2052.51 ± 49.41 −5743.81 ± 723.48 3186.80 ± 903.57 11 3065.59 ± 635.19 −4462.70 ± 53.84 −6252.19 ± 409.42 3306.67 ± 988.39 18 2597.22 ± 1366.57 −5148.62 ± 37.80 −3067.07 ± 177.20 3033.87 ± 1460.96 25 3235.73 ± 1186.38 −5122.12 ± 703.19 −3271.37 ± 226.66 4132.90 ± 878.67 Humanoid 80 1397.06 ± 1057.84 5093.12 ± 583.11 5096.43 ± 24.96 10200.73 ± 1324.47 160 3655.14 ± 3714.28 5120.52 ± 17.07 5412.47 ± 19.53 10119.80 ± 1254.73 240 5660.53 ± 3600.70 5192.34 ± 24.59 5145.94 ± 21.13 10361.94 ± 61.28
 Task Dataset size Behavioral cloning Ours (λ = 0) Ours (λ = 10−3) Ours (λ = 10−2)

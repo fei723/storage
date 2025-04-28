@@ -10,7 +10,7 @@ We study the problem of imitation learning from demonstrations that have multipl
 arXiv:1905.12888v2 [cs.LG] 31 May 2020
 
 
-2 Ke et al.
+ 2 Ke et al.
 (a) (b)
 Fig. 1: Behavior cloning fails with multi-modal demonstrations. Experts go left or right around obstacle. Learner interpolates between modes and crashes into obstacle.
 Interestingly, this oddity is not restricted to behavior cloning. [4] show that a more sophisticated approach, GAIL [5], also exhibits a similar trend. Their proposed solution, InfoGAIL [4], tries to recover all the latent modes and learn a policy for each one. For demonstrations with several modes, recovering all such policies will be prohibitively slow to converge. Our key insight is to view imitation learning algorithms as minimizing divergence between the expert and the learner trajectory distributions. Specifically, we examine the family of f -divergences. Since they cannot be minimized exactly, we adopt estimators from [6]. We show that behavior cloning minimizes the Kullback-Leibler (KL) divergence (M-projection), GAIL minimizes the JensenShannon (JS) divergence and DAgger minimizes the Total Variation (TV). Since both JS and KL divergence exhibit a mode-covering behavior, they end up interpolating across modes. On the other hand, the reverse-KL divergence (I-projection) has a mode-seeking behavior and elegantly collapses on a subset of modes fairly quickly. The contributions and organization of the remainder of the paper are:
@@ -19,14 +19,14 @@ Interestingly, this oddity is not restricted to behavior cloning. [4] show that 
 Imitation learning (IL) has a long-standing history in robotics as a tool to program desired skills and behavior in autonomous machines [7–10]. Even though IL has of late been used to bootstrap reinforcement learning (RL) [11–15], we focus on the original problem where an extrinsic reward is not defined. We ask the
 
 
-f-Imitation 3
+ f-Imitation 3
 question – “what objective captures the notion of similarity to expert demonstrations?”. Note that this question is orthogonal to other factors such as whether we are model-based / model-free or whether we use a policy / trajectory representation. IL can be viewed as supervised learning where the learner selects the same action as the expert (referred to as behavior cloning [16]). However small errors lead to large distribution mismatch. This can be somewhat alleviated by interactive learning, such as DAgger [17]. Although shown to be successful in various applications [1, 18, 19], there are domains where it’s impractical to have on-policy expert labels [20, 21]. More alarmingly, there are counter-examples where the DAgger objective results in undesirable behaviors [22]. We discuss this further in Appendix C. Another way is to view IL as recovering a reward (IRL) [23, 24] or Q-value [25] that makes the expert seem optimal. Since this is overly strict, it can be relaxed to value matching which, for linear rewards, further reduces to matching feature expectations [26]. Moment matching naturally leads to maximum entropy formulations [27] which has been used successfully in various applications [2, 28]. Interestingly, our divergence estimators also match moments suggesting a deeper connection. The degeneracy issues of IRL can be alleviated by a game theoretic framework where an adversary selects a reward function and the learner must compete to do as well as the expert [29, 30]. Hence IRL can be connected to min-max formulations [31] like GANs [32]. GAIL [5], SAM [33] uses this to directly recover policies. AIRL [34], EAIRL [35] uses this to recover rewards. This connection to GANs leads to interesting avenues such as stabilizing min-max games [36], learning from pure observations [37–39] and links to f-divergence minimization [6, 40]. In this paper, we view IL as f -divergence minimization between learner and expert. Our framework encompasses methods that look at specific measures of divergence such as minimizing relative entropy [41] or symmetric crossentropy [42]. Note that [43] also independently arrives at such connections between f-divergence and IL.3 We particularly focus on multi-modal expert demonstrations which has generally been treated by clustering data and learning on each cluster [44, 45]. InfoGAN [46] formalizes the GAN framework to recover latent clusters which is then extended to IL [4, 47]. MCTE [48] extended maximum entropy formulations with casual Tsallis entropy to learn sparse multi-model policy using sparse mixture density net [49]. [50] studied how choice of divergence affected policy improvement for reinforcement learning. Here, we look at the role of divergence with multi-model expert demonstrations.
 3 Problem Formulation
 Preliminaries We work with a finite horizon Markov Decision Process (MDP) 〈S, A, P, ρ0, T 〉 where S is a set of states, A is a set of actions, and P is the
 3 Different from [43], our framework optimizes trajectory divergence.
 
 
-4 Ke et al.
+ 4 Ke et al.
 transition dynamics. ρ0(s) is the initial distribution over states and T ∈ N+ is the time horizon. In IL paradigm, the MDP does not include a reward function. We examine stochastic policies π(a|s) ∈ [0, 1]. Let a trajectory be a sequence of state-action pairs τ = {s0, a1, s1, . . . , aT , sT }. It induces a distribution of trajectories ρπ(τ ) and state ρtπ(s) as:
 ρπ(τ ) = ρ0(s0)
 T
@@ -73,7 +73,7 @@ t=1 I(st−1 = s)
 pendix D
 
 
-f-Imitation 5
+ f-Imitation 5
 Since we have only sample access to the expert state-action distribution, the divergence between the expert and the learner has to be estimated. However, we need many samples to accurately estimate the trajectory distribution as the size
 of the trajectory space grows exponentially with time, i.e. O
 (
@@ -135,7 +135,7 @@ q(x) − f ∗(φ(x))
 Also (f ∗)∗ = f .
 
 
-6 Ke et al.
+ 6 Ke et al.
 Algorithm 1 f –VIM
 1: Sample trajectories from expert τ ∗ ∼ ρπ∗ 2: Initialize learner and estimator parameters θ0, w0 3: for i = 0 to N − 1 do
 4: Sample trajectories from learner τi ∼ ρπθi
@@ -177,7 +177,7 @@ mwax E(s,a)∼ρπ∗ [Vw(s, a)] − E(s,a)∼ρπ [exp(Vw(s, a) − 1)] (7)
 mwax E(s,a)∼ρπ∗ [− exp(−Vw(s, a))] + E(s,a)∼ρπ [−Vw(s, a)] (8)
 
 
-f-Imitation 7
+ f-Imitation 7
 Table 1: List of f -Divergences used, conjugates, optimal estimators and activation function
 Divergence f (u) f ∗(t) φ∗(x) gf (v)
 Kullback-Leibler u log u exp(t − 1) 1 + log p(x)
@@ -211,7 +211,7 @@ DAgger solves this non i.i.d problem in an iterative supervised learning manner 
 We highlight the Reverse KL divergence which has received relatively less attention in IL literature. RKL–VIM (8) has some shortcomings. First, it’s a double lower bound approximation due to Theorem 1 and Equation (5). Secondly, the
 
 
-8 Ke et al.
+ 8 Ke et al.
 optimal estimator is a state-action density ratio which maybe quite complex (Table 1). Finally, the optimization (6) may be slow to converge. However, assuming access to an interactive expert, i.e.we can query an interactive expert for any π∗(a|s), we can exploit Reverse KL divergence:
 DRKL (ρπ∗ (τ ), ρπ(τ )) = T Es∼ρπ [DRKL(π∗(·|s), π(·|s))]
 = T Es∼ρπ
@@ -250,7 +250,7 @@ Since the optimization is a non i.i.d learning problem, we solve it by dataset a
 We now examine multi-modal expert demonstrations. Consider the demonstrations in Fig. 2 which avoid colliding with a tree by turning left or right with equal probability. Depending on the policy class, it may be impossible to achieve zero divergence for any choice of f -divergence (Fig. 2a), e.g., Π is Gaussian with fixed variance. Then the question becomes, if the globally optimal policy in our policy class achieves non-zero divergence, how should we design our objective to fail elegantly and safely? In this example, one can imagine two reasonable choices: (1)
 
 
-f-Imitation 9
+ f-Imitation 9
 s0
 Tree
 (a) The ideal policy.
@@ -267,7 +267,7 @@ replicate one of the modes (mode-collapsing) or (2) cover both the modes plus th
 In this section, we empirically validate the following Hypotheses:
 
 
-10 Ke et al.
+ 10 Ke et al.
 H1 The globally optimal policy for RKL imitates a subset of the demonstrator modes, whereas JS and KL tend to interpolate between them. H2 The sample-based estimator for KL and JS underestimates the divergence more than RKL. H3 The policy gradient optimization landscape for KL and JS with continuously parameterized policies is more susceptible to local minima, compared to RKL. We test these hypothesis on two environments. The Bandit environment has a single state and three actions, a, b and c. The expert chooses a and b with equal probability as in Fig. 3a. We choose a policy class Π which has 3 policies A, B, and M . A selects a, B selects b and M stochastically selects a, b, or c with probability ( 0, 0, 1 − 2 0). The GridWorld environment has a 3 × 3 states (Fig. 3b). There are a start (S) and a terminal (T) state. The center state is undesirable. The environment has control noise 1 and transition noise 2. Fig. 3d shows the expert’s multi-modal demonstration. The policy class Π allows agents to go up, right, down, left at each state.
 (a) Bandit expert policy (b) Gridworld (c) Expert policy (d) Rollouts
 Fig. 3: Bandit and gridworld environment.
@@ -276,7 +276,7 @@ Divergence estimation To test H2, we compare the sample-based estimation of f -d
 Policy gradient optimization landscape To test H3, we solve for a local-optimal policy using policy gradient for KL–VIM, RKL–VIM and JS –VIM. Though the bandit problem and the gridworld environment have only discrete actions, we
 
 
-f-Imitation 11
+ f-Imitation 11
 Table 2: Globally optimal policies produced by policy enumeration (2a and 2b), and locally optimal policies produced by policy gradient (2c and 2d). In all cases, the RKL policy tends to collapse to one of the demonstrator modes, whereas the other policies interpolate between the modes, resulting in unsafe behavior.
 Bandit GridWorld
 RKL JS KL RKL JS KL
@@ -293,7 +293,7 @@ consider a continuously parameterized policy class (Appendix G) for use with pol
 We tested RKL–VIM and JS –VIM (GAIL) on a set of high dimensional control tasks in Mujoco. Though our main interest is in multi-modal behavior which occurs frequently in human demonstrations, here we had to generate expert demonstrations using a reinforcement learning policy, which are single modal. The vanilla version of these algorithms were significantly slow to maximize the cumulative reward. Further examination revealed that there were multiple
 
 
-12 Ke et al.
+ 12 Ke et al.
 (a) RKL (b) JS (c) KL
 Fig. 5: Comparing f -divergence with the estimated values. Preferred policies under each objective (in the 1 percentile of estimations) are in red. The normalized estimations appear to be typically lower than the normalized true values for JS and KL.
 Fig. 6: Training RKL–VIM and JS –VIM (GAIL) on Mujoco environments.
@@ -302,7 +302,7 @@ saddle points that the system gets ‘stuck’ in. A reliable way to coax the al
 We presented an imitation learning framework based on f -divergences, which generalizes existing approaches including behavior cloning (KL), GAIL (JS),
 
 
-f-Imitation 13
+ f-Imitation 13
 and DAgger (TV). In settings with multi-modal demonstrations, we showed that RKL divergence safely and efficiently collapses to a subset of the modes, whereas KL and JS often produce unsafe behavior.
 Our framework minimizes an approximate estimation of the divergence, notably a lower bound (5). KL divergence is the only one we can actually measure (Appendix C). The lower bound (5) is tight if the function approximator φ(x) has enough capacity to express the function f ′( p(x)
 q(x) ). For Reverse KL, f (u) = − log u and f ′(u) = − 1
@@ -315,11 +315,11 @@ Another interesting direction would be to consider the class of integral probabi
 Acknowledgements This work was (partially) funded by the National Institute of Health R01 (#R01EB019335), National Science Foundation CPS (#1544797),
 
 
-14 Ke et al.
+ 14 Ke et al.
 National Science Foundation NRI (#1637748), the Office of Naval Research, the RCTA, Amazon, and Honda Research Institute USA.
 
 
-Bibliography
+ Bibliography
 [1] Stéphane Ross, Narek Melik-Barkhudarov, Kumar Shaurya Shankar, Andreas Wendel, Debadeepta Dey, J Andrew Bagnell, and Martial Hebert. Learning monocular reactive uav control in cluttered natural environments. In Robotics and Automation (ICRA), 2013 IEEE International Conference on, 2013.
 [2] Chelsea Finn, Sergey Levine, and Pieter Abbeel. Guided cost learning: Deep inverse optimal control via policy optimization. In International Conference on Machine Learning, pages 49–58, 2016. [3] Dean A Pomerleau. ALVINN: An autonomous land vehicle in a neural network. In D S Touretzky, editor, Advances in Neural Information Processing Systems 1, pages 305–313. Morgan-Kaufmann, 1989. [4] Yunzhu Li, Jiaming Song, and Stefano Ermon. Infogail: Interpretable imitation learning from visual demonstrations. In Advances in Neural Information Processing Systems, pages 3812–3822, 2017. [5] Jonathan Ho and Stefano Ermon. Generative adversarial imitation learning. In Advances in Neural Information Processing Systems, pages 4565–4573, 2016.
 [6] Sebastian Nowozin, Botond Cseke, and Ryota Tomioka. f-gan: Training generative neural samplers using variational divergence minimization. In Advances in Neural Information Processing Systems, pages 271–279, 2016.
@@ -329,7 +329,7 @@ National Science Foundation NRI (#1637748), the Office of Naval Research, the RC
 [17] Stéphane Ross, Geoffrey J Gordon, and Drew Bagnell. A reduction of imitation learning and structured prediction to no-regret online learning. In AISTATS, 2011. [18] Beomjoon Kim, Amir-massoud Farahmand, Joelle Pineau, and Doina Precup. Learning from limited demonstrations. In Advances in Neural Information Processing Systems, pages 2859–2867, 2013.
 
 
-16 Ke et al.
+ 16 Ke et al.
 [19] Saurabh Gupta, James Davidson, Sergey Levine, Rahul Sukthankar, and Jitendra Malik. Cognitive mapping and planning for visual navigation. In Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition, 2017.
 [20] Michael Laskey, Jonathan Lee, Wesley Hsieh, Richard Liaw, Jeffrey Mahler, Roy Fox, and Ken Goldberg. Iterative noise injection for scalable imitation learning. arXiv preprint arXiv:1703.09327, 2017.
 [21] Michael Laskey, Sam Staszak, Wesley Yu-Shu Hsieh, Jeffrey Mahler, Florian T Pokorny, Anca D Dragan, and Ken Goldberg. Shiv: Reducing supervisor burden in dagger using support vectors for efficient learning from demonstrations in high dimensional state spaces. In Robotics and Automation (ICRA), 2016 IEEE International Conference on, pages 462–469. IEEE, 2016.
@@ -341,7 +341,7 @@ National Science Foundation NRI (#1637748), the Office of Naval Research, the RC
 [36] Xue Bin Peng, Angjoo Kanazawa, Sam Toyer, Pieter Abbeel, and Sergey Levine. Variational discriminator bottleneck: Improving imitation learning, inverse rl, and gans by constraining information flow. arXiv preprint arXiv:1810.00821, 2018.
 
 
-f-Imitation 17
+ f-Imitation 17
 [37] Faraz Torabi, Garrett Warnell, and Peter Stone. Generative adversarial imitation from observation. arXiv preprint arXiv:1807.06158, 2018.
 [38] Faraz Torabi, Garrett Warnell, and Peter Stone. Behavioral cloning from observation. arXiv preprint arXiv:1805.01954, 2018.
 [39] Xue Bin Peng, Angjoo Kanazawa, Jitendra Malik, Pieter Abbeel, and Sergey Levine. Sfv: Reinforcement learning of physical skills from videos. In SIGGRAPH Asia 2018 Technical Papers, page 178. ACM, 2018.
@@ -353,7 +353,7 @@ National Science Foundation NRI (#1637748), the Office of Naval Research, the RC
 [53] Takafumi Kanamori, Taiji Suzuki, and Masashi Sugiyama. Statistical analysis of kernel-based least-squares density-ratio estimation. Machine Learning, 86(3): 335–367, 2012. [54] Mingtian Zhang, Thomas Bird, Raza Habib, Tianlin Xu, and David Barber. Variational f-divergence minimization. arXiv preprint arXiv:1907.11891, 2019. [55] Wen Sun, Anirudh Vemula, Byron Boots, and J Andrew Bagnell. Provably efficient imitation learning from observation alone. arXiv preprint arXiv:1905.10948, 2019.
 
 
-18 Ke et al.
+ 18 Ke et al.
 Appendix for “Imitation Learning
 as f-Divergence Minimization”
 A Lower Bounding f -Divergence of Trajectory Distribution with State Action Distribution
@@ -437,7 +437,7 @@ Q(b)f
 (14)
 
 
-f-Imitation 19
+ f-Imitation 19
 Proof.
 ∑
 a
@@ -529,7 +529,7 @@ Corollary 1. Divergence between trajectory distribution is lower bounded by stat
 Df (ρπ∗ (τ ), ρπ(τ )) ≥ Df (ρπ∗ (s), ρπ(s))
 
 
-20 Ke et al.
+ 20 Ke et al.
 How tight is this lower bound? We examine the gap
 Corollary 2. The gap between the two divergences is
 Df (P (τ ), Q(τ )) − Df (P (z), Q(z)) = ∑
@@ -579,7 +579,7 @@ where we use ∑
 Let A be the set of trajectories that contain z, i.e., A = {τ |P (z|τ ) = Q(z|τ ) > 0}. The gap is the conditional f-divergence of τ ∈ A scaled by P (z). The gap comes from whether we treat τ ∈ A as separate events (in the case of trajectories) or as the same event (in the case of z).
 
 
-f-Imitation 21
+ f-Imitation 21
 B Relating f -Divergence of Trajectory Distribution with Expected Action Distribution
 In this section we explore the relation of divergences between induced trajectory distribution and induced action distribution. We begin with a general lemma
 Lemma 3. Given a policy π and a general feature function φ(s, a), the expected feature counts along induced trajectories is the same as expected feature counts on induced state action distribution
@@ -666,7 +666,7 @@ T I(st−1 = z)
 Proof. Apply Lemma 3 with φ(s, a) = I(s = z)
 
 
-22 Ke et al.
+ 22 Ke et al.
 Unfortunately Lemma 3 does not hold for f -divergences in general. But we can analyze a subclass of f -divergences that satisfy the following triangle inequality:
 Df (p, q) ≤ Df (p, r) + Df (r, q) (31)
 Examples of such divergences are Total Variation distance or Squared Hellinger distance.
@@ -690,7 +690,7 @@ t=2
 π∗(at|st−1)P (st|st−1, at) (34)
 
 
-f-Imitation 23
+ f-Imitation 23
 Let us consider the divergence between distributions ρπ∗ (τ0,T ) and ρπ(τ0,T ) and apply the triangle inequality (31) with respect to ρπ(τ0,T )
 Df (ρπ∗ (τ0,T ), ρπ(τ0,T )) (35) ≤Df (ρπ∗ (τ0,T ), ρπ(τ0,T )) + Df (ρπ(τ0,T ), ρπ(τ0,T )) (36)
 ≤
@@ -762,7 +762,7 @@ a
 ≤Es∼ρ0(s) [Df (π∗(a|s), π(a|s))] + Df (ρπ(τ0,T ), ρπ(τ0,T )) (43)
 
 
-24 Ke et al.
+ 24 Ke et al.
 Expanding the second term we have
 Df (ρπ(τ0,T ), ρπ(τ0,T )) (44)
 =
@@ -890,14 +890,14 @@ Es∼ρtπ(s) [Df (π∗(a|s), π(a|s))] (54)
 ≤ T Es∼ρπ(s) [Df (π∗(a|s), π(a|s))] (55)
 
 
-f-Imitation 25
+ f-Imitation 25
 where (55) follows from ρπ(s) = 1
 T
 ∑T −1
 t=0 ρtπ(s)
 
 
-26 Ke et al.
+ 26 Ke et al.
 C Existing algorithms as different f-divergence minimization
 Behavior Cloning – Kullback-Leibler (KL) divergence. If we use KL divergence f (u) = u log(u) in our framework’s trajectory matching problem:
 DKL(ρπ∗ (τ ), ρπ(τ )) = ∑
@@ -934,7 +934,7 @@ Dataset Aggregation ( DAgger) [17] – Total Variation (TV) distance. If we choo
 x |p(x) − q(x)|. TV satisfies the triangle inequalities and hence can be shown to satisfy the following:
 
 
-f-Imitation 27
+ f-Imitation 27
 Theorem 4. The Total Variation distance between trajectory distributions is upper bounded by the expected distance between the action distribution on states induced by π.
 DTV (ρπ∗ (τ ), ρπ(τ )) ≤ T Es∼ρπ(s) [DTV (π∗(a|s), π(a|s))] ≤ T
 √
@@ -982,7 +982,7 @@ We highlight some undesirable behaviors in DAgger. Consider the example shown in
 x |p(x) − q(x)|. This distance does not penalize the learner going off the track as much as RKL. In this case, RKL would have a very high penalization for reasons mentioned in Section 5.
 
 
-28 Ke et al.
+ 28 Ke et al.
 Bad states
 ⇡(s1) ⇡(s2) ⇡(s3)
 s1
@@ -1024,7 +1024,7 @@ Es∼ρπ
 We call this interactive variational imitation (RKL–i VIM). The algorithm is described in Algorithm 2. Unlike RKL–VIM, we collect a fresh batch of data
 
 
-f-Imitation 29
+ f-Imitation 29
 from both the expert and the learner every iteration. The optimal estimator in
 this case is Vw∗ (s, a) = log
 ( π(a|s) π ∗ (a|s)
@@ -1049,7 +1049,7 @@ Vw(si−1, ai)
 7: end for 8: Return πθN
 
 
-30 Ke et al.
+ 30 Ke et al.
 E Density Ratio Minimization for Reverse KL via No Regret Online Learning
 We continue the argument made in D for better algorithms for reverse KL minimization. Instead of variational lower bound, we can upper bound the action divergence as follows:
 1
@@ -1081,7 +1081,7 @@ i=1). We further assume that DRE achieves small prediction error: Ez∼q [|rˆ(z
 i cπ(s), where we use ca to denote the entry in the cost vector c that corresponds to action a.
 
 
-f-Imitation 31
+ f-Imitation 31
 Algorithm 3 Interactive DRE Minimization
 1: Input: Density Ratio Estimator (DRE) R, expert π∗, Cost sensitive classifier C 2: Initialize learner π0, dataset D = ∅ 3: for n = 0 to N − 1 do 4: s0 ∼ ρ0 5: Initialize D = ∅, D∗ = ∅ 6: for e = 0 to E do 7: for t = 0 to T − 1 do 8: Query expert: a∗
 t ∼ π∗(·|st)
@@ -1110,7 +1110,7 @@ N
 .
 
 
-32 Ke et al.
+ 32 Ke et al.
 The detailed proof is deferred to Appendix E. By definition of o(N ), we have limN→∞ o(N )/N → 0. The above theorem indicates that as N → ∞, the inverse KL divergence is upper bounded by (1 + 1/c)γ + class. Increasing the representation power of Π will decrease class and any performance improvement the density ratio estimation community could make on DRE can be immediately transferred to a performance improvement of Alg. 3.
 E.1 Proof of Theorem 6
 Denote the ideal loss function at iteration n as
@@ -1139,7 +1139,7 @@ i=1
 `ˆi(π) ≤ o(N ). (71)
 
 
-f-Imitation 33
+ f-Imitation 33
 Let us examine the second term on the LHS of the above inequality: minπ∈Π
 ∑N
 i=1 `ˆi(π):
@@ -1198,7 +1198,7 @@ Assumption E1 (Boundness). There exits a small positive constant c ∈ R+, such 
 Essentially we assume that q has full support over Z. The above assumption ensures that the ratio is well defined for all z ∈ Z, and p(z)/q(z) ∈ [c, 1/c]. Let us assume that we are equipped with a set of function approximators G = {g : Z → [−1/c, 1/c]} with a, b ∈ R+ two positive constants. The second assumption is the realizable assumption:
 
 
-34 Ke et al.
+ 34 Ke et al.
 Assumption E2 (Realizability). We assume that r(z) , p(z)/q(z) ∈ G, and G is discrete, i.e., G contains finitely many function approximators.
 Note that for analysis simplicity we assume G is discrete. As we will show later that |G| is only going to appear inside a log term, hence G could contain large number of function approximators. Also, our analysis below uses standard uniform convergence analysis with standard concentration inequality (i.e., Hoeffding’s inequality), it is standard to relax the above assumption to continuous G where log(|G|) will be replace by complexity terms such as Rademacher complexity. Given two sets of samples, {xi}N
 i=1 ∼ q, and {yi}N
@@ -1241,7 +1241,7 @@ c2
 N.
 
 
-f-Imitation 35
+ f-Imitation 35
 The above lemma can be easily proved by first applying Hoeffding’s inequality
 on ∑N
 i=1 vi/N for a fixed g, then applying union bound over all g ∈ G.
@@ -1272,7 +1272,7 @@ Ez∼q(gˆ(z) − r(z))2 ≤ √2CN .
 Hence we prove the theorem.
 
 
-36 Ke et al.
+ 36 Ke et al.
 F Divide-by-zero Issues with KL and JS
 Recall the definition of the f -divergence
 Df (p, q) = ∑
@@ -1289,7 +1289,7 @@ Ex∼q f
 is not unreasonable. However, the issue here is if ∃x s.t. p(x) > 0, q(x) = 0, then depending on f , this divergence may be infinite (in f -divergences, 0 ∗ ∞ = ∞. Yet the estimator will never sample the location where q(x) = 0 and thus fail to realize the infinite divergence. This issue is particularly pronounced in KL and JS due to their respective f functions.
 
 
-f-Imitation 37
+ f-Imitation 37
 G Experimental Details
 Environmental Noise For the bandit environment we set control noise 0 = 0.28, unless otherwise specified. For the grid world we tested with the control noise 1 = 0.14 and the transitional noise 2 = 0.15.
 Parameterization of policies Both bandit and grid world environment have discrete actions. To transform the discrete action space into a continuous policy space for policy gradient, we consider the following settings. Bandit’s policy is parameterized by one real number θ. Given θ, one can construct a vector V = [cos(−θ − π

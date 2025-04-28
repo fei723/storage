@@ -15,7 +15,7 @@ ACM Trans. Graph., Vol. 40, No. 4, Article 1. Publication date: August 2021.
 arXiv:2104.02180v2 [cs.GR] 12 May 2022
 
 
-1:2 • Xue Bin Peng†, Ze Ma†, Pieter Abbeel, Sergey Levine, and Angjoo Kanazawa
+ 1:2 • Xue Bin Peng†, Ze Ma†, Pieter Abbeel, Sergey Levine, and Angjoo Kanazawa
 heuristics often require careful balancing of the various objectives, a tuning process that may need to be repeated for each task. Datadriven methods are able to mitigate some of these challenges by leveraging motion clips recorded from real-life actors to guide the behaviors of simulated characters [Da Silva et al. 2008; Liu et al. 2010; Muico et al. 2009; Sok et al. 2007]. A common instantiation of this approach is to utilize a tracking objective that encourages a character to follow particular reference trajectories relevant for a given task. These tracking-based methods can produce high-quality motions for a large repertoire skills. But extending these techniques to effectively leverage large unstructured motion datasets remains challenging, since a suitable motion clip needs to be selected for the character to track at each time step. This selection process is typically performed by a motion planner, which generates reference trajectories for solving a particular task [Bergamin et al. 2019; Park et al. 2019; Peng et al. 2017]. However, constructing an effective motion planner can itself be a challenging endeavour, and entails significant overhead to annotate and organize the motion clips for a desired task. For many applications, it is not imperative to exactly track a particular reference motion. Since a dataset typically provides only a limited collection of example motions, a character will inevitably need to deviate from the reference motions in order to effectively perform a given task. Therefore, the intent is often not for the character to closely track a particular motion, but to adopt general behavioral characteristics depicted in the dataset. We refer to these behavioral characteristics as a style. In this work, we aim to develop a system where users can specify high-level task objectives for a character to perform, while the lowlevel style of a character’s movements can be controlled through examples provided in the form of unstructured motion clips. To control the style of a character’s motions, we propose adversarial motion priors (AMP), a method for imitating behaviors from raw motion clips without requiring any task-specific annotations or organization of the dataset. Given a set of reference motions that constitutes a desired motion style, the motion prior is modeled as an adversarial discriminator, trained to differentiate between behaviors depicted in the dataset from those produced by the character. The motion prior therefore acts as a general measure of similarity between the motions produced by a character and the motions in the dataset. By incorporating the motion prior in a goal-conditioned reinforcement learning framework, our system is able to train physically simulated characters to perform challenging tasks with natural and life-like behaviors. Composition of diverse behaviors emerges automatically from the motion prior, without the need for a motion planner or other mechanism for selecting which clip to imitate. The central contribution of this work is an adversarial learning approach for physics-based character animation that combines goalconditioned reinforcement with an adversarial motion prior, which enables the style of a character’s movements to be controlled via example motion clips, while the task is specified through a simple reward function. We present one of the first adversarial learning systems that is able to produce high-quality full-body motions for physically simulated characters. By combining the motion prior with additional task objectives, our system provides a convenient interface through which users can specify high-level directions for controlling a character’s behaviors. These task objectives allow our
 characters to acquire more complex skills than those demonstrated in the original motion clips. While our system is built on well-known adversarial imitation learning techniques, we propose a number of important design decisions that lead to substantially higher quality results than those achieved by prior work, enabling our characters to learn highly dynamic and diverse motors skills from unstructured motion data.
 2 RELATED WORK
@@ -24,7 +24,7 @@ Physics-Based Methods: Physics-based methods address some of the limitations of 
 ACM Trans. Graph., Vol. 40, No. 4, Article 1. Publication date: August 2021.
 
 
-AMP: Adversarial Motion Priors for Stylized Physics-Based Character Control • 1:3
+ AMP: Adversarial Motion Priors for Stylized Physics-Based Character Control • 1:3
 quality [Geijtenbeek et al. 2013; Jiang et al. 2019; Wang et al. 2012], but may nonetheless yield unnatural behaviors.
 Imitation Learning: The challenges of designing objective functions that lead to natural motions have spurred the adoption of data-driven physics-based animation techniques [Da Silva et al. 2008; Kwon and Hodgins 2017; Lee et al. 2010a; Sharon and van de Panne 2005; Zordan and Hodgins 2002], which utilizes reference motion data to improve motion quality. Reference motions are typically incorporated through an imitation objective that encourages a character to imitate motions in the dataset. The imitation objective is commonly implemented as a tracking objective, which attempts to minimize the pose error between the simulated character and target poses from a reference motion [Lee et al. 2010a; Liu et al. 2016, 2010; Peng et al. 2018a; Sok et al. 2007]. Since the pose error is generally computed with respect to a single target pose at a time, some care is required to select an appropriate target pose from the dataset. A simple strategy is to synchronize the simulated character with a given reference motion using a phase variable [Lee et al. 2019; Peng et al. 2018a,b], which is provided as an additional input to the controller. The target pose at each time step can then be conveniently determined by selecting the target pose according to the phase. This strategy has been effective for imitating individual motion clips, but it can be difficult to scale to datasets containing multiple disparate motions, as it may not be possible to synchronize and align multiple reference motions according to a single-phase variable. Recent methods have extended these tracking-based techniques to larger motion datasets by explicitly providing target poses from the reference motion that is being tracked as inputs to the controller [Bergamin et al. 2019; Chentanez et al. 2018; Park et al. 2019; Won et al. 2020]. This then allows a controller to imitate different motions depending on the input target poses. However, selecting the appropriate motion for a character to imitate in a given scenario can still entail significant algorithmic overhead. These methods often require a high-level motion planner that selects which motion clip the character should imitate for a given task [Bergamin et al. 2019; Park et al. 2019; Peng et al. 2017]. The character’s performance on a particular task can therefore be constrained by the performance of the motion planner. Another major limitation of tracking-based imitation techniques is the need for a pose error metric when computing the tracking objective [Liu et al. 2010; Peng et al. 2018a; Sharon and van de Panne 2005]. These error metrics are often manually-designed, and it can be challenging to construct and tune a common metric that is effective across all skills that a character is to imitate. Adversarial imitation learning provides an appealing alternative [Abbeel and Ng 2004; Ho and Ermon 2016; Ziebart et al. 2008], where instead of using a manually-designed imitation objective, these algorithms train an adversarial discriminator to differentiate between behaviors generated by an agent from behaviors depicted in the demonstration data (e.g. reference motions). The discriminator then serves as the objective function for training a control policy to imitate the demonstrations. While these methods have shown promising results for motion imitation tasks [Merel et al. 2017; Wang et al. 2017], adversarial learning algorithms can be notoriously unstable and the resulting motion
 quality still falls well behind what has been achieved with state-ofthe-art tracking-based techniques. Peng et al. [2019b] was able to able to produce substantially more realistic motions by regularizing the discriminator with an information bottleneck. However, their method still requires a phase variable to synchronize the policy and discriminator with the reference motion. Therefore, their results are limited to imitating a single motion per policy, and thus not suitable for learning from large diverse motion datasets. In this work, we propose an adversarial method for learning general motion priors from large unstructured datasets that contain diverse motion clips. Our approach does not necessitate any synchronization between the policy and reference motion. Furthermore, our approach does not require a motion planner, or any task-specific annotation and segmentation of the motion clips [Bergamin et al. 2019; Park et al. 2019; Peng et al. 2017]. Instead, composition of multiple motions in furtherance of a task objective emerges automatically through the motion prior. We also present a number of design decisions for stabilizing the adversarial training process, leading to consistent and high-quality results.
@@ -32,7 +32,7 @@ Latent Space Models: Latent space models can also act as a form of motion prior 
 ACM Trans. Graph., Vol. 40, No. 4, Article 1. Publication date: August 2021.
 
 
-1:4 • Xue Bin Peng†, Ze Ma†, Pieter Abbeel, Sergey Levine, and Angjoo Kanazawa
+ 1:4 • Xue Bin Peng†, Ze Ma†, Pieter Abbeel, Sergey Levine, and Angjoo Kanazawa
 3 OVERVIEW
 Given a dataset of reference motions and a task objective defined by a reward function, our system synthesizes a control policy that enables a character to achieve the task objective in a physically simulated environment, while utilizing behaviors that resemble the motions in the dataset. Crucially, the character’s behaviors need not exactly match any specific motion in the dataset, instead its movements need only to adopt more general characteristics exhibited by the corpus of reference motions. These reference motions collectively provide an example-based definition of a behavioral style, and by providing the system with different motion datasets, the character can then be trained to perform a task in a variety of distinct styles. Figure 2 provides a schematic overview of the system. The motion dataset M consists of a collection of reference motions, where each motion mi = {^qi
 t } is represented as a sequence of poses ^qi
@@ -68,7 +68,7 @@ d M (s, a) and dπ (s, a) denote the state-action distribution of the dataset an
 ACM Trans. Graph., Vol. 40, No. 4, Article 1. Publication date: August 2021.
 
 
-AMP: Adversarial Motion Priors for Stylized Physics-Based Character Control • 1:5
+ AMP: Adversarial Motion Priors for Stylized Physics-Based Character Control • 1:5
 RL objective detailed in Equation 1, with rewards specified by,
 rt = −log (1 − D (st , at )) . (3)
 This adversarial training procedure can be interpreted as training a policy to produce states and actions that appear to the discriminator as being indistinguishable from the demonstrations. It can be shown that this objective minimizes the Jensen-Shannon divergence between d M (s, a) and dπ (s, a) [Ke et al. 2019; Nowozin et al. 2016].
@@ -105,7 +105,7 @@ Since the discriminator specifies rewards for training the policy, selecting an 
 ACM Trans. Graph., Vol. 40, No. 4, Article 1. Publication date: August 2021.
 
 
-1:6 • Xue Bin Peng†, Ze Ma†, Pieter Abbeel, Sergey Levine, and Angjoo Kanazawa
+ 1:6 • Xue Bin Peng†, Ze Ma†, Pieter Abbeel, Sergey Levine, and Angjoo Kanazawa
 • 3D positions of the end-effectors (e.g. hands and feet), represented in the character’s local coordinate frame. The root is designated to be the character’s pelvis. The character’s local coordinate frame is defined with the origin located at the root, the x-axis oriented along the root link’s facing direction, and the y-axis aligned with the global up vector. The 3D rotation of each spherical joint is encoded using two 3D vectors corresponding to the normal and tangent in the coordinate frame. This rotation encoding provides a smooth and unique representation of a given rotation. This set of observation features for the discriminator is selected to provide a compact representation of the motion across a single state transition. The observations also do not include any task-specific features, thus enabling the motion prior to be trained without requiring task-specific annotation of the reference motions, and allowing motion priors trained with the same dataset to be used for different tasks.
 5.4 Gradient Penalty
 The interplay between the discriminator and generator in a GAN often results in unstable training dynamics. One source of instability is due to function approximation errors in the discriminator, where the discriminator may assign nonzero gradients on the manifold of real data samples [Mescheder et al. 2018]. These nonzero gradients can cause the generator to overshoot and move off the data manifold, instead of converging to the manifold, leading to oscillations and instability during training. To mitigate this phenomenon, a gradient penalty can be applied to penalize nonzero gradients on samples from the dataset [Gulrajani et al. 2017; Kodali et al. 2017; Mescheder et al. 2018]. We incorporate this technique to improve training stability. The discriminator objective is then given by:
@@ -158,7 +158,7 @@ t and goal g to a Gaussian distribution over actions π (at |st , g) = N (μ (st
 ACM Trans. Graph., Vol. 40, No. 4, Article 1. Publication date: August 2021.
 
 
-AMP: Adversarial Motion Priors for Stylized Physics-Based Character Control • 1:7
+ AMP: Adversarial Motion Priors for Stylized Physics-Based Character Control • 1:7
 layer. The values of the covariance matrix Σ = diag(σ1, σ2, ...) are manually-specified and kept fixed over the course of training. The value function V (st , g) and discriminator D (st , st+1) are modeled by separate networks with a similar architecture as the policy.
 6.3 Training
 Our policies are trained using a combination of GAIL [Ho and Ermon 2016] and proximal-policy optimization (PPO) [Schulman et al. 2017]. Algorithm 1 provides an overview of the training process. At each time step t, the agent receives a task-reward rG
@@ -190,7 +190,7 @@ All environments are simulated using the Bullet physics engine [Coumans et al. 2
 ACM Trans. Graph., Vol. 40, No. 4, Article 1. Publication date: August 2021.
 
 
-1:8 • Xue Bin Peng†, Ze Ma†, Pieter Abbeel, Sergey Levine, and Angjoo Kanazawa
+ 1:8 • Xue Bin Peng†, Ze Ma†, Pieter Abbeel, Sergey Levine, and Angjoo Kanazawa
 (a) Humanoid: Target Location (Locomotion) (b) Humanoid: Target Location (Zombie)
 (c) Humanoid: Target Heading (Locomotion + Getup)
 (d) Humanoid: Dribble (Locomotion) (e) Humanoid: Strike (Walk + Punch)
@@ -204,7 +204,7 @@ clips from 8 different human actors, for a total of 434s of motion data. In the 
 ACM Trans. Graph., Vol. 40, No. 4, Article 1. Publication date: August 2021.
 
 
-AMP: Adversarial Motion Priors for Stylized Physics-Based Character Control • 1:9
+ AMP: Adversarial Motion Priors for Stylized Physics-Based Character Control • 1:9
 Table 1. Performance statistics of combining AMP with additional task objectives. Performance is recorded as the average normalized task return, with 0 being the minimum possible return per episode and 1 being the maximum possible return. The return is averaged across 3 models initialized with different random seeds, with 32 episodes recorded per model. The motion prior can be trained with different datasets to produce policies that adopt distinct stylistic behaviors when performing a particular task.
 Character Task Dataset Task Return Humanoid Target Locomotion 0.90 ± 0.01 Heading Walk 0.46 ± 0.01 Run 0.63 ± 0.01 Stealthy 0.89 ± 0.02 Zombie 0.94 ± 0.00 Target Locomotion 0.63 ± 0.01 Location Zombie 0.50 ± 0.00 Obstacles Run + Leap + Roll 0.27 ± 0.10 Stepping Cartwheel 0.43 ± 0.03 Stones Jump 0.56 ± 0.12 Dribble Locomotion 0.78 ± 0.05 Zombie 0.60 ± 0.04 Strike Walk + Punch 0.73 ± 0.02 T-Rex Target
 Location Locomotion 0.36 ± 0.03
@@ -216,7 +216,7 @@ For the Strike task (Figure 1), the motion prior is trained using a collection o
 ACM Trans. Graph., Vol. 40, No. 4, Article 1. Publication date: August 2021.
 
 
-1:10 • Xue Bin Peng†, Ze Ma†, Pieter Abbeel, Sergey Levine, and Angjoo Kanazawa
+ 1:10 • Xue Bin Peng†, Ze Ma†, Pieter Abbeel, Sergey Levine, and Angjoo Kanazawa
 Fig. 5. Learning curves comparing the task performance of AMP to latent space models (Latent Space) and policies trained from scratch without motion data (No Data). Our method achieves comparable performance across the various tasks, while also producing higher fidelity motions.
 motion planner or manual annotations [Liu et al. 2012; Park et al. 2019]. Our approach provides a unified framework where the same underlying algorithm is able to learn how to perform the various skills and which skill to execute in a given scenario. Furthermore, the character can also be trained to traverse obstacles in distinct styles by providing the motion prior with different motion clips, such as jumping or cartwheeling across stepping stones (Figure 3).
 8.3 Comparisons
@@ -228,7 +228,7 @@ Although our goal is to train characters with large motion datasets, to evaluate
 ACM Trans. Graph., Vol. 40, No. 4, Article 1. Publication date: August 2021.
 
 
-AMP: Adversarial Motion Priors for Stylized Physics-Based Character Control • 1:11
+ AMP: Adversarial Motion Priors for Stylized Physics-Based Character Control • 1:11
 (a) T-Rex (Walk)
 (b) Dog (Trot)
 (c) Dog (Canter)
@@ -259,7 +259,7 @@ Our system is able to produce substantially higher fidelity motions than prior a
 ACM Trans. Graph., Vol. 40, No. 4, Article 1. Publication date: August 2021.
 
 
-1:12 • Xue Bin Peng†, Ze Ma†, Pieter Abbeel, Sergey Levine, and Angjoo Kanazawa
+ 1:12 • Xue Bin Peng†, Ze Ma†, Pieter Abbeel, Sergey Levine, and Angjoo Kanazawa
 Table 3. Performance statistics of imitating individual motion clips without task objectives. "Dataset Size" records the total length of motion data used for each skill. Performance is recorded as the average pose error (in units of meters) between the time-warped trajectories from the reference motion and simulated character. The pose error is averaged across 3 models initialized with different random seeds, with 32 episodes recorded per model. Each episode has a maximum length of 20s. We compare our method (AMP) with the motion tracking approach proposed by Peng et al. [2018a]. AMP is able to closely imitate a diverse repertoire of complex motions, without manual reward engineering.
 Character Motion Dataset
 Size
@@ -274,7 +274,7 @@ However, like many other GAN-based techniques, AMP is susceptible to mode collap
 ACM Trans. Graph., Vol. 40, No. 4, Article 1. Publication date: August 2021.
 
 
-AMP: Adversarial Motion Priors for Stylized Physics-Based Character Control • 1:13
+ AMP: Adversarial Motion Priors for Stylized Physics-Based Character Control • 1:13
 we hope this work provides a useful tool that enables physically simulated characters to take advantage of the large motion datasets that have been so effective for kinematic animation techniques, and open exciting directions for future exploration in data-driven physics-based character animation.
 ACKNOWLEDGEMENTS
 We thank Sony Interactive Entertainment for providing reference motion data for this project, Bonny Ho for narrating the video, the anonymous reviewers for their helpful feedback, and AWS for providing computational resources. This research was funded by an NSERC Postgraduate Scholarship, and a Berkeley Fellowship for Graduate Study.
@@ -288,7 +288,7 @@ Tero Karras, Timo Aila, Samuli Laine, and Jaakko Lehtinen. 2017. Progressive Gro
 ACM Trans. Graph., Vol. 40, No. 4, Article 1. Publication date: August 2021.
 
 
-1:14 • Xue Bin Peng†, Ze Ma†, Pieter Abbeel, Sergey Levine, and Angjoo Kanazawa
+ 1:14 • Xue Bin Peng†, Ze Ma†, Pieter Abbeel, Sergey Levine, and Angjoo Kanazawa
 Article 23 (May 2011), 11 pages. https://doi.org/10.1145/1966394.1966402 Sergey Levine, Jack M. Wang, Alexis Haraux, Zoran Popović, and Vladlen Koltun. 2012. Continuous Character Control with Low-Dimensional Embeddings. ACM Transactions on Graphics 31, 4 (2012), 28.
 Hung Yu Ling, Fabio Zinno, George Cheng, and Michiel van de Panne. 2020. Character Controllers Using Motion VAEs. 39, 4 (2020). Libin Liu, Michiel van de Panne, and KangKang Yin. 2016. Guided Learning of Control Graphs for Physics-Based Characters. ACM Transactions on Graphics 35, 3 (2016). Libin Liu, KangKang Yin, Michiel van de Panne, and Baining Guo. 2012. Terrain runner: control, parameterization, composition, and planning for highly dynamic motions. ACM Transactions on Graphics (TOG) 31, 6 (2012), 154.
 Libin Liu, KangKang Yin, Michiel van de Panne, Tianjia Shao, and Weiwei Xu. 2010. Sampling-based contact-rich motion control. ACM Trans. Graph. 29, 4, Article 128 (July 2010), 10 pages. https://doi.org/10.1145/1778765.1778865 Ying-Sheng Luo, Jonathan Hans Soeseno, Trista Pei-Chun Chen, and Wei-Chao Chen. 2020. CARL: Controllable Agent with Reinforcement Learning for Quadruped Locomotion. ACM Trans. Graph. 39, 4, Article 38 (July 2020), 10 pages. https: //doi.org/10.1145/3386569.3392433 Corey Lynch, Mohi Khansari, Ted Xiao, Vikash Kumar, Jonathan Tompson, Sergey Levine, and Pierre Sermanet. 2020. Learning Latent Plans from Play. In Proceedings of the Conference on Robot Learning (Proceedings of Machine Learning Research, Vol. 100), Leslie Pack Kaelbling, Danica Kragic, and Komei Sugiura (Eds.). PMLR, 1113–1132. http://proceedings.mlr.press/v100/lynch20a.html X. Mao, Q. Li, H. Xie, R. Y. K. Lau, Z. Wang, and S. P. Smolley. 2017. Least Squares Generative Adversarial Networks. In 2017 IEEE International Conference on Computer Vision (ICCV). 2813–2821. https://doi.org/10.1109/ICCV.2017.304 Josh Merel, Leonard Hasenclever, Alexandre Galashov, Arun Ahuja, Vu Pham, Greg Wayne, Yee Whye Teh, and Nicolas Heess. 2019. Neural Probabilistic Motor Primitives for Humanoid Control. In International Conference on Learning Representations. https://openreview.net/forum?id=BJl6TjRcY7 Josh Merel, Yuval Tassa, Dhruva TB, Sriram Srinivasan, Jay Lemmon, Ziyu Wang, Greg Wayne, and Nicolas Heess. 2017. Learning human behaviors from motion capture by adversarial imitation. CoRR abs/1707.02201 (2017). arXiv:1707.02201 http://arxiv.org/abs/1707.02201 Josh Merel, Saran Tunyasuvunakool, Arun Ahuja, Yuval Tassa, Leonard Hasenclever, Vu Pham, Tom Erez, Greg Wayne, and Nicolas Heess. 2020. Catch and Carry: Reusable Neural Controllers for Vision-Guided Whole-Body Tasks. ACM Trans. Graph. 39, 4, Article 39 (July 2020), 14 pages. https://doi.org/10.1145/3386569.3392474 Lars Mescheder, Andreas Geiger, and Sebastian Nowozin. 2018. Which Training Methods for GANs do actually Converge?. In Proceedings of the 35th International Conference on Machine Learning (Proceedings of Machine Learning Research, Vol. 80), Jennifer Dy and Andreas Krause (Eds.). PMLR, Stockholmsmässan, Stockholm Sweden, 3481–3490. http://proceedings.mlr.press/v80/mescheder18a.html Igor Mordatch, Emanuel Todorov, and Zoran Popović. 2012. Discovery of Complex Behaviors through Contact-Invariant Optimization. ACM Trans. Graph. 31, 4, Article 43 (July 2012), 8 pages. https://doi.org/10.1145/2185520.2185539 Igor Mordatch, Jack M. Wang, Emanuel Todorov, and Vladlen Koltun. 2013. Animating Human Lower Limbs Using Contact-Invariant Optimization. ACM Trans. Graph. 32, 6, Article 203 (Nov. 2013), 8 pages. https://doi.org/10.1145/2508363.2508365 Uldarico Muico, Yongjoon Lee, Jovan Popović, and Zoran Popović. 2009. Contact-Aware Nonlinear Control of Dynamic Characters. In ACM SIGGRAPH 2009 Papers (New Orleans, Louisiana) (SIGGRAPH ’09). Association for Computing Machinery, New York, NY, USA, Article 81, 9 pages. https://doi.org/10.1145/1576246.1531387 Vinod Nair and Geoffrey E. Hinton. 2010. Rectified Linear Units Improve Restricted Boltzmann Machines. In Proceedings of the 27th International Conference on International Conference on Machine Learning (Haifa, Israel) (ICML’10). Omnipress, Madison, WI, USA, 807–814. Sebastian Nowozin, Botond Cseke, and Ryota Tomioka. 2016. f-GAN: Training Generative Neural Samplers using Variational Divergence Minimization. In Advances in Neural Information Processing Systems, D. Lee, M. Sugiyama, U. Luxburg, I. Guyon, and R. Garnett (Eds.), Vol. 29. Curran Associates, Inc., 271–279. https://proceedings. neurips.cc/paper/2016/file/cedebb6e872f539bef8c3f919874e9d7- Paper.pdf Soohwan Park, Hoseok Ryu, Seyoung Lee, Sunmin Lee, and Jehee Lee. 2019. Learning Predict-and-Simulate Policies from Unorganized Human Motion Data. ACM Trans. Graph. 38, 6, Article 205 (Nov. 2019), 11 pages. https://doi.org/10.1145/3355089. 3356501 Xue Bin Peng, Pieter Abbeel, Sergey Levine, and Michiel van de Panne. 2018a. DeepMimic: Example-guided Deep Reinforcement Learning of Physics-based Character Skills. ACM Trans. Graph. 37, 4, Article 143 (July 2018), 14 pages. https: //doi.org/10.1145/3197517.3201311 Xue Bin Peng, Glen Berseth, and Michiel van de Panne. 2016. Terrain-adaptive Locomotion Skills Using Deep Reinforcement Learning. ACM Trans. Graph. 35, 4, Article 81 (July 2016), 12 pages. https://doi.org/10.1145/2897824.2925881 Xue Bin Peng, Glen Berseth, Kangkang Yin, and Michiel Van De Panne. 2017. DeepLoco: Dynamic Locomotion Skills Using Hierarchical Deep Reinforcement Learning. ACM Trans. Graph. 36, 4, Article 41 (July 2017), 13 pages. https://doi.org/10.1145/3072959.
@@ -297,12 +297,12 @@ Kwang Won Sok, Manmyung Kim, and Jehee Lee. 2007. Simulating Biped Behaviors fro
 ACM Trans. Graph., Vol. 40, No. 4, Article 1. Publication date: August 2021.
 
 
-AMP: Adversarial Motion Priors for Stylized Physics-Based Character Control • 1:15
+ AMP: Adversarial Motion Priors for Stylized Physics-Based Character Control • 1:15
 Kevin Wampler, Zoran Popović, and Jovan Popović. 2014. Generalizing Locomotion Style to New Animals with Inverse Optimal Regression. ACM Trans. Graph. 33, 4, Article 49 (July 2014), 11 pages. https://doi.org/10.1145/2601097.2601192 Jack M. Wang, David J. Fleet, and Aaron Hertzmann. 2009. Optimizing Walking Controllers. In ACM SIGGRAPH Asia 2009 Papers (Yokohama, Japan) (SIGGRAPH Asia ’09). Association for Computing Machinery, New York, NY, USA, Article 168, 8 pages. https://doi.org/10.1145/1661412.1618514 Jack M. Wang, Samuel R. Hamner, Scott L. Delp, and Vladlen Koltun. 2012. Optimizing Locomotion Controllers Using Biologically-Based Actuators and Objectives. ACM Trans. Graph. 31, 4, Article 25 (July 2012), 11 pages. https://doi.org/10.1145/2185520. 2185521 Ziyu Wang, Josh S Merel, Scott E Reed, Nando de Freitas, Gregory Wayne, and Nicolas Heess. 2017. Robust Imitation of Diverse Behaviors. In Advances in Neural Information Processing Systems, I. Guyon, U. V. Luxburg, S. Bengio, H. Wallach, R. Fergus, S. Vishwanathan, and R. Garnett (Eds.), Vol. 30. Curran Associates, Inc., 5320–5329. https://proceedings.neurips.cc/paper/2017/file/ 044a23cadb567653eb51d4eb40acaa88- Paper.pdf Jungdam Won, Deepak Gopinath, and Jessica Hodgins. 2020. A Scalable Approach to Control Diverse Behaviors for Physically Simulated Characters. ACM Trans. Graph. 39, 4, Article 33 (July 2020), 12 pages. https://doi.org/10.1145/3386569.3392381 Yuting Ye and C. Karen Liu. 2010. Synthesis of Responsive Motion Using a Dynamic Model. Computer Graphics Forum (2010). https://doi.org/10.1111/j.1467-8659.2009. 01625.x Wenhao Yu, Greg Turk, and C. Karen Liu. 2018. Learning Symmetric and Low-Energy Locomotion. ACM Trans. Graph. 37, 4, Article 144 (July 2018), 12 pages. https: //doi.org/10.1145/3197517.3201397 He Zhang, Sebastian Starke, Taku Komura, and Jun Saito. 2018. Mode-Adaptive Neural Networks for Quadruped Motion Control. ACM Trans. Graph. 37, 4, Article 145 (July 2018), 11 pages. https://doi.org/10.1145/3197517.3201366 Brian D. Ziebart, Andrew Maas, J. Andrew Bagnell, and Anind K. Dey. 2008. Maximum Entropy Inverse Reinforcement Learning. In Proceedings of the 23rd National Conference on Artificial Intelligence - Volume 3 (Chicago, Illinois) (AAAI’08). AAAI Press, 1433–1438. Victor Brian Zordan and Jessica K. Hodgins. 2002. Motion Capture-Driven Simulations That Hit and React. In Proceedings of the 2002 ACM SIGGRAPH/Eurographics Symposium on Computer Animation (San Antonio, Texas) (SCA ’02). Association for Computing Machinery, New York, NY, USA, 89–96. https://doi.org/10.1145/545261.545276
 ACM Trans. Graph., Vol. 40, No. 4, Article 1. Publication date: August 2021.
 
 
-1:16 • Xue Bin Peng†, Ze Ma†, Pieter Abbeel, Sergey Levine, and Angjoo Kanazawa
+ 1:16 • Xue Bin Peng†, Ze Ma†, Pieter Abbeel, Sergey Levine, and Angjoo Kanazawa
 APPENDIX A TASKS
 In this section, we provide a detailed description of each task, and the task reward functions used during training.
 Target Heading: In this task, the objective for the character is to move along a target heading direction d∗ at a target speed v∗. The goal input for the policy is specified as gt = (d ̃∗
@@ -406,7 +406,7 @@ Hyperparameter settings used in the AMP experiments are available in Table 4. Fo
 ACM Trans. Graph., Vol. 40, No. 4, Article 1. Publication date: August 2021.
 
 
-AMP: Adversarial Motion Priors for Stylized Physics-Based Character Control • 1:17
+ AMP: Adversarial Motion Priors for Stylized Physics-Based Character Control • 1:17
 Table 4. AMP hyperparameters.
 Parameter Value wG Task-Reward Weight 0.5 wS Style-Reward Weight 0.5 wgp Gradient Penalty 10 Samples Per Update Iteration 4096 Batch Size 256 K Discriminator Batch Size 256 π Policy Stepsize (Single-Clip Imitation) 2 × 10−6 π Policy Stepsize (Tasks) 4 × 10−6 V Value Stepsize (Single-Clip Imitation) 10−4 V Value Stepsize (Tasks) 2 × 10−5 D Discriminator Stepsize 10−5 B Discriminator Replay Buffer Size 105 γ Discount (Single-Clip Imitation) 0.95 γ Discount (Tasks) 0.99 SGD Momentum 0.9 GAE(λ) 0.95 TD(λ) 0.95 PPO Clip Threshold 0.02
 C LATENT SPACE MODEL
@@ -448,7 +448,7 @@ t , (22)
 ACM Trans. Graph., Vol. 40, No. 4, Article 1. Publication date: August 2021.
 
 
-1:18 • Xue Bin Peng†, Ze Ma†, Pieter Abbeel, Sergey Levine, and Angjoo Kanazawa
+ 1:18 • Xue Bin Peng†, Ze Ma†, Pieter Abbeel, Sergey Levine, and Angjoo Kanazawa
 where r heading
 t the same as the reward used for the Target Heading
 task equation 11, and r wave
@@ -465,11 +465,11 @@ Dataset (Size) Heading Return Waving Return Wave (51.7s) 0.683 ± 0.195 0.949 ±
 ACM Trans. Graph., Vol. 40, No. 4, Article 1. Publication date: August 2021.
 
 
-AMP: Adversarial Motion Priors for Stylized Physics-Based Character Control • 1:19
+ AMP: Adversarial Motion Priors for Stylized Physics-Based Character Control • 1:19
 Fig. 9. Learning curves comparing AMP to the motion tracking approach proposed by Peng et al. [2018a] (Motion Tracking) on the single-clip imitation tasks. 3 policies initialized with different random seeds are trained for each method and motion. AMP produces results of comparable quality when compared to prior tracking-based methods, without requiring a manually designed reward function or synchronization between the policy and reference motion.
 ACM Trans. Graph., Vol. 40, No. 4, Article 1. Publication date: August 2021.
 
 
-1:20 • Xue Bin Peng†, Ze Ma†, Pieter Abbeel, Sergey Levine, and Angjoo Kanazawa
+ 1:20 • Xue Bin Peng†, Ze Ma†, Pieter Abbeel, Sergey Levine, and Angjoo Kanazawa
 Fig. 10. Learning curves of applying AMP to various tasks and datasets.
 ACM Trans. Graph., Vol. 40, No. 4, Article 1. Publication date: August 2021.

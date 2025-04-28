@@ -42,7 +42,7 @@ the need for a unified low-level humanoid controller capable of adapting to dive
 arXiv:2410.21229v2 [cs.RO] 6 Mar 2025
 
 
-...
+ ...
 pr-an
 pl-an
 phead
@@ -186,7 +186,7 @@ B. Command Space Design for Humanoid Control
 In legged locomotion, root velocity [19] or position tracking [20] is a commonly employed command space. However, focusing solely on root tracking imposes limitations on the full capabilities of humanoid robots, especially for wholebody loco-manipulation tasks. We observe that while prior works [9, 10, 12, 13] have introduced control modes with varying advantages and disadvantages, each is typically tailored to specific subsets of tasks, thus lacking the flexibility required for general-purpose humanoid control. In contrast, our goal is to design a comprehensive control framework that
 
 
-TABLE I: Command space for priors works on whole-body humanoid control. HOVER covers all the command designs designed by prior works with a unified command space and supports multi-mode control by tracking arbitrary subsets of the command elements.
+ TABLE I: Command space for priors works on whole-body humanoid control. HOVER covers all the command designs designed by prior works with a unified command space and supports multi-mode control by tracking arbitrary subsets of the command elements.
 Controller Multi-Mode Control Upper-Body Command Lower-Body Command
 Kinematic Position Joint Angle Kinematic Position Joint Angle Root ExBody [12] ✗ ✗ ✓ ✗ ✗ ✓ H2O [10] ✗ ✓ ✗ ✓ ✗ ✗ OmniH2O [9] ✗ ✓ ✗ ✗ ✗ ✗ HumanPlus [13] ✗ ✗ ✓ ✗ ✓ ✓ MHC [21] ✓ ✗ ✓ ✗ ✓ ✓ HOVER (ours) ✓ ✓ ✓ ✓ ✓ ✓
 accommodates a wide range of scenarios and is adaptable to various humanoid tasks. To achieve this, the command space must be constructed to satisfy the following key criteria:
@@ -224,7 +224,7 @@ is the joint position, q ̇ is the joint velocity, ωbase is the base angular ve
 Command Mask. As illustrated in Figure 2, the task command input for the student policy is defined using modebased and sparsity-based masking. Specifically, the student’s
 
 
-TABLE III: Simulation motion imitation evaluation of HOVER and baselines on dataset Qˆ. Metrics that are tracked by different modes are highlighted in corresponding colors. Results that are statistically significant are highlighted in bold across 5 random seeds.
+ TABLE III: Simulation motion imitation evaluation of HOVER and baselines on dataset Qˆ. Metrics that are tracked by different modes are highlighted in corresponding colors. Results that are statistically significant are highlighted in bold across 5 random seeds.
 Kinematic Position Joint Angle Root
 Method Survive ↑ Eg-mpjpe ↓ Empjpe ↓ Eacc ↓ Evel ↓ Eupper-j ↓ Elower-j ↓ Eroot-vel ↓ Eroot-h ↓ Eroot-r ↓ Eroot-p ↓ Eroot-y ↓
 Oracle policy 99.3%±0.203 119±0.442 59.4±0.234 2.63±0.008 5.43±0.024 0.153±0.001 0.206±0.001 0.456±0.002 0.066±0.001 0.065±0.001 0.083±0.001 0.282±0.002
@@ -269,7 +269,7 @@ Baselines. To address Q1 and Q3, we compare HOVER with several specialists. As s
 Metrics. We report survival rate, where the episode terminates if the humanoid hits the ground, not by feet. We calculate tracking error in terms of kinematic pose, joint angles, and root twist and rotations. The mean values of the metrics are computed across all motion sequences from dataset Qˆ. We evaluate policy’s ability to imitate the reference motion by compare the tracking error of the global body position Eg−mpjpe (mm), the root-relative mean perjoint (MPJPE) Empjpe (mm), joint tracking error Ej (rad),
 
 
-TABLE IV: Comparison between HOVER and specialists. We only report tracking metrics that are tracked by this mode.
+ TABLE IV: Comparison between HOVER and specialists. We only report tracking metrics that are tracked by this mode.
 Method Eg-mpjpe-mode ↓ Empjpe-mode ↓ Eacc-mode ↓ Evel-mode ↓
 Left Hand Mode - Upper: kinematic position tracking (left hand), Lower: N/A
 Specialist 189±1.526 147±1.324 5.82±0.029 11.2±0.089 HOVER (Ours) 138±1.025 151±0.934 5.45±0.031 10.3±0.104
@@ -385,7 +385,7 @@ Standing Motion Evaluations. We evaluate HOVER’s performance in the real world
 Multi-Mode Evaluations. We also evaluate HOVER’s generalization to locomotion in Figure 6, where we abruptly switch command modes during operation to simulate reallife scenarios. HOVER successfully transitions from ExBody mode to H2O mode during forward walking in Figure 6(a), and from HumanPlus mode to OmniH2O mode while performing turning and backward walking, in Figure 6(b).
 
 
-TABLE V: Real-world tracking evaluation on 20 standing motions between prior works specialists and our method. Results that are statistically significant are highlighted in bold across 5 tests.
+ TABLE V: Real-world tracking evaluation on 20 standing motions between prior works specialists and our method. Results that are statistically significant are highlighted in bold across 5 tests.
 Method Eg-mpjpe ↓ Empjpe ↓ Eupper-j ↓ Eroot-rpy ↓
 ExBody Mode
 ExBody (Specialist) 51.3 ±0.279 39.3 ±0.214 0.131 ±0.001 0.036 ±0.001 HOVER (Ours) 48.9 ±0.470 36.8 ±0.201 0.126 ±0.001 0.032 ±0.001
@@ -405,7 +405,7 @@ V. CONCLUSIONS
 In this work, we introduced HOVER, a unified neural controller for humanoid whole-body control that supports diverse control modes. Through the use of a kinematic motion imitator and policy distillation, HOVER consolidates motor skills across multiple control modes into a unified policy that outperforms specialized controllers. Our evaluations collectively illustrate HOVER’s ability to handle diverse real-world control modes, offering and superior performance compared to specialist policies. Future work will explore further developing an automated mode-switching module for real-world applications.
 
 
-ACKNOWLEDGEMENT
+ ACKNOWLEDGEMENT
 We appreciate Unitree Robotics and Fourier Intelligence for supporting hardware experiments and thank Xue Bin Peng, Chen Tessler, Scott Reed, Viktor Makoviychuk, Yuqi Xie, Avnish Narayan, Zu Wang, Xuxin Cheng, Chong Zhang, Zixuan Chen, and Ziqiao Ma for the insightful discussions.
 REFERENCES
 [1] X. Cheng, J. Li, S. Yang, G. Yang, and X. Wang, “Open-television: Teleoperation with immersive active visual feedback,” arXiv preprint arXiv:2407.01512, 2024. [2] T. Lin et al., “Learning visuotactile skills with two multifingered hands,” arXiv preprint arXiv:2404.16823, 2024.
@@ -425,7 +425,7 @@ REFERENCES
 [22] S. Ross, G. Gordon, and D. Bagnell, “A reduction of imitation learning and structured prediction to noregret online learning,” in Proceedings of the fourteenth international conference on artificial intelligence and statistics, JMLR Workshop and Conference Proceedings, 2011, pp. 627–635. [23] V. Makoviychuk et al., “Isaac gym: High performance gpu-based physics simulation for robot learning,” arXiv preprint arXiv:2108.10470, 2021. [24] Unitree, Unitree’s first universal humanoid robot, 2023. [25] R. Brooks, “A robust layered control system for a mobile robot,” IEEE journal on robotics and automation, vol. 2, no. 1, pp. 14–23, 1986. [26] D. Gouaillier et al., “Mechatronic design of nao humanoid,” in 2009 IEEE international conference on robotics and automation, IEEE, 2009, pp. 769–774. [27] N. A. Radford et al., “Valkyrie: Nasa’s first bipedal humanoid robot,” Journal of Field Robotics, vol. 32, no. 3, pp. 397–419, 2015. [28] Y. Sakagami, R. Watanabe, C. Aoyama, S. Matsunaga, N. Higaki, and K. Fujimura, “The intelligent asimo: System overview and integration,” in IEEE/RSJ international conference on intelligent robots and systems, IEEE, vol. 3, 2002, pp. 2478–2483. [29] L. Sentis and O. Khatib, “A whole-body control framework for humanoids operating in human environments,” in Proceedings 2006 IEEE International Conference on Robotics and Automation, 2006. ICRA 2006., IEEE, 2006, pp. 2641–2648.
 
 
-[30] Y. Ishiguro et al., “Bilateral humanoid teleoperation system using whole-body exoskeleton cockpit tablis,” IEEE Robotics and Automation Letters, vol. 5, no. 4, pp. 6419–6426, 2020. [31] S. Dafarra et al., “Icub3 avatar system: Enabling remote fully immersive embodiment of humanoid robots,” Science Robotics, vol. 9, no. 86, eadh3834, 2024. [32] M. Chignoli, D. Kim, E. Stanger-Jones, and S. Kim, “The mit humanoid robot: Design, motion planning, and control for acrobatic behaviors,” in 2020 IEEERAS 20th International Conference on Humanoid Robots (Humanoids), IEEE, 2021, pp. 1–8.
+ [30] Y. Ishiguro et al., “Bilateral humanoid teleoperation system using whole-body exoskeleton cockpit tablis,” IEEE Robotics and Automation Letters, vol. 5, no. 4, pp. 6419–6426, 2020. [31] S. Dafarra et al., “Icub3 avatar system: Enabling remote fully immersive embodiment of humanoid robots,” Science Robotics, vol. 9, no. 86, eadh3834, 2024. [32] M. Chignoli, D. Kim, E. Stanger-Jones, and S. Kim, “The mit humanoid robot: Design, motion planning, and control for acrobatic behaviors,” in 2020 IEEERAS 20th International Conference on Humanoid Robots (Humanoids), IEEE, 2021, pp. 1–8.
 [33] K. Okada, T. Ogura, A. Haneda, J. Fujimoto, F. Gravot, and M. Inaba, “Humanoid motion generation system on hrp2-jsk for daily life environment,” in IEEE International Conference Mechatronics and Automation, 2005, IEEE, vol. 4, 2005, pp. 1772–1777. [34] S. Kuindersma et al., “Optimization-based locomotion planning, estimation, and control design for the atlas humanoid robot,” Autonomous robots, vol. 40, pp. 429–455, 2016. [35] K. Darvish et al., “Teleoperation of humanoid robots: A survey,” IEEE Transactions on Robotics, vol. 39, no. 3, pp. 1706–1727, 2023. [36] K. Hauser et al., “Analysis and perspectives on the ana avatar xprize competition,” International Journal of Social Robotics, pp. 1–32, 2024.
 [37] M. Wonsick and T. Padır, “Human-humanoid robot interaction through virtual reality interfaces,” in 2021 IEEE Aerospace Conference (50100), IEEE, 2021, pp. 1–7. [38] A. Serifi, R. Grandia, E. Knoop, M. Gross, and M. Ba ̈cher, “Vmp: Versatile motion priors for robustly tracking motion on physical characters,” 2024. [39] Z. Luo, J. Cao, A. W. Winkler, K. Kitani, and W. Xu, “Perpetual humanoid control for real-time simulated avatars,” in International Conference on Computer Vision (ICCV), 2023.
 [40] J. Won, D. Gopinath, and J. Hodgins, “A scalable approach to control diverse behaviors for physically simulated characters,” ACM Trans. Graph., vol. 39, 4 2020. [41] N. Chentanez, M. Mu ̈ller, M. Macklin, V. Makoviychuk, and S. Jeschke, “Physics-based motion capture imitation with deep reinforcement learning,” Proceedings - MIG 2018: ACM SIGGRAPH Conference on Motion, Interaction, and Games, 2018.
