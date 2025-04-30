@@ -38,7 +38,7 @@ Most existing VLMs (e.g., GPT-4o [54]) lack mechanisms for precise localization.
 © 2025 NVIDIA. All rights reserved.
 
 
-Describe Anything: Detailed Localized Image and Video Captioning
+ Describe Anything: Detailed Localized Image and Video Captioning
 clude unrelated content from other regions, as shown in Fig. 5. This raises the question: What makes detailed localized captioning (DLC) so challenging?
 We identify three key obstacles to DLC:
 1. Loss of Region Details: As shown in Fig. 2, prior methods extract local features from global image representations, often leading to loss of fine-grained details—particularly for small objects in complex scenes. By the time the LLM processes the visual features, crucial details necessary for generating precise captions are already lost. Cropping the region of interest may enhance detail but risks losing essential contextual cues.
@@ -76,7 +76,7 @@ We summarize our contributions as follows:
 2
 
 
-Describe Anything: Detailed Localized Image and Video Captioning
+ Describe Anything: Detailed Localized Image and Video Captioning
 Component Previous Practice Problem Our Solution Advantages
 Describe Anything Model (DAM)
 Extracting regional features from global image features
@@ -107,7 +107,7 @@ Benchmarking Localized Captioning. [28, 30, 59, 61, 93, 95, 98, 100, 101] evalua
 3
 
 
-Describe Anything: Detailed Localized Image and Video Captioning
+ Describe Anything: Detailed Localized Image and Video Captioning
 Vision Models with Focus. Prior works enhance attention to salient regions using focal self-attention [90], ToSA [68], ToMe [10], DWViT [65], Quadformer [66], and V* [86]. These methods allocate resources dynamically to salient regions defined by the model. In contrast, our focal prompt explicitly prioritizes user-specified regions, ensuring accurate and detailed captions even for non-salient objects.
 3. DAM: Describe Anything Model
 Describe Anything Model (DAM) generates detailed localized descriptions of user-specified regions within images and videos. DAM effectively balances local detail and contextual information through our proposed focal prompt and localized vision backbone.
@@ -172,7 +172,7 @@ For instance, setting α = 3 results in a region that can be up to 9 times as la
 4
 
 
-Describe Anything: Detailed Localized Image and Video Captioning
+ Describe Anything: Detailed Localized Image and Video Captioning
 small regions.
 The focal crop of the image and mask are then:
 I′ = I|B′, M ′ = M |B′, (3)
@@ -214,7 +214,7 @@ Notably, the proposed components do not increase the sequence length of the visi
 5
 
 
-Describe Anything: Detailed Localized Image and Video Captioning
+ Describe Anything: Detailed Localized Image and Video Captioning
 3.3. Extension to Videos
 Since images can be considered as videos with a single frame, the model naturally extends to handling videos by processing sequences of frames and their corresponding masks. The visual features from all frames are concatenated in the sequence dimension and fed into the language model to generate detailed localized descriptions across the video frames, compatible with how VLMs are pretrained to handle videos. We leverage SAM 2 [62] to turn sparse localizations into a mask for each frame.
 4. DLC-SDP: SSL-based Data Pipeline
@@ -238,7 +238,7 @@ As illustrated in Fig. 4, the evaluation process for a model like DAM has two st
 6
 
 
-Describe Anything: Detailed Localized Image and Video Captioning
+ Describe Anything: Detailed Localized Image and Video Captioning
 (a) A region in DLC-Bench for the model to scribe
 Task: describe this object
 A white electric stove with a smooth, flat cooktop featuring two visible black burners. The control panel is located at the back, with a black surface and a few visible knobs.
@@ -273,7 +273,7 @@ Open-class keyword-level localized captioning task requires the model to output 
 7
 
 
-Describe Anything: Detailed Localized Image and Video Captioning
+ Describe Anything: Detailed Localized Image and Video Captioning
 datasets in Tab. 2, our method achieves state-of-the-art performance. In the PACO benchmark, a challenging benchmark that includes both full objects and parts in complex scenes and requires the model to decide whether the region is an object or a part, our method achieves 73.2% semantic IoU and 84.2% semantic similarity, outperforming the previous best by 23.2% and 8.5% respectively.
 Phrase-level localized captioning task requires the model to output a phrase containing a brief description for each region that includes object identification and attributes typically within a few words. Tested zeroshot on Flickr30k Entities [58], our model achieves strong performance, outperforming the previous best by 12.3% relative improvement on an average of 5 metrics.
 Detailed localized captioning task requires the model to output a detailed description for each the region with the length spanning from a long sentence to multiple sentences. An ideal description includes the description of the object in the region, its parts, as well as their attributes and relationships. We benchmark this capability on the challenging Ref-L4 [14] benchmark and our proposed DLC-Bench. On the Ref-L4 benchmark in Tab. 4, our method achieves 33.4% relative improvement on average over the previous best on short language-based captioning metrics [2, 5, 43, 56, 79], and 13.1% relative improvement on the long language-based captioning metrics [13].
@@ -294,7 +294,7 @@ Finally, we analyzed the performance of DAM in HD (hallucination detection) sub-
 8
 
 
-Describe Anything: Detailed Localized Image and Video Captioning
+ Describe Anything: Detailed Localized Image and Video Captioning
 The image features a green cucumber slice with a red tomato on top of it. The tomato slice is placed on top of the green cucumber slice, creating a visually appealing and healthy snack. The combination of the green cucumber and tomato on the same slice makes for a delicious and nutritious meal option.
 OMG-LLaVA
 VP-SPHINX
@@ -339,7 +339,7 @@ Figure 7: DAM offers multi-granular localized descriptions.
 9
 
 
-Describe Anything: Detailed Localized Image and Video Captioning
+ Describe Anything: Detailed Localized Image and Video Captioning
 Prompting XAttn #IT Pos (%) Neg (%) Avg (%)
 Full Image Only No 196 32.1 65.4 48.7 Local Crop Only No 196 43.5 76.6 60.1 (+11.4) Full + Local Crop No* 392 26.3 58.6 42.4 (-6.3) Full + Local Crop Yes 196 45.7 80.6 63.2 (+14.5) Focal Crop Only No 196 47.3 83.6 65.4 (+16.7) Full + Focal Crop Yes 196 52.3 82.2 67.3 (+18.6)
 Table 8: Ablation studies across different visual prompts, cross-attention settings, and the number of image tokens. Local crop denotes cropping without surrounding context. XAttn: cross-attention. #IT: number of image tokens. * indicates the full image and the crop are concatenated on the sequence dimension. Bold: Our proposed focal prompt.
@@ -353,7 +353,7 @@ We introduced DAM, a model for detailed localized captioning in images and video
 10
 
 
-Describe Anything: Detailed Localized Image and Video Captioning
+ Describe Anything: Detailed Localized Image and Video Captioning
 A. Challenges in Generating Detailed Localized Descriptions with Off-theShelf VLMs
 Although cutting-edge Vision-Language Models (VLMs), such as GPT-4o [54] and LLaVA [46–48], excel at generating global-level image descriptions, producing detailed localized image captions remains an open problem. Specifically, these VLMs only take in RGB images along with text prompts and do not allow users to accurately specify regions of interest.
 While users could employ text to localize the object to be described, this approach is often cumbersome and inefficient, requiring precise referring phrases that may still be difficult for the VLM to interpret. This can lead to mislocalization of the intended object, as illustrated in Fig. A.1(a).
@@ -369,7 +369,7 @@ Our DAM is designed to perform well at localized image and video captioning acro
 1
 
 
-Describe Anything: Detailed Localized Image and Video Captioning
+ Describe Anything: Detailed Localized Image and Video Captioning
 Task: describe this object
 Prompt: Describe the rightmost building in the image
 (a) Baseline 1: Existing VLM + Localization through text
@@ -412,7 +412,7 @@ Phrase-level localized captioning task requires the model to output a phrase con
 2
 
 
-Describe Anything: Detailed Localized Image and Video Captioning
+ Describe Anything: Detailed Localized Image and Video Captioning
 [2, 5, 43, 56, 79]. We refer these metrics as short captioning metrics, as opposed to metrics from LLM-based evaluations that support evaluating detailed captions.
 We perform zero-shot evaluation on the grounded phrases in Flickr30k Entities [58], where our model is not trained on the entities annotated in the training split of Flickr30k Entities. Results are in Tab. 3.
 B.3. Detailed Localized Captioning Bench
@@ -453,7 +453,7 @@ Caveats exist when boxes are used to refer to regions in the data pipeline. As s
 3
 
 
-Describe Anything: Detailed Localized Image and Video Captioning
+ Describe Anything: Detailed Localized Image and Video Captioning
 Input Video
 Reference Caption
 DAM Output
@@ -476,7 +476,7 @@ DAM is only trained for multi-granular localized captioning, especially for deta
 4
 
 
-Describe Anything: Detailed Localized Image and Video Captioning
+ Describe Anything: Detailed Localized Image and Video Captioning
 A bright green frog with a smooth, glossy texture. The frog has a rounded head with prominent, slightly raised eyes. Its body is streamlined, tapering towards the tail, and the limbs are short and sturdy.
 DAM (Ours)
 (a) DAM might still misrecognize a region and output an incorrect description. For example, it misrecognizes the frog-shaped slipper to be a frog.
@@ -495,7 +495,7 @@ In addition to the details in data annotation presented in App. H.1, we discuss 
 5
 
 
-Describe Anything: Detailed Localized Image and Video Captioning
+ Describe Anything: Detailed Localized Image and Video Captioning
 we train our model on a comparable amount of data (1.5M samples). However, we obtain much better performance (Tab. 5), which shows the effectiveness of DAM.
 C.7. Performances of Baseline Models on
 DLC-Bench
@@ -518,7 +518,7 @@ For each model-generated description, we apply the following scoring rules:
 6
 
 
-Describe Anything: Detailed Localized Image and Video Captioning
+ Describe Anything: Detailed Localized Image and Video Captioning
 Q: Which of the following is applicable to the description? Choices:
 A. The control panel or the stove is not mentioned. (score: 0) B. The location of the control panel is mentioned in the description but is not back. (score: -1) C. The location of the control panel is mentioned in the description and is back. (score: 1) D. The location of the control panel is not mentioned, but the control panel of the stove is mentioned. (score: 0.5)
 (c) An example positive question in DLC-Bench
@@ -538,7 +538,7 @@ We present an example from DLC-Bench in Fig. A.5. The example region in Fig. A.5
 7
 
 
-Describe Anything: Detailed Localized Image and Video Captioning
+ Describe Anything: Detailed Localized Image and Video Captioning
 cooktop, allowing the model to get a point for this negative question.
 Evaluation Setting. For our models, we follow our inference setting described in App. H.
 E. Additional Ablation Studies
@@ -554,7 +554,7 @@ Set-of-Marks Prompting. We present a comparison with baseline VLMs that use Set-
 8
 
 
-Describe Anything: Detailed Localized Image and Video Captioning
+ Describe Anything: Detailed Localized Image and Video Captioning
 VP-SPHINX Arch Our Arch
 Avg (%) 50.2 63.8
 Table A.1: Ablations on architecture design compared to our strongest baseline VP-SPHINX [45]. We trained a model with VP-SPHINX [45] architecture on our curated DLC data from various segmentation datasets. The results on DLC-Bench indicate the advantages of our model architecture that allows detailed localized features to be presented to the LLM for DLC.
@@ -576,7 +576,7 @@ We present more examples for detailed localized video captioning in Fig. A.8 and
 9
 
 
-Describe Anything: Detailed Localized Image and Video Captioning
+ Describe Anything: Detailed Localized Image and Video Captioning
 Method #Params Pos (%) Neg (%) Avg (%)
 API-only General VLMs:
 GPT-4o (SOM) [54] - 5.0 29.2 17.1 o1 (SOM) [55]† - 0.8 28.0 14.4 Claude 3.7 Sonnet (SOM) [73]† - 0.5 40.2 20.4 Gemini 2.5 Pro (SOM) [74, 75]† - 13.2 65.0 39.1
@@ -612,7 +612,7 @@ In the bottom example, GPT-4o misidentifies the object, mistakenly assuming the 
 10
 
 
-Describe Anything: Detailed Localized Image and Video Captioning
+ Describe Anything: Detailed Localized Image and Video Captioning
 A brown leather cushion with a smooth texture and a slightly curved upper edge, exhibiting a sheen indicative of a soft, possibly plush surface.
 Region of Interest
 A navy blue roller blind with a smooth texture and a horizontal seam dividing it into two sections.
@@ -642,7 +642,7 @@ Stage 2. We annotate 10% of SA-1B through self
 11
 
 
-Describe Anything: Detailed Localized Image and Video Captioning
+ Describe Anything: Detailed Localized Image and Video Captioning
 A young child, dressed in a light-colored long-sleeve shirt and beige pants, is captured in a sequence of dynamic movements. The child appears to be in mid-motion, possibly dancing or playing, with one arm raised and the other slightly bent. The child's posture suggests a lively and energetic demeanor, with a slight forward lean indicating movement. The legs are positioned in a way that suggests a step or a jump, with one foot slightly lifted off the ground. The child's head is tilted slightly upward, adding to the sense of motion and engagement. Throughout the sequence, the child maintains a consistent posture, with the arms and legs moving in coordination, conveying a sense of playful activity.
 A cat with a predominantly white coat and distinct orange patches is seen in a series of fluid movements. Initially, the cat is crouched low, its body compact and poised, suggesting a state of alertness or curiosity. As the sequence progresses, the cat begins to rise, its body elongating and stretching, indicating a transition from a crouched position to a more upright stance. The cat's ears are perked, and its eyes are focused, suggesting attentiveness to its surroundings. The tail, initially curled, extends outwards, providing balance and a sense of readiness. The cat's movements are smooth and deliberate, showcasing its agility and grace. As it continues to rise, the cat's posture becomes more upright, and its head turns slightly, as if scanning the environment or preparing to move in a new direction. The sequence captures the essence of a cat's natural curiosity and fluid motion, highlighting its ability to navigate its environment with ease and elegance.
 Input Video
@@ -661,7 +661,7 @@ final number of instances and images is lower than the original 10% subset of SA
 12
 
 
-Describe Anything: Detailed Localized Image and Video Captioning
+ Describe Anything: Detailed Localized Image and Video Captioning
 An elephant, characterized by its large, rounded ears and long, curved tusks, moves gracefully through the sequence. Its skin appears rough and textured, with a grayish-brown hue that suggests a natural, earthy tone. The elephant's trunk, a versatile and muscular appendage, is prominently visible, swaying gently as it walks. Its eyes are small and partially obscured by the folds of its skin, giving it a calm and serene expression. The elephant's legs are sturdy and columnar, supporting its massive body with ease. As it progresses through the sequence, the elephant maintains a steady and deliberate pace, its movements fluid and unhurried. The tusks, slightly curved and pointed, catch the light subtly, adding a touch of elegance to its robust form. Overall, the elephant exudes a sense of majesty and tranquility, moving with a quiet confidence that is both powerful and graceful.
 A white SUV is prominently featured, showcasing a sleek and modern design. The vehicle's body is smooth and aerodynamic, with a slightly elevated stance typical of SUVs. The front of the car is characterized by a distinctive grille and sharp, angular headlights that give it a bold and assertive look. As the sequence progresses, the SUV moves steadily forward, maintaining a consistent trajectory. The wheels, with their intricate alloy design, rotate smoothly, indicating a well-maintained vehicle. The side mirrors are positioned to provide optimal visibility, and the windows are tinted, adding a touch of sophistication. The SUV's movement is fluid, suggesting a well-engineered suspension system that handles the road with ease. Throughout the sequence, the car remains the focal point, exuding a sense of reliability and style.
 A person wearing a blue jacket with white text on the back is captured in a sequence of dynamic movements. Initially, the individual is seen in a slightly bent posture, suggesting a moment of balance or readiness. As the sequence progresses, the person appears to be in motion, possibly walking or running, with their arms extended forward, indicating a sense of urgency or direction. The jacket, with its distinct color and text, remains a focal point throughout the sequence, emphasizing the person's presence and movement. The person's head is slightly tilted, and their posture suggests a forward-leaning stance, consistent with active movement. The sequence concludes with the person seemingly in mid-stride, capturing a sense of continuous motion and purpose.
@@ -680,7 +680,7 @@ tect objects in the images, and then use SAM [62] to generate masks for the dete
 13
 
 
-Describe Anything: Detailed Localized Image and Video Captioning
+ Describe Anything: Detailed Localized Image and Video Captioning
 GPT-4o
 DAM (Ours)
 The harbor seal has a sleek, elongated body with a dark brown coloration. Its skin appears smooth and slightly shiny, with a few lighter patches scattered across its back. The seal's body tapers towards the tail, which is not visible in the image.
@@ -714,7 +714,7 @@ We start from off-the-shelf VILA 1.5 [44] models that are publicly available on 
 14
 
 
-Describe Anything: Detailed Localized Image and Video Captioning
+ Describe Anything: Detailed Localized Image and Video Captioning
 Input Video
 Input Video
 An animal is present in the region, initially appearing as a sheep with a woolly coat. It stands on a patch of ground with sparse vegetation. As the sequence progresses, the animal undergoes a series of transformations. Its appearance shifts from a sheep to a creature resembling a wolf, with a sleeker, more streamlined body and a different texture. The transformation continues as the animal takes on the form of a pig, with a rounded body and a pinkish hue. This change is gradual, with the animal's features morphing smoothly from one form to another. Throughout these transformations, the animal remains in a similar position, occasionally adjusting its stance slightly. The sequence concludes with the animal returning to a sheep-like form, completing the cycle of transformations.
@@ -757,7 +757,7 @@ Figure A.11: Our proposed DAM demonstrates superior localized video understandin
 15
 
 
-Describe Anything: Detailed Localized Image and Video Captioning
+ Describe Anything: Detailed Localized Image and Video Captioning
 1 You are responsible to write a very descriptive caption to describe the {{category}} in the provided SEGMENTED image. You may leverage the surrounding context of the SEGMENTED image provided in the CROPPED image. 2 You must not mention any background in the caption and only describe the {{category}} in the SEGMENTED image! The caption must ONLY contain sufficient details to reconstruct the same {{category}} in the SEGMENTED image but nothing else! 3 Here are some additional rules you need to follow when describing the {{category}} in the SEGMENTED image: 4 1. If there are multiple {{category}} in the CROPPED image , focus on the {{category}} in the SEGMENTED image. 5 2. If the {{category}} in the SEGMENTED image is occluded by other objects , only describe the visible part. DO NOT mention anything that is not directly related to the visible part of {{ category}}, such as "A segment of", which part is invisible , etc. For objects with text written on it , describe the object instead of just outputting the text written on it. 6 Here is the SEGMENTED image that needs caption:
 Table A.7: Our prompt for data annotation in stage 1.
 4V [16] with our localized image/video captioning dataset collected with our proposed data pipeline. Following the VILA 1.5 training and inference recipe, we treat videos as 8 images concatenated in the sequence.
@@ -778,7 +778,7 @@ The list of prompts that include a {prompt_suffix} is as follows:
 16
 
 
-Describe Anything: Detailed Localized Image and Video Captioning
+ Describe Anything: Detailed Localized Image and Video Captioning
 7. Portray the masked area {prompt_suffix}. 8. Describe what the masked region looks like
 {prompt_suffix}.
 9. Illustrate the masked region {prompt_suffix}. 10. How would you explain the masked area
@@ -824,7 +824,7 @@ any motion or actions.
 17
 
 
-Describe Anything: Detailed Localized Image and Video Captioning
+ Describe Anything: Detailed Localized Image and Video Captioning
 References
 [1] Jean-Baptiste Alayrac, Jeff Donahue, Pauline Luc, Antoine Miech, Iain Barr, Yana Hasson, Karel Lenc, Arthur Mensch, Katherine Millican, Malcolm Reynolds, et al. Flamingo: a visual language model for few-shot learning. NeurIPS, 2022. 3, 5
 [2] Peter Anderson, Basura Fernando, Mark Johnson, and Stephen Gould. Spice: Semantic propositional image caption evaluation. In ECCV, pages 382–398. Springer, 2016. 2, 3, 8
@@ -849,7 +849,7 @@ References
 18
 
 
-Describe Anything: Detailed Localized Image and Video Captioning
+ Describe Anything: Detailed Localized Image and Video Captioning
 [21] Zhe Chen, Weiyun Wang, Yue Cao, Yangzhou Liu, Zhangwei Gao, Erfei Cui, Jinguo Zhu, Shenglong Ye, Hao Tian, Zhaoyang Liu, et al. Expanding performance boundaries of open-source multimodal models with model, data, and test-time scaling. arXiv:2412.05271, 2024. 8, 10
 [22] Wenliang Dai, Junnan Li, D Li, AMH Tiong, J Zhao, W Wang, B Li, P Fung, and S Hoi. Instructblip: Towards general-purpose vision-language models with instruction tuning. arxiv 2023. arXiv:2305.06500, 2023. 3
 [23] Henghui Ding, Chang Liu, Shuting He, Xudong Jiang, Philip HS Torr, and Song Bai. Mose: A new dataset for video object segmentation in complex scenes. In CVPR, 2023. 13
@@ -874,7 +874,7 @@ https://storage.googleapis.com/openimages/web/index.html, 2017. 11
 19
 
 
-Describe Anything: Detailed Localized Image and Video Captioning
+ Describe Anything: Detailed Localized Image and Video Captioning
 Wang, Lu Yuan, Lei Zhang, Jenq-Neng Hwang, et al. Grounded language-image pre-training. 2022 ieee. In CVPR, pages 10955–10965, 2021. 1
 [41] Yanghao Li, Hanzi Mao, Ross Girshick, and Kaiming He. Exploring plain vision transformer backbones for object detection. In ECCV, 2022. 14
 [42] Yuheng Li, Haotian Liu, Qingyang Wu, Fangzhou Mu, Jianwei Yang, Jianfeng Gao, Chunyuan Li, and Yong Jae Lee. Gligen: Open-set grounded text-toimage generation. In CVPR, pages 22511–22521, 2023. 1
@@ -902,7 +902,7 @@ Dehghani, Zhuoran Shen, et al. Simple openvocabulary object detection. In ECCV, 
 20
 
 
-Describe Anything: Detailed Localized Image and Video Captioning
+ Describe Anything: Detailed Localized Image and Video Captioning
 [63] Nils Reimers and Iryna Gurevych. Sentence-bert: Sentence embeddings using siamese bert-networks. arXiv preprint arXiv:1908.10084, 2019. 3
 [64] Jeremy Reizenstein, Roman Shapovalov, Philipp Henzler, Luca Sbordone, Patrick Labatut, and David Novotny. Common objects in 3d: Large-scale learning and evaluation of real-life 3d category reconstruction. In ICCV, 2021. 9, 17
 [65] Pengzhen Ren, Changlin Li, Guangrun Wang, Yun Xiao, Qing Du, Xiaodan Liang, and Xiaojun Chang. Beyond fixation: Dynamic window visual transformer. In CVPR, 2022. 4
@@ -931,7 +931,7 @@ Hauth, et al. Gemini: a family of highly capable multimodal models. arXiv:2312.1
 21
 
 
-Describe Anything: Detailed Localized Image and Video Captioning
+ Describe Anything: Detailed Localized Image and Video Captioning
 [87] Yecheng Wu, Zhuoyang Zhang, Junyu Chen, Haotian Tang, Dacheng Li, Yunhao Fang, Ligeng Zhu, Enze Xie, Hongxu Yin, Li Yi, et al. Vila-u: a unified foundation model integrating visual understanding and generation. arXiv:2409.04429, 2024. 3
 [88] Qizhe Xie, Zihang Dai, Eduard Hovy, Thang Luong, and Quoc Le. Unsupervised data augmentation for consistency training. NeurIPS, 2020. 2
 [89] Qizhe Xie, Minh-Thang Luong, Eduard Hovy, and Quoc V Le. Self-training with noisy student improves imagenet classification. In CVPR, pages 1068710698, 2020. 6

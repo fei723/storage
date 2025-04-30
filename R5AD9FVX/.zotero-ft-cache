@@ -12,7 +12,7 @@ In this paper, we introduce Motion Diffusion Model (MDM) — a carefully adapted
 arXiv:2209.14916v2 [cs.CV] 3 Oct 2022
 
 
-“A person kicks with their left leg.”
+ “A person kicks with their left leg.”
 “A man runs to the right then runs to the left then back to the middle.”
 Figure 1: Our Motion Diffusion Model (MDM) reflects the many-to-many nature of text-to-motion mapping by generating diverse motions given a text prompt. Our custom architecture and geometric losses help yielding high-quality motion. Darker color indicates later frames in the sequence.
 tive aforementioned many-to-many expression of the domain, as evidenced by the resulting motion quality and diversity (Figure 1). In addition, MDM combines insights already well established in the motion generation domain, helping it be significantly more lightweight and controllable.
@@ -23,7 +23,7 @@ Overall, we introduce Motion Diffusion Model, a motion framework that achieves s
 2
 
 
-single mid-range GPU. It supports geometric losses, which are non trivial to the diffusion setting, but are crucial to the motion domain, and offers the combination of state-of-the-art generative power with well thought-out domain knowledge.
+ single mid-range GPU. It supports geometric losses, which are non trivial to the diffusion setting, but are crucial to the motion domain, and offers the combination of state-of-the-art generative power with well thought-out domain knowledge.
 2 RELATED WORK
 2.1 HUMAN MOTION GENERATION
 Neural motion generation, learned from motion capture data, can be conditioned by any signal that describes the motion. Many works use parts of the motion itself for guidance. Some predict motion from its prefix poses (Fragkiadaki et al., 2015; Martinez et al., 2017; Hernandez et al., 2019; Guo et al., 2022b). Others (Harvey & Pal, 2018; Kaufmann et al., 2020; Harvey et al., 2020; Duan et al., 2021) solve in-betweening and super-resolution tasks using bi-directional GRU (Cho et al., 2014) and Transformer (Vaswani et al., 2017) architectures. Holden et al. (2016) use auto-encoder to learn motion latent representation, then utilize it to edit and control motion with spatial constraints such as root trajectory and bone lengths. Motion can be controlled with a high-level guidance given from action class (Guo et al., 2020; Petrovich et al., 2021; Cervantes et al., 2022), audio (Li et al., 2021; Aristidou et al., 2022) and natural language (Ahuja & Morency, 2019; Petrovich et al., 2022). In most cases authors suggests a dedicated approach to map each conditioning domain into motion.
@@ -38,7 +38,7 @@ i=1 is a sequences
 3
 
 
-CLIPtext
+ CLIPtext
 PE
 Linear
 x!" x!# x!$ x!%
@@ -122,7 +122,7 @@ In case we predict joint rotations, F K(·) denotes the forward kinematic functi
 4
 
 
-Overall, our training loss is
+ Overall, our training loss is
 L = Lsimple + λposLpos + λvelLvel + λfootLfoot. (6)
 Model. Our model is illustrated in Figure 2. We implement G with a straightforward transformer (Vaswani et al., 2017) encoder-only architecture. The transformer architecture is temporally aware, enabling learning arbitrary length motions, and is well-proven for the motion domain (Petrovich et al., 2021; Duan et al., 2021; Aksan et al., 2021). The noise time-step t and the condition code c are each projected to the transformer dimension by separate feed-forward networks, then summed to yield the token ztk. Each frame of the noised input xt is linearly projected into the transformer dimension and summed with a standard positional embedding. ztk and the projected frames are then fed to the encoder. Excluding the first output token (corresponding to ztk), the encoder result is projected back to the original motion dimensions, and serves as the prediction xˆ0. We implement text-to-motion by encoding the text prompt to c with CLIP (Radford et al., 2021) text encoder, and action-to-motion with learned embeddings per class.
 Sampling from p(x0|c) is done in an iterative manner, according to Ho et al. (2020). In every time step t we predict the clean sample xˆ0 = G(xt, t, c) and noise it back to xt−1. This is repeated from t = T until x0 is achieved (Figure 2 right). We train our model G using classifier-free guidance (Ho & Salimans, 2022). In practice, G learns both the conditioned and the unconditioned distributions by randomly setting c = ∅ for 10% of the samples, such that G(xt, t, ∅) approximates p(x0). Then, when sampling G we can trade-off diversity and fidelity by interpolating or even extrapolating the two variants using s:
@@ -135,7 +135,7 @@ Text-to-motion is the task of generating motion given an input text prompt. The 
 5
 
 
-In-betweening:
+ In-betweening:
 + “A person performs a crazy dance move.”
 In-betweening:
 + “A person is walking while raising hands.”
@@ -150,7 +150,7 @@ Action-to-motion is the task of generating motion given an input action class, r
 6
 
 
-Method R Precision
+ Method R Precision
 (top 3)↑ FID↓ Multimodal
 Dist↓ Diversity→ Multimodality↑
 Real 0.797±.002 0.002±.000 2.974±.008 9.503±.065 
@@ -191,7 +191,7 @@ Figure 4: (a) Text-to-motion user study for the KIT dataset. Each bar represents
 7
 
 
-Method FID↓ Accuracy↑ Diversity→ Multimodality→
+ Method FID↓ Accuracy↑ Diversity→ Multimodality→
 Real (INR) 0.020±.010 0.997±.001 6.850±.050 2.450±.040 Real (ours) 0.050±.000 0.990±.000 6.880±.020 2.590±.010
 Action2Motion (2020) 0.338±.015 0.917±.003 6.879±.066 2.511±.023 ACTOR (2021) 0.120±.000 0.955±.008 6.840±.030 2.530±.020 INR (2022) 0.088±.004 0.973±.001 6.881±.048 2.569±.040
 MDM (ours) 0.100±.000 0.990±.000 6.860±.050 2.520±.010 w/o foot contact 0.080±.000 0.990±.000 6.810±.010 2.580±.010
@@ -210,7 +210,7 @@ In this section we implement two motion editing applications - in-betweening and
 8
 
 
-model to generate the rest. In particular, we experiment with editing the upper body joints only. In figure 3 we show that in both cases, using the method described in Section 3 generates smooth motions that adhere both to the fixed part of the motion and the condition (if one was given).
+ model to generate the rest. In particular, we experiment with editing the upper body joints only. In figure 3 we show that in both cases, using the method described in Section 3 generates smooth motions that adhere both to the fixed part of the motion and the condition (if one was given).
 Method FID↓ KID↓ Precision↑
 Recall↑ Multimodality↑
 ACTOR (2021) 48.80 0.53 0.72, 0.74 14.10 MoDi (2022) 13.03 0.12 0.71, 0.81 17.57
@@ -227,7 +227,7 @@ A notable limitation of the diffusion approach is the long inference time, requi
 9
 
 
-ACKNOWLEDGEMENTS
+ ACKNOWLEDGEMENTS
 We thank Rinon Gal for his useful suggestions and references. This research was supported in part by the Israel Science Foundation (grants no. 2492/20 and 3441/21), Len Blavatnik and the Blavatnik family foundation, and The Tel Aviv University Innovation Laboratories (TILabs).
 REFERENCES
 Kfir Aberman, Peizhuo Li, Dani Lischinski, Olga Sorkine-Hornung, Daniel Cohen-Or, and Baoquan Chen. Skeleton-aware networks for deep motion retargeting. ACM Transactions on Graphics (TOG), 39(4):62–1, 2020.
@@ -248,7 +248,7 @@ Fe ́lix G Harvey and Christopher Pal. Recurrent transition networks for charact
 10
 
 
-Fe ́lix G Harvey, Mike Yurick, Derek Nowrouzezahrai, and Christopher Pal. Robust motion inbetweening. ACM Transactions on Graphics (TOG), 39(4):60–1, 2020.
+ Fe ́lix G Harvey, Mike Yurick, Derek Nowrouzezahrai, and Christopher Pal. Robust motion inbetweening. ACM Transactions on Graphics (TOG), 39(4):60–1, 2020.
 Alejandro Hernandez, Jurgen Gall, and Francesc Moreno-Noguer. Human motion prediction via spatio-temporal inpainting. In Proceedings of the IEEE/CVF International Conference on Computer Vision, pp. 7134–7143, 2019.
 Jonathan Ho and Tim Salimans. Classifier-free diffusion guidance. arXiv preprint arXiv:2207.12598, 2022.
 Jonathan Ho, Ajay Jain, and Pieter Abbeel. Denoising diffusion probabilistic models. Advances in Neural Information Processing Systems, 33:6840–6851, 2020.
@@ -269,7 +269,7 @@ Mathis Petrovich, Michael J. Black, and Gu ̈l Varol. Action-conditioned 3D huma
 11
 
 
-Mathis Petrovich, Michael J. Black, and Gu ̈l Varol. TEMOS: Generating diverse human motions from textual descriptions. In European Conference on Computer Vision (ECCV), 2022.
+ Mathis Petrovich, Michael J. Black, and Gu ̈l Varol. TEMOS: Generating diverse human motions from textual descriptions. In European Conference on Computer Vision (ECCV), 2022.
 Matthias Plappert, Christian Mandery, and Tamim Asfour. The kit motion-language dataset. Big data, 4(4):236–252, 2016.
 Sigal Raab, Inbal Leibovitch, Peizhuo Li, Kfir Aberman, Olga Sorkine-Hornung, and Daniel CohenOr. Modi: Unconditional motion synthesis from diverse data. arXiv preprint arXiv:2206.08010, 2022.
 Alec Radford, Jong Wook Kim, Chris Hallacy, Aditya Ramesh, Gabriel Goh, Sandhini Agarwal, Girish Sastry, Amanda Askell, Pamela Mishkin, Jack Clark, et al. Learning transferable visual models from natural language supervision. In International Conference on Machine Learning, pp. 8748–8763. PMLR, 2021.

@@ -13,7 +13,7 @@ Recent approaches (Ross and Bagnell, 2010) can guarantee an expected number of m
 arXiv:1011.0686v3 [cs.LG] 16 Mar 2011
 
 
- A Reduction of Imitation Learning and Structured Prediction to No-Regret Online Learning
+A Reduction of Imitation Learning and Structured Prediction to No-Regret Online Learning
 others and the learned controller may be unstable.
 We propose a new meta-algorithm for imitation learning which learns a stationary deterministic policy guaranteed to perform well under its induced distribution of states (number of mistakes/costs that grows linearly in T and classification cost ). We take a reduction-based approach (Beygelzimer et al., 2005) that enables reusing existing supervised learning algorithms. Our approach is simple to implement, has no free parameters except the supervised learning algorithm sub-routine, and requires a number of iterations that scales nearly linearly with the effective horizon of the problem. It naturally handles continuous as well as discrete predictions. Our approach is closely related to no regret online learning algorithms (Cesa-Bianchi et al., 2004; Hazan et al., 2006; Kakade and Shalev-Shwartz, 2008) (in particular Follow-The-Leader) but better leverages the expert in our setting. Additionally, we show that any no-regret learner can be used in a particular fashion to learn a policy that achieves similar guarantees.
 We begin by establishing our notation and setting, discuss related work, and then present the DAGGER (Dataset Aggregation) method. We analyze this approach using a noregret and a reduction approach (Beygelzimer et al., 2005). Beyond the reduction analysis, we consider the sample complexity of our approach using online-to-batch (CesaBianchi et al., 2004) techniques. We demonstrate DAGGER is scalable and outperforms previous approaches in practice on two challenging imitation learning problems: 1) learning to steer a car in a 3D racing game (Super Tux Kart) and 2) and learning to play Super Mario Bros., given input image features and corresponding actions by a human expert and near-optimal planner respectively. Following Daumé III et al. (2009) in treating structured prediction as a degenerate imitation learning problem, we apply DAGGER to the OCR (Taskar et al., 2003) benchmark prediction problem achieving results competitive with the state-of-the-art (Taskar et al., 2003; Ratliff et al., 2007; Daumé III et al., 2009) using only single-pass, greedy prediction.
@@ -46,7 +46,7 @@ T
 This is bounded by T 2 and behaves as Θ(T 2 ) for small .
 
 
- Stéphane Ross, Geoffrey J. Gordon, J. Andrew Bagnell
+Stéphane Ross, Geoffrey J. Gordon, J. Andrew Bagnell
 Ross and Bagnell (2010) provided an imitation learning example where J(πˆsup) = (1 − T )J(π∗) + T 2 . Hence the traditional supervised learning approach has poor performance guarantees due to the quadratic growth in T . Instead we would prefer approaches that can guarantee growth linear or near-linear in T and . The following two approaches from Ross and Bagnell (2010) achieve this on some classes of imitation learning problems, including all those where surrogate loss ` upper bounds C.
 2.2 Forward Training
 The forward training algorithm introduced by Ross and Bagnell (2010) trains a non-stationary policy (one policy πt for each time step t) iteratively over T iterations, where at iteration t, πt is trained to mimic π∗ on the distribution of states at time t induced by the previously trained policies π1, π2, . . . , πt−1. By doing so, πt is trained on the actual distribution of states it will encounter during execution of the learned policy. Hence the forward algorithm guarantees that the expected loss under the distribution of states induced by the learned policy matches the average loss during training, and hence improves performance.
@@ -85,7 +85,7 @@ In its simplest form, the algorithm proceeds as follows. At the first iteration,
 1−exp(−δ) ).
 
 
- A Reduction of Imitation Learning and Structured Prediction to No-Regret Online Learning
+A Reduction of Imitation Learning and Structured Prediction to No-Regret Online Learning
 Initialize D ← ∅. Initialize πˆ1 to any policy in Π. for i = 1 to N do
 Let πi = βiπ∗ + (1 − βi)πˆi.
 Sample T -step trajectories using πi. Get dataset Di = {(s, π∗(s))} of visited states by πi and actions given by expert. Aggregate datasets: D ← D ⋃ Di. Train classifier πˆi+1 on D. end for
@@ -118,7 +118,7 @@ In online learning, an algorithm must provide a policy πn at iteration n which 
 3It is not necessary to find the best policy in the sequence that minimizes the loss under its distribution; the same guarantee holds for the policy which uniformly randomly picks one policy in the sequence πˆ1:N and executes that policy for T steps.
 
 
- Stéphane Ross, Geoffrey J. Gordon, J. Andrew Bagnell
+Stéphane Ross, Geoffrey J. Gordon, J. Andrew Bagnell
 loss functions `n+1 may vary in an unknown or even adversarial fashion over time. A no-regret algorithm is an algorithm that produces a sequence of policies π1, π2, . . . , πN such that the average regret with respect to the best policy in hindsight goes to 0 as N goes to ∞:
 1 N
 N
@@ -209,7 +209,7 @@ mN
 j=1 Yij ≤
 
 
- A Reduction of Imitation Learning and Structured Prediction to No-Regret Online Learning
+A Reduction of Imitation Learning and Structured Prediction to No-Regret Online Learning
 `max
 √
 2 log(1/δ)
@@ -283,7 +283,7 @@ supervised approach where training always occurs under the expert’s trajectori
 Super Mario Bros. is a platform video game where the character, Mario, must move across each stage by avoid
 
 
- Stéphane Ross, Geoffrey J. Gordon, J. Andrew Bagnell
+Stéphane Ross, Geoffrey J. Gordon, J. Andrew Bagnell
 ing being hit by enemies and falling into gaps, and before running out of time. We used the simulator from a recent Mario Bros. AI competition (Togelius and Karakovskiy, 2009) which can randomly generate stages of varying difficulty (more difficult gaps and types of enemies). Our goal is to train the computer to play this game based on the current game image features as input (see Figure 3). Our expert in this scenario is a near-optimal planning algorithm that has full access to the game’s internal state and can simulate exactly the consequence of future actions. An action consists of 4 binary variables indicating which subset of buttons we should press in {left,right,jump,speed}. For
 Figure 3: Captured image from Super Mario Bros.
 all methods, we use 4 independent linear SVM as the base learner which update the 4 binary actions at 5Hz based on the vector of image features5.
@@ -312,7 +312,7 @@ Figure 4: Average distance/stage as a function of data.
 approach, performance stagnates as we collect more data from the expert demonstrations, as this does not help the particular errors the learned controller makes. In particular, a reason the supervised approach gets such a low score is that under the learned controller, Mario is often stuck at some location against an obstacle instead of jumping over it. Since the expert always jumps over obstacles at a significant distance away, the controller did not learn how to get unstuck in situations where it is right next to an obstacle. On the other hand, all the other iterative methods perform much better as they eventually learn to get unstuck in those situations by encountering them at the later iterations. Again in this experiment, DAGGER outperforms SMILe, and also outperforms SEARN for all choice of α we considered. When using βi = 0.9i−1, convergence is significantly slower could have benefited from more iterations as performance was still improving at the end of the 20 iterations. Choosing 0.5i−1 yields slightly better performance (3030) then with the indicator function (2980). This is potentially due to the large number of data generated where mario is stuck at the same location in the early iterations when using the indicator; whereas using the ex
 
 
- A Reduction of Imitation Learning and Structured Prediction to No-Regret Online Learning
+A Reduction of Imitation Learning and Structured Prediction to No-Regret Online Learning
 pert a small fraction of the time still allows to observe those locations but also unstucks mario and makes it collect a wider variety of useful data. A video available on YouTube (Ross, 2010b) also shows a qualitative comparison of the behavior obtained with each method.
 5.3 Handwriting Recognition
 Finally, we demonstrate the efficacy of our approach on a structured prediction problem involving recognizing handwritten words given the sequence of images of each character in the word. We follow Daumé III et al. (2009) in adopting a view of structured prediction as a degenerate form of imitation learning where the system dynamics are deterministic and trivial in simply passing on earlier predictions made as inputs for future predictions. We use the dataset of Taskar et al. (2003) which has been used extensively in the literature to compare several structured prediction approaches. This dataset contains roughly 6600 words (for a total of over 52000 characters) partitioned in 10 folds. We consider the large dataset experiment which consists of training on 9 folds and testing on 1 fold and repeating this over all folds. Performance is measured in terms of the character accuracy on the test folds.
@@ -342,7 +342,7 @@ Acknowledgements
 This work is supported by the ONR MURI grant N0001409-1-1052, Reasoning in Reduced Information Spaces, and by the National Sciences and Engineering Research Council of Canada (NSERC).
 
 
- Stéphane Ross, Geoffrey J. Gordon, J. Andrew Bagnell
+Stéphane Ross, Geoffrey J. Gordon, J. Andrew Bagnell
 References
 P. Abbeel and A. Y. Ng. Apprenticeship learning via inverse reinforcement learning. In Proceedings of the 21st International Conference on Machine Learning (ICML), 2004.
 B. D. Argall, S. Chernova, M. Veloso, and B. Browning. A survey of robot learning from demonstration. Robotics and Autonomous Systems, 2009.

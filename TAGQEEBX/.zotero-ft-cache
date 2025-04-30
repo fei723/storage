@@ -25,7 +25,7 @@ In recent years, foundation models have brought forth dramatic breakthroughs in 
 arXiv:2503.14734v2 [cs.RO] 27 Mar 2025
 
 
-GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
+ GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
 control modes, and other factors result in an archipelago of “data islands” rather than a coherent, Internet-scale dataset needed for training a true generalist model.
 Web Data & Human Videos
 Synthetic Data
@@ -38,7 +38,7 @@ With a unified model and single set of weights, GR00T N1 can generate diverse ma
 2
 
 
-GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
+ GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
 Robot State
 “Pick up the industry object and place in yellow bin.”
 Joint
@@ -72,7 +72,7 @@ To process states and actions of varying dimensions across different robot embod
 3
 
 
-GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
+ GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
 Robot State
 Eagle-2 VLM
 Cross-Attention
@@ -112,7 +112,7 @@ For modeling actions, GR00T N1 uses a variant of DiT (Peebles and Xie, 2023), wh
 4
 
 
-GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
+ GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
 alternating cross-attention and self-attention blocks, similar to Flamingo (Alayrac et al., 2022) and VIMA (Jiang et al., 2023). The self-attention blocks operate on noised action token embeddings Atτ together with state embeddings qt, while cross-attention blocks allow conditioning on the vision-language token embeddings φt output by VLM. After the final DiT block, we apply an embodiment-specific Action Decoder, another MLP, to the final H tokens to predict the actions.
 Given a ground-truth action chunk At, a flow-matching timestep τ ∈ [0, 1] and sampled noise ε ∼ N (0, I), the noised action chunk Atτ is computed as Atτ = τ At + (1 − τ )ε. The model prediction Vθ(φt, Atτ , qt) aims to approximate the denoising vector field ε − At by minimizing the following loss:
 Lfm(θ) = Eτ
@@ -134,7 +134,7 @@ For human egocentric videos and neural trajectories, we do not have any actions 
 5
 
 
-GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
+ GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
 Latent action 1: Move the right arm to the left Latent action 2: Move the right arm to the right
 Figure 4: Latent Actions. We retrieve similar latent embeddings across various embodiments. The left images illustrate the latent action that corresponds to moving the right arm (or hand) to the left, while the right images illustrate the latent action that corresponds to moving the right arm (or hand) to the right. Note that this general latent action is not only consistent in different robot embodiments, but also in human embodiment.
 Neural Trajectories
@@ -146,7 +146,7 @@ Starting with a small set of human demonstrations, DexMimicGen applies demonstra
 6
 
 
-GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
+ GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
 Prompt: use the right hand to pick up cucumber to basket
 Prompt: use the left hand to pick up spray bottle to basket
 Prompt: use the left hand to pick up spray bottle to beige bowl
@@ -159,7 +159,7 @@ end. Only successful demonstrations are retained, ensuring high-quality data. Us
 7
 
 
-GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
+ GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
 2.3. Training Details
 Pre-training
 During the pre-training phase, GR00T N1 is trained via flow-matching loss (Equation 1) on a diverse collection of embodiments and data sources, encompassing various real and synthetic robot datasets as well as human motion data. We refer readers to Sec. 3 for a detailed description of the datasets.
@@ -175,7 +175,7 @@ Compute-constrained finetuning was tested in the context of a single A6000 GPU. 
 8
 
 
-GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
+ GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
 3. Pre-Training Datasets
 We structure our pre-training corpus into three main categories: real-robot datasets (Sec. 3.1), synthetic datasets (Sec. 3.2), and human video datasets (Sec. 3.3). These roughly correspond to the peak, middle, and base of the data pyramid (Fig. 1), respectively. The synthetic datasets consist of both simulation trajectories and neural trajectories. Table 1 summarizes our training data generation strategies in Sec. 2.2 and their applicable data sources correspondingly. We provide the full statistics (# of frames, hours, and camera views) of our pretraining datasets in Table 7.
 Table 1: Training Data Generation. Our data generation strategies leverage different data sources. The latentaction learning technique is broadly applied to diverse video datasets. Neural trajectories can be generated from datasets containing robot actions, while simulation trajectories rely on a physics simulator and utilize our DexMimicGen-based automated data generation system.
@@ -191,7 +191,7 @@ In addition to real-world datasets, we feature large-scale synthetic datasets ge
 9
 
 
-GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
+ GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
 Human Motion Capture
 Option 1: Manus Glove + VIve Ultimate Tracker
 Option 2: Apple Vision Pro Option 3: Leap Motion Robot Action Retargeting
@@ -208,7 +208,7 @@ We include a diverse set of human video datasets. These do not include explicit 
 10
 
 
-GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
+ GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
 Piece Assembly Transport Pouring Tray Lift
 Coffee
 Pick and Place Turn Off Stove Turn On Water Turn On Microwave
@@ -225,7 +225,7 @@ Our simulation experiments comprise two open-source benchmarks from prior work (
 11
 
 
-GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
+ GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
 illustrates some example tasks from these three benchmarks.
 • RoboCasa Kitchen (24 tasks, RoboCasa)
 RoboCasa (Nasiriany et al., 2024) features a collection of tasks in simulated kitchen environments. We focus on 24 “atomic” tasks that involve foundational sensorimotor skills such as pick-and-place, door opening and closing, pressing buttons, turning faucets, and more. For each task, we use the publicly available dataset of 3000 demonstrations featuring the Franka Emika Panda arm, all generated with MimicGen (Mandlekar et al., 2023). The observation space includes three RGB images captured from cameras positioned on the left, right, and at the wrist. The state representation comprises the position and rotation of both the end-effector and the robot base, as well as the gripper’s state. The action space is defined by the relative position and rotation of the end-effector along with the gripper state. We follow the same training and evaluation protocol outlined by Nasiriany et al. (2024). • DexMimicGen Cross-Embodiment Suite (9 tasks, DexMG)
@@ -238,7 +238,7 @@ This category evaluates the model’s ability to grasp objects and place them in
 12
 
 
-GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
+ GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
 Prompt: pick up peach to yellow bin
 Prompt: pick up green bell pepper to bottom shelf
 Pick-and-Place with Left-to-Right Handover Pick up Novel Object to Novel Container
@@ -255,7 +255,7 @@ These tasks assess the model’s ability to manipulate articulated storage compa
 13
 
 
-GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
+ GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
 We design this category for industrial scenarios, which involve three structured workflows and tool-based interactions: 1) Machinery Packing: Pick up various machinery parts and tools and place them into a designated yellow bin; 2) Mesh Cup Pouring: Grasp a mesh cup containing small industrial components (e.g., screws and bolts) and pour its contents into a plastic bin; and 3) Cylinder Handover: Pick up a cylindrical object, transfer it from one hand to the other, and place it into a yellow bin. These tasks closely mirror real-world industrial applications, making them highly relevant benchmarks for assessing dexterity in structured environments.
 • Multi-Agent Coordination (2 tasks, Coordination)
 Collaborative tasks require synchronization between multiple agents, emphasizing role coordination and adaptive decision-making: 1) Coordination Part 1: Pick up a cylinder, place it into a mesh cup, and hand it over to another robot; and 2) Coordination Part 2: The receiving robot places the cylinder into one yellow bin, then pours the remaining contents of the mesh cup into another yellow bin.
@@ -271,7 +271,7 @@ For real robot evaluation, we employ a partial scoring system to capture model b
 14
 
 
-GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
+ GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
 We conduct only 5 trials due to the time constraint. Additionally, to assess the model’s efficiency in a low-data regime, we subsample 10% of the full dataset for each task and evaluate whether the model can still learn effective behaviors.
 4.4. Quantitative Results
 Pre-training Evaluations
@@ -289,7 +289,7 @@ GR00T-N1-2B (10% Data) 35.0% 62.0% 31.0% 50.0% 42.6% GR00T-N1-2B (Full Data) 82.
 15
 
 
-GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
+ GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
 Figure 9: Neural Trajectories Ablations. In the RoboCasa simulation, we show using neural trajectories for post-training across 3 data regimes (30, 100, and 300 per task). In the real world, we show results only on the low-data regime (10% of the demonstrations). We co-train with 3k neural trajectories per task for RoboCasa and 100 neural trajectories per task for real-world tasks. We explore using both latent and IDM-labeled actions in simulation and only IDM-labeled actions for the real robot.
 Post-training w/ Neural Trajectories Evaluations
 We show some preliminary results of using neural trajectories during post-training for the RoboCasa benchmark for simulation evaluation and Pick-and-Place (seen) and Industrial for the real-world evaluation in Figure 9. We observe that GR00T N1 co-trained with neural trajectories consistently results in substantial gains compared to GR00T N1 only trained on real-world trajectories: +4.2%, +8.8%, +6.8% on average for 30, 100, and 300 data-regimes, respectively, for RoboCasa and +5.8% on average across the 8 tasks with the GR-1 Humanoid.
@@ -301,7 +301,7 @@ For post-trained GR00T N1, we observed that, compared to the baseline Diffusion 
 16
 
 
-GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
+ GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
 suffers from immobility during the initial frames and frequently exhibits inaccurate grasping, resulting in a low success rate in our real-world benchmarks. We provide visualizations of two policy rollout examples in Fig. 12.
 4.6. Limitations
 Currently, our GR00T N1 model focuses primarily on short-horizon tabletop manipulation tasks. In future work, we aim to extend its capabilities to tackle long-horizon loco-manipulation, which will require advancements in humanoid hardware, model architecture, and training corpora. We anticipate a stronger vision-language backbone will enhance the model’s spatial reasoning, language understanding, and adaptability. Our synthetic data generation techniques — leveraging video generation models and automated trajectory synthesis systems — have shown great promise. However, existing methods still face challenges in generating diverse and counterfactual data, while adhering to the laws of physics, limiting the quality and variability of synthetic datasets. We aim to enhance our synthetic data generation techniques to further enrich our data pyramid for model training. Furthermore, we plan to explore novel model architectures and pre-training strategies to improve the robustness and generalization capabilities of our generalist robot models.
@@ -311,7 +311,7 @@ Datasets for Robot Learning. A core challenge in robot learning is the scarcity 
 17
 
 
-GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
+ GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
 hardware to capture robot-relevant observation and action data without explicitly teleoperating the target robot. For example, Chi et al. (2024); Seo et al. (2025) use hand-held robot grippers, Fang et al. (2024) uses a robot-like exoskeleton, and Kareer et al. (2024) uses special glasses to capture human hand motions, which are retargeted to robot action data. These approaches tend to result in faster data collection, though they have a mismatch with the downstream robot compared to direct robot teleoperation. A separate line of work makes use of human video datasets (Damen et al., 2018; Goyal et al., 2017; Grauman et al., 2022, 2024; Miech et al., 2019), which are plentiful and substantially easier to collect than on-robot data, as a source of training data for robots. Some works (Karamcheti et al., 2023; Nair et al., 2022; Wu et al., 2023) use human video datasets to pre-train representations that are then used as a feature space for training policies on downstream robot datasets. Other works Bharadhwaj et al. (2024,); Ren et al. (2025) try to jointly use human video data and robot data through intermediate representations for the motions in the video. Ye et al. (2025) shows that pretraining VLAs with latent actions only on human videos yields positive transfer to downstream robotic tasks. Rather than relying on a single type of training data, we developed techniques to effectively learn from a diverse assortment of real-world robot data, human video data, and synthetic data.
 Synthetic Data Generation in Robotics. Real-world robot data collection requires large amounts of time and considerable human cost. By contrast, data collection in simulation can be substantially more efficient and less painful, making it a compelling alternative. Recently, several works (Dalal et al., 2023; Garrett et al., 2024; Gu et al., 2023; Ha et al., 2023; James et al., 2020; Jiang et al., 2024; Mandlekar et al., 2023; Nasiriany et al., 2024; Wang et al., 2024; Yang et al., 2025) have proposed automated data generation pipelines that can leverage simulation to produce thousands of task demonstrations with minimal human effort. This makes it easy to generate large-scale datasets; however, utilizing these datasets can be challenging due to the simulation-to-reality gap.
 Another promising avenue has been using neural generative models to augment existing sets of robot demonstrations (Chen et al., 2023; Mandi et al., 2022; Yu et al., 2023). However, previous work have been limited to utilizing in-painting or text-to-image diffusion models to augment the training data. In our work, we leverage the recent advancements in video generative models (Agarwal et al., 2025; Wan Team, 2025) to create entire neural trajectories, at a scale that has never been explored before: ∼300k neural trajectories which amounts to 827 hours of robot trajectories.
@@ -321,7 +321,7 @@ We have presented GR00T N1, an open foundation model for generalist humanoid rob
 18
 
 
-GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
+ GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
 A. Contributors and Acknowledgments
 A.1. Core Contributors
 Model Training
@@ -352,7 +352,7 @@ We thank Max Fu, Zhengyi Luo, Annika Brundyn, Aastha Jhunjhunwala, Jeff Smith, Y
 19
 
 
-GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
+ GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
 We thank Erwin Coumans, Billy Okal, John Welsh, Pulkit Goyal, Stephan Pleines, Vishal Kulkarni, Chirag Majithia, Di Zeng, Yan Chang, Soha Pouya, Wei Liu, Rushane Hua, Benjamin Butin, Lionel Gulich, Lakshmi Ramesh, Peter Mcaughan, Piyush Medikeri for internal codebase review and testing.
 We thank Kyle Yumen, Jeremy Chimienti, Gianna Calderon, Isabel Zuluaga, Juan Zuluaga, Ivy Tam, Jazmin Sanchez, Jesse Yang, Leilee Naderi, Patrick Lee, Tri Cao, Jenna Diamond, Andrew Mathau, Marina Davila, and Sarah Stoddard for working with us on robot teleoperation data collection and annotation.
 We thank Andrew Tao, Padmavathy Subramanian, Bryan Catanzaro and Kari Briski for the support and guidance on commercial VLM training, and Yao Lu, Sean Cha, Zaid Pervaiz Bhat, Subhashree Radhakrishnan, Yilin Zhao, Paris Zhang, Ratnesh Kumar, Vidya Murali, Yao Xu, Osvald Nitski, Dmitry Chichkov, Qing Miao, Elena Lantz, and Jane Polak Scowcroft for their contributions to the commercial VLM data curation.
@@ -393,7 +393,7 @@ We provide qualitative rollout examples of our pre-trained and post-trained GR00
 20
 
 
-GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
+ GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
 Task: Pick up red apple and place it into the basket
 Figure 11: Pre-training Qualitative Example. While prompting the pretrained GR00T-N1-2B model with a post-training task instruction, we even increase the difficulty by placing the apple to the left of both hands. Despite not having encountered this setup during training, the model successfully places the red apple into the basket via a two-handed handover, albeit with jerkier motion.
 GR00T-N1-2B
@@ -411,7 +411,7 @@ Our training corpora build upon the LeRobot dataset format (Cadene et al., 2024)
 21
 
 
-GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
+ GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
 Prompt: pick the mug from the counter and place it under the coffee machine dispenser, from left, right and wrist view
 Prompt (round 1): pick up the green pepper
 Prompt (round 2): move the green pepper to the bag
@@ -422,7 +422,7 @@ Figure 13: More Examples of Neural Generated Trajectories. We highlight 4 key ca
 22
 
 
-GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
+ GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
 At its core, the LeRobot dataset format employs a combination of established file formats for efficient storage and access:
 1. Tabular Data: Robot states, actions, and metadata are stored in parquet files, which offer efficient columnar storage and fast data retrieval. This format enables quick filtering and slicing operations essential for training deep learning models. 2. Image and Video Data: Visual observations are encoded as MP4 video files (or alternatively as PNG image sequences), with references stored in the parquet files. This approach significantly reduces storage requirements while maintaining data accessibility. 3. Metadata: Dataset statistics, episode indices, and other metadata are stored in structured JSON files, providing machine-readable information about the dataset’s characteristics.
 The format organizes demonstration data into episodes, with each frame containing synchronized observation and action pairs. Each observation typically includes camera imagery (observation.images.*) and robot state information (observation.state), while actions represent the control commands sent to the robot. This organization facilitates both imitation learning, where models learn to predict actions from observations, and reinforcement learning, where models learn to optimize for specific outcomes.
@@ -433,7 +433,7 @@ Our extended format offers several key benefits for training VLA models:
 23
 
 
-GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
+ GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
 The extended format strikes a balance between standardization and flexibility, providing a clear structure for common robotics data while accommodating the specific needs of VLA models. This approach has proven valuable in our work, enabling more efficient training and improved model performance while maintaining compatibility with the broader robotics research community.
 E.2. Standardized Action Spaces
 For the above datasets, we make a best-effort unification of action and state spaces to ensure consistency across different embodiments and control modalities. Several key practices are applied to achieve this standardization:
@@ -448,7 +448,7 @@ We train an inverse dynamics model (IDM) by conditioning on two images (current 
 24
 
 
-GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
+ GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
 (Ego4D) Language Annotation: drops the hand dryer in the cabinet with her right hand.
 (EgoeXO-4D) Language Annotation: pours the garlic into the bowl with her right hand.
 (HOI4D) Language Annotation: pick and place stapler.
@@ -460,7 +460,7 @@ Figure 14: Human Egocentric Video Dataset Samples. We use seven human video data
 25
 
 
-GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
+ GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
 Table 4: Simulation Evaluation Results with Models Trained with Different Dataset Sizes.
 Task Diffusion Policy GR00T-N1-2B
 30 demos 100 demos 300 demos 30 demos 100 demos 300 demos
@@ -473,7 +473,7 @@ GR-1 Average 21.3 32.7 40.4 43.2 50.0 49.3
 26
 
 
-GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
+ GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
 Table 5: Success rate on real-world tasks with the GR-1 humanoid robot.
 Task Diffusion Policy GR00T-N1-2B
 10% Data Full Data 10% Data Full Data
@@ -495,7 +495,7 @@ Learning rate 1e-4 Optimizer AdamW Adam beta1 0.95 Adam beta2 0.999 Adam epsilon
 27
 
 
-GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
+ GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
 Table 7: Pre-training Dataset Statistics
 Dataset Length (Frames) Duration (hr) FPS Camera View Category
 GR-1 Teleop Pre-Training 6.4M 88.4 20 Egocentric Real robot DROID (OXE) 23.1M 428.3 15 Left, Right, Wrist Real robot RT-1 (OXE) 3.7M 338.4 3 Egocentric Real robot Language Table (OXE) 7.0M 195.7 10 Front-facing Real robot Bridge-v2 (OXE) 2.0M 111.1 5 Shoulder, left, right, wrist Real robot MUTEX (OXE) 362K 5.0 20 Wrist Real robot Plex (OXE) 77K 1.1 20 Wrist Real robot RoboSet (OXE) 1.4M 78.9 5 Left, Right, Wrist Real robot Agibot-Alpha 213.8M 1,979.4 30 Egocentric, left, right Real robot RH20T-Robot 4.5M 62.5 20 Wrist Real robot Ego4D 154.4M 2,144.7 20 Egocentric Human Ego-Exo4D 8.9M 123.0 30 Egocentric Human Assembly-101 1.4M 19.3 20 Egocentric Human HOI4D 892K 12.4 20 Egocentric Human HoloAssist 12.2M 169.6 20 Egocentric Human RH20T-Human 1.2M 16.3 20 Egocentric Human EPIC-KITCHENS 2.3M 31.7 20 Egocentric Human GR-1 Simulation Pre-Training 125.5M 1,742.6 20 Egocentric Simulation GR-1 Neural Videos 23.8M 827.3 8 Egocentric Neural-generated
@@ -503,7 +503,7 @@ Total robot data 262.3M 3,288.8 – – Total human data 181.3M 2,517.0 – – 
 28
 
 
-GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
+ GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
 References
 [1] Niket Agarwal, Arslan Ali, Maciej Bala, Yogesh Balaji, Erik Barker, Tiffany Cai, Prithvijit Chattopadhyay, Yongxin Chen, Yin Cui, Yifan Ding, et al. Cosmos world foundation model platform for physical ai. arXiv preprint arXiv:2501.03575, 2025. 6, 18
 [2] AgiBot-World-Contributors et al. AgiBot World Colosseo: A Large-scale Manipulation Platform for Scalable and Intelligent Embodied Systems. arXiv preprint arXiv:2503.06669, 2025. 9, 17
@@ -520,7 +520,7 @@ References
 29
 
 
-GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
+ GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
 Nachum, Carolina Parada, Jodilyn Peralta, Emily Perez, Karl Pertsch, Jornell Quiambao, Kanishka Rao, Michael Ryoo, Grecia Salazar, Pannag Sanketi, Kevin Sayed, Jaspiar Singh, Sumedh Sontakke, Austin Stone, Clayton Tan, Huong Tran, Vincent Vanhoucke, Steve Vega, Quan Vuong, Fei Xia, Ted Xiao, Peng Xu, Sichun Xu, Tianhe Yu, and Brianna Zitkovich. Rt-1: Robotics transformer for real-world control at scale. In arXiv preprint arXiv:2212.06817, 2022. 9, 17
 [13] Anthony Brohan, Noah Brown, Justice Carbajal, Yevgen Chebotar, Joseph Dabis, Chelsea Finn, Keerthana Gopalakrishnan, Karol Hausman, Alex Herzog, Jasmine Hsu, et al. Rt-1: Robotics transformer for realworld control at scale. arXiv preprint arXiv:2212.06817, 2022. 17
 [14] Anthony Brohan, Noah Brown, Justice Carbajal, Yevgen Chebotar, Xi Chen, Krzysztof Choromanski, Tianli Ding, Danny Driess, Avinava Dubey, Chelsea Finn, Pete Florence, Chuyuan Fu, Montse Gonzalez Arenas, Keerthana Gopalakrishnan, Kehang Han, Karol Hausman, Alex Herzog, Jasmine Hsu, Brian Ichter, Alex Irpan, Nikhil Joshi, Ryan Julian, Dmitry Kalashnikov, Yuheng Kuang, Isabel Leal, Lisa Lee, Tsang-Wei Edward Lee, Sergey Levine, Yao Lu, Henryk Michalewski, Igor Mordatch, Karl Pertsch, Kanishka Rao, Krista Reymann, Michael Ryoo, Grecia Salazar, Pannag Sanketi, Pierre Sermanet, Jaspiar Singh, Anikait Singh, Radu Soricut, Huong Tran, Vincent Vanhoucke, Quan Vuong, Ayzaan Wahid, Stefan Welker, Paul Wohlhart, Jialin Wu, Fei Xia, Ted Xiao, Peng Xu, Sichun Xu, Tianhe Yu, and Brianna Zitkovich. Rt-2: Vision-language-action models transfer web knowledge to robotic control. In arXiv preprint arXiv:2307.15818, 2023. 17
@@ -537,7 +537,7 @@ huggingface/lerobot, 2024. 21
 30
 
 
-GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
+ GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
 [24] Dima Damen, Hazel Doughty, Giovanni Maria Farinella, Sanja Fidler, Antonino Furnari, Evangelos Kazakos, Davide Moltisanti, Jonathan Munro, Toby Perrett, Will Price, et al. Scaling egocentric vision: The epic-kitchens dataset. In Proceedings of the European conference on computer vision (ECCV), pages 720–736, 2018. 11, 18
 [25] Shivin Dass, Wensi Ai, Yuqian Jiang, Samik Singh, Jiaheng Hu, Ruohan Zhang, Peter Stone, Ben Abbatematteo, and Roberto Martín-Martín. Telemoma: A modular and versatile teleoperation system for mobile manipulation. In 2nd Workshop on Mobile Manipulation and Embodied Intelligence at ICRA 2024, 2024. 17
 [26] Danny Driess, Fei Xia, Mehdi SM Sajjadi, Corey Lynch, Aakanksha Chowdhery, Brian Ichter, Ayzaan Wahid, Jonathan Tompson, Quan Vuong, Tianhe Yu, et al. Palm-e: An embodied multimodal language model. arXiv preprint arXiv:2303.03378, 2023. 17
@@ -554,7 +554,7 @@ huggingface/lerobot, 2024. 21
 31
 
 
-GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
+ GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
 [37] Edward J Hu, Yelong Shen, Phillip Wallis, Zeyuan Allen-Zhu, Yuanzhi Li, Shean Wang, Lu Wang, and Weizhu Chen. LoRA: Low-rank adaptation of large language models. In International Conference on Learning Representations, 2022. 24
 [38] Xixi Hu, Bo Liu, Xingchao Liu, and Qiang Liu. Adaflow: Imitation learning with variance-adaptive flow-based policies. arXiv preprint arXiv:2402.04292, 2024. 17
 [39] Jiangyong Huang, Silong Yong, Xiaojian Ma, Xiongkun Linghu, Puhao Li, Yan Wang, Qing Li, Song-Chun Zhu, Baoxiong Jia, and Siyuan Huang. An embodied generalist agent in 3d world. In Proceedings of the International Conference on Machine Learning (ICML), 2024. 17
@@ -571,7 +571,7 @@ huggingface/lerobot, 2024. 21
 32
 
 
-GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
+ GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
 Son, Stephen Tian, Emi Tran, Andrew E. Wang, Yilin Wu, Annie Xie, Jingyun Yang, Patrick Yin, Yunchu Zhang, Osbert Bastani, Glen Berseth, Jeannette Bohg, Ken Goldberg, Abhinav Gupta, Abhishek Gupta, Dinesh Jayaraman, Joseph J Lim, Jitendra Malik, Roberto Martín-Martín, Subramanian Ramamoorthy, Dorsa Sadigh, Shuran Song, Jiajun Wu, Michael C. Yip, Yuke Zhu, Thomas Kollar, Sergey Levine, and Chelsea Finn. Droid: A large-scale in-the-wild robot manipulation dataset. 2024. 9
 [50] Moo Jin Kim, Karl Pertsch, Siddharth Karamcheti, Ted Xiao, Ashwin Balakrishna, Suraj Nair, Rafael Rafailov, Ethan Foster, Grace Lam, Pannag Sanketi, Quan Vuong, Thomas Kollar, Benjamin Burchfiel, Russ Tedrake, Dorsa Sadigh, Sergey Levine, Percy Liang, and Chelsea Finn. Openvla: An open-source vision-language-action model. arXiv preprint arXiv:2406.09246, 2024. 17
 [51] Xinghang Li, Minghuan Liu, Hanbo Zhang, Cunjun Yu, Jie Xu, Hongtao Wu, Chilam Cheang, Ya Jing, Weinan Zhang, Huaping Liu, et al. Vision-language foundation models as effective robot imitators. arXiv preprint arXiv:2311.01378, 2023. 17
@@ -589,7 +589,7 @@ Son, Stephen Tian, Emi Tran, Andrew E. Wang, Yilin Wu, Annie Xie, Jingyun Yang, 
 33
 
 
-GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
+ GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
 [63] Ajay Mandlekar, Jonathan Booher, Max Spero, Albert Tung, Anchit Gupta, Yuke Zhu, Animesh Garg, Silvio Savarese, and Li Fei-Fei. Scaling robot supervision to hundreds of hours with roboturk: Robotic manipulation dataset through human reasoning and dexterity. In 2019 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS), pages 1048–1055. IEEE, 2019. 17
 [64] Ajay Mandlekar, Danfei Xu, Roberto Martín-Martín, Yuke Zhu, Li Fei-Fei, and Silvio Savarese. Humanin-the-loop imitation learning using remote teleoperation. arXiv preprint arXiv:2012.06733, 2020. 17
 [65] Ajay Mandlekar, Danfei Xu, Josiah Wong, Soroush Nasiriany, Chen Wang, Rohun Kulkarni, Li Fei-Fei, Silvio Savarese, Yuke Zhu, and Roberto Martín-Martín. What matters in learning from offline human demonstrations for robot manipulation. In Conference on Robot Learning (CoRL), 2021. 14
@@ -607,7 +607,7 @@ Son, Stephen Tian, Emi Tran, Andrew E. Wang, Yilin Wu, Annie Xie, Jingyun Yang, 
 34
 
 
-GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
+ GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
 [77] Juntao Ren, Priya Sundaresan, Dorsa Sadigh, Sanjiban Choudhury, and Jeannette Bohg. Motion tracks: A unified representation for human-robot transfer in few-shot imitation learning. arXiv preprint arXiv:2501.06994, 2025. 18
 [78] Zhongwei Ren, Yunchao Wei, Xun Guo, Yao Zhao, Bingyi Kang, Jiashi Feng, and Xiaojie Jin. Videoworld: Exploring knowledge learning from unlabeled videos. arXiv preprint arXiv:2501.09781, 2025. 6
 [79] F. Sener, D. Chatterjee, D. Shelepov, K. He, D. Singhania, R. Wang, and A. Yao. Assembly101: A large-scale multi-view video dataset for understanding procedural activities. CVPR 2022, 2022. 11
@@ -626,7 +626,7 @@ Son, Stephen Tian, Emi Tran, Andrew E. Wang, Yilin Wu, Annie Xie, Jingyun Yang, 
 35
 
 
-GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
+ GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
 [92] Philipp Wu, Yide Shentu, Zhongke Yi, Xingyu Lin, and Pieter Abbeel. Gello: A general, low-cost, and intuitive teleoperation framework for robot manipulators, 2023. 17
 [93] Jiannan Xiang, Guangyi Liu, Yi Gu, Qiyue Gao, Yuting Ning, Yuheng Zha, Zeyu Feng, Tianhua Tao, Shibo Hao, Yemin Shi, et al. Pandora: Towards general world model with natural language actions and video states. arXiv preprint arXiv:2406.09455, 2024. 6
 [94] Jianwei Yang, Reuben Tan, Qianhui Wu, Ruijie Zheng, Baolin Peng, Yongyuan Liang, Yu Gu, Mu Cai, Seonghyeon Ye, Joel Jang, Yuquan Deng, Lars Liden, and Jianfeng Gao. Magma: A foundation model for multimodal AI agents, 2025. 17
