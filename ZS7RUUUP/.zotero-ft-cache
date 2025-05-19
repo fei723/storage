@@ -1,0 +1,304 @@
+Loam livox: A fast, robust, high-precision LiDAR odometry and
+mapping package for LiDARs of small FoV
+Jiarong Lin and Fu Zhang
+Abstract— LiDAR odometry and mapping (LOAM) has been playing an important role in autonomous vehicles, due to its ability to simultaneously localize the robot’s pose and build high-precision, high-resolution maps of the surrounding environment. This enables autonomous navigation and safe path planning of autonomous vehicles. In this paper, we present a robust, real-time LOAM algorithm for LiDARs with small FoV and irregular samplings. By taking effort on both frontend and back-end, we address several fundamental challenges arising from such LiDARs, and achieve better performance in both precision and efficiency compared to existing baselines. To share our findings and to make contributions to the community, we open source our codes on Github1.
+I. INTRODUCTION
+With the ability to provide long range, highly accurate 3D measurements of the surrounding environment, light detection and ranging (LiDARs) is becoming an essential sensor in many robotic applications, such as autonomous driving vehicles [1], drones [2, 3], surveying, and mapping [4, 5]. To enable massive use in these areas, recent developments in LiDAR technologies have been focusing on lowering the device cost while increasing its reliability [6]. In this trend, one class of LiDARs that gains increasingly interests and developments are solid state LiDARs, which come with various implementations, such as micro-electromechanical-system (MEMS) scanning, optical phase array (OPA), Risley prism, etc. Being massively produced 2, these high performance and extremely low-cost LiDARs hold the potential to promote or radically change the robotics industry. Despite their superiority in cost, reliability, and possibly performance against the conventional mechanical spinning LiDARs, such as Velodyne Puck 3, solid state LiDARs have many new features that bring significant challenges to the LiDAR navigation and mapping. These features are (to explain these features, we take the Livox MID40 LiDAR 2 as an example due to its wide availability): Small FoV: solid state LiDARs usually have very small field of view (FoV). For examples, Livox MID40 has a front facing, conical shaped FoV spanning 38.4 degrees. Other solid state LiDARs such MEMS LiDARs also suffer from similar small FoV problem due to the large size of the MEMS mirror preventing large steering angles. Comparing
+J. Lin and F. Zhang are with the Department of Mechanical Engineering, Hong Kong University, Hong Kong SAR., China. {jiarong.lin, fuzhang}@hku.hk 1https://github.com/hku-mars/loam_livox 2 https://www.livoxtech.com/mid-40-and-mid-100 3https://velodynelidar.com/vlp-16.html
+Fig. 1: The 3D map of the Chong Yuet Ming Cultural Center in the University of Hong Kong (HKU).
+Fig. 2: The large scale mapping of the Hong Kong University of Science and Technology (HKUST) main campus, the upper and lower images are the bird-view and side-view, respectively. In above images, the white path is the trajectory of the LiDAR, points are colored by their heights.
+to conventional spinning LiDAR (see Fig. 3), the reduced FoV will lead to very fewer features in a frame, making the subsequent feature matching prone to degenerate and easily disturbed by moving objects. Although a larger FoV can be obtained by combining multiple LiDARs, it considerably increases the sensor cost and weight.
+Irregular scanning pattern: existing spinning LiDARs have multiple laser-receiver pairs stacking in a vertical row. Rotating all pairs as a whole leads to a collection of parallel rings. This regular scanning greatly simplifies the feature extraction. For example, a corner is easily computed by differentiating the depth of points on the line. In constrat, the scanning pattern of solid state LiDARs is quite irregular. For example, the Livox MID40 has a rosette-like scanning pattern (see Fig. 4) where two neighboring scanning petals are separated far apart.
+Non-repetitive scanning: to maximize the coverage ratio even when the LiDAR is static, non-repetitive scanning is
+arXiv:1909.06700v1 [cs.RO] 15 Sep 2019
+
+
+-180° 0° 180°
+38.4°
+30.0°
+Comparison of FoV (fish-eye view)
+Livox Mid-40 Velodyne VLP-16
+Fig. 3: FoV of Livox Mid-40 and Velodyne PUCK (VLP-16).
+usually adopted [7] where the scanning trajectory never repeats itself (see Fig. 4). Motion blur: due to the continuous scanning of a single laser head, the 3D points measured in one frame are really sampled at different times as the LiDAR is continuously moving. The in-frame motion will distort the point clouds and cause motion blur. To address the problems mentioned above, we develop a software package named “Loam Livox”, which addresses many key issues including feature extraction and selection in a very limited FoV, robust outliers rejection, moving objects filtering and motion distortion compensation. Without other sensors such as IMU, GPS, and cameras, our algorithm calculates the LiDAR poses in real time (i.e. odometry) by registering its point cloud to a specified range of local map. Some of the results we obtained are shown in Fig. 1 and Fig. 2, where we can tell the precision of the algorithm from the level of details of the stairs and railing (Fig. 1), as well as versatility for large-scale mapping (Fig. 2).
+II. RELATED WORK
+State estimation and map-building are the fundamental prerequisites for intelligent robots. In the past recent years, we have seen great efforts being made in the field of simultaneous localization and mapping (SLAM), including both vision-based and laser-based approaches. In this paper, we mainly focus on the problem of laser-based SLAM. Besl et al [8] first proposed the Iterative Closest Points (ICP) method for scan matching, which builds the basic operation for odometry. Building on this, Mendes et al [9] proposed a pose-graph SLAM to correct the drift in sequential scan matching, and demonstrated its effectiveness in a high definition LiDARs, Velodyne HDL 64. While the ICP algorithm performs well for 3D scans with dense points, its effectiveness considerably degrades when the points in a scan are sparse where the two scans do not scan the same location on an object. To solve this problem, Pulli et al [10] proposed a point-to-plane error metric. This metric is used together with the point-to-point metric in [8] and called the generalized ICP in [11]. Zhang et al [12] and Shan et al [13] also used the point-to-edge metric in the context of LiDAR odometry and mapping. Besides the geometry features mentioned above, 3D keypoints based method [14]–[16] have also been proposed. These methods required less computation resources, by extracting keypoints from dense point cloud with detector like Point Feature Histograms (PFH) [14, 15], Viewpoint Feature Histograms (VFH) [16], etc. Considering the point cloud characteristic of our scenarios and the demands of real-time performance, we use point-to-edge and point-to-plane feature in our work, inspired by the work of [12, 13].
+−0.40 −0.35 −0.30 −0.25 −0.20 −0.15 −0.10 −0.05 0.00 0.05 0.10 0.15 0.20 0.25 0.30 0.35
+1 frame, time = 20 ms
+−0.40
+−0.35
+−0.30
+−0.25
+−0.20
+−0.15
+−0.10
+−0.05
+0.00
+0.05
+0.10
+0.15
+0.20
+0.25
+0.30
+0.35
+FoV = 38.4 ∘
+0.0
+2.5
+5.0
+7.5
+10.0
+12.5
+15.0
+17.5
+20.0
+−0.40 −0.35 −0.30 −0.25 −0.20 −0.15 −0.10 −0.05 0.00 0.05 0.10 0.15 0.20 0.25 0.30 0.35
+2 frames, time = 40 ms
+−0.40
+−0.35
+−0.30
+−0.25
+−0.20
+−0.15
+−0.10
+−0.05
+0.00
+0.05
+0.10
+0.15
+0.20
+0.25
+0.30
+0.35
+0
+5
+10
+15
+20
+25
+30
+35
+40
+−0.40 −0.35 −0.30 −0.25 −0.20 −0.15 −0.10 −0.05 0.00 0.05 0.10 0.15 0.20 0.25 0.30 0.35
+3 frames, time = 60 ms
+−0.40
+−0.35
+−0.30
+−0.25
+−0.20
+−0.15
+−0.10
+−0.05
+0.00
+0.05
+0.10
+0.15
+0.20
+0.25
+0.30
+0.35
+0
+10
+20
+30
+40
+50
+60
+Sampleing time (ms)
+3D points project on X=1 plane
+Fig. 4: The scanning trajectory of 3D points projected on the plane of 1m distance in front, where the color encodes the sampling time.
+To eliminate the effects of motion blur caused by LiDAR movement, authors in [12] , [17] and [18] compensate the movements in front-end processing by linear interpolating the LiDAR pose. More recently, Gentil et al [19] formulates an optimization problem in the back-end processing to compensate the LiDAR movement. Compared to the previous work, the back-end processing method achieves better performance but cannot run in real-time. While most of the previous work were based on spinning LiDARs, in this work, we focus on the odometry and mapping with solid-state LiDARs of small FOVs. Our contributions are: (1) we develop a complete LOAM algorithm for LiDARs with small FOVs. The algorithms is carefully engineered and made open source to benefit the community; (2) we increase the accuracy and robustness of the LOAM algorithm by considering the ow-level physical properties of LiDAR sensors in the front-end processing; (3) we propose a simple yet effective motion compensation method, the piecewise processing, and parallelize its implementation. Experiments show that the piecewise processing outperforms linear interpolation in terms of accuracy and running efficiency.
+III. POINTS SELECTION AND FEATURE EXTRACTION
+The overview or our system is shown as Fig. 5, whose front-end processing comprises of the point selection and feature extraction. Considering the measuring mechanism of a LiDAR sensor its low-level physical properties (e.g., laser spot size, signal noise ratio), we perform a point level selection to extract the “good points”.
+A. Points selection
+We compute the following features of each 3D point P = [x, y, z], where the X − Y − Z axis correspond to the FrontLeft-Up (FLU) of a LiDAR (see Fig. 6 (a)). Depth D is the distance of the measured point to the LiDAR sensor.
+D(P) = √x2 + y2 + z2 (1)
+The laser deflection angle φ is the angle between X axis and laser ray
+φ(P) = tan−1 (√(y2 + z2)/x2
+)
+(2)
+The intensity I is
+I(P) = R/D(P)2 (3)
+where R is the object reflectivity, measured by the LiDAR sensor (some LiDARs, e.g., Velodyne Puck, returns the
+
+
+Maps update
+Maps of edge and
+planar features
+Iteratively pose optimization
+Factors of plane to plane
+Planar features from maps
+Planar features from lidar input
+Factors of line to line
+Edge features from lidar input
+Edge features from maps
+Retrieve features for matching
+Output of odometry
+(20Hz) Points selection and
+feature extraction
+Edge features
+Planar features
+Good points
+for feature
+extraction
+Input from LiDAR
+The overview of
+our workflows
+Front-end procedures
+Back-end procedures
+Retrieve features
+from maps
+Select features
+for matching
+Build Kd-tree
+of features
+Fig. 5: The overview of our workflows. Each new frame is matched directly with the global map to provide the odometry output. The matching result is in turn used to register the frame to the global map, leading to the same rate (i.e., 20 Hz) of odometry output and map update. In our implementation, only the feature points (i.e., edge points and plane points) are saved in memory and all the raw points are saved in hard disk for possible offline processing (e.g., offline global optimization).
+a
+cb
+d
+e
+f
+Θ
+φ XZ
+Y
+P2
+P1
+P4
+P5 P3
+Pw
+(b)
+(c)
+(a)
+Fig. 6: (a) Illustration of incident angle θ, deflection angle φ; (b) residual of edge-to-edge; (c) residual of plane-to-plane.
+intensity instead of reflectivity. In this case, the intensity is directly available). Small intensity I(P) means the point is either far from the LiDAR sensor (large D(P)) or the object reflectivity R is low. The incident angle θ is the angle between the laser lay and the local plane around the measured point (Fig. 6 (a)).
+θ(Pb) = cos−1
+( (Pa − Pc) · Pb |Pa − Pc| |Pb|
+)
+(4)
+To increase the localization and mapping accuracy, we remove any of the following points:
+1. Points nearing to the fringe of the FoV. (e.g., φ(P) ≥ 17◦ for Livox MID40). In such area, scanning trajectory has large curvatures, leading to the feature extraction in Section III.B less reliable. 2. Points with too large or too small intensity (e.g. I(P) ≤ 7 × 10−3,or I(P) ≥ 1 × 10−1 for MID40 ). This is because intensity directly indicates the strength of the received laser signal. Too large intensity (signal) usually leads to saturation or distortion in the receiving circuitry and decreases the ranging accuracy. On the other hand, too small intensity (signal) usually leads to lower signal noise ratio, which also deteriorate the ranging accuracy. 3. Points with incident angles near to π or 0 (e.g. θ(P) ≤ 5◦,or θ(P) ≥ 175◦ for MID40), like point Pf in Fig. 6 (a). This is because the laser spot caused by the nonzero
+divergence angle of the laser beam will be considerably elongated. As a result, the measured range is the average of the area covered by the large spot instead of a specific point. 4. Points hidden behind an objects (e.g., Pe in Fig. 6 (a)), which will cause a false edge feature otherwise. A point Pe is a hidden point if:
+|Pe − Pd| ≥ 0.1|Pe|, and|Pe| > |Pd|
+where Pd is the nearest measurement point in scanning order.
+B. Feature extraction
+After points selection, we perform feature extraction to extract features from the “good points”. We extract plane and edge features by computing the local smoothness of the point candidate as in [12]. Furthermore, to mitigate the matching degeneration due to the small number of features caused by the limited FoV and the point selection, we employ the LiDAR reflectivity as the 4-th dimensional measurement. If the reflectivity of a 3D point is considerably different its neighborhood points, we treat it as a point of edge feature (edge in the reflectivity due to materials change, in contrast to the edge in geometry due to shape change). Such points are beneficial in some of the degeneration cases like facing a wall with closed doors and windows.
+IV. ITERATIVE POSE OPTIMIZATION
+Due to the non-repetitive scanning mentioned in Section. I, the extracted feature cannot be constantly tracked like in [12, 13, 19]. A simple example is that, even when the LiDAR is static, the scanned trajectory (and feature points) are different from the previous frame. In our work, we use an iterative pose optimization procedure to calculate the LiDAR pose. With the proper implementation detailed later, we achieve real-time odometry and mapping, both at 20Hz.
+
+
+A. Residual of edge-to-edge
+Denote Ek and Em the set of all edge features (see Section. III-B) in the current frame and in the map, respectively. For each point in Ek, we find 5 nearest points from Em (see Fig. 6 (b)). To boost the searching speed, we build a KD-tree of Em (see Fig. 5). Moreover, the KD-tree is built by another parallel thread once the last registered frame/sub-frame is received (see Fig. 7). This makes the KD-tree immediately available when the new frame is received. Let Pl be a point in Ek of the current frame (k-th frame). Noticing that the point Pl in Ek is in the local LiDAR frame while points of Em are registered in the global map, to find the nearest points of Pl in Em, we need to project it to the global map by the following transformation.
+Pw = RkPl + Tk (5)
+where (Rk, Tk) is the LiDAR pose when the last point in current frame is sampled, and needs to be determined by the pose optimization. Here we use the LiDAR pose at the last point in a frame to represent the pose of the whole frame, and all points in that frame are projected to the global map using this pose. Also notice that the last point in the current frame is essentially the first point in the next frame. Let Pi denote the i-th nearest points of Pw of Em. To make sure that Pi is indeed on a line, we compute the mean μ and covariance matrix Σ formed by the m nearest points of Pw. We set m to 5 in our work. If the biggest of eigenvalue of Σ is three times larger than the second biggest eigenvalue, we assure that the nearest points of Pw form a line on which Pw should lie. The residual is then computed as (Fig. 6 (b)).
+re2e = |(Pw − P5) × (Pw − P1)|
+|P5 − P1| (6)
+B. Residual of plane-to-plane
+Similar to the edge feature points, for a point in the planar feature set Pk of current frame, we find 5 nearest points in the planar feature set Pm of the map (see Fig. 6(c)). We also assure these 5 nearest points are indeed within the same plane by computing their covariance matrix Σ. If the smallest eigenvalue of Σ is three times less than the second smallest eigenvalue, we compute the distance of the plane point in the current frame to the plane formed by the 5 points in the same plane, as follows, and add this residual to pose optimization.
+rp2p = (Pw − P1)T ((P3 − P5) × (P3 − P1))
+|(P3 − P5) × (P3 − P1)| (7)
+C. In-frame motion compensation
+As mentioned previously, the 3D points are sampled at different time of different poses (i.e., motor blur) as the LiDAR motion is continuously undergoing. To eliminate the effect of motion blur, we propose two methods as follows: 1) Piecewise processing: A simple yet effective way to eliminate the effect of motion blur is piecewise processing. We divide an incoming frame into three sequential subframes. Then match these three sub-frames to the same map accumulated so far independently. During the scan matching
+Points cloud registration
+[R|T]
+Parallable
+paradiam
+Retrive features for
+matching
+Subframe 1 Output of
+odemetry
+Front-end procedures Iterative pose optimization
+Output of
+odemetry
+Front-end procedures Iterative pose optimization
+Subframe 2
+Output of
+odemetry
+Front-end procedures Iterative pose optimization
+Subframe n
+...
+Designed for
+CPU with
+multiple cores
+Fig. 7: Our parallel paradigm for CPU with multiple cores. Each sub-frame is matched with the global map independently on a dedicated thread. The matched sub-frame is then registered to the global map and become a part of the map. Another dedicated thread receives the new registered sub-frame and build a KD three of the updated map to be used in the next frame.
+of each sub-frame, all its points are projected to the global map using the LiDAR pose at the end point of that sub-frame. By doing so, the time interval of each sub-frame is 1/3 of the original frame. Although this method seems very simple, it works surprisingly well as shown in the results. Additionally, this piecewise processing has the benefits of utilizing the multi-core structure in modern CPUs by parallelizing the matching of each sub-frame (see Fig. 7). 2) Linear interpolation: Another commonly used motion compensation method is linear interpolation, as in [12, 19]. Denote (Rk, Tk) the LiDAR pose at the last point of the current frame and (Rk−1, Tk−1) the previous frame, (Rk
+k−1, Tk
+k−1) the relative rotation and translation between the previous and the current frame, then:
+Rk = Rk−1Rk
+k−1, Tk = Rk−1Tk
+k−1 + Tk−1
+Assume tk−1 is the sampling time of the last point in the previous frame. For any point sampled at time t in the current frame, we have t ∈ [tk−1, tk]. Compute s = (t−tk−1)/(tk − tk−1), then, the linearly interpolated pose at time t is:
+Rt
+k−1 = eωˆ θs, Tt
+k−1 = sTk
+k−1
+where θ is the magnitude and ω is the unit vector of of the rotation axis of Rk
+k−1, respectively. ̂ω is the skew symmetric matrix of ω. From the Rodrigue’s formula [20], we have:
+Rt
+k−1 = I + ̂ω sin(sθ) + ωˆ 2(1 − cos(sθ))
+which implies that only sin(sθ) and cos(sθ) needs to be computed for each point of the current frame, while the rests remain constant. This saves some computations. With Rt
+k−1,
+the LiDAR pose at the current time is:
+Rt = Rk−1Rt
+k−1, Tt = Rk−1Tt
+k−1 + Tk−1 (8)
+Then we can project the point at time t to the global map by the interpolated pose, as follows:
+Pw(t) = RtPl + Tt (9)
+
+
+Overview
+Details in dash frame
+Camera LiDAR
+Laptop
+(a) Without motion blur compensation (b) With linear interpolation (c) With piecewise processing (d) Sampling device and scene
+Fig. 8: The comparison of different motion compensation methods. The first column shows the results without any motion compensation, the second is with linear interpolation, and the third column is piecewise processing. The upper picture in the fourth column is our hand-held device for data collection, the lower picture is the RGB image of the mapped area.
+Algorithm 1: Iterative LiDAR pose optimization
+Input : The edge set Ek and plane set Pk from the current (sub-) frame; The edge set Em and plane set Pm from maps; The LiDAR pose of the previous frame (Rk−1, Tk−1). Output: The pose of the current frame (Rk, Tk). Start : Rk ← Rk−1, Tk ← Tk−1
+for Iterative pose optimization is not converged do for Pl ∈ Ek do
+Compute Pw via (5) (or (9)). Find 5 nearest points {P1∼5} of Pw in Em. if {P1−5} are indeed in a line then
+Add edge-to-edge residual re2e via (6).
+for Pl ∈ Pk do
+Compute Pw via (5) (or (9)). Find 5 nearest points {P1∼5} of Pw in Pm. if {P1∼5} are indeed a plane then
+Add plane-to-plane residual rp2p via (7).
+Perform pose optimization with 2 iterations. Recompute re2e and rp2p, then remove 20% of the biggest residual.
+for a maximal number of iterations do if the nonlinear optimization converges then Break;
+D. Outliers rejection, dynamic objects filtering
+To avoid moving object in real environments bringing down the accuracy of scan matching, we perform a dynamic objects filtering as follows: in each iteration of the iterative pose optimization, we refind the nearest neighbors of each feature point and add the edge-to-edge residual (6) and plane-to-plane residual (7) to the objective function, we first perform pose optimization with a small number of iterations (e.g., 2 used in our experiments). Using the optimization results, we compute the two residuals in (6) and (7), and remove the first 20% largest residuals. With the outliers removed, a full pose optimization is finally performed. The
+complete iterative pose optimization algorithm is summarized in Algorithm. 1.
+V. RESULTS
+A. Evaluation of mapping
+The comparisons of the two motion compensation methods of are shown in Fig. 8, where we can see that, without any motion compensation (Fig. 8 (a)), the mapping is very blurry in local areas (e.g., stairs, railing) and distorted in larger scale (e.g., the building is curved). In contrast, with the motion compensation, both of the linear interpolation and piecewise processing effectively eliminate the motion blur, and the stair steps and railing are distinguishable one from another. However, the linear interpolation has a considerable long-term drift, as seen by the curved building in the upper figure of Fig. 8 (b). This is because the data are collected by hand-held devices and the movement could be quite jerky and cannot be accurately captured by simple linear interpolation.
+B. Evaluation of odometry
+We evaluate the localization of our algorithm by comparing with the measurement of GPS, shown in Fig. 9. We compute the distance of two positions of our odometry and then compare it with the measurement of GPS. The results on two datasets are 0.41% and 0.65%, respectively, implying that the localization is of high accuracy. Furthermore, we evaluate the accuracy of rotation by comparing our result with the motion capture system (mocap) shown in Fig. 10). The results show that the trajectories of our odometry and mocap are very close and the average error of Euler angles in all three directions is as low as 1.1◦.
+C. Evaluation of running performance
+We evaluate the time consumption of our algorithm and the current baseline 4 (both algorithm eliminates the motion blur with piecewise processing) on two platforms, the desktop PC (with i7-9700K) and onboard-computer (DJI manifold2
+4https://github.com/HKUST-Aerial-Robotics/A-LOAM
+
+
+GPS measurement: 022°20'15.54'' N 114°15'46.64'' E
+GPS measurement: 022°20'05.59'' N 114°15'45.88'' E
+GPS measurement:
+022°17'05.56'' N 114°08'02.93'' E
+GPS measurement:
+022°17'05.56'' N 114°08'02.93'' E
+Fig. 9: The localization accuracy on two datasets: outdoor (upper) and indoor (lower). In each dataset, we compare our odometry results with Google maps and compute the traveled distance.
+30 35 40 45 50 55 60 65 70 75 80
+Time/s
+−70
+−50
+−30
+−10
+Euler angle/ ∘
+Comparison with mocap
+mocap_roll mocap_pitch mocap_yaw loam_roll loam_pitch loam_yaw
+Fig. 10: The comparison between our results and motion capture (mocap) system, the dashed line is measured by mocap, and the solid line is the odometry output from our algorithm.
+5 with i7-8550U). As shown in Table. I, benefiting from the parallelization among sub-frame registration, as well as between feature matching and KD-tree building, our algorithms run 2∼3 times faster than the baseline.
+D. Others
+Due to the space limit, we strongly recommend the reader to review our code 6 and more results contained there 7.
+VI. CONCLUSION AND DISCUSSION
+This paper presented an odometry and mapping algorithm for LiDARs with small FOVs. The algorithm inherits the basic structure and techniques (e.g., feature extraction, mating, motion compensation by linear interpolation) of standard LOAM algorithm, but with several key new contributions, such as point selection, iterative pose optimization, and implementation parallelization. The developed algorithm has its odometry and mapping both running in real time (i.e., 20 Hz). While achieving a high level of accuracy in mapping and localization, the sequential scan matching is inherently drifting. Reducing this drift by using techniques like loop closure and sliding window optimization will be further researched in the future.
+5https://www.dji.com/cn/manifold-2 6https://github.com/hku-mars/loam_livox 7https://github.com/ziv-lin/loam_livox_paper_res
+Desktop PC Desktop PC Onboard PC Onboard PC @4.0∼4.8 Ghz parallel @3.0∼3.5 Ghz parallel Ours 35.68 ms 17.24 ms 54.60 ms 32.54 ms Baseline 109.00 ms NaN 125.13 ms NaN
+TABLE I: The time consumption for each frame of our algorithm and the baseline4, where “Desktop PC parallel” and “Onboard PC parallel” use 3 threads for point cloud registration.
+REFERENCES
+[1] J. Levinson, J. Askeland, J. Becker, J. Dolson, D. Held, S. Kammel, J. Z. Kolter, D. Langer, O. Pink, V. Pratt, et al., “Towards fully autonomous driving: Systems and algorithms,” in 2011 IEEE Intelligent Vehicles Symposium (IV). IEEE, 2011, pp. 163–168.
+[2] A. Bry, A. Bachrach, and N. Roy, “State estimation for aggressive flight in gps-denied environments using onboard sensing,” in 2012 IEEE International Conference on Robotics and Automation. IEEE, 2012, pp. 1–8. [3] F. Gao, W. Wu, W. Gao, and S. Shen, “Flying on point clouds: Online trajectory generation and autonomous navigation for quadrotors in cluttered environments,” Journal of Field Robotics, vol. 36, no. 4, pp. 710–733, 2019. [4] A. Nu ̈chter, K. Lingemann, J. Hertzberg, and H. Surmann, “6d slam3d mapping outdoor environments,” Journal of Field Robotics, vol. 24, no. 8-9, pp. 699–722, 2007. [5] B. Schwarz, “Lidar: Mapping the world in 3d,” Nature Photonics, vol. 4, no. 7, p. 429, 2010. [6] “Ces 2018: Waiting for the $100 lidar.” [Online]. Available: https://spectrum.ieee.org/cars-that-think/transportation/sensors/ ces-2018-how-a-new-generation-lidars-is-redefining-the-car [7] “Point cloud characteristics of livox-lidar.” [Online]. Available: https://www.livoxtech.com/3296f540ecf5458a8829e01cf429798e/ downloads/Pointcloudcharacteristics.pdf [8] P. J. Besl and N. D. McKay, “Method for registration of 3-d shapes,” in Sensor fusion IV: control paradigms and data structures, vol. 1611. International Society for Optics and Photonics, 1992, pp. 586–606. [9] E. Mendes, P. Koch, and S. Lacroix, “Icp-based pose-graph slam,” in 2016 IEEE International Symposium on Safety, Security, and Rescue Robotics (SSRR). IEEE, 2016, pp. 195–200. [10] K. Pulli, “Multiview registration for large data sets,” in Second International Conference on 3-D Digital Imaging and Modeling (Cat. No. PR00062). IEEE, 1999, pp. 160–168. [11] A. Segal, D. Haehnel, and S. Thrun, “Generalized-icp.” in Robotics: science and systems, vol. 2, no. 4. Seattle, WA, 2009, p. 435. [12] J. Zhang and S. Singh, “Loam: Lidar odometry and mapping in realtime.” in Robotics: Science and Systems, vol. 2, 2014, p. 9.
+[13] T. Shan and B. Englot, “Lego-loam: Lightweight and groundoptimized lidar odometry and mapping on variable terrain,” in 2018 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS). IEEE, 2018, pp. 4758–4765. [14] R. B. Rusu, Z. C. Marton, N. Blodow, and M. Beetz, “Learning informative point classes for the acquisition of object model maps,” in 2008 10th International Conference on Control, Automation, Robotics and Vision. IEEE, 2008, pp. 643–650. [15] R. B. Rusu, N. Blodow, and M. Beetz, “Fast point feature histograms (fpfh) for 3d registration,” in 2009 IEEE International Conference on Robotics and Automation. IEEE, 2009, pp. 3212–3217. [16] R. B. Rusu, G. Bradski, R. Thibaux, and J. Hsu, “Fast 3d recognition and pose using the viewpoint feature histogram,” in 2010 IEEE/RSJ International Conference on Intelligent Robots and Systems. IEEE, 2010, pp. 2155–2162. [17] S. Hong, H. Ko, and J. Kim, “Vicp: Velocity updating iterative closest point algorithm,” in 2010 IEEE International Conference on Robotics and Automation. IEEE, 2010, pp. 1893–1898. [18] D. Droeschel and S. Behnke, “Efficient continuous-time slam for 3d lidar-based online mapping,” in 2018 IEEE International Conference on Robotics and Automation (ICRA). IEEE, 2018, pp. 1–9.
+[19] C. L. Gentil, T. Vidal-Calleja, and S. Huang, “In2laama: Inertial lidar localisation autocalibration and mapping,” arXiv preprint arXiv:1905.09517, 2019. [20] R. M. Murray, A mathematical introduction to robotic manipulation. CRC press, 2017.
