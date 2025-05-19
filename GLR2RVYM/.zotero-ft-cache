@@ -1,0 +1,382 @@
+arXiv:2503.14254v1 [cs.RO] 18 Mar 2025
+CTSAC: Curriculum-Based Transformer Soft Actor-Critic
+for Goal-Oriented Robot Exploration
+Chunyu Yang∗, Shengben Bi∗, Yihui Xu, Xin Zhang
+Abstract— With the increasing demand for efficient and flexible robotic exploration solutions, Reinforcement Learning (RL) is becoming a promising approach in the field of autonomous robotic exploration. However, current RL-based exploration algorithms often face limited environmental reasoning capabilities, slow convergence rates, and substantial challenges in Sim-To-Real (S2R) transfer. To address these issues, we propose a Curriculum Learning-based Transformer Reinforcement Learning Algorithm (CTSAC) aimed at improving both exploration efficiency and transfer performance. To enhance the robot’s reasoning ability, a Transformer is integrated into the perception network of the Soft Actor-Critic (SAC) framework, leveraging historical information to improve the farsightedness of the strategy. A periodic review-based curriculum learning is proposed, which enhances training efficiency while mitigating catastrophic forgetting during curriculum transitions. Training is conducted on the ROS-Gazebo continuous robotic simulation platform, with LiDAR clustering optimization to further reduce the S2R gap. Experimental results demonstrate the CTSAC algorithm outperforms the state-of-the-art non-learning and learning-based algorithms in terms of success rate and success rate-weighted exploration time. Moreover, real-world experiments validate the strong S2R transfer capabilities of CTSAC.
+I. INTRODUCTION
+Autonomous Exploration (AE) enables robots to perceive their environment, plan paths, reach goals, or build maps while avoiding obstacles. This capability is crucial in fields such as space exploration, search and rescue, and reconnaissance. At each time step, the robot must plan the shortest and most efficient path based on the currently observed data. This task falls under sequential decision-making and is classified as an NP-Hard [1]. Currently, AE is classified into non-learning-based and learning-based approaches, depending on the methods employed [2]. Non-learning-based methods primarily include information-theoretic [3], [4], frontier-based [5], and random sampling-based approaches [1], [6]–[8]. Human-designed exploration algorithms often rely on strong assumptions about the environment and the task. However, due to their limited reasoning ability regarding the environment [9], [10], as the environment is gradually revealed, the optimal paths generated from partially known maps frequently become suboptimal [11], leading to inefficiencies in traditional exploration algorithms.
+† The authors are with the School of Information and Control Engineering, China University of Mining and Technology, Xuzhou, 221116, China. Correspondence to: Chunyuyang@cumt.edu.cn (Chunyu Yang). This work was supported by the National Natural Science Foundation of China under Grant 62273350. Code and videos can be found at https://github.com/ShengbenBi/CTSAC. ∗ These authors are co-first authors.
+Rewards
+Actions Observations
+CTSAC
+IMU
+LiDAR
+Environment
+Fig. 1: CTSAC-based autonomous robot exploration system. The robot perceives its environment using LiDAR and IMU sensors, and makes decisions through the CTSAC algorithm, enabling efficient exploration the environment.
+Reinforcement Learning (RL) offers a promising alternative, allowing agents to autonomously develop exploration strategies through their interactions with the environment. However, RL by itself often falls short in addressing the complex decision-making, To overcome this limitation, [12] proposed a method that uses Convolutional Neural Networks (CNN) to extract information from raw sensor data and employs Deep Q-Networks (DQN) to generate robot motion commands. Research by [9], [13]–[17] focused on enhancing prediction accuracy and improving the long-term foresight of agent by innovating network architectures. However, all of these methods rely solely on current observations for decision-making, overlooking the importance of historical information. During experiments, it was found that the robot is prone to get stuck in a local optimum and enter a wandering state, making it difficult to escape from the local optimum. As a typical example of Partially Observable Markov Decision Processes (POMDPs) [18], AE highlights the limitations of relying solely on current observations for accurate decision-making. Consequently, incorporating historical observations is essential for selecting the optimal action [19]. To enable RL to generalize effectively, it is typically trained in complex environments to cover a broad range of scenarios. However, training directly in such environments introduces the risk of model divergence and instability [20][22]. Reference [23] has shown that the Soft Actor-Critic (SAC) algorithm [24] can learn better exploration strategies, but the training time for SAC can extend up to 8.5 days. Additionally, RL often depends on large-scale CNNs to process LiDAR and image data [9], [25]–[27], which exacerbates challenges related to training stability and convergence
+
+
+speed. To address these issues, [25], [28], [29] propose the use of curriculum learning to accelerate training, while [28] introduces the concept of a cumulative course of study to address catastrophic forgetting [30]. Despite these advancements, applying these methods to continuous spaces remains a significant challenge [31], [32]. Consequently, most RLbased methods are still trained in table-based simulation environments [9], [25], [26], [33], which fail to account for the robot’s movement, the authenticity of the environment, and other physical factors, making it difficult to apply these approaches to real-world scenarios [34]. We integrate the powerful sequential perception capabilities of Transformers [35] into the SAC framework to utilize both the robot’s current and historical state information. This integration enables the agent to uncover latent relationships between different regions of the environment and its past states, helping guide the robot out of looping states when trapped in a local optimum, thus enhancing its decisionmaking and reasoning abilities. Additionally, we propose a periodic review-based curriculum learning strategy in the continuous environment of the Gazebo-ROS simulation. This strategy gradually increases task difficulty while revisiting previous tasks to retain knowledge and mitigate catastrophic forgetting. Leveraging the continuous nature of the environment, this approach improves the Sim-To-Real (S2R) transferability of the trained model. Furthermore, building upon the work outlined in [32], we have optimized LiDAR clustering based on the robot’s direction to enhance the segmentation method. This optimization improves the robot’s perception of its environment while reducing the dimensionality of the original LiDAR data, further narrowing the S2R gap and facilitating the model’s deployment in real-world environments, as shown in Fig. 1. The novelties and contributions of this work are:
+• A Transformer-based reinforcement learning algorithm is proposed to reason with both the robot’s historical state information and the environmental context, addressing the issue of the robot’s lack of long-term vision and its tendency to get stuck in loops. • A periodic review-based curriculum learning strategy is introduced to improve the efficiency and stability of the training process, addressing the problem of catastrophic forgetting. • A LiDAR clustering optimization regarding the robot’s direction is used to reduce the sim-to-real gap. A ROSGazebo-Pytorch continuous space training platform is employed, and the proposed algorithm has been validated in both simulated and real-world scenarios.
+II. PROBLEM FORMULATION
+AE is essentially a type of sequential decision-making problem. Since exploration takes place in an unknown environment, the robot cannot observe the full global state and can only acquire partial information through sensors. Accordingly, AE can be described as the following Markov Decision Process: Let st denote the state of the robot at
+time t, which comprises information about surrounding obstacles obtained from the preprocessed LiDAR observations l1, ..., ld, the robot’s linear velocity vr, angular velocity ωr, as well as the relative distance dt and angle θt between the goal point and the robot. Based on the policy π, the robot selects an action at, which comprises a linear velocity vc and an angular velocity ωc, within its kinematic limits. Subsequently, the environment provides a reward rt for the robot’s action, leading to a state transition to the next state st+1. This process repeats until the robot reaches the preset target state.
+III. CTSAC APPROACH
+A. End-to-end goal-oriented robot exploration framework
+Fig. 2 illustrates the end-to-end AE system architecture, referred to as CTSAC, where the robot, equipped with a LiDAR and an Inertial Measurement Unit (IMU), performs environmental perception and state estimation. First, the LiDAR data undergoes preprocessing, where the scanning area is divided into multiple segments based on its dimensional properties, and the LiDAR data within each segment is clustered. Typically, the area is evenly partitioned into several parts [31], [32]. However, for a robot moving forward, perception in the forward direction is more critical. Therefore, we optimize the segmentation method regarding robot direction in Fig. 3. Let d denote the segmentation dimension of the LiDAR, with ∆θm representing the angular span of the m-th segment:
+∆θm =
+{
+4π / (3d − 4) if m < 3d / 4
+4π(3d − 8) / d(3d − 4) if m ≥ 3d / 4 (1)
+With the same LiDAR dimension d, the optimized segmentation method enhances the robot’s forward perception for identical obstacles and reduces the network’s decisionmaking time to approximately 3.7 ms. Besides, the reward setting during the training process is also particularly important. The reward function is mainly composed of seven parts:
+R=
+
+  
+  
+λ1 if goal −λ2 if collision −λ3 · r1(ωr) + λ4 · r2(dt) −λ5 · r3(min ld) − λ6 · rp − λ7
+}
+otherwise
+(2) When the robot reaches the goal, a positive reward λ1 is given, and the episode is terminated. When the robot collides, a negative reward λ2 is given, and the episode is similarly terminated. 1) Turning penalty: A penalty mechanism is implemented to limit the robot’s turning frequency. When the angular velocity ωr exceeds 0.5 rad/s, a penalty of 1 is applied.
+r1(ωr) =
+{
+1 if | ωr |> 0.5
+0 otherwise (3)
+
+
+st , at, st+1, ct
+Target
+Robot State
+Perceived Environment
+l1 l2 l3 l4 ... ld-2 ld-1 ld vr ωr dt θt
+State
+Device
+sti , ati , rti , sti+1 , cti
+Ă
+sti+k, ati+k, rti+k, sti+1+k, cti+k
+Experience Batch
+stj , atj , rtj , stj+1 , ctj
+Ă
+stj+k, atj+k, rtj+k, stj+1+k, ctj+k
+...
+Sampling Batch
+Experience Replay Buffer st , at, rt, st+1, ct
+st1 , at1, rt1, st1+1, ct1
+stn , atn, rtn, stn+1, ctn
+...
+Get Reward
+vr ωr
+dt
+min ld rp target collision
+Reward
+-λ5
+-λ3
+λ1 -λ2
+-λ6
+Step penalty
+Replay Buffer
+rt
+Robot ROS-Gazebo
+LiDAR Clustering Optimization
+LiDAR IMU
+End-to-End SAC Reinforcement Learning
+Improve μv ln(σv)
+μω ln(σω)
+Sampling Action
+Probability Distribution
+vc
+ωc
+Update
+Update
+Periodic Review-based Curriculum Learning Maps of Different Levels
+-λ7
+λ4
+Positional Encoding
+Decoder
+Encoder
+Fully Connected Layer
+Concatenation
+Input
+Output Fully Connected Layer
+n×
+n×
+Transformer
+Transformer Network
+Linear velocity Angular velocity
+Q1
+Q0
+Double Critic Q Networks V V Target
+Critic V Networks
+Actor Networks Select
+Fig. 2: Overview of the CTSAC autonomous exploration system architecture
+Before optimization After optimization
+9
+17
+25
+y
+Lidar_dim = 32
+φObstacles n φLidar radiation
+φObserved obstacles φRadiation after clustering
+x y
+x
+Fig. 3: LiDAR clustering optimization regarding robot direction. The figure illustrates an example with d = 32.
+2) Goal proximity reward: To encourage the robot to move towards the goal, a reward is assigned when the goal distance dt is less than 10 m. To prevent excessive rewards from distorting the overall reward structure, the coefficient λ4 is set relatively small.
+r2(dt) =
+{
+dt / 10 if dt < 10
+1 otherwise (4)
+3) Obstacle proximity penalty: To ensure that the robot maintains a safe distance from obstacles, we process the LiDAR data to determine the minimum distance, denoted as min ld, to any obstacles. When min ld is less than 1 m, a certain penalty is applied.
+r3(min ld) =
+{
+1 − min ld if min ld < 1
+0 otherwise (5)
+4) Wandering penalty: To prevent the robot from falling into a local optimum (e.g., spinning or wandering in one location) and to encourage broader exploration, we introduce a wandering penalty mechanism. This mechanism counts the
+number of times the Manhattan distance between the current position (x, y) and the stored historical positions (xi, yi) within the episode falls below a threshold δ, which is used as the penalty factor Rp, 1(·) is an indicator function that returns 1 if the condition is met and 0 otherwise.
+dm(x, y, xi, yi) =| x − xi | + | y − yi | (6)
+rp =
+n
+∑
+i=1
+1(dm(x, y, xi, yi) < δ) (7)
+5) Step penalty: To encourage the robot to reach the goal as quickly as possible and minimize unnecessary detours, a constant step penalty λ7 is applied at each step. This incentivizes the robot to follow a more direct path, effectively reducing inefficient exploration. To facilitate S2R transfer, we utilized the continuousspace Gazebo simulation for training and built the RL model with PyTorch, integrating ROS for data transmission into a unified ROS-Gazebo-PyTorch training platform. To enhance realism in the Gazebo simulation, we introduced environmental noise, including LiDAR sensor noise and data transmission delays, etc. To improve the robot’s sampling efficiency, a diverse range of randomized scenarios was incorporated, including random obstacles generation as well as randomized initial positions and goal locations for the robot. To mitigate the slow simulation speed in Gazebo, we optimized the simulation rate parameters, achieving an approximately tenfold increase in simulation speed. The CTSAC algorithm was trained for approximately 90,000 steps, reducing the total training time to around 15.2 h.
+B. Transformer-based Soft Actor-Critic
+SAC is an off-policy actor-critic framework based on maximum entropy reinforcement learning, as shown in Fig. 4. Its goal is to maximize the expected reward while also maximizing the entropy of the policy, ensuring the successful
+
+
+Critic V Networks
+Soft Update
+ˆ( t, t)
+Qs a
+Q0
+Q0(st,at)
+Q1(st,at)
+V V Target
+γ(1 - ct)
+JQ1(θ)
+BP
+JQ0(θ)
+BP
+Q(st,at)
+rt
+Qˆ(st , at )
+min
+Q(st,at)
+Actor Networks
+˖Multiplication ˖Addition ˖Subtraction ˖Back Propagation ˖Minimum
+min
+BP
+Double Critic Q Networks Actor Improve Actor Select Parameter Sharing
+BP
+Jπ (φ)
+Entropy Calculation
+V(st)
+BP
+JV(ψ) Q0
+at = fφ (εt;st)
+Fig. 4: SAC architecture diagram.
+completion of the task while promoting as much exploration as possible. SAC consists of three types of neural networks: the Actor networks, double critic Q networks, and critic V networks. The temperature coefficient α is a dynamic adjustment parameter of the initial temperature coefficient α0, which is set to 1 by default. τ is the temperature decay rate, set to 1 × 10−6. During training, the number of episodes ne completed in a specific curriculum stage affects the adjustment of the temperature coefficient. When the training curriculum switches to a different stage, ne is reset to 0. At the beginning of a new environment, the agent focuses more on exploration, and as training progresses, the agent gradually shifts towards exploiting the knowledge it has acquired.
+α = α0 / (1.0 + τ · ne) (8)
+In this work, Transformer is used as the core neural network structure in the SAC model, replacing the fully connected layers typically found in traditional deep reinforcement learning. The designed neural network structure is shown in Fig. 5: 1) Actor networks: The Actor network is divided into two parts: Actor Select and Actor Improve, both of which share parameters. The Actor Select network is invoked during the decision-making process, where its input consists of the robot’s states over T steps in the environment. After dimensional expansion via a fully connected layer, the input is passed through a Transformer layer, which generates correlation information between the steps and merges it with the current step’s data. An average operation is then applied along the sequence length dimension, and the result is concatenated with the current step’s information along the feature dimension. Finally, the concatenated output is passed through two fully connected layers, which generate the mean μ and the log standard deviation ln(σ) of the action. The Actor Improve network is invoked during the policy improvement process, receiving experience sequences from the experience replay buffer. To generate sequence-based action data for the Q network to learn, the sequence data processed by the Transformer layer is concatenated with the original data, preserving the original state information while inferring contextual insights. 2) Critic V networks: The V network consists of two components: one for estimating the current state value V (st) and another for calculating the target value V (st+1). The
+FC2 FC3
+FC4
+Cat(2)
+Transformer
+Mean (1)
+FC1
+[:, -1, :]
+State 1×T×Ds
+1×T×1024 1×T×1024
+1×1×1024 1×1×2048 1×1×512
+1×1×1024
+1×1×Da
+ln(σ) 1×1×Da
+(a) Actor Select network architecture
+FC1
+Transformer Cat(2) FC2
+FC3
+FC4
+State-batch B×T×Ds
+B×T×1024 B×T×1024 B×T×2048 B×T×512
+B×T×Da
+ln(σ) B×T×Da
+(b) Actor Improve network architecture
+FC1
+Transformer FC2
+Mean (1) Cat(2)
+[:, -1, :]
+FC3
+State-batch B×T×Ds
+B×T×1024 B×T×1024 B×1×1024
+B×1×1024
+B×1×2048 B×1×512
+V(s) B×1×1
+(c) V network architecture
+FC1
+Transformer FC2
+Mean (1) Cat(2)
+[:, -1, :]
+FC3
+Action-batch (B×T×Db)
+Cat(2)
+Action-batch B×T×Da
+State-batch B×T×Ds
+B×T×(Ds+Da) B×T×1024 B×T×1024 B×1×1024 B×1×2048
+B×1×1024
+B×1×512
+Q(s,a) B×1×1
+(d) Q network architecture
+Fig. 5: Transformer-based architecture for SAC network. The F C denotes a fully connected layer, while Mean(n) and Cat(n) represent dimension-wise averaging and concatenation operations along n dimensions, respectively. The batch parameters include B (batch size) and T (sequence length per sample). For feature dimensions, Ds and Da correspond to the state feature dimension and action feature dimension, respectively.
+parameters of the V Target network are updated through a soft update from the V network. The structure of the V networks is similar to the Actor Select network, but the difference is that the V networks output only a single onedimensional value V (s) at the end.
+3) Double critic Q networks: The Q network consists of two Q networks with identical structures but independent parameters, which are updated separately. Ultimately, the final Q value is the minimum of the two network outputs. The Q network architecture is similar to the V network, with the main difference being that the Q network takes the concatenation of the state and action batches as input, while the rest of the structure remains the same. During training, the neural network is updated once every two iterations. The learning rate is set to 5 × 10−4, the discount factor γ is set to 0.98, the experience buffer size is set to 1 × 105, the batch size is 256, and the random seed is set to 1. The Adam optimizer is used to optimize the
+
+
+neural network parameters. Additionally, to prevent overfitting, dropout and weight decay techniques are applied within the Transformer structure. The embedding dimension of the Transformer layer is set to 1024, with 2 encoder blocks and 2 decoder blocks, each containing 8 attention heads.
+C. Periodic review-based curriculum learning
+To accelerate the training speed and stability of the agent and to prevent it from falling into local optima that could lead to training divergence, we employ a periodic review-based curriculum learning approach to train Transformer-based soft actor-critic (TSAC), while also mitigating the common issue of catastrophic forgetting in curriculum learning. In each training phase, revisiting previous tasks at specific intervals to ensure successful learning in new environments while effectively retaining the knowledge acquired from earlier stages.
+Fig. 6: Environment for different levels of training and testing. The world in the first row are training worlds, the second row are testing worlds, and the graphic shows a 2D schematic.
+Algorithm 1: Periodic review-based curriculum learning for TSAC
+1: Initialize environment E, initialize T SAC, j ← 0, i ← 0, environment container (EC) ← ∅, e(n) represents the j-th level training environment. 2: for j = 1 to n do
+3: EC ← EC ∪ {e(j)} 4: success rate ← 0 5: while success rate ≤ β do
+6: E ← sample from EC with probability P(i,j) 7: Perform T SAC actions in environment E 8: success rate ← 1
+n
+n
+∑
+k=1
+success history [k]
+9: end while 10: end for
+Different levels of training environments are illustrated as shown in Fig. 6. The environments are designed in Gazebo, including dead ends, various sizes of obstacles, randomly appearing dynamic obstacles and situations where certain paths may be blocked due to random obstacles. These environments essentially cover typical scenarios encountered in AE. Each environment is modeled as an individual model, which can be generated using the spawn model feature and removed using the delete model function. The pseudocode for curriculum learning is shown in Algorithm 1. In this study, the curriculum learning consists
+of six stages. With each stage advancement, the environment container adds worlds with corresponding difficulty. The generation probability of the i-th environment at stage j is given by (9):
+p(i,j) = i2
+∑j
+k=1 k2 (9)
+IV. EXPERIMENTS AND DISCUSSION
+The proposed CTSAC was compared with state-ofthe-art non-learning methods: Far Planner (FP) [8] and Rapidly-Exploring Random Tree (RRT*) [36] combined with Dynamic Window Approach (DWA) for navigation and learning-based methods: TD3 [31]. The parameters for the baseline algorithms were set to their default recommended values from open-source implementations.
+A. Simulation experiment
+In the simulation experiment, test worlds were designed as shown in the second row of Fig. 6. The platform used Ubuntu 20.04 with Intel i5 12400 and NVIDIA RTX 4080 GPU. The simulation environment uses Gazebo with a scene size of 20m × 20m. The robot used is a TurtleBot3, with a linear velocity range of [0, 1] m/s and an angular velocity range of [−1, 1] rad/s. A Velodyne VLP16 LiDAR is used, with a detection range of 6 m and a 360◦ scanning field. To evaluate generalization, six test worlds not included in the training dataset were used. Each robot was allowed a maximum of 1000 iterations, with 100 runs per world, and tested under the same initial and goal positions. The Success Rate (SR) and Success Rate Weighted Exploration Time (SET) for four algorithms were recorded. As shown in Fig. 7(a), CTSAC quickly reached the goal, benefiting from Transformer-based SAC decision-making. The TD3 algorithm struggled to find the narrow entrance due to limited detection accuracy in the front, while the FP algorithm got stuck in a dead end due to a lack of environmental understanding. The RRT* algorithm followed walls, posing safety concerns, but CTSAC avoided this behavior. In Fig. 7(d), TD3 performed best in World 4 but lacked generalization. CTSAC achieved high success rates and shorter exploration times across all environments, indicating optimal performance. Learning-based methods, despite higher variance, demonstrate greater flexibility and generalization.
+B. Ablation experiment
+1) Transformer: To validate that the introduction of the Transformer structure can enhance decision-making quality and effectively address the issues of robots wandering in place and escaping local optima, we compared CTSAC with CSAC (the SAC algorithm without the Transformer). Both models were trained under identical settings. As shown in Fig. 7(b), in an environment with the same dead end, CTSAC successfully navigated past the obstacle, while CSAC continued to wander. CTSAC effectively utilizes the self-attention mechanism of the Transformer to capture long-term historical information, enabling it to make more
+
+
+−10 −5 0 5 10
+X (m)
+−10
+−5
+0
+5
+10
+Y (m)
+TD3 FP RRT* CTSAC Start End Goal
+(a) World 6-1
+−10 −5 0 5 10
+X (m)
+−10
+−5
+0
+5
+10
+Y (m)
+CTSAC CSAC Start End Goal
+(b) World 6-2
+−10 −5 0 5 10
+X (m)
+−10
+−5
+0
+5
+10
+Y (m)
+TSAC C-TSAC CTSAC Start End Goal
+(c) World 6-3
+135 orld
+00
+0
+0
+0
+0
+10
+SR
+RRT* FP TD3 CTSAC
+135 orld
+05
+0
+0
+0
+0
+10
+SR
+CSAC CTSAC
+135 orld
+0
+0
+0
+0
+10
+SR
+TSAC C-TSAC CTSAC
+135 orld
+0
+0
+0
+0
+0
+100
+10
+SET ( )
+RRT* FP TD3 CTSAC
+(d) PR 1
+135 orld
+0
+0
+0
+0
+0
+SET (
+!
+)
+CSAC CTSAC
+(e) PR 2
+1" 3# 5$
+%orld
+0
+"0
+#0
+$0
+&0
+100
+SET (
+'
+)
+TSAC C-TSAC CTSAC
+(f) PR 3
+−35 −(0 −5 10 (5
+X (m)
+−15
+0
+15
+30
+Y (m)
+CTSAC FP TD3
+Start End Goal
+(g) Exploration trajectory (h) Global map
+Fig. 7: Experimental trajectory diagram, SR, and SET, (a)-(c) show trajectory plots in simulation environment world5. (d)-(f) show Performance Ssults (PR) plots in various test worlds, including SR and SET. Histogram means the average value for different metrics and the error bar is the range under a 95% confidence interval. (g) shows trajectory plots of real-world experiments, and (h) shows the map built during exploration.
+accurate decisions and avoid stagnation. Furthermore, as depicted in Fig. 7(e), the SR and SET of CTSAC outperform those of CSAC by 10%. This demonstrates that CTSAC not only improves task success rates but also optimizes exploration efficiency by reducing redundant behaviors. The performance gap becomes even more pronounced in more complex environments. 2) Curriculum learning: A comparative experiment on periodic review-based curriculum learning was conducted to evaluate the generalization performance of CTSAC and its ability to mitigate the forgetting effect. The experiment compared CTSAC, C-TSAC (traditional switchingbased curriculum) and TSAC (without curriculum learning) in terms of generalization performance on test worlds. All three algorithms, based on the Transformer-based SAC, were trained under identical settings. As shown in Fig. 7(c)(f), TSAC exhibited poor generalization, as it was trained only on the final world, limiting its acquired knowledge. This highlights the importance of curriculum learning in improving the generalization performance of RL. C-TSAC showed moderate generalization by learning from diverse worlds, but still experienced some forgetting in the simpler world 1. CTSAC, on the other
+hand, maintained a stable success rate across all environments, being 20% higher than C-TSAC in world 1, with minimal performance gap in more complex environments. This suggests that CTSAC, through its periodic reviewbased curriculum learning mechanism, effectively mitigated the forgetting effect and showed enhanced generalization performance across a variety of environments.
+C. Real-world experiment
+SR SET(s)
+FP 0.575 104.83 ± 30.59 TD3 0.775 59.98 ± 20.62 CTSAC 0.8 25.79 ± 18.59
+TABLE I: Performance results from real-world experiments.
+To evaluate the S2R performance of CTSAC in real-world settings, as shown in Fig. 1, an underground parking lot covering an area of 45 by 60 m was selected as the test site. The environment features pillars, narrow passages, doors that may open or close, and pedestrians. CTSAC was tested and compared with FP and TD3, with multiple starting and goal points set. The robot used for testing was an AgileX Bunker, equipped with an NVIDIA Jetson Orin NX and a Velodyne VLP16 LiDAR. Each algorithm was tested 40 times. As shown in Table 1, CTSAC achieved the highest success rate of 0.8, which is 22% higher than FP and comparable to TD3. However, CTSAC demonstrated a shorter exploration time, indicating more efficient path planning. It also exhibited good transferability from simulation to real-world environments. In Fig. 7(g), CTSAC successfully escaped the local optimum where FP got stuck, navigating through the narrow passage to reach the goal. In contrast, TD3 failed to pass through the narrow passage due to its poor observation performance. We observed that the robot tended to slip, indicating that the velocity tracking controller did not effectively track the commands, which needs to be addressed in future work.
+V. CONCLUSION
+In this work, we propose CTSAC, a Transformer-based reinforcement learning method with curriculum learning for goal-oriented autonomous robot exploration. By integrating the Transformer into SAC, the robot is able to leverage historical information, enhancing its reasoning ability regarding the environment and improving the quality of its decision-making. Additionally, we introduced a periodic review-based curriculum learning approach that optimized the switching mechanism and mitigated catastrophic forgetting, thus improving the model’s generalization performance. Furthermore, we conducted S2R transfer experiments, where CTSAC demonstrated excellent S2R performance, thanks to the exploration framework, continuous training environments, and LiDAR clustering optimization. Future work will draw inspiration from large-scale models and embodied intelligence approaches to further improve the model’s performance in autonomous exploration.
+
+
+REFERENCES
+[1] C. Cao, H. Zhu, Z. Ren, H. Choset, and J. Zhang, “Representation granularity enables time-efficient autonomous exploration in large, complex worlds,” Science Robotics, vol. 8, no. 80, 2023. [2] L. C. Garaffa, M. Basso, A. A. Konzen, and E. P. de Freitas, “Reinforcement learning for mobile robotics exploration: A survey,” IEEE Trans. Neural Netw. Learn. Syst., vol. 34, no. 8, pp. 3796-3810, 2023. [3] S. Bai, J. Wang, F. Chen, and B. Englot, “Information-theoretic exploration with bayesian optimization,” in 2016 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS). IEEE, 2016, pp. 1816-1822. [4] C. Stachniss, G. Grisetti, and W. Burgard, ”Information gain-based exploration using Rao-Blackwellized particle filters,” in Robotics: Science and Systems, vol. 2, no. 1, 2005, pp. 65-72. [5] J. Faigl and M. Kulich, “On benchmarking of frontier-based multirobot exploration strategies,” in 2015 European Conference on Mobile Robots (ECMR). IEEE, 2015, pp. 1-8. [6] C. Cao, H. Zhu, H. Choset, and J. Zhang, ”TARE: A hierarchical framework for efficiently exploring complex 3D environments,” in Robotics: Science and Systems, vol. 5, p. 2, 2021.
+[7] T. Dang, M. Tranzatto, S. Khattak, F. Mascarich, K. Alexis, and M. Hutter, “Graph-based subterranean exploration path planning using aerial and legged robots,” J. Field Rob., vol. 37, no. 8, pp. 1363-1388, 2020. [8] F. Yang, C. Cao, H. Zhu, J. Oh, and J. Zhang, “FAR planner: Fast, attemptable route planner using dynamic visibility update,” in 2022 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS). IEEE, 2022, pp. 9-16. [9] D. Zhu, T. Li, D. Ho, C. Wang, and M. Q.-H. Meng, “Deep reinforcement learning supervised autonomous exploration in office environments,” in 2018 IEEE International Conference on Robotics and Automation (ICRA). IEEE, 2018, pp. 7548-7555. [10] R. Shrestha, F.-P. Tian, W. Feng, P. Tan, and R. Vaughan, “Learned Map Prediction for Enhanced Mobile Robot Exploration,” in 2019 International Conference on Robotics and Automation (ICRA). IEEE, 2019, pp. 1197-1204. [11] Y. Cao, T. Hou, Y. Wang, X. Yi, and G. Sartoretti, “ARiADNE: A reinforcement learning approach using attention-based deep networks for exploration,” in 2023 IEEE International Conference on Robotics and Automation (ICRA). IEEE, 2023, pp. 10219-10225. [12] L. Tai and M. Liu, “A robot exploration strategy based on Qlearning network,” in 2016 IEEE International Conference on Realtime Computing and Robotics (RCAR). IEEE, 2016, pp. 57-62.
+[13] T. Chen, S. Gupta, and A. Gupta, “Learning Exploration Policies for Navigation,” arXiv preprint arXiv:1903.01959, 2019.
+[14] E. Parisotto, F. Song, J. Rae, R. Pascanu, C. Gulcehre, S. Jayakumar, M. Jaderberg, R. L. Kaufman, A. Clark, S. Noury, et al., ”Stabilizing transformers for reinforcement learning,” in Proceedings of the International Conference on Machine Learning. 2020, pp. 7487-7498. [15] T.-H. Wang, A. Maalouf, W. Xiao, Y. Ban, A. Amini, G. Rosman, S. Karaman, and D. Rus, “Drive Anywhere: Generalizable End-to-end Autonomous Driving with Multi-modal Foundation Models,” in 2024 IEEE International Conference on Robotics and Automation (ICRA). IEEE, 2024, pp. 6687-6694. [16] W. Zhu and M. Hayashibe, “Learn to Navigate in Dynamic Environments with Normalized LiDAR Scans,” in 2024 IEEE International Conference on Robotics and Automation (ICRA). IEEE, 2024, pp. 7568-7575. [17] S. Gupta, J. Davidson, S. Levine, R. Sukthankar, and J. Malik, ”Cognitive Mapping and Planning for Visual Navigation,” in Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR). IEEE, 2017. [18] F.-M. Luo, Z. Tu, Z. Huang, and Y. Yu, “Efficient Recurrent OffPolicy RL Requires a Context-Encoder-Specific Learning Rate,” arXiv preprint arXiv:2405.15384, 2024.
+[19] S. Hu, L. Shen, Y. Zhang, Y. Chen, and D. Tao, “On Transforming Reinforcement Learning With Transformers: The Development Trajectory,” IEEE Trans. Pattern Anal. Mach. Intell., pp. 1-20, 2024.
+[20] X. Wang, Y. Chen, and W. Zhu, “A Survey on Curriculum Learning,” IEEE Trans. Pattern Anal. Mach. Intell., pp. 1-1, 2021.
+[21] S. Narvekar, B. Peng, M. Leonetti, J. Sinapov, M. E. Taylor, and P. Stone, ”Curriculum learning for reinforcement learning domains: A framework and survey,” Journal of Machine Learning Research, vol. 21, no. 181, pp. 1-50, 2020.
+[22] P. Soviany, R. T. Ionescu, P. Rota, and N. Sebe, “Curriculum Learning: A Survey,” Int J Comput Vis, vol. 130, no. 6, pp. 1526-1565, 2022. [23] S. Sivashangaran and A. Eskandarian, “Deep reinforcement learning for autonomous ground vehicle exploration without a-priori maps,” Advances in Artificial Intelligence and Machine Learning, vol. 03, no. 02, pp. 1198-1219, 2023. [24] T. Haarnoja, A. Zhou, P. Abbeel, and S. Levine, ”Soft actor-critic: Offpolicy maximum entropy deep reinforcement learning with a stochastic actor,” in Proc. Int. Conf. Machine Learning, 2018, pp. 1861-1870. [25] Z. Li, J. Xin, and N. Li, “Autonomous exploration and mapping for mobile robots via cumulative curriculum reinforcement learning,” in 2023 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS). IEEE, 2023, pp. 7495-7500. [26] J. Fan, X. Zhang, and Y. Zou, “Hierarchical path planner for unknown space exploration using reinforcement learning-based intelligent frontier selection,” Expert Syst. Appl., vol. 230, p. 120630, 2023. [27] F. Niroui, K. Zhang, Z. Kashino, and G. Nejat, “Deep reinforcement learning robot for search and rescue applications: Exploration in unknown cluttered environments,” IEEE Robot. Autom. Lett., vol. 4, no. 2, pp. 610-617, 2019. [28] L. Chang, L. Shan, W. Zhang, and Y. Dai, “Distributed Deep Reinforcement Learning: An Overview,” Rob. Comput. Integr. Manuf., vol. 83, pp. 102570, 2023. [29] H.-C. Wang, S.-C. Huang, P.-J. Huang, K.-L. Wang, Y.-C. Teng, Y.-T. Ko, D. Jeon, and I.-C. Wu, ”Curriculum reinforcement learning from avoiding collisions to navigating among movable obstacles in diverse environments,” IEEE Robotics and Automation Letters, vol. 8, no. 5, pp. 2740-2747, 2023. [30] A. A. Rusu, N. C. Rabinowitz, G. Desjardins, H. Soyer, J. Kirkpatrick, K. Kavukcuoglu, R. Pascanu, and R. Hadsell, ”Progressive neural networks,” arXiv preprint arXiv:1606.04671, 2016.
+[31] R. Cimurs, I. H. Suh, and J. H. Lee, “Goal-driven autonomous exploration through deep reinforcement learning,” IEEE Robot. Autom. Lett., vol. 7, no. 2, pp. 730-737, 2022. [32] L. Tai, G. Paolo, and M. Liu, “Virtual-to-real deep reinforcement learning: Continuous control of mobile robots for mapless navigation,” in 2017 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS). IEEE, 2017, pp. 31-36. [33] L. Jiang, H. Huang, and Z. Ding, “Path planning for intelligent robots based on deep Q-learning with experience replay and heuristic knowledge,” IEEE/caa J. Autom. Sinica, vol. 7, no. 4, pp. 1179-1189, 2020. [34] S. Zhu, J. Zhou, A. Chen, M. Bai, J. Chen and J. Xu, ”MAexp: A Generic Platform for RL-based Multi-Agent Exploration,” 2024 IEEE International Conference on Robotics and Automation (ICRA). IEEE, 2024, pp. 5155-5161. [35] A. Vaswani, “Attention is All you Need,”in Advances in Neural Information Processing Systems, 2017.
+[36] S. Karaman, M. R. Walter, A. Perez, E. Frazzoli, and S. Teller, “Anytime Motion Planning using the RRT*,” in 2011 IEEE International Conference on Robotics and Automation. IEEE, 2011, pp. 1478-1483.
