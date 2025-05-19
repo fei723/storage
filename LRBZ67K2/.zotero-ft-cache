@@ -1,0 +1,479 @@
+FAST-LIO: A Fast, Robust LiDAR-inertial Odometry Package by
+Tightly-Coupled Iterated Kalman Filter
+Wei Xu1, Fu Zhang1
+Abstract— This paper presents a computationally efficient and robust LiDAR-inertial odometry framework. We fuse LiDAR feature points with IMU data using a tightly-coupled iterated extended Kalman filter to allow robust navigation in fastmotion, noisy or cluttered environments where degeneration occurs. To lower the computation load in the presence of a large number of measurements, we present a new formula to compute the Kalman gain. The new formula has computation load depending on the state dimension instead of the measurement dimension. The proposed method and its implementation are tested in various indoor and outdoor environments. In all tests, our method produces reliable navigation results in realtime: running on a quadrotor onboard computer, it fuses more than 1,200 effective feature points in a scan and completes all iterations of an iEKF step within 25 ms. Our codes are opensourced on Github2.
+I. INTRODUCTION
+Simultaneous localization and mapping (SLAM) is a fundamental prerequisite of mobile robots, such as unmanned aerial vehicles (UAVs). Visual (-inertial) odometry (VO), such as Stereo VO [1] and Monocular VO [2, 3] are commonly used on mobile robots due to their lightweight and low-cost. Although providing rich RGB information, visual solutions lack direct depth measurements and require much computation resources to reconstruct the 3D environment for trajectory planning. Moreover, they are very sensitive to lighting conditions. Light detection and ranging (LiDAR) sensors could overcome all these difficulties but have been too costly (and bulky) for small-scale mobile robots. Solid-state LiDARs recently emerge as main trends in LiDAR developments, such as those based on microelectro-mechanical-system (MEMS) scanning [4] and rotating prisms [5]. These LiDARs are very cost-effective (in a cost range similar to global shutter cameras), lightweight (can be carried by a small-scale UAV), and of high performance (producing active and direct 3D measurements of long-range and high-accuracy). These features make such LiDARs viable for UAVs, especially industrial UAVs, which need to acquire accurate 3D maps of the environments (e.g., aerial mapping) or may operate in cluttered environments with severe illumination variations (e.g., post-disaster search and inspection). Despite the great potentiality, solid-state LiDARs bring new challenges to SLAM: 1) the feature points in LiDAR measurements are usually the geometrical structures (e.g.,
+This work is funded by a DJI (project no.200009538). 1All authors are with Mechatronics and Robotic Systems (MaRS) Laboratory, Department of Mechanical Engineering, University of Hong Kong. {xuweii, fuzhang}@hku.hk 2https://github.com/hku-mars/FAST_LIO
+Onboard Computer (DJI Manifold 2-C)
+LiDAR (Livox AVIA)
+Airframe (280mm WheelBase)
+Camera
+Fig. 1. Our LiDAR-inertial navigation system runs on a Livox AVIA LiDAR3 and a DJI Manifold 2-C onboard computer4, all on a customized small-scale quadrotor UAV (280 mm wheelbase). The RGB camera is not used in our algorithm, but only for visualization. Video is available at https://youtu.be/iYCY6T79oNU
+edges and planes) in the environments. When the UAV is operating in cluttered environments where no strong features are present, the LiDAR-based solution easily degenerates. This problem is more obvious when the LiDAR has a small FoV. 2) Due to the high-resolution along the scanning direction, a LiDAR scan usually contains many feature points (e.g., a few thousand). While these feature points are not adequate to reliably determine the pose in case of degeneration, tightly fusing such a large number of feature points to IMU measurements requires tremendous computational resources that are not affordable by the UAV onboard computer. 3) Since the LiDAR samples point sequentially with a few laser/receiver pairs, laser points in a scan are always sampled at different times, resulting in motion distortion that will significantly degrade a scan registration [6]. The constant rotations of UAV propellers and motors also introduce significant noises to the IMU measurements. To make the LiDAR navigation viable for small-scale mobile robots such as UAVs, we propose the FAST-LIO, a computationally efficient and robust LiDAR-inertial odometry package. More specifically, our contributions are as follows: 1) To cope with fast-motion, noisy or cluttered environments where degeneration occurs, we adopt a tightly-coupled iterated Kalman filter to fuse LiDAR feature points with IMU measurements. We propose a formal back-propagation process to compensate for the motion distortion; 2) To lower the computation load caused by a large number of LiDAR
+3https://www.livoxtech.com/de/avia 4https://www.dji.com/cn/manifold-2/specs
+arXiv:2010.08196v3 [cs.RO] 14 Apr 2021
+
+
+feature points, we propose a new formula for computing the Kalman gain and prove its equivalence to the conventional Kalman gain formula. The new formula has a computation complexity depending on the state dimension instead of the measurement dimension. 3) We implement our formulations into a fast and robust LiDAR-inertial odometry software package. The system is able to run on a small-scale quadrotor onboard computer. 4) We conduct experiments in various indoor and outdoor environments and with actual UAV flight tests (Fig. 1) to validate the system’s robustness when fast motion or intense vibration noise exists. The remaining paper is organized as follows: In Section. II, we discuss relevant research works. We give an overview of the complete system pipeline and the details of each key component in Section. III. The experiments are presented in Section. IV, followed by conclusions in Section. V.
+II. RELATED WORKS
+Existing works on LiDAR SLAM are extensive. Here we limit our review to the most relevant works: LiDAR-only odometry and mapping, loosely-coupled and tightly-coupled LiDAR-Inertial fusion methods.
+A. LiDAR Odometry and Mapping
+Besl et al. [6] propose an iterated closest points (ICP) method for scan registration, which builds the basis for LiDAR odometry. ICP performs well for dense 3D scans. However, for sparse point clouds of LiDAR measurements, the exact point matching required by ICP rarely exists. To cope with this problem, Segal et al. [7] propose a generalized-ICP based on the point-to-plane distance. Then Zhang et al. [8] combine this ICP method with a pointto-edge distance and developed a LiDAR odometry and mapping (LOAM) framework. Thereafter, many variants of LOAM have been developed, such as LeGO-LOAM [9] and LOAM-Livox [10]. While these methods work well for structured environments and LiDARs of large FoV, they are very vulnerable to featureless environments or small FoV LiDARs [10].
+B. Loosely-coupled LiDAR-Inertial Odometry
+IMU measurements are commonly used to mitigate the problem of LiDAR degeneration in featureless environments. Loosely-coupled LiDAR-inertial odometry (LIO) methods typically process the LiDAR and IMU measurements separately and fuse their results later. For example, IMU-aided LOAM [8] takes the pose integrated from IMU measurements as the initial estimate for LiDAR scan registration. Zhen et al. [11] fuse the IMU measurements and the Gaussian Particle Filter output of LiDAR measurements using the error-state EKF. Balazadegan et al [12] add the IMU-gravity model to estimate the 6-DOF ego-motion to aid the LiDAR scan registration. Zuo et al. [13] use a Multi-State Constraint Kalman Filter (MSCKF) to fuse the scan registration results with IMU and visual measurements. A common procedure of the loosely-coupled approach is obtaining a pose measurement by registering a new scan and then fusing the
+pose measurement with IMU measurements. The separation between scan registration and data fusion reduces the computation load. However, it ignores the correlation between the system’s other states (e.g., velocity) and the pose of the new scan. Moreover, in the case of featureless environments, the scan registration could degenerate in certain directions and causes unreliable fusion in later stages.
+C. Tightly-coupled LiDAR-Inertial Odometry
+Unlike the loosely-coupled methods, tightly-coupled LiDAR-inertial odometry methods typically fuse the raw feature points (instead of scan registration results) of LiDAR with IMU data. There are two main approaches to tightlycoupled LIO: optimization-based and filter-based. Geneva et al. [14] use a graph optimization with IMU pre-integration constrains [15] and plane constraints [16] from LiDAR feature points. Recently, Ye et al. [17] propose the LIOM package which uses a similar graph optimization but is based on edge and plane features. For filter-based methods, Bry [18] uses a Gaussian Particle Filter (GPF) to fuse the data of IMU and a planar 2D LiDAR. This method has also been used in the Boston Dynamics Atlas humanoid robot. Since the computation complexity of particle filter grows quickly with the number of feature points and the system dimension, Kalman filter and its variants are usually more preferred, such as extended Kalman filter [19], unscented Kalman filter [20], and iterated Kalman filter [21]. Our method falls into the tightly-coupled approach. We adopt an iterated extended Kalman filter similar to [21] to mitigate linearization errors. Kalman filter (and its variants) has a time complexity O (m2) where m is the measurement dimension [22], this may lead to remarkably high computation load when dealing with a large number of LiDAR measurements. Naive down-sampling would reduce the number of measurements but at the cost of information loss. [21] reduces the number of measurements by extracting and fitting ground planes similar to [9]. This, however, does not apply to aerial applications where the ground plane may not always present.
+III. METHODOLOGY
+A. Framework Overview
+This paper will use the notations shown in Table I. The overview of our workflow is shown in Fig. 2. The LiDAR inputs are fed into the feature extraction module to obtain planar and edge features. Then the extracted features and IMU measurements are fed into our state estimation module for state estimation at 10Hz−50Hz. The estimated pose then registers the feature points to the global frame and merges them with the feature points map built so far. The updated map is finally used to register further new points in the next step.
+B. System Description
+1) / operator:
+
+
+LiDAR Inputs IMU Inputs Map
+(History Feature Points)
+Odometry
+Framework
+overview
+State Update
+Residual Computation
+State Estimation (10-50Hz)
+100-250Hz
+Converged?
+N
+Y
+10-50Hz
+100k-500kHz
+(Section III-C-1)
+(Section III-C-2)
+(Section III-C-4)
+(Section III-C-3)
+Updated Feature Points
+Add
+Retrieve Sub-Map
+Iterated Kalman Filter
+Time
+= −f(x, u,0)
+t2 ti tk
+IMU inputs:
+Feature points: × × × × × × × × ×
+Projection of points
+A LiDAR Scan
+IInMpUuts:
+Feature
+Points:
+......
+Forward Propagation:
+Backward Propagation: ... ...
+(a) (b)
+Feature Extraction Planar Edge
+Points Accumulation
+Pre-Processing Forward Propagation
+Backward Propagation
+&Motion Compensation
+Fig. 2. System overview of FAST-LIO. (a): the overall pipeline; (b): the forward and backward propagation.
+TABLE I
+SOME IMPORTANT NOTATIONS
+Symbols Meaning
+tk The scan-end time of the k-th LiDAR scan. τi The i-th IMU sample time in a LiDAR scan. ρj The j-th feature point’s sample time in a LiDAR scan. Ii, Ij , Ik The IMU body frame at the time τi, ρj and tk. Lj , Lk The LiDAR body frame at the time ρj and tk. x, ̂x,  ̄x The ground-true, propagated, and updated value of x. x ̃ The error between ground-true x and its estimation  ̄x.
+̂xκ The κ-th update of x in the iterated Kalman filter. xi, xj , xk The vector (e.g.,state) x at time τi, ρj and tk. ˇxj Estimate of xj relative to xk in the back propagation.
+Let M be the manifold of dimension n in consideration (e.g., M = SO(3)). Since manifolds are locally homeomorphic to Rn, we can establish a bijective mapping from a local neighborhood on M to its tangent space Rn via two encapsulation operators and [23]:
+: M×Rn→M; : M×M → Rn
+M= SO(3) : R r = RExp(r); R1 R2 = Log(RT
+2 R1)
+M= Rn : a b = a+b; a b = a−b
+where Exp (r) = I+ r
+‖r‖ sin (‖r‖)+ r2
+‖r‖2 (1−cos (‖r‖)) is the exponential map [23] and Log(·) is its inverse map. For a compound manifold M = SO(3) × Rn we have:
+[R
+a
+] [r
+b
+]
+=
+[R r a+b
+]
+;
+[R1 a
+] [R2
+b
+]
+=
+[R1 R2 a−b
+]
+From the above definition, it is easy to verify that
+(x u) x = u; x (y x) = y; ∀x, y ∈ M, ∀u ∈ Rn.
+2) Continuous model:
+Assuming an IMU is rigidly attached to the LiDAR with a known extrinsic I TL = (I RL, I pL
+). Taking the IMU frame (denoted as I) as the body frame of reference leads to a kinematic model:
+Gp ̇ I = GvI , Gv ̇ I = GRI (am − ba − na) + Gg, Gg ̇ = 0
+GR ̇ I = GRI bωm − bω − nωc∧, b ̇ ω = nbω, b ̇ a = nba
+(1) where GpI , GRI are the position and attitude of IMU in the global frame (i.e., the first IMU frame, denoted as G),
+Gg is the unknown gravity vector in the global frame, am and ωm are IMU measurements, na and nω are the white noise of IMU measurements, ba and bω are the IMU bias modelled as the random walk process with Gaussian noises nba and nbω, and the notation bac∧ denotes the skewsymmetric matrix of vector a ∈ R3 that maps the cross product operation.
+3) Discrete model:
+Based on the operation defined above, we can discretize the continuous model in (1) at the IMU sampling period ∆t using a zero-order holder. The resultant discrete model is
+xi+1 = xi (∆tf (xi, ui, wi)) (2)
+where i is the index of IMU measurements, the function f , state x, input u and noise w are defined as below:
+M = SO(3) × R15, dim(M) = 18
+x .= [GRT
+I
+GpT
+I
+GvT
+I bT
+ω bT
+a
+GgT ]T ∈ M
+u .= [ωT
+m aT
+m
+]T , w =. [nT
+ω nT
+a nT
+bω nT
+ba
+]T
+f (xi, ui, wi) =
+
+      
+ωmi − bωi − nωi GvIi
+GRIi (ami − bai − nai ) + Ggi
+nbωi
+nbai
+03×1
+
+      
+(3)
+4) Preprocessing of LiDAR measurements:
+LiDAR measurements are point coordinates in its local body frame. Since the raw LiDAR points are sampled at a very high rate (e.g., 200kHz), it is usually not possible to process each new point once being received. A more practical approach is to accumulate these points for a certain time and process them all at once. In FAST-LIO, the minimum accumulation interval is set to 20 ms, leading to up to 50 Hz full state estimation (i.e., odometry output) and map update as shown in Fig. 2 (a). Such an accumulated set of points is called a scan, and the time for processing it is denoted as tk (see Fig. 2 (b)). From the raw points, we extract planar points with high local smoothness [8] and edge points with low local smoothness as in [10]. Assume the number of feature points is m, each is sampled at time ρj ∈ (tk−1, tk] and is denoted as Lj pfj , where Lj is the LiDAR local frame at the time ρj. During a LiDAR scan, there are also multiple IMU
+
+
+F ̃x=
+
+      
+Exp (− ̂ωi∆t) 0 0 −A( ̂ωi∆t)T∆t 0 0 0 I I∆t 0 0 0 −G ̂RIi b̂aic∧∆t 0 I 0 −G ̂RIi ∆t I∆t 0 00 I 0 0 0 00 0 I 0 0 00 0 0 I
+
+      
+, Fw=
+
+      
+−A ( ̂ωi∆t)T ∆t 0 0 0 0 0 00 0 −G ̂RIi ∆t 0 0 0 0 I∆t 0 0 0 0 I∆t 0 0 00
+
+      
+(7)
+measurements, each sampled at time τi ∈ [tk−1, tk] with the respective state xi as in (2). Notice that the last LiDAR feature point is the end of a scan, i.e., ρm = tk, while the IMU measurements may not necessarily be aligned with the start or end of the scan.
+C. State Estimation
+To estimate the states in the state formulation (2), we use an iterated extended Kalman filter. Moreover, we characterize the estimation covariance in the tangent space of the state estimate as in [23, 24]. Assume the optimal state estimate of the last LiDAR scan at tk−1 is x ̄k−1 with covariance matrix
+ ̄Pk−1. Then  ̄Pk−1 represents the covariance of the random error state vector defined below:
+x ̃k−1
+.= xk−1  ̄xk−1 =
+[
+δθT G
+p ̃T
+I
+G
+v ̃T
+I
+b ̃T
+ω
+b ̃T
+a
+G
+g ̃T
+]T
+where δθ = Log(G  ̄RT
+I
+GRI ) is the attitude error and the rests are standard additive errors (i.e., the error in the estimate x ̄ of a quantity x is x ̃ = x − x ̄). Intuitively, the attitude error δθ describes the (small) deviation between the true and the estimated attitude. The main advantage of this error definition is that it allows us to represent the attitude uncertainty by the 3 × 3 covariance matrix E {δθδθT }. Since the attitude has 3 degree of freedom (DOF), this is a minimal representation. 1) Forward Propagation:
+The forward propagation is performed once receiving an IMU input (see Fig. 2). More specifically, the state is propagated following (2) by setting the process noise wi to zero:
+̂xi+1 = ̂xi (∆tf (̂xi, ui, 0)) ; ̂x0 = x ̄k−1. (4)
+where ∆t = τi+1 − τi. To propagate the covariance, we use the error state dynamic model obtained below:
+x ̃i+1 = xi+1 ̂xi+1
+= (xi ∆tf (xi, ui, wi)) (̂xi ∆tf (̂xi, ui, 0))
+(2'3) F ̃xx ̃i + Fwwi.
+(5)
+The matrix F ̃x and Fw in (5) is computed following the Appendix. A. The result is shown in (7), where ̂ωi =
+ωmi − ̂bωi , ̂ai = ami − ̂bai and A (u)−1 follows the same definition in [25] as below:
+A (u)−1 = I − 1
+2 buc∧ + (1 − α (‖u‖)) buc2
+∧ ‖u‖2
+α (m) = m
+2 cot ( m
+2
+)= m
+2
+cos(m/2) sin(m/2)
+(6)
+Denoting the covariance of white noises w as Q, then the propagated covariance ̂Pi can be computed iteratively following the below equation.
+̂Pi+1 = Fx ̃ ̂PiFT
+x ̃ + FwQFT
+w; ̂P0 =  ̄Pk−1. (8)
+The propagation continues until reaching the end time of a new scan at tk where the propagated state and covariance are denoted as ̂xk, ̂Pk. Then ̂Pk represents the covariance of the error between the ground-truth state xk and the state propagation ̂xk (i.e., xk ̂xk).
+2) Backward Propagation and Motion Compensation:
+When the points accumulation time interval is reached at time tk, the new scan of feature points should be fused with the propagated state ̂xk and covariance ̂Pk to produce an optimal state update. However, although the new scan is at time tk, the feature points are measured at their respective sampling time ρj ≤ tk (see Section. III-B.4 and Fig. 2 (b)), causing a mismatch in the body frame of reference. To compensate the relative motion (i.e., motion distortion) between time ρj and time tk, we propagate (2) backward as xˇj−1 = xˇj (−∆tf (ˇxj, uj, 0)), starting from zero pose and rests states (e.g., velocity and bias) from ̂xk. The backward propagation is performed at the frequency of feature point, which is usually much higher than the IMU rate. For all the feature points sampled between two IMU measurements, we use the left IMU measurement as the input in the back propagation. Furthermore, noticing that the last three block elements (corresponding to the gyro bias, accelerometer bias, and extrinsic) of f (xj, uj, 0) (see (3)) are zeros, the back propagation can be reduced to:
+Ik pˇIj−1= Ik pˇIj −Ik vˇIj ∆t, s.f. Ik pˇIm = 0;
+Ik vˇIj−1= Ik vˇIj − Ik Rˇ Ij (ami−1 − ̂bak )∆t − Ik
+̂gk ∆t,
+s.f. Ik vˇIm = G ̂RT
+Ik
+G
+̂vIk , Ik
+̂gk =G ̂RT
+Ik
+G
+̂gk ;
+Ik ˇRIj−1= Ik Rˇ Ij Exp((̂bωk−ωmi−1 )∆t), s.f. Ik RIm = I. (9) where ρj−1 ∈ [τi−1, τi), ∆t = ρj − ρj−1, and s.f. means “starting from”. The backward propagation will produce a relative pose between time ρj and the scan-end time tk: Ik ˇTIj =
+(Ik ˇRIj , Ik pˇIj
+). This relative pose enables us to project the local measurement Lj pfj to scan-end measurement Lk pfj as follows (see Fig. 2):
+Lk pfj = I T−1
+L
+Ik ˇTIj
+I TLLj pfj . (10)
+
+
+where I TL is the known extrinsic (see Section. III-B.2). Then the projected point Lk pfj is used to construct a residual in the following section.
+3) Residual computation:
+With the motion compensation in (10), we can view the scan of feature points {Lk pfj } all sampled at the same time tk and use it to construct the residual. Assume the current iteration of the iterated Kalman filter is κ, and the corresponding state estimate is ̂xκ
+k. When κ = 0, ̂xκ
+k = ̂xk, the predicted state from the propagation in (4). Then, the feature points {Lk pfj } can be transformed to the global frame as below:
+G
+̂pκ
+fj = G ̂Tκ
+Ik
+I TLLk pfj ; j = 1, · · · , m. (11)
+For each LiDAR feature point, the closest plane or edge defined by its nearby feature points in the map is assumed to be where the point truly belongs to. That is, the residual is defined as the distance between the feature point’s estimated global frame coordinate G
+̂pκ
+fj and the nearest plane (or edge) in the map. Denoting uj the normal vector (or edge orientation) of the corresponding plane (or edge), on which lying a point Gqj, then the residual zκ
+j is computed as:
+zκ
+j = Gj
+(G
+̂pκ
+fj − Gqj
+)
+(12)
+where Gj = uT
+j for planar features and Gj = bujc∧ for edge features. The computation of the uj and the search of nearby points in the map, which define the corresponding plane or edge, is achieved by building a KD-tree of the points in the most recent map [10]. Moreover, we only consider residuals whose norm is below certain threshold (e.g., 0.5m). Residuals exceeding this threshold are either outliers or newly observed points. 4) Iterated state update: To fuse the residual zκ
+j computed in (12) with the state prediction ̂xk and covariance ̂Pk propagated from the IMU data, we need to linearize the measurement model that relates the residual zκ
+j to the ground-truth state xk and measurement noise. The measurement noise originates from the LiDAR ranging and beam-directing noise Lj nfj when measuring the point Lj pfj . Removing this noise from the point measurement Lj pfj leads to the true point location
+Lj pgt
+fj = Lj pfj − Lj nfj . (13)
+This true point, after projecting to the frame Lk via (10) and then to the global frame with the ground-truth state xk (i.e, pose), should lie exactly on the plane (or edge) in the map. That is, plugging (13) into (10), then into (11), and further into (12) should result in zero. i.e.,
+0 = hj
+(xk,Lj nfj
+)= Gj
+(GTIk
+Ik ˇTIj
+I TL
+(Lj pfj −Lj nfj
+)−Gqj
+)
+Approximating the above equation by its first order approximation made at ̂xκ
+k leads to
+0 = hj
+(xk, Lj nfj
+) ' hj (̂xκ
+k , 0) + Hκ
+j
+x ̃κ
+k + vj
+= zκ
+j + Hκ
+j
+x ̃κ
+k + vj
+(14)
+where x ̃κ
+k = xk ̂xκ
+k (or equivalently xk = ̂xκ
+k
+x ̃κ
+k ), Hκ
+j
+is the Jacobin matrix of hj
+(
+̂xκ
+k
+x ̃κ
+k , Lj nfj
+) with respect to x ̃κ
+k, evaluated at zero, and vj ∈ N (0, Rj) comes from the
+raw measurement noise Lj nfj . Notice that the prior distribution of xk obtained from the forward propagation in Section. III-C.1 is for
+xk ̂xk = (̂xκ
+k
+x ̃κ
+k ) ̂xk = ̂xκ
+k
+̂xk + Jκ
+x ̃κ
+k (15)
+where Jκ is the partial differentiation of (̂xκ
+k
+x ̃κ
+k) ̂xk with
+respect to x ̃κ
+k evaluated at zero:
+Jκ =
+[
+A
+(G ̂Rκ
+Ik
+G
+̂RIk
+)−T
+03×15
+015×3 I15×15
+]
+(16)
+where A(·)−1 is defined in (6). For the first iteration (i.e., the case of extended Kalman filter), ̂xκ
+k = ̂xk, then Jκ = I. Combining the prior in (15) with the posteriori distribution from (14) yields the maximum a-posteriori estimate (MAP):
+min
+x ̃κ
+k
+(
+‖xk ̂xk‖2
+̂P−1
+k
++
+∑m
+j=1 ‖zκ
+j + Hκ
+j
+x ̃κ
+k ‖2
+R−1
+j
+)
+(17)
+where ‖x‖2
+M = xT Mx. Substituting the linearization of the prior in (15) into (17) and optimizing the resultant quadratic cost leads to the standard iterated Kalman filter [21], which can be computed below (to simplify the notation, let H = [HκT
+1 , · · · , HκT
+m ]T , R = diag (R1, · · · Rm),P =
+(Jκ)−1
+̂Pk(Jκ)−T , and zκ
+k=
+[
+zκT
+1 , · · · , zκT
+m
+]T
+):
+K = PHT (HPHT +R)−1,
+̂xκ+1
+k = ̂xκ
+k
+(−Kzκ
+k − (I − KH)(Jκ)−1 (̂xκ
+k
+̂xk)) . (18)
+The updated estimate ̂xκ+1
+k is then used to compute the residual in Section. III-C.3 and repeat the process until convergence (i.e., ‖̂xκ+1
+k
+̂xκ
+k‖ < ). After convergence, the optimal state estimation and covariance is:
+x ̄k = ̂xκ+1
+k ,  ̄Pk = (I − KH) P (19)
+A problem with the commonly used Kalman gain form in (18) is that it requires to invert the matrix HPHT +R which is in the dimension of the measurements. In practice, the number of LiDAR feature points are very large in number, inverting a matrix of this size is prohibitive. As such, existing works [21, 26] only use a small number of measurements. In this paper, we show that this limitation can be avoided. The intuition originates from (17) where the cost function is over the state, hence the solution should be calculated with complexity depending on the state dimension. In fact, if directly solving (17), we can obtain the same solution in (18) but with a new form of Kalman gain shown below:
+K=(HT R−1H+P−1)−1HT R−1. (20)
+We prove in Appendix B that the two forms of Kalman gains are indeed equivalent based on the matrix inverse lemma [27]. Since the LiDAR measurements are independent, the covariance matrix R is (block) diagonal and hence the new formula only requires to invert two matrices both in the dimension of state instead of measurements. The new
+
+
+formula greatly saves the computation as the state dimension is usually much lower than measurements in LIO (e.g., more than 1,000 effective feature points in a scan for 10 Hz scan rate while the state dimension is only 18). 5) The algorithm:
+Our state estimation is summarized in Algorithm 1.
+Algorithm 1: State Estimation
+Input : Last optimal estimation  ̄xk−1 and  ̄Pk−1, IMU inputs (am, ωm) in current scan; LiDAR feature points Lj pfj in current scan. 1 Forward propagation to obtain state prediction ̂xk via (4) and covariance prediction ̂Pk via (8); 2 Backward propagation to obtain Lk pfj via (9), (10);
+3 κ = −1, ̂xκ=0
+k = ̂xk; 4 repeat
+5 κ = κ + 1;
+6 Compute Jκ via (16) and P = (Jκ)−1 ̂Pk(Jκ)−T ; 7 Compute residual zκ
+j (12) and Jocobin Hκ
+j (14);
+8 Compute the state update ̂xκ+1
+k via (18) with the Kalman gain K from (20);
+9 until ‖̂xκ+1
+k
+̂xκ
+k‖ < ;
+10  ̄xk = ̂xκ+1
+k ; P ̄ k = (I − KH) P.
+Output: Current optimal estimation  ̄xk and  ̄Pk.
+D. Map Update
+With the state update x ̄k (hence GT ̄ Ik = (G  ̄RIk , Gp ̄Ik )),
+each feature point (Lk pfj ) projected to the body frame Lk (see (10)) is then transformed to the global frame via:
+G  ̄pfj = G  ̄TIk
+I TLLk pfj ; j = 1, · · · , m. (21)
+These features points are finally appended to the existing map containing feature points from all previous steps.
+E. Initialization
+To obtain a good initial estimate of the system state (e.g., gravity vector Gg, bias, and noise covariance) so to speedup the state estimator, initialization is required. In FAST-LIO, the initialization is simple: keeping the LiDAR static for several seconds (2 seconds for all the experiments in this paper), the collected data is then used to initialize the IMU bias and the gravity vector. If non-repetitive scanning is supported by the LiDAR (e.g., Livox AVIA), keeping static also allows the LiDAR to capture an initial high-resolution map that is beneficial for the subsequent navigation.
+IV. EXPERIMENT RESULTS
+A. Computational Complexity Experiments
+In order to validate the computational efficiency of the proposed new formula for computing Kalman gains. We intentionally replace the computation of Kalman gains with the old formula in our system and compare their computation time under the same system pipeline and number of feature points. The results are shown in Table. II. It is obvious that the complexity of the new formula is much lower than the old one.
+TABLE II
+THE RUNNING TIMES OF TWO KALMAN GAIN FORMULAS
+Feature Num. 307 717 998 1243 1453 1802 Old Formula (ms) 7.1 23.4 109.3 251 1219 1621 New Formula (ms) 0.07 0.11 0.25 0.37 0.59 1.16
+Fig. 3. During the flight experiment, the UAV is automatically flying in a circle path with 1.8 m radius and 1.4 m height. The circle path is conducted repeatedly for 4 times with different periods (6-10 s). The yaw command of the UAV maintains constant during the flight. In the end, the UAV is manually controlled to land at the take-off point, which enables us to measure the drift.
+B. UAV Flight Experiments
+In order to validate the robustness and computational efficiency of FAST-LIO in actual mobile robots, we build a small-scale quadrotor that can carry a Livox Avia LiDAR with 70◦ FoV and a DJI Manifold 2-C onboard computer with a 1.8 GHz quad-core Intel i7-8550U CPU and 8 GB RAM, as shown in Fig. 1. The UAV has only 280 mm wheelbase, and the LiDAR is directly installed on the airframe. The LiDAR-inertial odometry is sent to the flight controller tracking a circle trajectory (Fig. 3). The actual flight experiments show that FAST-LIO can achieve real-time and stable odometry output and mapping in a maximum of 50 Hz for the indoor environment. The flight trajectory and mapping results of 50 Hz frame rate indoor experiment are shown in Fig. 3. The average number of effective feature points and running time is 270 and 6.7 ms, respectively , the drift is smaller than 0.3% (0.08 m drift over 32 m trajectory). The flight video can be found at https://youtu.be/iYCY6T79oNU.
+C. Indoor Experiments
+Then we test FAST-LIO in a challenging indoor environment with large rotation speeds. In order to generate large rotation, the sensor suite is held on hands and undergoes quickly shaking. Fig. 4 shows the angular velocity and acceleration during the experiment. It is seen that the angular velocity often exceeds 100 deg/s. A state of the art implementation of LOAM on Livox LiDARs5 [10] and LOAM with IMU6 [8] are also tested as comparisons when the feature extraction are replaced with the one of FAST-LIO. The results show that FAST-LIO can output odometry faster and more stable than others, as shown in Fig. 5 and Table. III. It should be noted that the LOAM+IMU is a loosely-coupled
+5https://github.com/Livox-SDK/livox_mapping 6https://github.com/Livox-SDK/livox_horizon_loam
+
+
+TABLE III
+COMPARISON OF PROCESSING TIME FOR A LIDAR SCAN AT 10Hz
+Packages Num. of effective features Running time LOAM 1107 59 ms LOAM+IMU 1107 44 ms FAST-LIO 1430 23 ms
+Fig. 4. The angular velocity and acceleration in the indoor experiments.
+method, hence results in inconsistent mapping. To further verify the mapping result, we perform a second experiment in the same environment but with a much slower motion. The map built by FAST-LIO is shown in the lower-right figure of Fig. 4. Since the two experiments have non-identical movements, it leads to slight visual differences at places occlusions occur. The rest mapping results are very close.
+D. Outdoor Experiments
+Here we show the performance of FAST-LIO in outdoor environments. Fig. 6 shows the mapping results (displaying all raw points) of the Main Building in the University of Hong Kong. The sensor suite is handheld during the data collection and returned to the starting position after traveling around 140m. The drift in this experiment is smaller than 0.05% (0.07 m drift over 140 m trajectory). The scan rate is set to 10 Hz in this experiment, and the average processing time of a scan is 25 ms with average 1497 effective feature points. Further, we compare FAST-LIO with LINS7 [21]. To make a fair comparison, we use the dataset from LINS [21], which is a seaport area data collected by a Velodyne VLP-16 and an Xsens MTiG-710 IMU7. The results show that the FASTLIO can achieve better mapping accuracy (see Fig. 7) and only consumes 7.3 ms processing time in average while LINS takes 34.5 ms in average, both running at 10Hz. It should be noted that since the EKF formula in LINS package has high computational complexity (see Section. III-C.4)), it down samples the feature points to average 147 points in a scan (while 784 in a scan for FAST-LIO). This leads to degraded mapping accuracy for LINS. The result in Fig. 7 shows all the feature points (before down-sample) of FASTLIO and LINS. All the experiments are conducted on the DJI Manifold2 onboard computer.
+7https://github.com/ChaoqinRobotics/ LINS---LiDAR-inertial-SLAM
+Fig. 5. The Mapping results of different LIO packages in an indoor environment with large rotation speed.
+Fig. 6. Mapping results of the Main Building, University of Hong Kong. The LiDAR platform, the same one in Fig. 1, is handheld randomly walking to scan the building. In order to show the drift, the experiment are started and ended at the same place.
+V. CONCLUSION
+This paper proposed FAST-LIO, a computationally efficient and robust LiDAR-inertial odometry framework by a tightly-coupled iterated Kalman filter. We used the forward and backward propagation to predict the states and compensate for the motion in a LiDAR scan. Besides, we proved and implemented an equivalent formula that can achieve much lower complexity for the Kalman gain computation. FASTLIO was tested in the UAV flight experiment, challenging indoor environment with large rotation speed and outdoor environment. In all tests, our method produced precise, realtime, and reliable navigation results.
+APPENDIX
+A. Computation of Fx ̃ and Fw
+Recall xi = ̂xi x ̃i, denote g (x ̃i, wi) = f (xi, ui, wi)∆t = f (̂xi  ̃xi, ui, wi)∆t. Then the error state
+
+
+Fig. 7. Comparison between LINS [21] and FAST-LIO. The data is from [21] and is collected by a Velodyne VLP-16 LiDAR and an Xsens MTiG710 IMU, the green straight line in the center is the odometry output.
+model (5) is rewriten as:
+x ̃i+1 = ((̂xi x ̃i) g (x ̃i, wi)) (̂xi g (0, 0))
+} {{ }
+G( ̃xi ,g( ̃xi ,wi ))
+(22)
+Following the chain rule of partial differention, the matrix F
+ ̃x and Fw in (5) are computed as below.
+F
+ ̃x =
+( ∂G(x ̃i,g(0,0)) ∂
+x ̃i + ∂G(0,g( ̃xi,0))
+∂ g( ̃xi ,0)
+∂ g( ̃xi ,0) ∂
+ ̃xi
+)∣ ∣
+∣
+ ̃xi =0
+Fw =
+( ∂G(0,g(0,wi)) ∂ g(0,wi )
+∂ g(0,wi ) ∂wi
+)∣ ∣
+∣wi=0
+(23)
+B. Equivalent Kalman Gain formula
+Based on the matrix inverse lemma [27], we can get:
+(P−1 +HT R−1H)−1 = P − PHT (HPHT + R)−1 HP
+Substituting above into (20), we can get:
+K = (HT R−1H+P−1)−1HT R−1
+= PHT R−1 −PHT (HPHT +R)−1 HPHT R−1
+Now note that HPHT R−1 = (HPHT + R) R−1 − I. Substituting it into above, we can get the standard Kalman gain formula in (18), as shown below.
+K = PHT R−1 − PHT R−1 + PHT (HPHT + R)−1
+= PHT (HPHT + R)−1 .
+REFERENCES
+[1] K. Sun, K. Mohta, B. Pfrommer, M. Watterson, S. Liu, Y. Mulgaonkar, C. J. Taylor, and V. Kumar, “Robust stereo visual inertial odometry for fast autonomous flight,” IEEE Robotics and Automation Letters, vol. 3, no. 2, pp. 965–972, 2018. [2] T. Qin, P. Li, and S. Shen, “Vins-mono: A robust and versatile monocular visual-inertial state estimator,” IEEE Transactions on Robotics, vol. 34, no. 4, pp. 1004–1020, 2018. [3] C. Forster, M. Pizzoli, and D. Scaramuzza, “Svo: Fast semi-direct monocular visual odometry,” in 2014 IEEE international conference on robotics and automation (ICRA). IEEE, 2014, pp. 15–22.
+[4] D. Wang, C. Watkins, and H. Xie, “Mems mirrors for lidar: A review,” Micromachines, vol. 11, no. 5, p. 456, 2020. [5] Z. Liu, F. Zhang, and X. Hong, “Low-cost retina-like robotic lidars based on incommensurable scanning,” IEEE/ASME Transactions on Mechatronics, pp. 1–1, 2021.
+[6] P. J. Besl and N. D. McKay, “Method for registration of 3-d shapes,” in Sensor fusion IV: control paradigms and data structures, vol. 1611. International Society for Optics and Photonics, 1992, pp. 586–606. [7] A. Segal, D. Haehnel, and S. Thrun, “Generalized-icp.” in Robotics: science and systems, vol. 2, no. 4. Seattle, WA, 2009, p. 435. [8] J. Zhang and S. Singh, “Loam: Lidar odometry and mapping in realtime.” in Robotics: Science and Systems, vol. 2, no. 9, 2014.
+[9] T. Shan and B. Englot, “Lego-loam: Lightweight and groundoptimized lidar odometry and mapping on variable terrain,” in 2018 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS). IEEE, 2018, pp. 4758–4765. [10] J. Lin and F. Zhang, “Loam livox: A fast, robust, high-precision lidar odometry and mapping package for lidars of small fov,” in 2020 IEEE International Conference on Robotics and Automation (ICRA). IEEE, 2020, pp. 3126–3131. [11] W. Zhen, S. Zeng, and S. Soberer, “Robust localization and localizability estimation with a rotating laser scanner,” in 2017 IEEE International Conference on Robotics and Automation (ICRA). IEEE, 2017, pp. 6240–6245. [12] Y. Balazadegan Sarvrood, S. Hosseinyalamdary, and Y. Gao, “Visuallidar odometry aided by reduced imu,” ISPRS international journal of geo-information, vol. 5, no. 1, p. 3, 2016. [13] X. Zuo, P. Geneva, W. Lee, Y. Liu, and G. Huang, “Lic-fusion: Lidarinertial-camera odometry,” in 2019 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS), 2019, pp. 5848–5854. [14] P. Geneva, K. Eckenhoff, Y. Yang, and G. Huang, “Lips: Lidarinertial 3d plane slam,” in 2018 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS). IEEE, 2018, pp. 123–130. [15] C. Forster, L. Carlone, F. Dellaert, and D. Scaramuzza, “On-manifold preintegration for real-time visual–inertial odometry,” IEEE Transactions on Robotics, vol. 33, no. 1, pp. 1–21, 2016. [16] M. Hsiao, E. Westman, and M. Kaess, “Dense planar-inertial slam with structural constraints,” in 2018 IEEE International Conference on Robotics and Automation (ICRA). IEEE, 2018, pp. 6521–6528. [17] H. Ye, Y. Chen, and M. Liu, “Tightly coupled 3d lidar inertial odometry and mapping,” in 2019 International Conference on Robotics and Automation (ICRA). IEEE, 2019, pp. 3144–3150. [18] A. Bry, A. Bachrach, and N. Roy, “State estimation for aggressive flight in gps-denied environments using onboard sensing,” in 2012 IEEE International Conference on Robotics and Automation. IEEE, 2012, pp. 1–8. [19] J. A. Hesch, F. M. Mirzaei, G. L. Mariottini, and S. I. Roumeliotis, “A laser-aided inertial navigation system (l-ins) for human localization in unknown indoor environments,” in 2010 IEEE International Conference on Robotics and Automation. IEEE, 2010, pp. 5376–5382.
+[20] Z. Cheng, D. Liu, Y. Yang, T. Ling, X. Chen, L. Zhang, J. Bai, Y. Shen, L. Miao, and W. Huang, “Practical phase unwrapping of interferometric fringes based on unscented kalman filter technique,” Optics express, vol. 23, no. 25, pp. 32 337–32 349, 2015. [21] C. Qin, H. Ye, C. E. Pranata, J. Han, S. Zhang, and M. Liu, “Lins: A lidar-inertial state estimator for robust and efficient navigation,” in 2020 IEEE International Conference on Robotics and Automation (ICRA). IEEE, 2020, pp. 8899–8906. [22] M. Raitoharju and R. Pich ́e, “On computational complexity reduction methods for kalman filter extensions,” IEEE Aerospace and Electronic Systems Magazine, vol. 34, no. 10, pp. 2–19, 2019. [23] C. Hertzberg, R. Wagner, U. Frese, and L. Schro ̈der, “Integrating generic sensor fusion algorithms with sound state representations through encapsulation of manifolds,” Information Fusion, vol. 14, no. 1, pp. 57–77, 2013. [24] W. Xu, D. He, Y. Cai, and F. Zhang, “Robots state estimation and observability analysis based on statistical motion models,” 2020. [25] F. Bullo and R. M. Murray, “Proportional derivative (pd) control on the euclidean group,” in European control conference, vol. 2, 1995, pp. 1091–1097. [26] M. Bloesch, M. Burri, S. Omari, M. Hutter, and R. Siegwart, “Iterated extended kalman filter based visual-inertial odometry using direct photometric feedback,” The International Journal of Robotics Research, vol. 36, no. 10, pp. 1053–1072, 2017.
+[27] N. J. Higham, Accuracy and stability of numerical algorithms. SIAM, 2002.
