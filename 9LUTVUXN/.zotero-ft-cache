@@ -1,0 +1,288 @@
+Continuous Dynamic Bipedal Jumping via Real-time Variable-model Optimization
+Junheng Li, Omar Kolt, and Quan Nguyen
+Abstract— Dynamic and continuous jumping remains an open yet challenging problem in bipedal robot control. Realtime planning with full body dynamics over the entire jumping trajectory presents unsolved challenges in computation burden. In this paper, we propose a novel variable-model optimization approach, a unified framework of variable-model trajectory optimization (TO) and variable-frequency Model Predictive Control (MPC), to effectively realize continuous and robust jumping planning and control on HECTOR bipedal robot in real-time. The proposed TO fuses variable-fidelity dynamics modeling of bipedal jumping motion in different jumping phases to balance trajectory accuracy and real-time computation efficiency. In addition, conventional fixed-frequency control approaches suffer from unsynchronized sampling frequencies, leading to mismatched modeling resolutions. We address this by aligning the MPC sampling frequency with the variable-model TO trajectory resolutions across different phases. In hardware experiments, we have demonstrated robust and dynamic jumps covering a distance of up to 40 cm (57% of robot height). To verify the repeatability of this experiment, we run 53 jumping experiments and achieve 90% success rate. In continuous jumps, we demonstrate continuous bipedal jumping with terrain height perturbations (up to 5 cm) and discontinuities (up to 20 cm gap).
+I. INTRODUCTION
+Bipedal robots have demonstrated a large step of advancement in dynamic, adaptive, and robust locomotion in recent years [1], [2], [3], [4], [5]. Traditional approaches in bipedal locomotion control rely on periodic walking gait to ensure stability and always in-contact [6], [7]. Boston Dynamics and Unitree Robotics have showcased impressive parkour and back-flipping motions on full-size humanoids [8], [9], demonstrating the capability of bipedal/humanoid robots in locomotion techniques with extended flight phases and beyond walking gaits. With the motivation of allowing bipedal robots to efficiently plan and execute dynamic jumping motions in real-time with adaptivity and agility like humans, in this work, we propose a robust and versatile bipedal jumping motion planning and control framework. Model-based control approaches to solving quadruped jumping motion generation have a strong presence in recent literature and usually involve solving offline trajectory optimization (TO) problems [10], [11], [12], [13]. Due to the inherently unstable and under-actuated nature of bipedal robots, bipedal jumping consists of more challenges in model-based control system design, such as in addressing (1) leveraging whole-body motion for takeoff, (2) effective
+Junheng Li, Omar Kolt, and Quan Nguyen are with the Department of Aerospace and Mechanical Engineering, University of Southern California, Los Angeles, CA 90089.
+Email: {junhengl, kolt, quann}@usc.edu. This work is supported by USC Departmental Startup Fund.
+(a) Continuous jumping over discrete terrain.
+20 cm
+5 cm
+(b) Continuous jumping with terrain perturbation.
+20 cm
+5 cm
+(c) Jumping down from 25 cm block.
+Fig. 1: Dynamic and Continous Bipedal Jumping on HECTOR. Full experiment video: https://youtu.be/TDzxay3PuEM
+pose tracking during the flight phase for optimal landing configuration, (3) impact mitigation and balancing upon landing, (4) real-time planning, and (5) transferability to hardware. Related works have made attempts to address the above challenges partially. For instance, many related work leverage kino-dynamics modeling in bipedal jumping planning[14], [15], [16], which considers whole-body link effects with reduced computation burden. However, it still presents computation efficiency challenges for real-time usage. Additionally, Xiong et al. leverages a single spring-mass model to plan bipedal hopping and landing trajectories via direct collocation [17]. Hierarchical TO is proposed in [18] to uses TO simple model first to quickly generate contact timings to reduce additional computation cost in subsequent TO with full-order dynamics. A common theme among these related works is utilizing a single modeling method in TO as an offline motion planner. As for the modeling choice, on one hand, reduced-order modeling such as kinodynamics assumes the robot as a single-rigid-body dynamics (SRBD) model or centroidal dynamics (CD) model [19] with kinematic constraints [20]. On the other hand, wholebody dynamics TO utilizes a full-order dynamics model of the robot and contact dynamics for very accurate trajectory
+arXiv:2404.11807v2 [cs.RO] 22 Sep 2024
+
+
+ Variable-model Trajectory Optimization (Motion Planning) Variable Dynamics Modelling for Bipedal Jumping
+Terrain Information for Next Jump
+Variable-frequency Trajectories
+Motion Execution
+Variable-frequency MPC
+Joint-space PD Contro1l0kHz
+1kHz
+HECTOR
+1Hz
+Fig. 2: System Architecture
+planning but may take significantly longer time to generate [21]. In this work, we attempt to address the above problems altogether by finding a well-balanced middle ground and proposing a Variable-model TO framework that takes into consideration the model fidelity requirement in TO during different jumping phases to balance the resolution of the trajectory and computation effort. The proposed framework can offer real-time, accurate, and hardware-realizable trajectories. Allowing variability of model resolutions in optimization problems has become a popular strategy in model-based control. Li et al. propose a Model Hierarchical Predictive Control that prioritizes high-resolution models in near MPC horizons and uses reduced-order models in far prediction horizons [22], [23]. Csomay-Shanklin et al. use a finer sampling rate during contact and a relaxed sampling rate during the flight phase on monoped robots. [24]. In addition, conventional model-based tracking control strategies use fixed-frequency control that is unsynchronized with planned trajectories (e.g., [18], [14]), which does not fully leverage the model resolution for effective tracking performance. In this work, we validate the significance of matching frequency in planned trajectory and control through an SRBD-based variable-frequency MPC, inspired by prior work [25]. The main contributions of the paper are as follows:
+• We propose a real-time bipedal jumping planner using a variable-model trajectory optimization (TO) framework with three dynamic models and sampling rates, each tailored to the takeoff, flight, and landing phases. • We propose a variable-frequency scheme to allow matching frequency between planned trajectory and motion execution (i.e., MPC) to fully exploit the synergy of trajectory resolution among the control hierarchy. • We introduce a landing recovery trajectory in bipedal jumping to complement the variable-model TO and address the rebalancing and recovery challenge after the landing. • In hardware validations, our proposed framework
+demonstrated robust and repeatable jumping planning and execution. We also showcase the first instance of dynamic continuous bipedal jumping on hardware over discrete terrains with optimization-based control strategies.
+The rest of the paper is organized as follows. Section. II presents the overview of the proposed control system architecture. Section.III introduces the details of the bipedal robot models used in variable-frequency TO, its nonlinear programming (NLP) problem definition, and the variablefrequency MPC. Section. IV presents the numerical comparative analysis and experimental validations.
+II. SYSTEM OVERVIEW
+In this section, we introduce the system architecture of the proposed control architecture, shown in Fig. 2. The proposed Variable-model Optimization framework consists of two major parts, the variable-model TO and vairablefrequency MPC. Conventional whole-body dynamics TO with contact is computationally intensive, particularly for high-DoF bipedal robots. Even reduced-order methods like kino-dynamic TO face challenges in achieving real-time planning. The variablemodel TO addresses this by using multiple dynamics models and variable sampling rates, efficiently generating real-time, hardware-realizable jumping trajectories. The framework first generate target landing locations based on the one-step terrain data or user input. The proposed variable-model TO serves as a motion planner and generates variable-frequency jumping trajectories. With N time-steps, these trajectories are in terms of 2D reference trunk Center of Mass (CoM) states, xrcef , reference joint trajectories,
+qref
+ip , contact sequence σ, and optimal sampling rates for takeoff, flight, and landing phases, dtt, dtf , and dtl. These trajectories are converted to 3D, xrcef , qref
+j , for real-time tracking control. Unsynchronized planning and control frequencies cause conflicts between the TO trajectory and the MPC prediction resolution. To address this, we pair the variable-model TO with a variable-frequency MPC that uses adaptive sampling
+
+
+ frequencies and step lengths in its prediction horizon. This setup, combined with a joint-space PD controller, effectively tracks the jumping trajectories throughout the motion. The resulting joint torques, τj, from controllers are sent to the robot motors. The feedback states from the robot includes CoM states, xc = [pc; Θ; p ̇c; ω] and joint states, qj ∈ R10, q ̇j ∈ R10. Where pc ∈ R3 is trunk CoM location, Θ ∈ R3 represents robot’s Euler angles, Θ = [φ; θ; ψ], p ̇c ∈ R3 is trunk CoM velocity, ω ∈ R3 is the world frame angular velocity.
+III. PROPOSED APPROACH
+In this section, we introduce the proposed approaches in this work, including the choice of variable dynamics models of the bipedal robot jumping problem, formulation of variable-model TO, and variable-frequency MPC.
+A. HECTOR Bipedal Robot
+We use the HECTOR bipedal robot as our robot model and hardware experiment platform, introduced in the author’s prior work [26]. HECTOR biped has 5-DoF legs with ankle actuation, stands at 70 cm, and weighs 14 kg. The biped can output 67.0 Nm of maximum torque at knee joints. Detailed physical parameters are outlined in [26]. HECTOR’s full joint-space dynamics equation of motion is described as follows. The joint-space generalized states q ∈ R16 include pc, Θ, and qj.
+H(q) ̈q + C(q, q ̇ ) = Γ + Ji(q)⊺λi (1)
+where H ∈ R16×16 is the mass-inertia matrix and C ∈ R16 is the joint-space bias force term. Γ = [06; τj] represents the actuation in the generalized coordinate. λi and Ji represent the external force applied to the system and its corresponding Jacobian matrix.
+B. Variable-fidelity Dynamics Modeling
+In the proposed variable-model TO framework, we choose to use 3 different fidelities of dynamics models of bipedal robots for different phases of a jumping trajectory, illustrated in Fig. 2. By leveraging variable models fidelities and trajectory resolutions, the TO can be efficiently solved online while providing hardware-realizable trajectories. We classify the bipedal jumping trajectory into three phases, as shown in Fig. 2: (1) takeoff, from the start of the jump until the feet leave the ground; (2) flight, from when the robot is airborne until just before touchdown; and (3) landing, from initial ground contact until the robot reaches the desired configuration.
+1) Takeoff Phase and 3-link Inverted Pendulum Model: This phase is the most challenging part of the jumping, requiring strong lift-off while meeting actuation constraints. To ensure accuracy and optimize whole-body motion, we use a high-fidelity model with fine sampling steps. [24], [10]. We assume the biped remains in-contact with the ground before flight and model the planar takeoff motion using a full dynamics model of a fixed-base 3-link inverted pendulum in 2D. This fixed-base approach reduces computation while still applying virtual force constraints to represent the ground
+reaction forces of a floating-base model. Each pendulum link has physical properties representing the corresponding biped link’s mass and moment of inertia (MoI). The 2-D dynamics equation of motion (EoM) is as follows,
+Hip(qip)q ̈ip + Cip(qip, q ̇ip) = τip (2)
+where qip = [q0, q1, q2]⊺ describes the 3-link inverted pendulum joint states. τip represents the 3-link model joint torques. 2) Flight Phase and MRBD: In this phase, the TO must account for the effects of leg dynamics on whole-body angular momentum and adjust the position of the links for proper landing. However, since leg adjustments are minor in flight, we use a simplified multi-rigid-body model instead of full dynamics, treating each link’s dynamics as external forces on the trunk CoM in 2D, pc2D (e.g., three-particle
+model in [27]). Note that we impose a virtual foot force F v in dynamics formulation, to capture the effect of joint torques during the flight phase. The MRBD EoM is as follows,
+m0(p ̈2D
+c + g) = F v +
+3
+X
+n=1
+−mng (3)
+d
+dt (I0θ ̇) = (pf − p2D
+c )×Fv +
+3
+X
+n=1
+(pn − p2D
+c ) × −mng
+(4)
+where mn represents the mass of each link n, n = 1, 2, 3, I0 represents the MoI of the trunk link, θ represents the robot’s pitch angle, pn and pf are the CoM location of each link and foot location in the world frame, accessed by forward kinematics (FK) of joint angles, FK(qip).
+3) Landing Phase and SRBD: As many legged-jumping TO frameworks have omitted, we choose to design the TO to include a landing and balancing phase of the jumping motion to generate a recovery trajectory for the MPC to track. Simplified float-based dynamics modeling is an effective approach in real-time control to allow soft impact [28]. In addition, to establish a unified control framework and synchronize with the modeling of biped in our MPC, we design the landing part of the TO to consist of a singlerigid-body dynamics model, as described in detail in authors’ prior work [29] and many other SRBD-based MPC on legged robots [30], [31]. The 2D EoM during landing is as follows,
+m0(p ̈2D
+c + g) = F (5)
+d
+dt (Icθ ̇) = (pf − p2D
+c ) × F + M (6)
+where F is the 2D ground reaction force at the contact point, M is the ground reaction moment in the x-y plane.
+C. Variable-model Trajectory Optimization
+With the variable-fidelity models introduced, the following section will explain the details of the proposed variablemodel TO and its NLP formulation. The Variable-model TO functions as an online trajectory planner for bipedal jumping and landing, using inputs such as jump distance, obstacle height, and landing location. It adapts model fidelity and trajectory resolution for each jumping phase and is formulated as a direct collocation TO problem solvable with an NLP solver.
+
+
+ The optimization variables chosen in this TO are,
+X = [xc, qip, q ̇ip, τip, F , M, dtf , dtl]⊺; (7)
+where dtf is the flight phase step length and dtl is the landing phase step length. We choose to let the optimization determine the lengths of sampling steps during each phase, to prevent hard constraints on dt, which may lead to the optimization solving with infeasible contact timings or heavier computation. Note that xc = [pc,x, pc,y, θ, p ̇c,x, p ̇c,y, θ ̇]⊺ is the 2D representation of the robot trunk CoM states xc.
+The formulation of the finite horizon optimization problem with N steps is as follows,
+mXin
+N
+X
+i=1
+qip,0 − qip,i
+2
+Q0
++ q ̇ip,i
+2
+Q1
++ τip,i
+2
+Q2
+(8)
+s.t. Joint angle: qmin ≤ qip ≤ qmax (9a)
+Joint speed: q ̇min ≤ q ̇ip ≤ q ̇max (9b)
+Joint torque: τmin ≤ τip ≤ τmax (9c)
+Motor Max Power: Pmotor ≤ 400W (9d)
+Initial Condition: xc,0 = xIC
+c (9e)
+Final Condition: xc,N = xFC
+c (9f)
+Forward Kinematics: xc = FK(qip, q ̇ip) (9g)
+Positive GRF: 0 ≤ Fy (9h)
+Friction: − μFy ≤ Fx ≤ μFy (9i)
+Line foot: − lhFy ≤ M ≤ ltFy (9j)
+Takeoff Phase i = 0 : N t − 1
+Dynamics (2): q ̈ip,i = H−1
+ip,i(−Cip,i + τip)
+q ̇ip,i+1 = q ̇ip,i + q ̈ip,idtt
+qip,i+1 = qip,i + q ̇ip,idtt (10a)
+Support region: − lh ≤ prc,x(qip) ≤ lt (10b)
+Virtual GRFM: [Fi; Mi] = J ⊺
+c
+−1τip,i (10c)
+Flight Phase i = N t : N t + N f − 1
+Dynamics (3-4): xc,i+1 = xc,i + x ̇ c,idtf (11a)
+Collision avoidance: hterrain,i < ptoe,y(qip,i) (11b)
+Minimal actuation: |F v
+i | ≤ 10N (11c)
+Sampling rate: 0 ≤ dtf (11d)
+Landing Phase i = N t + N f : N − 1
+Dynamics (5-6): xc,i+1 = xc,i +  ̇xc,idtl (12a)
+Sampling rate: 0.02s ≤ dtl ≤ 0.05s (12b)
+The objectives of the variable-model TO in (8) contain minimizing joint movement, joint speed, and joint torque during the entire jumping motion. The goal is to generate a fluent jump with minimal actuation efforts. Q0, Q1, and Q2 are objective weighting matrices. The NLP is subjected to several constraints. (9a-9c) describe the joint kinematics and actuation limits. (9d) describes the Unitree A1 motor power constraints based on its efficiency and wattage limit, which is an effective approach to ensure actuation awareness for hardware experiments [10], [14]. (9e-9f) describes the initial
+and final conditions of the robot, based on the terrain setup and user commands. We use FK described in (9g) to bridge the joint space states qip and robot trunk CoM states xc and their discrete dynamics representations in variable models. (9h-9i) ensure the ground reaction forces are always positive and respect friction constraints. (9j) describes the contact wrench cone constraint of line-foot [32]. Additional constraints are given and phase-specific, besides variable dynamics modeling. In (10c), we impose a virtual ground reaction forces F and moment M from joint torques and virtual contact Jacobian to amplify the 3-link fixbase model to behave closely to a float-base model when in contact with the ground. (10b) ensures the CoM of the entire robot, prc stays within the support region, formed by the toe and heel length, lt, lh. During the flight phase, (11b) enforces the foot height of the robot ptoe,y always above the terrain. (11c) allows small virtual Cartesian foot forces (translated to joint torque actuations) to be applied to the dynamics, enabling the TO to adjust the robot’s feet for better landing configuration.
+D. Variable-frequency MPC
+Once the variable-model TO generates an optimal jumping trajectory online, the subsequential variable-frequency MPC will work in conjunction with joint PD control to track the reference trajectories xrcef and qref
+j , which are mapped directly from optimization solution X. The MPC uses the planned contact sequence, variable trajectory frequency, and sampling step length dt to synchronize sampling frequencies with the variable-model TO to fully leverage trajectory resolutions. The variable-frequency MPC leverages the SRBD modeling of bipedal robot HECTOR, with the assumption of negligible effect of leg movement during landing control. The dynamics formulation closely follows the author’s prior work [25], a 3D extension of (5-6). We choose to include gravity g in the optimization variable x = [xc; g] to linearize the dynamics and form the discrete-time statespace equation at time step k, xk+1 = Aˆd,kxk + Bˆd,kuk, where Aˆd ∈ R15×15 and Bˆd ∈ R15×12 are discrete-time state-space dynamics matrices. The control input u includes the 3D ground reaction forces and moments of both foot, u = [F0; F1; M0; M1] The formulation of the optimization problem with finite horizon h is as follows,
+mx,iun
+h−1
+X
+i=0
+xk − xref
+k
+2
+R0
++ uk
+2
+R1
+(13)
+s.t.
+Dynamics: xk+1 = Aˆd,kxk + Bˆd,kuk (14a)
+Friction pyramid − μFz,n ≤ Fx,n ≤ μFz,n (14b)
+of foot n: − μFz,n ≤ Fy,n ≤ μFz,n
+Force limit: 0 ≤ Fz,n ≤ Fmax (14c)
+Moment X: BMx,n = 0 (14d)
+Line foot: − lhFz,n ≤ My,n ≤ ltFz,n (14e)
+The objective of the problem is to drive state x close to the
+
+
+ t
+dtt dtf
+40 cm
+40 cm
+Case 2
+Successful
+Case 1
+t
+dtt dtf dtl
+TO:
+MPC:
+• Variable-frequency TO • Optimize landing trajectory
+• Fixed MPC frequency
+Significant pitch error after landing!
+Planned Trajectory Illustration Simulation snapshots
+Cannot recover after landing
+Planned Trajectory Illustration Simulation snapshots
+t
+dt
+t
+dtt dtf dtl
+t
+dtt dtf dtl
+TO:
+MPC:
+• Variable-frequency TO • Optimize landing trajectory
+• Variable MPC frequency
+t
+dtt dtf
+• Variable-frequency TO • No landing optimization
+• Variable MPC frequency
+TO:
+MPC:
+Planned Trajectory Illustration Simulation snapshots
+Case 3 (Proposed)
+prediction at i
+Fig. 3: Comparing Baseline Approaches with Proposed Approach in Simulation. Red text represents proposed methods in this paper while yellow text represents baseline methods.
+1 1.2 1.4 1.6 1.8 2 2.2 2.4 2.6 Time, s
+0
+0.5
+1
+Position, m
+CoM X Position
+Take-off Phase Flight Phase Landing Phase
+1 1.2 1.4 1.6 1.8 2 2.2 2.4 2.6 Time, s
+0
+0.5
+1
+Position, m
+CoM Y Position
+1 1.2 1.4 1.6 1.8 2 2.2 2.4 2.6 Time, s
+-0.4
+-0.2
+0
+0.2
+0.4
+Angle, rad
+Body Pitch Angle
+Adaptive-model TO trajectory reference Case 1: Fixed MPC frequency
+Case 2: W/o landing trajectory Case 3: Proposed method
+Fig. 4: CoM Trajectory Tracking Plots. Associated with comparative analysis shown in Fig. 3
+TO reference and minimize control input u. These objectives are weighted by diagonal matrices R0 ∈ R15×15 and R1 ∈ R12×12. (14d) enforces foot moment in the x-direction is always zeros in the robot’s body frame, as discussed in [29].
+E. Real-time Jumping Control
+The real-time jumping control consists of both variablefrequency MPC for tracking CoM trajectory and joint-PD control for tracking the joint trajectory simultaneously. The joint torque command is computed as,
+τj = Kp(qref
+j − qj ) + Kd(q ̇ref
+j − q ̇j ) + J ⊺
+c u (15)
+where Jc is the contact points’ world frame Jacobian matrix. To achieve dynamic continuous jumping, we integrate the variable-model TO and variable-frequency MPC by using variable step lengths dt to create preview trajectories for each phase. The MPC connects each jump’s end configuration to the next jump’s start, guiding the robot to prepare for the following jump [33]. Unlike single jumps, continuous jumping leverages conserved energy by taking off from a lowered height, with the variable-frequency MPC adjusting loop frequency and sampling step lengths accordingly.
+IV. RESULTS
+This section presents the hardware results of the proposed Variable-model Optimization framework in bipedal jumping,
+including comparisons with baseline approaches and robust behaviors in single and continuous jumps.
+A. Implementing Details
+The variable-model TO is set up as NLP problem and is solved with CasADi toolbox [34] and FATROP solver [35]. In simulation validation, we use the HECTOR open-source simulation software in Simulink [36]. On the hardware, the real-time MPC is solved as a quadratic programming (QP) problem via qpOASES solver in C++. The detailed hardware control parameters are shown in Table. I.
+TABLE I: Experiment Parameters
+Q0 = 0.1 N t = 70, dtt = 0.01s Q1 = 0.5 N f = 30 Q2 = 0.01 N l = 30 μ = 0.5 h = 10
+R0 = diag([300 300 400 150 200 150 1 1 1 1 1 10 0]) R1 = diag([1 1 1 1 1 1 1 1 1 1 1 1] · 10−6) Kp = diag([150 150 150 150 100]) Kd = diag([2 2 2 2 2 1])
+B. Comparison of Solve Time
+We set up bipedal jumping TO problems with several different dynamics model fidelities, including the full dynamics model, kinodynamics model, SRBD model, and the proposed variable-model scheme. The solve time comparisons are presented in Table.II, under 3 different tasks setups: (1) 25 cm forward leap, (2) 40 cm forward leap, and (3) 40 cm forward and 40 cm high jump (Fig. 3). With tailored model choices during different jumping phases and variable sampling frequencies, our method can achieve real-time computation of TO (i.e., when TO solve time is shorter than the jumping motion length, TO can generate the next-jump trajectory before the end of the current jump). Even though SRBD-based TO can be solved very efficiently through QP solver, the trajectory accuracy still poses challenges to being employed in dynamic jumping motions [18].
+C. Comparison of Baseline Approaches
+We demonstrate the significance of landing trajectory and variable-frequency frameworks on bipedal jumping. In Fig. 3, we compare baseline approaches with our method
+
+
+ TABLE II: Bipedal Jumping TO Solve Time Comparison
+Model Full-order Kinodynamics SRBD Proposed
+Dimension 2-D 3-D 3-D 2-D Ref. worka [21], [10] [14], [15] [18], [25] # of steps 100 100 100 100+30b Step length 0.01 s 0.01 s 0.01 s variable Solver FATROP FATROP qpOASES FATROP
+Case Solve time 25 cm F 6.9 s 4.5 s 0.09 s 0.91 s 40 cm F 7.5 s 3.9 s 0.09 s 0.84 s 40 cm F&H 7.2 s 4.3 s 0.11 s 0.93 s
+a The compared methods based on these references are re-constructed to fit our robot model and problem setup. b Refers to the additional landing trajectory in proposed method.
+0 0.05 0.1 0.15 0.2 0.25 0.3 0.35 0.4 0.45 X position, m
+0.35
+0.4
+0.45
+0.5
+0.55
+0.6
+0.65
+Z position, m
+Trunk CoM Trajectory
+Initial Condition Final Condition Final Condition
+25 cm forward leap trajectories 40 cm forward leap trajectories
+Fig. 5: Jumping Trajectory Overlay. CoM trajectories overlaid in jumping repeatability tests.
+in simulations. Case 1 shows that using a fixed-frequency MPC with a variable-frequency trajectory (i.e., mismatched resolutions) leads to significant pitch error post-impact. Case 2 demonstrates that omitting the landing recovery trajectory optimization leads to instability after impact. Our approach in Case 3 successfully enables the robot to jump and land on a 40 cm platform.
+D. Jumping Repeatability
+To validate the repeatability of the jumping behaviors with the proposed framework, we run 53 jumping experiments, which include (1) 18 trials of 40-cm forward leaps and (2) 35 trials of 25-cm forward leaps. Five of each jumping trajectories are overlaid in Fig. 5 to showcase the consistency of performance with our control framework.
+E. Landing Robustness
+A successful jumping control cannot omit the importance of its landing recovery. In this work, we leverage the SRBDbased variable-frequency MPC for impact absorption and recovery after landing. We verify the robustness of the landing control by manually dropping the robot from a height of 40 cm foot clearance off the ground (57% of robot height), shown in Fig. 6. The robot can effectively absorb the impact and high z-direction velocity after freefall and balance immediately.
+F. Robustness over Challenging Terrain
+We successfully applied our control method to dynamic continuous jumps, handling terrain perturbations up to 20
+40 cm g
+Fig. 6: Balancing after 0.4 m Freefall. Experimental snapshots and CoM plots.
+Fig. 7: Continous Jumping over Discrete Terrain Experiment Joint Plots. Left leg joint position tracking and joint torque plots. Note that the hip yaw and hip roll joints are omitted for comparison in this plot due to sagittal motion.
+cm (Fig. 1b) and 5 cm height changes between jumps (Fig. 1c). The robot, without prior knowledge of disturbances, navigates these terrains effectively. Additionally, the robot can jump over wooden boxes with increasing heights, up to 20 cm, in under 6 seconds. Joint tracking and torque performance are shown in Fig. 1, demonstrating effective tracking within actuation limits.
+V. CONCLUSION AND FUTURE WORK
+In conclusion, we present a variable-model optimization framework for real-time planning and control of bipedal jumping. We demonstrated the effectiveness of variable model selection and trajectory optimization, real-time application feasibility, the need for landing recovery trajectories, and the importance of matching frequencies and sampling steps between the planned trajectory and tracking MPC, through extensive hardware experimentation. The ongoing refinement of the framework involves: (1) adapting the 2D inverted pendulum model to a 3-D framework, potentially using a double multi-link model with closed-loop kinematics for efficient 3-D motion; and (2) integrating perception for one-step preview terrain data to enhance autonomous planning in hardware experiments.
+
+
+ REFERENCES
+[1] Q. Nguyen, A. Agrawal, W. Martin, H. Geyer, and K. Sreenath, “Dynamic bipedal locomotion over stochastic discrete terrain,” The International Journal of Robotics Research, vol. 37, no. 13-14, pp. 15371553, 2018. [2] D. Kim, S. J. Jorgensen, J. Lee, J. Ahn, J. Luo, and L. Sentis, “Dynamic locomotion for passive-ankle biped robots and humanoids using whole-body locomotion control,” The International Journal of Robotics Research, vol. 39, no. 8, pp. 936–956, 2020. [3] Z. Li, X. Cheng, X. B. Peng, P. Abbeel, S. Levine, G. Berseth, and K. Sreenath, “Reinforcement learning for robust parameterized locomotion control of bipedal robots,” in 2021 IEEE International Conference on Robotics and Automation (ICRA), pp. 2811–2817, IEEE, 2021. [4] G. Gibson, O. Dosunmu-Ogunbi, Y. Gong, and J. Grizzle, “Terrainadaptive, alip-based bipedal locomotion controller via model predictive control and virtual constraints,” in 2022 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS), pp. 6724–6731, IEEE, 2022. [5] Z. Gu, Y. Zhao, Y. Chen, R. Guo, J. K. Leestma, G. S. Sawicki, and Y. Zhao, “Robust-locomotion-by-logic: Perturbation-resilient bipedal locomotion via signal temporal logic guided model predictive control,” arXiv preprint arXiv:2403.15993, 2024.
+[6] M. Vukobratovic ́, B. Borovac, and D. ˇSurdilovi ́c, “Zero moment pointproper interpretation and new applications,” in Int. Conf. on Humanoid Robots, pp. 237–244, 2001. [7] C. L. Vaughan, “Theories of bipedal walking: an odyssey,” Journal of biomechanics, vol. 36, no. 4, pp. 513–523, 2003.
+[8] https://www.youtube.com/watch?v=tF4DML7FIWk, “Atlas | partner in parkour,”
+[9] https://www.youtube.com/watch?v=V1LyWsiTgms,
+“Unitree h1 the world’s first full-size motor drive humanoid robot flips on ground,” [10] Q. Nguyen, M. J. Powell, B. Katz, J. Di Carlo, and S. Kim, “Optimized jumping on the mit cheetah 3 robot,” in 2019 International Conference on Robotics and Automation (ICRA), pp. 7448–7454, IEEE, 2019. [11] M. Chignoli, S. Morozov, and S. Kim, “Rapid and reliable quadruped motion planning with omnidirectional jumping,” in 2022 International Conference on Robotics and Automation (ICRA), pp. 6621–6627, IEEE, 2022. [12] Y. Ding, C. Li, and H.-W. Park, “Kinodynamic motion planning for multi-legged robot jumping via mixed-integer convex program,” in 2020 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS), pp. 3998–4005, IEEE, 2020. [13] G. Bellegarda, M. Shafiee, M. E.  ̈Ozberk, and A. Ijspeert, “Quadrupedfrog: Rapid online optimization of continuous quadruped jumping,” arXiv preprint arXiv:2403.06954, 2024.
+[14] M. Chignoli, D. Kim, E. Stanger-Jones, and S. Kim, “The mit humanoid robot: Design, motion planning, and control for acrobatic behaviors,” in 2020 IEEE-RAS 20th International Conference on Humanoid Robots (Humanoids), pp. 1–8, IEEE, 2021.
+[15] J. Zhang, J. Shen, Y. Liu, and D. Hong, “Design of a jumping control framework with heuristic landing for bipedal robots,” in 2023 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS), pp. 8502–8509, IEEE, 2023. [16] Z. He, J. Wu, J. Zhang, S. Zhang, Y. Shi, H. Liu, L. Sun, Y. Su, and X. Leng, “Cdm-mpc: An integrated dynamic planning and control framework for bipedal robots jumping,” IEEE Robotics and Automation Letters, 2024.
+[17] X. Xiong and A. D. Ames, “Bipedal hopping: Reduced-order model embedding via optimization-based control,” in 2018 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS), pp. 3821–3828, IEEE, 2018. [18] C. Nguyen and Q. Nguyen, “Contact-timing and trajectory optimization for 3d jumping on quadruped robots,” in 2022 IEEE/RSJ international conference on intelligent robots and systems (IROS), pp. 11994–11999, IEEE, 2022.
+[19] D. E. Orin, A. Goswami, and S.-H. Lee, “Centroidal dynamics of a humanoid robot,” Autonomous robots, vol. 35, no. 2, pp. 161–176, 2013. [20] A. Herzog, S. Schaal, and L. Righetti, “Structured contact force optimization for kino-dynamic motion generation,” in 2016 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS), pp. 2703–2710, IEEE, 2016. [21] M. Posa, C. Cantu, and R. Tedrake, “A direct method for trajectory optimization of rigid bodies through contact,” The International Journal of Robotics Research, vol. 33, no. 1, pp. 69–81, 2014. [22] H. Li, R. J. Frei, and P. M. Wensing, “Model hierarchy predictive control of robotic systems,” IEEE Robotics and Automation Letters, vol. 6, no. 2, pp. 3373–3380, 2021. [23] H. Li and P. M. Wensing, “Cafe-mpc: A cascaded-fidelity model predictive control framework with tuning-free whole-body control,” arXiv preprint arXiv:2403.03995, 2024.
+[24] N. Csomay-Shanklin, V. D. Dorobantu, and A. D. Ames, “Nonlinear model predictive control of a 3d hopping robot: Leveraging lie group integrators for dynamically stable behaviors,” in 2023 IEEE International Conference on Robotics and Automation (ICRA), pp. 1210612112, IEEE, 2023. [25] J. Li and Q. Nguyen, “Dynamic walking of bipedal robots on uneven stepping stones via adaptive-frequency MPC,” IEEE Control Systems Letters, 2023.
+[26] J. Li, J. Ma, O. Kolt, M. Shah, and Q. Nguyen, “Dynamic locomanipulation on hector: Humanoid for enhanced control and opensource research,” arXiv preprint arXiv:2312.11868, 2023.
+[27] Y. Yang, J. Shi, S. Huang, Y. Ge, W. Cai, Q. Li, X. Chen, X. Li, and M. Zhao, “Balanced standing on one foot of biped robot based on three-particle model predictive control,” Biomimetics, vol. 7, no. 4, p. 244, 2022. [28] P. M. Wensing, A. Wang, S. Seok, D. Otten, J. Lang, and S. Kim, “Proprioceptive actuator design in the mit cheetah: Impact mitigation and high-bandwidth physical interaction for dynamic legged robots,” Ieee transactions on robotics, vol. 33, no. 3, pp. 509–522, 2017. [29] J. Li and Q. Nguyen, “Force-and-moment-based model predictive control for achieving highly dynamic locomotion on bipedal robots,” in 2021 60th IEEE Conference on Decision and Control (CDC), pp. 1024–1030, IEEE, 2021. [30] J. Di Carlo, P. M. Wensing, B. Katz, G. Bledt, and S. Kim, “Dynamic locomotion in the mit cheetah 3 through convex model-predictive control,” in 2018 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS), pp. 1–9, IEEE, 2018.
+[31] Y. Ding, C. Khazoom, M. Chignoli, and S. Kim, “Orientationaware model predictive control with footstep adaptation for dynamic humanoid walking,” in 2022 IEEE-RAS 21st International Conference on Humanoid Robots (Humanoids), pp. 299–305, IEEE, 2022.
+[32] S. Caron, Q.-C. Pham, and Y. Nakamura, “Stability of surface contacts for humanoid robots: Closed-form formulae of the contact wrench cone for rectangular support areas,” in 2015 IEEE International Conference on Robotics and Automation (ICRA), pp. 5107–5112, IEEE, 2015. [33] C. Nguyen, L. Bao, and Q. Nguyen, “Continuous jumping for legged robots on stepping stones via trajectory optimization and model predictive control,” in 2022 IEEE 61st Conference on Decision and Control (CDC), pp. 93–99, IEEE, 2022. [34] J. A. E. Andersson, J. Gillis, G. Horn, J. B. Rawlings, and M. Diehl, “CasADi – A software framework for nonlinear optimization and optimal control,” Mathematical Programming Computation, vol. 11, no. 1, pp. 1–36, 2019. [35] L. Vanroye, A. Sathya, J. De Schutter, and W. Decr ́e, “Fatrop: A fast constrained optimal control problem solver for robot trajectory optimization and control,” in 2023 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS), pp. 10036–10043, IEEE, 2023.
+[36] DRCL-USC, “https://github.com/DRCL-USC/Hector_ Simulation.”

@@ -13,7 +13,7 @@ Non-repetitive scanning: to maximize the coverage ratio even when the LiDAR is s
 arXiv:1909.06700v1 [cs.RO] 15 Sep 2019
 
 
--180° 0° 180°
+ -180° 0° 180°
 38.4°
 30.0°
 Comparison of FoV (fish-eye view)
@@ -120,7 +120,7 @@ I(P) = R/D(P)2 (3)
 where R is the object reflectivity, measured by the LiDAR sensor (some LiDARs, e.g., Velodyne Puck, returns the
 
 
-Maps update
+ Maps update
 Maps of edge and
 planar features
 Iteratively pose optimization
@@ -184,7 +184,7 @@ IV. ITERATIVE POSE OPTIMIZATION
 Due to the non-repetitive scanning mentioned in Section. I, the extracted feature cannot be constantly tracked like in [12, 13, 19]. A simple example is that, even when the LiDAR is static, the scanned trajectory (and feature points) are different from the previous frame. In our work, we use an iterative pose optimization procedure to calculate the LiDAR pose. With the proper implementation detailed later, we achieve real-time odometry and mapping, both at 20Hz.
 
 
-A. Residual of edge-to-edge
+ A. Residual of edge-to-edge
 Denote Ek and Em the set of all edge features (see Section. III-B) in the current frame and in the map, respectively. For each point in Ek, we find 5 nearest points from Em (see Fig. 6 (b)). To boost the searching speed, we build a KD-tree of Em (see Fig. 5). Moreover, the KD-tree is built by another parallel thread once the last registered frame/sub-frame is received (see Fig. 7). This makes the KD-tree immediately available when the new frame is received. Let Pl be a point in Ek of the current frame (k-th frame). Noticing that the point Pl in Ek is in the local LiDAR frame while points of Em are registered in the global map, to find the nearest points of Pl in Em, we need to project it to the global map by the following transformation.
 Pw = RkPl + Tk (5)
 where (Rk, Tk) is the LiDAR pose when the last point in current frame is sampled, and needs to be determined by the pose optimization. Here we use the LiDAR pose at the last point in a frame to represent the pose of the whole frame, and all points in that frame are projected to the global map using this pose. Also notice that the last point in the current frame is essentially the first point in the next frame. Let Pi denote the i-th nearest points of Pw of Em. To make sure that Pi is indeed on a line, we compute the mean μ and covariance matrix Σ formed by the m nearest points of Pw. We set m to 5 in our work. If the biggest of eigenvalue of Σ is three times larger than the second biggest eigenvalue, we assure that the nearest points of Pw form a line on which Pw should lie. The residual is then computed as (Fig. 6 (b)).
@@ -243,7 +243,7 @@ Then we can project the point at time t to the global map by the interpolated po
 Pw(t) = RtPl + Tt (9)
 
 
-Overview
+ Overview
 Details in dash frame
 Camera LiDAR
 Laptop
@@ -272,7 +272,7 @@ We evaluate the time consumption of our algorithm and the current baseline 4 (bo
 4https://github.com/HKUST-Aerial-Robotics/A-LOAM
 
 
-GPS measurement: 022°20'15.54'' N 114°15'46.64'' E
+ GPS measurement: 022°20'15.54'' N 114°15'46.64'' E
 GPS measurement: 022°20'05.59'' N 114°15'45.88'' E
 GPS measurement:
 022°17'05.56'' N 114°08'02.93'' E

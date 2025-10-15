@@ -1,0 +1,2463 @@
+ 
+ 
+Journals Applied Sciences Volume 12 Issue 20 10.3390/app122010395 
+settings
+Order Article Reprints
+Open AccessArticle
+Adaptive Markov IMM Based Multiple Fading Factors Strong Tracking CKF for Maneuvering Hypersonic-Target Tracking
+by Yalun Luo 1,Zhaoming Li 2,*,Yurong Liao 2,Haining Wang 1 andShuyan Ni 2
+1
+Department of Graduate School, Space Engineering University, Beijing 101416, China
+2
+Department of Electronics and Optics, Space Engineering University, Beijing 101416, China
+*
+Author to whom correspondence should be addressed.
+Appl. Sci. 2022, 12(20), 10395; https://doi.org/10.3390/app122010395
+Submission received: 3 September 2022 / Revised: 7 October 2022 / Accepted: 11 October 2022 / Published: 15 October 2022
+(This article belongs to the Section Aerospace Science and Engineering)
+
+Download
+keyboard_arrow_down
+ Browse Figures Versions Notes
+
+Abstract
+Hypersonic targets have complex motion states and high maneuverability. The traditional interactive multi-model (IMM) has low tracking accuracy and a slow convergence speed. Therefore, this paper proposes a strong tracking cubature Kalman filter (CKF) adaptive interactive multi-model (AIMM) based on multiple fading factors. Firstly, this paper analyzes the structure of the CKF algorithm, introduces the fading factor of the strong tracking algorithm into the covariance matrix of the time update and measurement update, and adjusts the filter gain online and in real time, which can reduce the decline infilter accuracy caused by model mismatch. Secondly, Singer model, “current” statistical (CS) model, and Jerk model are selected in the model set of IMM and introduced singular value decomposition (SVD) decomposition to solve the problem that Cholesky decomposition cannot be performed in the CKF due to the model dimension expansion. Last, an adaptive algorithm for the Markov matrix in the IMM is proposed. The transition probability was adaptively modified by the value of the model likelihood function to enhance the proportion of matching models. The simulation results show that the proposed algorithm enhanced the proportion of matching models in the IMM and improved the tracking accuracy by 16.51% and the convergence speed by 37.5%.
+Keywords: hypersonic target; cubature Kalman filter; strong tracking filtering; fading factor; adaptive interactive multiple model
+
+1. Introduction
+A hypersonic glide target (HGT) [1] has a flight Mach number greater than 5. It has the characteristics of a fast flight speed, strong penetration capability, strong mobility, and high accuracy. It adopts an aerodynamic shape with a large lift-drag ratio, and its trajectory is complex and changeable, so it is difficult to achieve effective defense. Therefore, tracking and locating the target have always been difficult and hot issues in the field of target tracking.
+With the continuous deepening of the research on the characteristics of maneuvering targets, experts and scholars have proposed a variety of single-model motion models to fit maneuvering targets: A. W. B. et al. proposed the constant velocity (CV) model and constant acceleration (CA) model in 1973 [2]. The Singer model, also known as the time-dependent model, was first developed by R Singer and proposed in 1970 [3]. Professor Hongren Zhou of China put forward the CS model in the 1980s [4]. In 1997, Indian scholar Kishore proposed the Jerk model [5], with reference to the Singer model, expanded the dimension of traditional acceleration, and proposed the concept of acceleration. Some experts and scholars have improved these models alone, but for highly maneuvering targets such as hypersonic targets, it is difficult for a single model to match their motion states. When the difference between motion states is large, it will lead to filtering divergence and tracking failure [6].
+To solve the above problems, in 1965, Magill proposed multiple models (MM) [7] to improve the limitation of single models. On the basis of the multi-model algorithm, Bar Shalom and Blom proposed the IMM algorithm by using the pseudo-Bayesian algorithm, and used the Markov transformation matrix to overcome the filtering divergence caused by the fixed model [8]. It tracks the uniform motion process, significantly reduces the noise, and has high tracking accuracy and a fast convergence speed [9]. Since the IMM algorithm was proposed, scholars have applied it to the target tracking field and conducted a significant amount of research. For the tracking of hypersonic gliding targets, Ref. [10] proposed a self-adaptive algorithm of maneuvering frequency in the Singer model, which uses filtering information to calculate and adjust the maneuvering frequency in the Singer model. Compared with the IMM Singer algorithm, it has high tracking accuracy and requires a small amount of calculation. The nonlinear filtering algorithm plays an important role in the field of target tracking, such as multi-base radar positioning [11] and nonlinear filtering vehicle adaptive navigation [12]. Since the measurement model of hypersonic target radar is also nonlinear, Ref. [13] proposed the use of the unscented Kalman filter (UKF) [14] combined with the IMM algorithm to realize the tracking filtering of hypersonic targets. For the problem of model interaction, Ref. [15] proposed an improved AIMM algorithm with Markov parameters. The tracking accuracy is improved, but it is only applicable to slow maneuvering targets with prior information. On this basis, Ref. [16] proposed an adaptive variable structure interactive multi-model (AVSIMM), which improves the tracking accuracy of hypersonic targets.
+To sum up, there are three main problems in the IMM tracking algorithm for highly maneuvering targets such as hypersonic targets: The first is, the selection of models. The conventional CV, CA, and other models are weak in mobility, and cannot match the motion state of hypersonic targets. The second is the filtering algorithm. Most of the measurements of hypersonic targets are nonlinear measurement equations, which are not suitable for the linear Kalman filter (KF) in the IMM model; at the same time, the accuracy of the filtering algorithm needs to be improved. The third is the model interaction problem. The Markov matrix of the conventional IMM algorithm is fixed, the model probability interaction adaptability is weak, and the matching accuracy is low.
+On the basis of previous algorithms, this paper analyzed the structure of the CKF [17] and proposes a strong tracking CKF algorithm with multiple fading factors to improve the filtering accuracy. To solve the problem that Cholesky decomposition fails due to the different model dimensions in the CKF algorithm, an improved strong tracking CKF algorithm based on SVD [18] is proposed. The aim of the algorithm is to improve the standard Markov matrix to improve the adaptability of the algorithm. The simulation results show that, compared with the single-model algorithm and the standard IMM algorithm, the proposed algorithm can significantly improve the tracking accuracy and convergence speed of the hypersonic target.
+2. Modeling of Hypersonic Target Motion Characteristics
+2.1. Motion Equation of Hypersonic Target
+In the process of establishing the motion equation of hypersonic targets, the following coordinate systems need to be considered (Figure 1):
+Figure 1. Coordinate system relationship. 
+𝑂
+O
+ is geo-center, 
+𝑂−𝑋𝑌𝑍
+O−XYZ
+ is the geocentric earth fixed coordinate system, and 
+𝑂−𝑥𝑦𝑧
+O−xyz
+ is the aircraft position coordinate system.
+(1)
+Earth-centered, Earth-fixed (ECEF) coordinate system: The origin 
+𝑂
+O
+ is located at the Earth’s center, 
+𝑂𝑋
+OX
+ points to the zero degrees longitude in the equatorial plane, the 
+𝑂𝑍
+OZ
+ axis points to the north pole, and the 
+𝑂𝑌
+OY
+ axis is perpendicular to the 
+𝑂𝑋
+OX
+ and 
+𝑂𝑍
+OZ
+ axes in the equatorial plane. The unit vectors on the three 
+𝑂−𝑋𝑌𝑍
+O−XYZ
+ axes are expressed as 
+𝑖
+i
+, 
+𝑗
+j
+, and 
+𝑘
+k
+.
+(2)
+Longitude, latitude, altitude (LLA) coordinate system: This is the geodetic coordinate system. The coordinate origin is located at the geo-center 
+𝑂
+O
+, and the longitude 
+𝜇
+μ
+, latitude 
+𝜆
+λ
+, and altitude 
+ℎ
+h
+ of the target location.
+(3)
+Aircraft position coordinate system: The origin 
+𝑂
+O
+ is located at the center of the Earth. The 
+𝑂𝑥
+Ox
+ axis is the connecting line from the center of the Earth to the hypersonic target, and it is positive upward. The 
+𝑂𝑦
+Oy
+ axis is perpendicular to the axis and is in the equatorial plane. The due east direction is positive, and the 
+𝑂𝑧
+Oz
+ axis is determined by the other two axes and the right-hand law. The 
+𝑂−𝑥𝑦𝑧
+O−xyz
+ coordinate system can be obtained by combining the 
+𝑂−𝑋𝑌𝑍
+O−XYZ
+ coordinate system with the latitude and longitude of the hypersonic target position.
+(4)
+East-north-up (ENU): This is the radar coordinate system. The radar position 
+𝑅
+R
+ is the origin of the coordinate system, and the 
+𝑅𝐸
+RE
+, 
+𝑅𝑁
+RN
+, and 
+𝑅𝑈
+RU
+ axes point to the east, north, and sky directions perpendicular to each other. It can be used to represent the pitch angle 
+𝑎
+a
+ and azimuth angle 
+𝑒
+e
+ of the hypersonic target.
+Assuming the Earth is a homogeneous sphere with rotation [19], the aerodynamic force and gravity of the hypersonic target are converted into the same coordinate system through the flight heading angle, aerodynamic angle, attitude angle, and other important angles to obtain the six-degree-of-freedom motion equation of the hypersonic target. Due to the complex structure of the equation, it is simplified when analyzing the scene, and the target trajectory model is obtained as follows [20]:
+⎧
+⎩
+⎨
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+𝑟
+˙
+=𝑉sin𝛾
+𝜇
+˙
+=
+𝑉cos𝛾cos𝜉
+𝑟cos𝜆
+𝜆
+˙
+=
+𝑉cos𝛾sin𝜉
+𝑟
+𝑉
+˙
+=−
+𝐷
+𝑚
+−𝑔sin𝛾+
+𝑤
+2
+𝑒
+𝑟cos𝜆(sin𝛾cos𝜆−cos𝛾sin𝜆sin𝜉)
+𝛾
+˙
+=
+𝐿cos𝜎
+𝑚𝑉
++(
+𝑉
+𝑟
+−
+𝑔
+𝑉
+)cos𝛾+2
+𝑤
+𝑒
+cos𝜆cos𝜉
++
+𝑤
+2
+𝑒
+𝑟
+𝑉
+cos𝜆(cos𝛾cos𝜆+sin𝛾sin𝜆sin𝜉)
+𝜉
+˙
+=
+𝐿sin𝜎
+𝑚𝑉cos𝛾
+−
+𝑉
+𝑟
+cos𝛾cos𝜉tan𝜆+
+2
+𝑤
+𝑒
+(tan𝛾cos𝜆sin𝜉−sin𝜆)−
+𝑤
+2
+𝑒
+𝑟
+𝑉cos𝛾
+sin𝜆cos𝜆cos𝜉
+{r˙=Vsinγ
+μ˙=Vcosγcosξrcosλ
+λ˙=Vcosγsinξr
+V˙=−Dm−gsinγ+we2rcosλ(sinγcosλ−cosγsinλsinξ)
+γ˙=LcosσmV+(Vr−gV)cosγ+2wecosλcosξ
++we2rVcosλ(cosγcosλ+sinγsinλsinξ)
+ξ˙=LsinσmVcosγ−Vrcosγcosξtanλ+
+2we(tanγcosλsinξ−sinλ)−we2rVcosγsinλcosλcosξ
+	
+(1)
+where 
+𝑟
+r
+ is the distance between the center of mass of the target aircraft and the geo-center, 
+𝜇
+μ
+ is the geocentric longitude, and 
+𝜆
+λ
+ is the geocentric latitude. These three parameters describe the location of the target. 
+𝑉
+V
+ is the target velocity, 
+𝛾
+γ
+ is the trajectory inclination angle, and 
+𝜉
+ξ
+ is the trajectory deflection angle. These three parameters describe the target velocity. 
+𝐷
+D
+ and, 
+𝐿
+L
+ are the aerodynamic resistance and aerodynamic lift, 
+𝜎
+σ
+ is the inclination angle, 
+𝑤
+𝑒
+we
+ is the value of the Earth’s rotation angle velocity, and 
+𝑔
+g
+ is the local gravity acceleration.
+In the main movement process of the hypersonic target, the complex aerodynamic force is the main factor to be considered. The common flight aerodynamic lift 
+𝐿
+L
+ and drag 
+𝐷
+D
+ are as follows:
+⎧
+⎩
+⎨
+
+
+
+
+𝐿=
+𝐶
+𝐿
+𝑞𝑆
+𝐷=
+𝐶
+𝐷
+𝑞𝑆
+𝑞=0.5𝜌
+𝑉
+2
+{L=CLqS
+D=CDqS
+q=0.5ρV2
+	
+(2)
+where 
+𝐶
+𝐿
+CL
+ is the lift coefficient, and 
+𝐶
+𝐷
+CD
+ is the drag coefficient. These two coefficients are usually related to the flight Mach number and angle of attack of the target. 
+𝑆
+S
+ is the aerodynamic reference area of the hypersonic target, and 
+𝜌
+ρ
+ is the air density at the flight altitude. The atmospheric index model is used to describe this as follows:
+𝜌=
+𝜌
+0
+𝑒
+−
+ℎ
+𝜌
+𝛽
+ρ=ρ0e−hρβ
+	
+(3)
+where 
+𝜌
+0
+=1.225 kg/
+m
+3
+ρ0=1.225 kg/m3
+ is the standard sea-level atmospheric density, and 
+𝜌
+𝛽
+ρβ
+ is 6700 m [21].
+This paper took Falcon Hypersonic Technology Vehicle 2 (HTV-2) as the research object. Since the aerodynamic parameters of HTV-2 are similar to those of Currency Aerodynamic Vehicle H (CAV-H) [22], the aerodynamic parameters of CAV-H can be cited [23], and the least square method can be used to identify the model parameters:
+{
+𝐶
+𝐷
+=
+𝐶
+𝐷0
++
+𝐶
+𝐷1
+𝛼
+2
++
+𝐶
+𝐷2
+exp(
+𝐶
+𝐷3
+𝑀𝑎)
+𝐶
+𝐿
+=
+𝐶
+𝐿0
++
+𝐶
+𝐿1
+𝛼+
+𝐶
+𝐿2
+exp(
+𝐶
+𝐿3
+𝑀𝑎)
+{CD=CD0+CD1α2+CD2exp(CD3Ma)
+CL=CL0+CL1α+CL2exp(CL3Ma)
+	
+(4)
+where 
+𝑀𝑎
+Ma
+ refers to the flight Mach number, which is the ratio of the flight speed to the local sound speed. Other coefficients are as follows:
+𝐶
+𝐷0
+=0.024, 
+𝐶
+𝐷1
+=7.24×
+10
+−4
+, 
+𝐶
+𝐷2
+=0.406, 
+𝐶
+𝐷3
+=−0.323
+𝐶
+𝐿0
+=−0.2317, 
+𝐶
+𝐿1
+=0.0513, 
+𝐶
+𝐷2
+=0.2945, 
+𝐶
+𝐷3
+=−0.1028
+CD0=0.024, CD1=7.24×10−4, CD2=0.406, CD3=−0.323
+CL0=−0.2317, CL1=0.0513, CD2=0.2945, CD3=−0.1028
+	
+(5)
+2.2. Measurement Model
+The measurement of the single-station radar includes the pitch angle 
+𝑎
+a
+, azimuth angle 
+𝑒
+e
+, and relative distance 
+𝑟
+r
+. According to the geometric relationship shown in Figure 2, the following systematic observation equations can be established:
+𝒁
+𝑘
+=
+⎡
+⎣
+⎢
+⎢
+𝑎
+𝑒
+𝑟
+⎤
+⎦
+⎥
+⎥
+=
+⎡
+⎣
+⎢
+⎢
+⎢
+⎢
+⎢
+arctan(
+𝑧
+𝑥
+2
++
+𝑦
+2
+√
+)
+arctan(
+𝑦
+𝑥
+)
+𝑥
+2
++
+𝑦
+2
++
+𝑧
+2
+−
+−
+−
+−
+−
+−
+−
+−
+−
+−
+√
+⎤
+⎦
+⎥
+⎥
+⎥
+⎥
+⎥
++
+𝒗
+𝑘
+Zk=[a
+e
+r]=[arctan(zx2+y2)
+arctan(yx)
+x2+y2+z2]+vk
+	
+(6)
+where 
+𝒗
+𝑘
+vk
+ is the measurement noise, 
+𝒗
+𝑘
+~𝑁(0,
+𝑹
+𝑘
+)
+vk~N(0,Rk)
+, and 
+𝑹
+𝑘
+Rk
+ is the noise covariance matrix.
+Figure 2. Target measurement in the radar observation coordinate system. The origin 
+𝑂
+O
+ is the radar coordinate, the azimuth angle is 
+𝑒
+e
+, the elevation angle is 
+𝑎
+a
+, and the relative distance is
+𝑟
+r
+.
+The radar measurement equation is established in the ENU coordinate system, while the HTV-2 ballistic reference coordinate system in the previous text is the LLA coordinate system. Therefore, coordinate transformation is required for the hypersonic target state information, as shown in Figure 3.
+Figure 3. The geocentric coordinate system and reference coordinate system of the radar station. The radar position 
+𝑅
+R
+ is the origin of the coordinate system, and the 
+𝑅𝐸
+RE
+, 
+𝑅𝑁
+RN
+, and 
+𝑅𝑈
+RU
+ axes point to the east, north, and sky directions perpendicular to each other.
+Assuming that the coordinates of the hypersonic target are 
+(𝜇,𝜆,ℎ)
+(μ,λ,h)
+ in the LLA coordinate system and 
+(𝑋,𝑌,𝑍)
+(X,Y,Z)
+ in the ECEF coordinate system, the conversion relationship is as follows:
+⎧
+⎩
+⎨
+
+
+
+
+𝑋=(𝑁+ℎ)cos(𝜇)cos(𝜆)
+𝑌=(𝑁+ℎ)cos(𝜇)sin(𝜆)
+𝑍=(𝑁(1−
+𝑒
+2
+)+ℎ)sin(𝜇)
+{X=(N+h)cos(μ)cos(λ)
+Y=(N+h)cos(μ)sin(λ)
+Z=(N(1−e2)+h)sin(μ)
+	
+(7)
+⎧
+⎩
+⎨
+
+
+
+
+𝑒
+2
+=
+𝑎
+2
+−
+𝑏
+2
+𝑎
+2
+𝑁=
+𝑎
+1−
+𝑒
+2
+sin
+2
+(𝜇)
+√
+{e2=a2−b2a2
+N=a1−e2sin2(μ)
+	
+(8)
+where 
+𝑁
+N
+ is the radius of the reference ellipsoid, 
+𝑒
+e
+ is the eccentricity of the ellipsoid, 
+𝑎
+a
+ is the long half-axis of the Earth, and 
+𝑏
+b
+ is the short half-axis of the Earth.
+Similarly, the LLA coordinates 
+(
+𝜇
+0
+,
+𝜆
+0
+,
+ℎ
+0
+)
+(μ0,λ0,h0)
+ of the radar can be converted into ECEF coordinates 
+(
+𝑋
+0
+,
+𝑌
+0
+,
+𝑍
+0
+)
+(X0,Y0,Z0)
+ by Equations (6) and (7). Therefore, the position information of the hypersonic target in the ENU coordinate system can be obtained:
+⎡
+⎣
+⎢
+⎢
+⎢
+𝑥
+𝑦
+𝑧
+⎤
+⎦
+⎥
+⎥
+⎥
+=
+⎡
+⎣
+⎢
+⎢
+𝑒
+𝑛
+𝑢
+⎤
+⎦
+⎥
+⎥
+=
+𝑻
+ENU
+ECEF
+⎡
+⎣
+⎢
+⎢
+𝑋−
+𝑋
+0
+𝑌−
+𝑌
+0
+𝑍−
+𝑍
+0
+⎤
+⎦
+⎥
+⎥
+[x
+y
+z]=[e
+n
+u]=TECEFENU[X−X0
+Y−Y0
+Z−Z0]
+	
+(9)
+𝑻
+ENU
+ECEF
+=
+⎡
+⎣
+⎢
+⎢
+⎢
+−sin(
+𝜆
+0
+)
+−sin(
+𝜇
+0
+)cos(
+𝜆
+0
+)
+cos(
+𝜇
+0
+)cos(
+𝜆
+0
+)
+cos(
+𝜆
+0
+)
+−sin(
+𝜇
+0
+)sin(
+𝜆
+0
+)
+cos(
+𝜇
+0
+)sin(
+𝜆
+0
+)
+0
+sin(
+𝜇
+0
+)
+sin(
+𝜇
+0
+)
+⎤
+⎦
+⎥
+⎥
+⎥
+TECEFENU=[−sin(λ0)	cos(λ0)	0
+−sin(μ0)cos(λ0)	−sin(μ0)sin(λ0)	sin(μ0)
+cos(μ0)cos(λ0)	cos(μ0)sin(λ0)	sin(μ0)]
+	
+(10)
+3. Strong Tracking CKF Based on Multiple Fading Factors
+3.1. CKF Algorithm
+Taking the hypersonic target motion model as the state equation and the single-station radar observation model as the measurement equation, the following nonlinear system model is formed:
+{
+𝒙
+𝑘
+=𝒇(
+𝒙
+𝑘−1
+)+
+𝒘
+𝑘−1
+𝒛
+𝑘
+=𝒉(
+𝒙
+𝑘
+)+
+𝒗
+𝑘
+{xk=f(xk−1)+wk−1
+zk=h(xk)+vk
+	
+(11)
+where:
+𝒙
+𝑘
+=
+[
+𝑥
+𝑥
+˙
+𝑥
+¨
+𝑥
+⃛ 
+𝑦
+𝑦
+˙
+𝑦
+¨
+𝑦
+⃛ 
+𝑧
+𝑧
+˙
+𝑧
+¨
+𝑧
+⃛ 
+]
+𝑇
+∈
+𝑅
+𝑛
+xk=[x	x˙	x¨	x⃛	y	y˙	y¨	y⃛	z	z˙	z¨	z⃛]T∈Rn
+	
+(12)
+It refers to the flight state of the hypersonic target at time 
+𝑘
+k
+, including the position, speed, acceleration, and other 
+𝑛
+n
+ dimensional state information of the target. 
+𝒛
+𝑘
+=
+[𝑎 𝑒 𝑟]
+𝑇
+zk=[a e r]T
+ is the observation vector of the radar system at time 
+𝑘
+k
+, representing the measurement element of the radar. Additionally, 
+𝒇(⋅)
+f(⋅)
+ is the process function and 
+𝒉(⋅)
+h(⋅)
+ is the measurement function of the nonlinear tracking system. 
+𝒘
+𝑘
+wk
+ and 
+𝒗
+𝑘
+vk
+ are uncorrelated zero-mean Gaussian white noise, and the corresponding covariance matrices are 
+𝑸
+𝑘
+Qk
+ and 
+𝑹
+𝑘
+Rk
+.
+CKF is a nonlinear Gaussian filtering algorithm, whose core is to select the sampling points through the spherical radial cubature criterion. The traditional calculation process is as follows [17].
+3.2. Multiple Fading Factor Strong Tracking CKF
+The strong tracking filter (STF) can adjust the state prediction covariance matrix 
+𝑷
+𝑘+1|𝑘
+Pk+1|k
+ in real time by introducing the changing fading factor 
+𝜆
+𝑘
+λk
+, it can keep the filtering residual matrix orthogonal, in order to deal with the problem of the sudden change of the target motion state and improve the robustness. The core idea is to adjust the gain matrix 
+𝐾
+𝑘
+Kk
+ online to meet the following two conditions:
+(1)
+𝐸[(
+𝒙
+𝑘+1
+−
+𝒙
+̂ 
+𝑘+1
+)
+(
+𝒙
+𝑘+1
+−
+𝒙
+̂ 
+𝑘+1
+)
+𝑇
+]=min
+E[(xk+1−x^k+1)(xk+1−x^k+1)T]=min
+;
+(2)
+𝐸[
+𝒆
+𝑘+1+𝑗
+𝒆
+𝑇
+𝑘+1
+]=0
+𝑘=0,1,2,⋯
+𝑗=1,2,⋯
+E[ek+1+jek+1T]=0	k=0,1,2,⋯	j=1,2,⋯
+, where 
+𝒆
+𝑘+1
+=
+𝒛
+𝑘+1
+−
+𝒛
+̂ 
+𝑘+1|𝑘
+ek+1=zk+1−z^k+1|k
+ is the residual at time 
+𝑘+1
+k+1
+. That is, it is required that the residual sequences should remain orthogonal to each other at all times.
+The traditional STF algorithm is based on expend Kalman filter (EKF). In this paper, the STF algorithm and CKF algorithm were combined to establish the STF algorithm for nonlinear systems. The core structure of the algorithm is the calculation of the residual:
+𝒙
+̂ 
+𝑘
+=
+𝒙
+̂ 
+𝑘|𝑘−1
++
+𝑲
+𝑘
+𝒆
+𝑘
+x^k=x^k|k−1+Kkek
+	
+(13)
+𝒆
+𝑘
+=
+𝒛
+𝑘
+−𝒉(
+𝒙
+̂ 
+𝑘|𝑘−1
+)
+ek=zk−h(x^k|k−1)
+	
+(14)
+The fading factor 
+𝜆
+𝑘+1
+λk+1
+ is calculated as follows:
+𝜆
+𝑘
+=max(1,
+tr[
+𝑵
+𝑘
+]
+tr[
+𝑴
+𝑘
+]
+)
+λk=max(1,tr[Nk]tr[Mk])
+	
+(15)
+𝑵
+𝑘
+=
+𝑽
+0,𝑘
+−
+𝑯
+𝑘
+𝑸
+𝑘−1
+𝑯
+𝑇
+𝑘
+−𝛽
+𝑹
+𝑘
+Nk=V0,k−HkQk−1HkT−βRk
+	
+(16)
+𝑴
+𝑘
+=
+𝑯
+𝑘
+𝑷
+𝑥
+𝑘|𝑘−1
+𝑯
+𝑇
+𝑘
+Mk=HkPk|k−1xHkT
+	
+(17)
+𝑯
+𝑘
+=(
+𝑷
+𝑥𝑧,𝑙
+𝑘|𝑘−1
+)
+(
+𝑷
+𝑙
+𝑘|𝑘−1
+)
+−1
+Hk=(Pk|k−1xz,l)(Pk|k−1l)−1
+	
+(18)
+𝑷
+𝑥𝑧,𝑙
+𝑘|𝑘−1
+=
+1
+𝑚
+∑
+𝑖=1
+𝑚
+𝒙
+𝑖,𝑙
+𝑘|𝑘−1
+𝒉
+𝑇
+(
+𝒙
+𝑖,𝑙
+𝑘|𝑘−1
+)−
+𝒙
+̂ 
+𝑘|𝑘−1
+𝒉
+𝑇
+(
+𝒙
+̂ 
+𝑘|𝑘−1
+)
+Pk|k−1xz,l=1m∑i=1mxk|k−1i,lhT(xk|k−1i,l)−x^k|k−1hT(x^k|k−1)
+	
+(19)
+𝑽
+0,𝑘
+=
+⎧
+⎩
+⎨
+
+
+
+
+𝒆
+1
+𝒆
+𝑇
+1
+,𝑘=0
+𝜀
+𝑽
+0,𝑘
++
+𝒆
+𝑘
+𝒆
+𝑇
+𝑘
+1+𝜀
+,𝑘>0
+V0,k={e1e1T,k=0
+εV0,k+ekekT1+ε,k>0
+	
+(20)
+where 
+𝑷
+𝑥
+𝑘|𝑘−1
+Pk|k−1x
+ is the variance matrix of the state prediction error when the fading factor is not introduced and the system noise variance matrix is not considered; 
+𝑷
+𝑙
+𝑘|𝑘−1
+Pk|k−1l
+ is the state prediction error variance matrix considering the system noise variance matrix; 
+𝛽≥1
+β≥1
+ is the weakening factor; and 
+𝜀
+ε
+ is the forgetting factor, usually taken as
+0.95≤𝜀≤0.995
+0.95≤ε≤0.995
+.
+The nonlinear system variables of hypersonic targets are multi-dimensional and complex, so it is difficult to determine the optimal fading factor, and the accuracy of a single fading factor is limited. Therefore, a strong tracking cubature Kalman filter (STCKF) algorithm based on multiple fading factors is introduced:
+(1)
+In the time update process, the symmetric fading factor is introduced into the state prediction error covariance matrix, and 
+𝑷
+−
+𝑘
+Pk−
+ is changed to the following formula:
+𝑷
+−
+𝑘
+=
+𝜆
+𝑘+1
+[
+1
+𝑚
+∑
+𝑖=1
+𝑚
+(
+𝝌
+−
+𝑖,𝑘
+−
+𝒙
+̂ 
+−
+𝑘
+)
+(
+𝝌
+−
+𝑖,𝑘
+−
+𝒙
+̂ 
+−
+𝑘
+)
+𝑇
+]
+𝜆
+𝑘+1
+𝑇
++
+𝑸
+𝑘−1
+Pk−=λk+1[1m∑i=1m(χi,k−−x^k−)(χi,k−−x^k−)T]λk+1T+Qk−1
+	
+(21)
+(2)
+In the measurement update process, a fading factor is introduced into the innovation covariance matrix and the measurement autocovariance matrix:
+𝑷
+𝑧
+=
+𝜆
+𝑘+1
+[
+1
+𝑚
+∑
+𝑖=1
+𝑚
+𝜡
+−
+𝑖,𝑘
+(
+𝜡
+−
+𝑖,𝑘
+)
+𝑇
+−
+𝒛
+̂ 
+−
+𝑘
+(
+𝒛
+̂ 
+−
+𝑘
+)
+𝑇
+]+
+𝑹
+𝑘
+Pz=λk+1[1m∑i=1mΖi,k−(Ζi,k−)T−z^k−(z^k−)T]+Rk
+	
+(22)
+𝑷
+𝑥𝑧
+=
+𝜆
+𝑘+1
+[
+1
+𝑚
+∑
+𝑖=1
+𝑚
+𝑿
+−
+𝑖,𝑘
+(
+𝜡
+−
+𝑖,𝑘
+)
+𝑇
+−
+𝒙
+̂ 
+−
+𝑘
+(
+𝒛
+̂ 
+−
+𝑘
+)
+𝑇
+]
+Pxz=λk+1[1m∑i=1mXi,k−(Ζi,k−)T−x^k−(z^k−)T]
+	
+(23)
+Compared with [10], the algorithm in this paper adds a fading factor in the time updating process, which can adjust the prediction covariance matrix in real time and the gain matrix more obviously. With a slight increase in the amount of calculation, the algorithm accuracy can be improved.
+In nonlinear systems, the system noise covariance matrix 
+𝑸
+𝑘
+Qk
+ is often time-varying and uncertain [24]. A suboptimal unbiased MAP constant noise estimator can be designed according to the maximum a posteriori estimation principle and the exponential weighting method. The fading factor is added to the filter to adjust the system noise, and the following recursive formula is given:
+𝑸
+̂ 
+𝑘+1
+=(1−
+𝑑
+𝑘+1
+)
+𝑸
+̂ 
+𝑘−1
++
+𝑑
+𝑘+1
+[
+𝑲
+𝑘+1
+𝒆
+𝑘+1
+𝒆
+𝑘+1
+𝑇
+𝑲
+𝑘+1
+𝑇
++
+𝑷
+𝑘+1
+−
+∑
+𝑖=1
+𝑚
+1
+𝑚
+(
+𝝌
+−
+𝑖,𝑘
+−
+𝒙
+̂ 
+−
+𝑘
+)
+(
+𝝌
+−
+𝑖,𝑘
+−
+𝒙
+̂ 
+−
+𝑘
+)
+𝑇
+]
+Q^k+1=(1−dk+1)Q^k−1+dk+1[Kk+1ek+1ek+1TKk+1T+Pk+1−∑i=1m1m(χi,k−−x^k−)(χi,k−−x^k−)T]
+	
+(24)
+where 
+𝑑
+𝑘
+=(1−𝑏)/(1−
+𝑏
+𝑘
+)
+dk=(1−b)/(1−bk)
+, b is the noise fading factor, and the value range is 
+0<𝑏<1
+0<b<1
+. Through multiple simulations, it can be seen that a better tracking filtering effect can be obtained when b is 0.89.
+Substitute the selected b value into the formula to acquire:
+𝑸
+𝑘
+=(1−
+𝑑
+𝑘
+)
+𝑸
+𝑘−1
++
+𝑑
+𝑘
+[
+𝑲
+𝑘
+𝒆
+𝑘
+𝒆
+𝑘
+𝑇
+𝑲
+𝑘
+𝑇
+ ]𝑘≥2
+Qk=(1−dk)Qk−1+dk[KkekekTKkT ]k≥2
+	
+(25)
+Add 
+𝑸
+𝑘
+Qk
+ to the multi fading factor strong tracking algorithm, the filtering value of the target is closer to the real value and the filtering accuracy is improved.
+4. AIMM Algorithm
+4.1. IMM Algorithm
+The IMM algorithm is mainly composed of an interactor, multiple filters, a state estimation fusion device, and a model probability estimator. The main calculation process is as follows (Figure 4):
+Figure 4. Computational steps of the interactive multi-model algorithm. Each filter is an independent model. The observation information is introduced, the target motion state is obtained by filtering, and finally the state fusion is carried out by weighting.
+The traditional IMM algorithm has four calculation steps, it can refer to the literature [8].
+4.2. AIMM Algorithm
+In the IMM algorithm, model switching is a Markov process, so it is very dependent on the Markov matrix of the model transformation. In the standard IMM algorithm, the Markov matrix is given in advance. Due to the uncertainty of prior information such as the mobility of the target, it is generally determined based on experience. Therefore, for highly maneuvering targets such as hypersonic targets, the fixed Markov matrix cannot sufficiently reflect the real motion state of the target and the switching process between the models. Therefore, based on traditional IMM algorithm, we proposed to use the posterior information to adaptively modify the Markov matrix.
+The model likelihood function value 
+Λ
+𝑗
+(𝑘)
+Λj(k)
+ contains the residual and residual covariance between the predicted state and the real state at time 
+𝑘
+k
+, so it can sufficiently reflect the matching degree between model 
+𝑗
+j
+ and the current motion state. The degree of model matching is proportional to the value of the likelihood function. Therefore, based on the model likelihood function, this paper proposes a transfer probability matrix adaptive algorithm based on the likelihood function. The calculation process is as follows:
+𝜑
+𝑖𝑗
+(𝑘)=
+(
+Λ
+𝑗
+(𝑘)
+Λ
+𝑖
+(𝑘)
+)
+𝛾
+φij(k)=(Λj(k)Λi(k))γ
+	
+(26)
+𝑃
+𝑖𝑗
+(𝑘)=
+𝑃
+′
+𝑖𝑗
+(𝑘)/
+∑
+𝑗=1
+𝑢
+𝑃
+′
+𝑖𝑗
+(𝑘)
+Pij(k)=Pij′(k)/∑j=1uPij′(k)
+	
+(27)
+𝑃
+′
+𝑖𝑗
+(𝑘)=
+𝜑
+𝑖𝑗
+(𝑘)
+𝑃
+𝑖𝑗
+(𝑘−1)
+Pij′(k)=φij(k)Pij(k−1)
+	
+(28)
+where 
+𝜑
+𝑖𝑗
+(𝑘)
+φij(k)
+ is the ratio of the model likelihood function, which is used as the adjustment factor to adjust the model conversion rate, and 
+𝛾
+γ
+ is the correction rate, 
+0≤𝛾≤1
+0≤γ≤1
+, which is used to control the speed of correction. It can be seen from Equation (24) that at time 
+𝑘
+k
+, when the likelihood function index 
+Λ
+𝑗
+(𝑘)
+Λj(k)
+ is greater than 
+Λ
+𝑖
+(𝑘)
+Λi(k)
+, model 
+𝑗
+j
+ has a higher matching degree with the real motion than model 
+𝑖
+i
+, and the probability from model 
+𝑗
+j
+ to model 
+𝑖
+i
+ increases after the correction. Therefore, the model with a larger likelihood function value accounts for a larger proportion in the next moment. On the contrary, the proportion of the model with a small likelihood function decreases in the next moment. Therefore, it can be concluded that this method enhances the proportion of matching models by using the measurement information to adaptively modify the transfer probability matrix.
+However, it can be found through substitution calculation that Formula (25) has defects. During iterative calculation, some elements of the main diagonal may become larger and larger, and the transition probability between models may be reduced. Therefore, when the model state needs to be switched, the efficiency will be reduced. Therefore, the thresholds 
+𝑀
+M
+ and 
+𝑁
+N
+ are set for the main diagonal element and the non-main diagonal element, respectively, and the following improvements are made.
+If the main diagonal element is too large, i.e., 
+𝑃
+𝑖𝑖
+(𝑘)>𝑀
+Pii(k)>M
+, let 
+𝑃
+′
+𝑖𝑖
+(𝑘)=𝑀
+Pii′(k)=M
+, and redistribute the non-main diagonal elements of its row according to the original ratio:
+𝑃
+″
+𝑖𝑗
+(𝑘)=
+𝑃
+𝑖𝑗
+(𝑘)
+⎡
+⎣
+⎢
+⎢
+⎢
+⎢
+⎢
+⎢
+1−
+𝑀−
+𝑃
+𝑖𝑖
+(𝑘)
+∑
+𝑗=1
+𝑚
+𝑃
+𝑖𝑖
+(𝑘)−
+𝑃
+″
+𝑖𝑖
+(𝑘)
+⎤
+⎦
+⎥
+⎥
+⎥
+⎥
+⎥
+⎥
+Pij″(k)=Pij(k)[1−M−Pii(k)∑j=1mPii(k)−Pii″(k)]
+	
+(29)
+Similarly, if the non-main diagonal element is too small, i.e., 
+𝑃
+𝑖𝑗
+(𝑘)<𝑁(𝑖≠𝑗)
+Pij(k)<N(i≠j)
+, let 
+𝑃
+′
+𝑖𝑗
+(𝑘)=𝑁(𝑖≠𝑗)
+Pij′(k)=N(i≠j)
+, and redistribute the other elements of its row according to the original proportion (refer to Formula (27)).
+The correction of the elements by Equation (27) still satisfies 
+∑
+𝑗=1
+𝑚
+𝑃
+𝑖𝑗
+(𝑘)=1
+∑j=1mPij(k)=1
+ and 
+0≤
+𝑃
+𝑖𝑗
+(𝑘)≤1
+0≤Pij(k)≤1
+, and can enhance the stability and adaptability of the model transformation.
+4.3. SVD Algorithm
+The selection of the IMM model set needs to meet the highest matching degree between the model and the motion state at any time. The existing models include the CV model, CA model, constant turning (CT) model, Singer model, CS model, and Jerk model, which are applicable to different scenarios. Among them, the CV and CA models are applicable to the non-maneuvering or weak maneuvering movement state of the target, CT models are applicable to the turning movement of the target, the Singer and CS models can describe the normal movement, and the Jerk model, as the model with the highest order, can describe the acceleration of the target, which is mainly used to track strong maneuvering targets. Literature [25] proposed the single model to target tracking, but the hypersonic target has high maneuverability, which is difficult to tracking. Therefore, this paper selected three models with high maneuverability, namely, the Singer model, CS model, and Jerk model, to build the IMM model set.
+The state equation of the target motion model can be expressed as
+𝒙
+𝑘
+=
+𝑭
+1
+𝒙
+𝑘−1
++
+𝒘
+𝑘−1
+xk=F1xk−1+wk−1
+	
+(30)
+where 
+𝒙
+𝑘−1
+xk−1
+ is the motion state of the target at the previous time, 
+𝒙
+𝑘
+xk
+ is the motion state of the current target, and 
+𝑭
+1
+F1
+ is the state transition matrix.
+Singer model: Singer model is time related, that is, the target acceleration can be set as a first-order time correlation function with the mean value of 0, and its corresponding function can be expressed as:
+𝑅
+𝑎
+(𝜏)=𝐸[𝑎(𝑡)𝑎(𝑡+𝜏)]=
+𝜎
+𝑎
+2
+𝑒
+−𝛼|𝜏|
+(𝛼≥0)
+Ra(τ)=E[a(t)a(t+τ)]=σa2e−α|τ|	(α≥0)
+	
+(31)
+where 
+𝑎(𝑡)
+a(t)
+ is the target acceleration, 
+𝜎
+𝑎
+2
+σa2
+ is the variance, 
+𝛼
+α
+ is the maneuvering frequency. The probability density function can be used to solve 
+𝜎
+𝑎
+2
+σa2
+:
+𝜎
+𝑎
+2
+=
+∫
+𝑎
+max
+−
+𝑎
+max
+𝑃(𝑎)
+𝑎
+2
+𝑑𝑎=
+𝑎
+max
+2
+3
+(1+4
+𝑃
+max
+−
+𝑃
+0
+)
+σa2=∫−amaxamaxP(a)a2da=amax23(1+4Pmax−P0)
+	
+(32)
+The state transition matrix and state noise covariance matrix in one dimension are as follows:
+𝑭
+1
+=
+⎡
+⎣
+⎢
+⎢
+⎢
+1
+0
+0
+𝑇
+1
+0
+(𝛼𝑇−1+
+𝑒
+−𝛼𝑇
+)/
+𝛼
+2
+(1−
+𝑒
+−𝛼𝑇
+)/𝛼
+𝑒
+−𝛼𝑇
+⎤
+⎦
+⎥
+⎥
+⎥
+F1=[1	T	(αT−1+e−αT)/α2
+0	1	(1−e−αT)/α
+0	0	e−αT]
+	
+(33)
+In the formula, 
+𝛼
+α
+ refers to the maneuvering frequency, which is usually selected according to experience: generally, 1, 1/20, and 1/60 are taken according to the maneuverability of the target. The state noise covariance matrix can be found in [26].
+CS model: The state transition matrix and state noise covariance matrix are the same as in the Singer model. Compared with the Singer model, the CS model has a control input matrix, and its discrete state equation can be expressed as:
+𝒙
+𝑘
+=
+𝑭
+1
+𝒙
+𝑘−1
++
+𝑼
+𝑘
+𝒂
+¯
++
+𝒘
+𝑘−1
+xk=F1xk−1+Uka¯+wk−1
+	
+(34)
+where 
+𝒂
+¯
+a¯
+ is the average value of acceleration, and the one-step prediction of the acceleration state can be taken as the average value of the current acceleration, i.e., 
+𝑎
+¯
+𝑥
+=
+𝑥
+¨
+−
+𝑘
+a¯x=x¨k−
+; according to the average value of the “current” acceleration, the variance of the current acceleration can be obtained:
+𝜎
+2
+𝑎
+={
+(4−𝜋)/𝜋·
+(
+𝑎
+max
+−
+𝑎
+¯
+)
+2
+, 
+𝑎
+¯
+>0
+(4−𝜋)/𝜋·
+(
+𝑎
+¯
+−
+𝑎
+min
+)
+2
+, 
+𝑎
+¯
+<0
+σa2={(4−π)/π·(amax−a¯)2, a¯>0
+(4−π)/π·(a¯−amin)2, a¯<0
+	
+(35)
+where 
+𝑎
+max
+amax
+ and 
+𝑎
+min
+amin
+ are the maximum and minimum accelerations set for each axis, which are generally set according to prior conditions.
+Jerk model: Based on the Singer model, zero-mean colored noise is introduced to express the acceleration. The exponential autocorrelation function of target acceleration 
+𝑗(𝑡)
+j(t)
+ is:
+𝑟
+𝑗
+(𝜏)=𝐸[𝑗(𝑡)𝑗(𝑡+𝜏)]=
+𝜎
+𝑗
+2
+𝑒
+−𝛼|𝜏|
+(𝛼≥0)
+rj(τ)=E[j(t)j(t+τ)]=σj2e−α|τ|	(α≥0)
+	
+(36)
+where, 
+𝜎
+𝑗
+2
+σj2
+ is the variance of acceleration of maneuvering target, and 
+𝛼
+m
+αm
+ is the maneuvering frequency. By Laplace transformation of the above equation, we can acquire:
+𝑅(𝑠)=𝐿𝑎𝑝𝑙𝑎𝑐𝑒{
+𝑅
+𝑗
+(𝜏)}=
+−2
+𝛼
+m
+𝜎
+𝑗
+2
+(𝑠−
+𝛼
+m
+)(𝑠+
+𝛼
+m
+)
+=𝐻(𝑠)𝐻(−𝑠)𝑉(𝑠)
+R(s)=Laplace{Rj(τ)}=−2αmσj2(s−αm)(s+αm)=H(s)H(−s)V(s)
+	
+(37)
+where,
+𝐻(𝑠)=1/(𝑠+𝑎)
+H(s)=1/(s+a)
+	
+(38)
+𝑉(𝑠)=2
+𝛼
+m
+𝜎
+𝑗
+2
+V(s)=2αmσj2
+	
+(39)
+Then change the above equation in time domain to obtain the differential equation as follows:
+𝑗(𝑡)=−𝛼𝑗(𝑡)+𝑣(𝑡)
+j(t)=-αj(t)+v(t)
+	
+(40)
+where the correlation function of white noise a is 
+𝑣(𝑡)
+v(t)
+:
+𝑟
+𝑣
+(𝜏)=2𝛼
+𝜎
+𝑗
+2
+𝛿(𝜏)
+rv(τ)=2ασj2δ(τ)
+	
+(41)
+The discrete state transition matrix and state noise covariance matrix are as follows:
+𝑭
+2
+=
+⎡
+⎣
+⎢
+⎢
+⎢
+⎢
+⎢
+1
+0
+0
+0
+𝑇
+1
+0
+0
+𝑇
+2
+2
+𝑇
+1
+0
+𝑝
+1
+𝑞
+1
+𝑟
+1
+𝑠
+1
+⎤
+⎦
+⎥
+⎥
+⎥
+⎥
+⎥
+F2=[1	T	T22	p1
+0	1	T	q1
+0	0	1	r1
+0	0	0	s1]
+	
+(42)
+The elements of the state noise covariance matrix can be found in [27].
+Since the Jerk model is of the fourth order and the Singer and CS models are of the third order, it is necessary to expand the dimension of their state transition matrix and state noise variance matrix. All zero rows will appear in the traditional dimension expansion method, which leads to the fact that Cholesky in the CKF algorithm cannot be decomposed due to the loss of the positive definiteness of the matrix. Therefore, in order to enhance the stability of the calculation, SVD decomposition was considered to replace Cholesky decomposition in this paper. The specific process is as follows:
+Cholesky decomposition of the covariance matrix in the time update process was rewritten into SVD decomposition:
+𝑷
+𝑘−1
+=
+𝑼
+𝑘−1
+[
+𝑺
+𝑘−1
+0
+0
+0
+]
+𝑼
+𝑇
+𝑘−1
+Pk−1=Uk−1[Sk−1	0
+0	0]Uk−1T
+	
+(43)
+where 
+𝑺
+𝑘−1
+Sk−1
+ is a diagonal matrix, 
+𝑺
+𝑘−1
+=diag[
+𝑠
+1
+,
+𝑠
+2
+,⋯
+𝑠
+𝑛
+]
+Sk−1=diag[s1,s2,⋯sn]
+, and 
+𝑠
+𝑖
+si
+ is the singular value of the matrix. The cubature point can be expressed as:
+𝑿
+𝑖,𝑘−1
+=
+𝒙
+̂ 
+𝑘−1
++
+𝑼
+𝑘−1
+𝑺
+𝑘−1
+−
+−
+−
+−
+√
+𝜉
+𝑖
+, 𝑖=1,2,⋯𝑚
+Xi,k−1=x^k−1+Uk−1Sk−1ξi, i=1,2,⋯m
+	
+(44)
+where 
+𝜉
+𝑖
+=
+𝑚/2
+−
+−
+−
+−
+√
+[1]
+𝑖
+ξi=m/2[1]i
+.
+The measurement update is similar to the time update.
+𝑷
+−
+𝑘−1
+=
+𝑼
+−
+𝑘−1
+[
+𝑺
+−
+𝑘−1
+0
+0
+0
+]
+𝑼
+−
+𝑘−1
+𝑇
+Pk−1−=Uk−1−[Sk−1−	0
+0	0]Uk−1−T
+	
+(45)
+𝑿
+𝑖,𝑘−1
+=
+𝒙
+̂ 
+𝑘−1
++
+𝑼
+−
+𝑘−1
+𝑺
+−
+𝑘−1
+−
+−
+−
+−
+√
+𝜉
+𝑖
+, 𝑖=1,2,⋯𝑚
+Xi,k−1=x^k−1+Uk−1−Sk−1−ξi, i=1,2,⋯m
+	
+(46)
+This algorithm takes into account the representation of the Jerk model in the IMM model set and the reasonable decomposition of the covariance matrix in the CKF algorithm and enhances the stability of the algorithm.
+5. Simulation and Analysis
+5.1. Simulation Environment Settings
+(1)
+Construction of real trajectory of HTV-2 trajectory
+In this paper, the trajectory model of hypersonic target is simulated, and the real water drift trajectory model is constructed. Using the characteristic data of HTV-2 given by the United States, the mass of the aircraft was 907 kg, the aerodynamic reference area 
+𝑆=0.4837
+ m
+2
+S=0.4837 m2
+, and the gravity acceleration 
+𝑔
+g
+ was taken as 
+9.8 m/
+s
+2
+9.8 m/s2
+. In order to obtain the motion state of the hypersonic target, the initial test state of the target was set as follows: the geocentric distance was 6426 km, the longitude and latitude were 0 degrees, the initial velocity of the target was 17 Mach, the target trajectory inclination angle was 
+0.25 rad
+0.25 rad
+, and the trajectory deflection angle was 
+−0.42 rad
+−0.42 rad
+. The angle of attack setting followed that presented in [28]:
+𝛼=
+⎧
+⎩
+⎨
+
+
+
+
+
+
+𝛼
+max
+,
+𝛼
+mid
++
+𝛼
+bal
+sin[
+(𝑉−
+𝑉
+mid
+)𝜋
+𝑉
+1
+−
+𝑉
+2
+],
+𝛼
+max(𝐾)
+𝑉
+1
+<𝑉≤
+𝑉
+𝑒
+𝑉
+2
+≤𝑉≤
+𝑉
+1
+𝑉
+𝑓
+≤𝑉<
+𝑉
+2
+α={αmax,	V1<V≤Ve
+αmid+αbalsin[(V−Vmid)πV1−V2],	V2≤V≤V1
+αmax(K)	Vf≤V<V2
+	
+(47)
+⎧
+⎩
+⎨
+
+
+
+
+𝛼
+mid
+=(
+𝛼
+max
++
+𝛼
+max(𝐾)
+)/2
+𝛼
+bal
+=(
+𝛼
+max
+−
+𝛼
+max(𝐾)
+)/2
+𝑉
+mid
+=(
+𝑉
+1
++
+𝑉
+2
+)/2
+{αmid=(αmax+αmax(K))/2
+αbal=(αmax−αmax(K))/2
+Vmid=(V1+V2)/2
+	
+(48)
+where the maximum angle of attack 
+𝛼
+max
+αmax
+ was set to 20 degrees, and the angle of attack 
+𝛼
+max(𝐾)
+αmax(K)
+ was set to 11 degrees at the maximum lift–drag ratio. The target motion trajectory can be obtained through the fourth-order Runge–Kutta method simulation, as shown in the Figure 5.
+Figure 5. HTV-2 trajectory. The blue track part shows the entire movement process of the hype-sonic target in a step jump process, and the red track part shows the radar observation period.
+(2)
+Radar simulation condition setting
+The coordinates in the radar longitude, latitude, altitude coordinate system were 
+(
+37.45
+∘
+,−
+15
+∘
+,0 m)
+(37.45°,−15°,0 m)
+, the detection range of the single-station radar was 400 km, the standard deviations of the angle measurement and range were 500 m and 0.5 degrees, respectively, the radar sampling period was 1 s, and the tracking period was 710 s–1060 s. The tracking track is shown in the red track part in Figure 5.
+5.2. Algorithm Simulation and Analysis
+(1)
+Algorithm simulation verification
+The strong tracking algorithm is verified against the state mutation of maneuvering target (Figure 6):
+Figure 6. Tradition target maneuver trajectory. The traditional target has two state changes during maneuver, and IMM-CKF and IMM-STCKF track it.
+As can be seen from Figure 7, the target has a state mutation at time 40 and 135. The RMSE of the traditional IMM-CKF is obvious when the state mutation occurs, and the tracking accuracy is reduced. The strong tracking algorithm based on multiple fading factors proposed in this paper can improve the tracking accuracy by adjusting the gain matrix in real time, so that it can reduce the impact of state mutation residual. Therefore, the following simulation results can be obtained by applying the algorithm in this paper to the strong maneuver phase of the hypersonic target trajectory.
+Figure 7. RMSE of position (a) and velocity (b). The red line is RMSE of IMM-CKF, the blue line is RMSE of IMM-STCKF.
+As shown in the Figure 8, three algorithms are used to simulate and verify the strong maneuvering segment of the hypersonic target. It can be seen from the trajectory tracking graph of X, Y, Z axes that the three algorithms have achieved effective tracking. The algorithm proposed in this paper has the highest tracking accuracy in the three axes. It is obvious from the z-axis tracking process that the hypersonic target has a strong maneuver in about 150 s. The algorithm proposed in this paper can reduce the impact of state mutation and improve the tracking accuracy. According to the strong maneuvering phase of the hypersonic target, the algorithm in this paper is compared with the recent literature:
+Figure 8. Trajectory tracking of hypersonic target. (a) Hypersonic target strong maneuver phase; (b) X-axis trajectory tracking; (c) Y-axis trajectory tracking; (d) Z-axis trajectory tracking.
+Compared with the reference [13], this paper proposed adaptive IMM. The comparative simulation results are as follows (Figure 9):
+Figure 9. Comparison of algorithm with reference [13]. (a) RMSE of position; (b) Change of trace value 
+𝑲
+𝑘
+Kk
+ of position gain matrix of Jerk model.
+From the experimental simulation results, it can be seen that the tracking accuracy of the algorithm in reference [13] is lower than AIMM in this paper, and the mean square error variance is large. Take the Jerk model as an example, it can be seen from the change trend of the trace value of the position gain matrix in the figure that at time t = 158–164 s, the trace value of the position gain matrix has a sudden change, and the model state has changed; The gain matrix 
+𝑲
+𝑘
+Kk
+ trace value of the algorithm in this paper changes less than that of the algorithm in reference [13], so the adaptability of the model matching degree is enhanced.
+(2)
+Hypersonic target tracking simulation
+Take the weak maneuver phase as an example, the hypersonic target tracking algorithm is simulated. The initial value of the hypersonic target was set as 
+𝒙
+0
+x0
+ = [−719,000, 4270, 1, 0.2, 233,000, −1530, −0.6, 0.3, 199,000, 1030, −5.9, 0.5], and the target maneuvering frequency was set as 
+𝛼=1/20
+α=1/20
+. In the CS model, the maximum and minimum accelerations of the 
+𝑥
+x
+ axis, 
+𝑦
+y
+, axis and 
+𝑧
+z
+ axis were, respectively, 
+±700 m/
+s
+2
+±700 m/s2
+, 
+±500 m/
+s
+2
+±500 m/s2
+, and 
+±200 m/
+s
+2
+±200 m/s2
+, and the observation noise covariance matrix was set as 
+𝑹=diag[
+0.5
+2
+0.5
+2
+500
+2
+]
+R=diag[0.52	0.52	5002]
+. In the IMM algorithm, the initial probability matrix of the model was 
+𝒖
+1
+=[
+1/3
+1/3
+1/3
+]
+u1=[1/3	1/3	1/3]
+, and the initial Markov transition probability matrix was
+𝑷
+1
+=
+⎡
+⎣
+⎢
+⎢
+0.9
+0.05
+0.05
+0.05
+0.9
+0.05
+0.05
+0.05
+0.9
+⎤
+⎦
+⎥
+⎥
+P1=[0.9	0.05	0.05
+0.05	0.9	0.05
+0.05	0.05	0.9]
+	
+(49)
+After conducting 100 Monte Carlo simulations, the performance of the algorithm was measured by the root mean square error (RMSE) and the mean value of the RMSE.
+𝑅𝑀𝑆
+𝐸
+𝑖
+=
+1
+𝑁
+∑
+𝑘=1
+𝑁
+(
+𝑋
+𝑖
+−
+𝑋
+̂ 
+𝑖
+)
+2
++
+(
+𝑌
+𝑖
+−
+𝑌
+̂ 
+𝑖
+)
+2
++
+(
+𝑍
+𝑖
+−
+𝑍
+̂ 
+𝑖
+)
+2
+−
+−
+−
+−
+−
+−
+−
+−
+−
+−
+−
+−
+−
+−
+−
+−
+−
+−
+−
+−
+−
+−
+−
+−
+−
+−
+−
+−
+−
+−
+−
+−
+−
+−
+−
+−
+
+⎷
+
+
+RMSEi=1N∑k=1N(Xi−X^i)2+(Yi−Y^i)2+(Zi−Z^i)2
+	
+(50)
+where 
+𝑁
+N
+ refers to the number of Monte Carlo simulations, 
+𝑋
+𝑖
+,
+𝑌
+𝑖
+,
+𝑍
+𝑖
+Xi,Yi,Zi
+ refer to the real state of each axis in the 
+𝑖
+i
+ simulation, and 
+𝑋
+̂ 
+𝑖
+,
+𝑌
+̂ 
+𝑖
+,
+𝑍
+̂ 
+𝑖
+X^i,Y^i,Z^i
+ refer to the filter estimation value of each axis. The simulation results are as follows.
+The tracking trajectory of the target is shown in Figure 6. It can be seen that the three algorithms could effectively track the hypersonic target. In order to compare the tracking accuracy of the three algorithms, the position and speed root mean square errors of each axis were simulated, as shown in Figure 10 and Figure 11. Additionally, the comparison table of the root mean square error and mean value of the three algorithms was obtained through calculation, as shown in Table 1. The model transition probability of IMM-CKF is shown in Figure 12a, and the model transition probability of the algorithm in this paper is shown in Figure 12b.
+Figure 10. Position RMSE of three algorithms: (a) RMSE of position in the x-axis direction; (b) RMSE of position in the y-axis direction; (c) RMSE of position in the z-axis direction; (d) RMSE of position.
+Figure 11. Velocity RMSE of three algorithms: (a) RMSE of velocity in the x-axis direction; the RMSE is about 400 m/s; (b) RMSE of velocity in the y-axis direction; (c) RMSE of velocity in the z-axis direction; (d) RMSE of velocity.
+Figure 12. Model probability: (a) IMM-CKF; (b) AIMM-STCKF.
+Table 1. Table of the mean RMSEs of the three algorithms.
+As defenders, the velocity tracking error and position tracking error are the main indicators for HTV-2 tracking performance [29,30,31]. According to Figure 10 and Figure 11 and Table 1, the RMSE of the x, y, z positions and speed can be found:
+(1)
+The IMM-CKF and IMM-STCKF algorithms converged faster because the setting error of the initial value of the axis position and speed was small. Due to the large error of the initial value, the convergence time of the two algorithms was about 40 s. In contrast, the AIMM-STCKF algorithm has model adaptability, so the convergence time was significantly faster. Overall, it was about 25 s, and the convergence speed was increased by about 37.5%.
+(2)
+The AIMM-STCKF algorithm proposed in this paper significantly improved the accuracy of the algorithm after adding the Markov adaptive matrix. Among the three algorithms, the root mean square error of the speed and position was the smallest, the tracking accuracy was the highest and the variance was small. Overall, the position tracking accuracy was about 16.51% higher than that of the IMM-STCKF algorithm, and the speed tracking accuracy was about 35.74%.
+(3)
+Since there was no obvious mutation in the state of the hypersonic target, the accuracy of the strong tracking algorithm was low. In contrast, the strong tracking algorithm based on adaptive model interaction could accelerate the model transformation and enhance the adaptive matching ability, so the convergence speed and tracking accuracy were better.
+By comparing the probability transfer diagram of the model, the following can be found:
+(1)
+As the maneuverability of the hypersonic target decreased, the probability of the Singer model with weak maneuverability gradually increased. As the maneuverability of the hypersonic target increased, the probability of the Jerk model with strong maneuverability gradually increased.
+(2)
+It can be found through comparison that the algorithm in this paper enhanced the proportion of matching models in the IMM algorithm, reduced the probability variance in the model, and made the model transformation more robust.
+6. Concluding Remarks
+A strong tracking adaptive IMM algorithm based on CKF was proposed to solve the problem of the low tracking accuracy or even failure of the traditional IMM algorithm under the high maneuverability of hypersonic targets.
+Firstly, the six-degree-of-freedom equation was established for the dynamics of HTV-2. The jump glide trajectory of HTV-2 was obtained by using the fourth-order Runge–Kutta method and the angle of attack model, and the radar measurement model was established according to the coordinate axis transformation relationship. After analyzing the structure of CKF, the gain matrix was adjusted in real time by adding multiple pairs of fading factors, and the strong tracking filter was combined with CKF to improve the filtering accuracy when the model is out of order. Aiming at the problem that the model dimension in the IMM is expanded, which makes Cholesky decomposition impossible in the CKF algorithm, SVD decomposition was proposed to replace Cholesky decomposition. Aiming at the shortcomings of the IMM in estimating the Markov matrix, an IMM with an adaptive transition probability was proposed. The transition probability was adaptively modified by posterior information to enhance the proportion of matching models.
+The multi-fading factor strong tracking algorithm proposed in this paper adjusts the filtering gain in real time and improves the tracking accuracy. The adaptive interaction multi-model proposed in this paper improves the matching degree of the motion state of the hypersonic target and speeds up the convergence of the algorithm. The SVD decomposition of CKF in this paper improves the stability of the algorithm. The simulation results show that the proposed algorithm enhanced the proportion of matching models in the IMM and improved the tracking accuracy by 16.51% and the convergence speed by 37.5%. It has engineering application value.
+Author Contributions
+Conceptualization, Y.L. (Yurong Liao) and methodology, Z.L.; software, Y.L. (Yalun Luo) and H.W.; writing—original draft preparation, Y.L. (Yalun Luo); writing—review and editing, Y.L. (Yalun Luo); supervision, Y.L. (Yurong Liao) and S.N.; funding acquisition, Z.L.; All authors have read and agreed to the published version of the manuscript.
+Funding
+National Natural Science Foundation of China, No. 61805283.
+Institutional Review Board Statement
+Not applicable.
+Informed Consent Statement
+Not applicable.
+Conflicts of Interest
+The authors declare no conflict of interest.
+References
+Li, G.; Zhang, H.; Tang, G.; Xie, Y. Maneuver modes analysis for hypersonic glide vehicles. In Proceedings of the 2014 IEEE Chinese Guidance, Navigation and Control Conference (CGNCC), Yantai, China, 8–10 August 2014; pp. 543–548. [Google Scholar]
+Zhou, H.R.; Jing, Z.L.; Wang, P.D. Maneuvering Target Tracking; National Defense Industry Press: Beijing, China, 1991; pp. 1–35. [Google Scholar]
+Singer, R.A. Estimating optimal tracking filter performance for manned maneuvering targets. IEEE Trans. Aerosp. Electron. Syst. 2007, AES-6, 473–483. [Google Scholar] [CrossRef]
+Zhou, H.R. A “current” statistical model and adaptive tracking algorithm for maneuvering targets. J. Aeronaut. 1983, 4, 73–86. [Google Scholar]
+Mehrotra, K.; Mahapatra, P.R. A jerk model for tracking highly maneuvering targets. IEEE Trans. Aerosp. Electron. Syst. 1997, 33, 1094–1105. [Google Scholar] [CrossRef]
+Wang, L.; Cheng, X.H.; Li, S.X.; Gao, H.T. Adaptive interacting multiple model filter for AUV integrated navigation. J. Chin. Inert. Technol. 2016, 24, 511–516. [Google Scholar]
+Magiu, D.T. Optimal adaptive estimation of sampled stochastic processe. IEEE Tram. Autom. Control 1965, 10, 434–439. [Google Scholar]
+Blom, H.A.P. An efficient filter for abruptly changing system. In Proceedings of the Conference on Decision and Control, Las Vegas, CA, USA, 12–14 December 1984; Volume 3, pp. 656–658. [Google Scholar]
+Li, X.R.; Bar-Shalom, Y. Design of an interacting multiple model algorithm for air traffic control tracking. IEEE Trans. Aerosp. Electron. Syst. 1993, 29, 186–194. [Google Scholar]
+Huang, J.S.; Li, Y.Y.; Tang, G.J.; Bao, W.M. Hypersonic glide target adaptive tracking method. J. Aeronaut. 2020, 41, 323786. [Google Scholar]
+Sobhani, B.; Paolini, E.; Giorgetti, A.; Mazzotti, M.; Chiani, M. Target tracking for uwb multistatic radar sensor networks. IEEE J. Sel. Top. Signal Process. 2017, 8, 125–136. [Google Scholar] [CrossRef]
+Toledo-Moreo, R.; Colodro-Conde, C.; Toledo-Moreo, J. A multiple-model particle filter fusion algorithm for GNSS/DR slide error detection and compensation. Appl. Sci. 2018, 8, 445. [Google Scholar] [CrossRef]
+Dai, H.D.; Fang, J.; Tang, L.; Wang, X.B. Strong tracking UKF adaptive interactive multi model algorithm for hypersonic maneuvering target. Chin. J. Inert. Technol. 2018, 26, 338–345. [Google Scholar]
+Julier, S.J.; Uhlmann, J.K.; Durrant-Whyte, H.F. A new approach for filtering nonlinear systems. In Proceedings of the American Control Conference, Seattle, WA, USA, 21–23 June 1995; Volume 3, pp. 1628–1632. [Google Scholar]
+Dai, D.C.; Yao, M.L.; Cai, Z.P. Improved Markov parameter adaptive IMM algorithm. J. Electron. 2017, 45, 1198–1205. [Google Scholar]
+Xiao, C.; Li, J.; Lei, H.; Wang, H. Hypersonic reentry glide target tracking based on AVSIMM algorithm. J. Beijing Univ. Aeronaut. Astronaut. 2019, 45, 413–421. [Google Scholar]
+Arasaratnam, I.; Haykin, S. Cubature kalman filters. IEEE Trans. Autom. Control. 2009, 54, 1254–1269. [Google Scholar] [CrossRef]
+Wang, Y.Y.; Chen, R.W.; Zhang, X. Application of improved robust cubature Kalman filter algorithm based on singular value decomposition in global positioning and navigation. Sci. Technol. Eng. 2021, 21, 2356–2362. [Google Scholar]
+Wu, N.; Chen, L. Adaptive Kalman Filtering for Trajectory Estimation of Hypersonic Glide Reentry Vehicles. Acta Aeronaut. Astronaut. Sin. 2013, 34, 1960–1971. [Google Scholar]
+Shen, Z.; Lu, P. Dynamic lateral entry guidance logic. J. Guid. Control Dyn. 2004, 27, 949–959. [Google Scholar] [CrossRef]
+Jia, X.J. Reentry Trajectory Estimation and Tracking of Hypersonic Vehicle. Ph.D. Dissertation, Northwestern Polytechnic University, Fremont, CA, USA, 2015; pp. 18–22. [Google Scholar]
+Jorris, T.R. Common Aero Vehicle Autonomous Reentry Trajectory Optimization Satisfying Waypoint and No-Fly Zone Constraints. Ph.D. Dissertation, Air Force Institute of Technology, Dayton, OH, USA, 2007. [Google Scholar]
+Miao, T.Y. Research on Radar Detection, Tracking and Prediction Algorithm of Boost Glide Hypersonic Vehicle. Ph.D. Dissertation, Harbin Institute of Technology, Harbin, China, 2017; pp. 11–13. [Google Scholar]
+Huang, Q.S.; Deng, B. Performance comparison of CKF and UKF in passive state noise of UAV. J. Phys. Conf. Ser. 2020, 1, 1682. [Google Scholar]
+Zhang, H.; Gao, M.; Xu, C. Maneuvering target tracking based on improved strong tracking volume kalman filter. Mod. Def. Technology 2015, 43, 142–147. [Google Scholar]
+Qin, L.; Li, J.L.; Zhou, D. HTV-2 tracking filtering and prediction of non ballistic targets in near space. Aerosp. Control 2015, 33, 56–61. [Google Scholar]
+Qiao, X.D.; Wang, B.S.; Li, T. A motion modle for tracking highly maneuvering targets. IEEE Trans. Aerosp. Electron. Syst. 2002, 6, 493–499. [Google Scholar]
+Li, G.H. Analysis of Motion Characteristics of Hypersonic Glider and Research on Trajectory Tracking and Prediction Method. Ph.D. Thesis, National University of Defense Science and Technology, Changsha, China, 2016; pp. 19–20. [Google Scholar]
+Moose, R.L. An adaptive state estimation solution to the maneuvering target problem. IEEE Trans. Autom. Control 1975, AC-20, 359–362. [Google Scholar] [CrossRef]
+Bogler, P.L. Tracking a Maneuvering Target Using Input Estimation. IEEE Trans. Aerosp. Electron. Syst. 1987, AES-23, 298–310. [Google Scholar] [CrossRef]
+Blair, W.D.; Watson, G.A.; Rice, T.R. Tracking maneuvering targets with an interacting multiple model filter containing exponentially-correlated acceleration models. Asian J. Inf. Manag. 1991, 3, 224–228. [Google Scholar]
+	
+Publisher’s Note: MDPI stays neutral with regard to jurisdictional claims in published maps and institutional affiliations.
+
+© 2022 by the authors. Licensee MDPI, Basel, Switzerland. This article is an open access article distributed under the terms and conditions of the Creative Commons Attribution (CC BY) license (https://creativecommons.org/licenses/by/4.0/).
+Share and Cite
+      
+MDPI and ACS Style
+
+Luo, Y.; Li, Z.; Liao, Y.; Wang, H.; Ni, S. Adaptive Markov IMM Based Multiple Fading Factors Strong Tracking CKF for Maneuvering Hypersonic-Target Tracking. Appl. Sci. 2022, 12, 10395. https://doi.org/10.3390/app122010395
+
+AMA Style
+
+
+Luo Y, Li Z, Liao Y, Wang H, Ni S. Adaptive Markov IMM Based Multiple Fading Factors Strong Tracking CKF for Maneuvering Hypersonic-Target Tracking. Applied Sciences. 2022; 12(20):10395. https://doi.org/10.3390/app122010395
+
+Chicago/Turabian Style
+
+
+Luo, Yalun, Zhaoming Li, Yurong Liao, Haining Wang, and Shuyan Ni. 2022. "Adaptive Markov IMM Based Multiple Fading Factors Strong Tracking CKF for Maneuvering Hypersonic-Target Tracking" Applied Sciences 12, no. 20: 10395. https://doi.org/10.3390/app122010395
+
+APA Style
+
+
+Luo, Y., Li, Z., Liao, Y., Wang, H., & Ni, S. (2022). Adaptive Markov IMM Based Multiple Fading Factors Strong Tracking CKF for Maneuvering Hypersonic-Target Tracking. Applied Sciences, 12(20), 10395. https://doi.org/10.3390/app122010395
+
+Note that from the first issue of 2016, this journal uses article numbers instead of page numbers. See further details here.
+Article Metrics
+Citations
+Crossref
+ 
+14
+Scopus
+ 
+14
+Web of Science
+ 
+10
+Google Scholar
+ 
+[click to view]
+Article Access Statistics
+Article access statisticsArticle Views18. Jul19. Jul20. Jul21. Jul22. Jul23. Jul24. Jul25. Jul26. Jul27. Jul28. Jul29. Jul30. Jul31. Jul1. Aug2. Aug3. Aug4. Aug5. Aug6. Aug7. Aug8. Aug9. Aug10. Aug11. Aug12. Aug13. Aug14. Aug15. Aug16. Aug17. Aug18. Aug19. Aug20. Aug21. Aug22. Aug23. Aug24. Aug25. Aug26. Aug27. Aug28. Aug29. Aug30. Aug31. Aug1. Sep2. Sep3. Sep4. Sep5. Sep6. Sep7. Sep8. Sep9. Sep10. Sep11. Sep12. Sep13. Sep14. Sep15. Sep16. Sep17. Sep18. Sep19. Sep20. Sep21. Sep22. Sep23. Sep24. Sep25. Sep26. Sep27. Sep28. Sep29. Sep30. Sep1. Oct2. Oct3. Oct4. Oct5. Oct6. Oct7. Oct8. Oct9. Oct10. Oct11. Oct12. Oct13. Oct14. Oct15. Oct0k1k2k3k
+For more information on the journal statistics, click here.
+Multiple requests from the same IP address are counted as one view.
+Appl. Sci., EISSN 2076-3417, Published by MDPI RSS Content Alert
+Further Information
+Article Processing Charges
+Pay an Invoice
+Open Access Policy
+Contact MDPI
+Jobs at MDPI
+Guidelines
+For Authors
+For Reviewers
+For Editors
+For Librarians
+For Publishers
+For Societies
+For Conference Organizers
+MDPI Initiatives
+Sciforum
+MDPI Books
+Preprints.org
+Scilit
+SciProfiles
+Encyclopedia
+JAMS
+Proceedings Series
+Follow MDPI
+LinkedIn
+Facebook
+X
+
+Subscribe to receive issue release notifications and newsletters from MDPI journals
+
+Select options
+Subscribe
+© 1996-2025 MDPI (Basel, Switzerland) unless otherwise stated
+DisclaimerTerms and ConditionsPrivacy Policy
+×
+拖拽到此处完成下载
+图片将完成下载
+AIX智能下载器

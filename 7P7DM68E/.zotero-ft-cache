@@ -19,7 +19,7 @@ Although in practice some applications may require local autonomy, in principle 
 arXiv:1706.05296v1 [cs.AI] 16 Jun 2017
 
 
-problems in practice. We present a simple experiment in which the centralised approach fails by learning inefficient policies with only one agent active and the other being “lazy”. This happens when one agent learns a useful policy, but a second agent is discouraged from learning because its exploration would hinder the first agent and lead to worse team reward.1
+ problems in practice. We present a simple experiment in which the centralised approach fails by learning inefficient policies with only one agent active and the other being “lazy”. This happens when one agent learns a useful policy, but a second agent is discouraged from learning because its exploration would hinder the first agent and lead to worse team reward.1
 An alternative approach is to train independent learners to optimize for the team reward. In general each agent is then faced with a non-stationary learning problem because the dynamics of its environment effectively changes as teammates change their behaviours through learning (Laurent et al., 2011). Furthermore, since from a single agent’s perspective the environment is only partially observed, agents may receive spurious reward signals that originate from their teammates’ (unobserved) behaviour. Because of this inability to explain its own observed rewards naive independent RL is often unsuccessful: for example Claus and Boutilier (1998) show that independent Q-learners cannot distinguish teammates’ exploration from stochasticity in the environment, and fail to solve even an apparently trivial, 2-agent, stateless, 3 × 3-action problem and the general Dec-POMDP problem is known to be intractable (Bernstein et al., 2000; Oliehoek and Amato, 2016). Though we here focus on 2 player coordination, we note that the problems with individual learners and centralized approaches just gets worse with more agents since then, most rewards do not relate to the individual agent and the action space grows exponentially for the fully centralized approach.
 One approach to improving the performance of independent learners is to design individual reward functions, more directly related to individual agent observations. However, even in the single-agent case, reward shaping is difficult and only a small class of shaped reward functions are guaranteed to preserve optimality w.r.t. the true objective (Ng et al., 1999; Devlin et al., 2014; Eck et al., 2016). In this paper we aim for more general autonomous solutions, in which the decomposition of the team value function is learned.
 We introduce a novel learned additive value-decomposition approach over individual agents. Implicitly, the value decomposition network aims to learn an optimal linear value decomposition from the team reward signal, by back-propagating the total Q gradient through deep neural networks representing the individual component value functions. This additive value decomposition is specifically motivated by avoiding the spurious reward signals that emerge in purely independent learners.The implicit value function learned by each agent depends only on local observations, and so is more easily learned. Our solution also ameliorates the coordination problem of independent learning highlighted in Claus and Boutilier (1998) because it effectively learns in a centralised fashion at training time, while agents can be deployed individually.
@@ -31,7 +31,7 @@ Other work addressing team rewards in cooperative settings is based on differenc
 2
 
 
-has nice properties (e.g. high learnability), but can be impractical as it requires knowledge about the system state (Colby et al., 2016; Agogino and Tumer, 2008; Proper and Tumer, 2012). Other approaches can be found in Devlin et al. (2014); HolmesParker et al. (2016); Babes et al. (2008).
+ has nice properties (e.g. high learnability), but can be impractical as it requires knowledge about the system state (Colby et al., 2016; Agogino and Tumer, 2008; Proper and Tumer, 2012). Other approaches can be found in Devlin et al. (2014); HolmesParker et al. (2016); Babes et al. (2008).
 2 Background
 2.1 Reinforcement Learning
 We recall some key concepts of the RL setting (Sutton and Barto, 1998), an agent-environment framework (Russell and Norvig, 2010) in which an agent sequentially interacts with the environment over a sequence of timesteps, t = 1, 2, 3, . . ., by executing actions and receiving observations and rewards, and aims to maximize cumulative reward. This is typically modelled as a Markov decision process (MDP) (e.g. Puterman, 1994) defined by a tuple 〈S, A, T1, T , R〉 comprising the state space S, action space A, a (possibly stochastic) reward function R : S × A × S → R start state distribution T1 ∈ P(S) and transition function T : S × A → P(S), where P(X ) denotes the
@@ -52,7 +52,7 @@ We consider problems where observations and actions are distributed across d age
 3
 
 
-a1
+ a1
 a2
 Q1
 Q2
@@ -93,7 +93,7 @@ i=1 Q ̃i.
 4
 
 
-For illustration of the idea consider the case with 2 agents (for simplicity of exposition) and where rewards decompose additively across agent observations2, r(s, a) = r1(o1, a1) + r2(o2, a2), where
+ For illustration of the idea consider the case with 2 agents (for simplicity of exposition) and where rewards decompose additively across agent observations2, r(s, a) = r1(o1, a1) + r2(o2, a2), where
 (o1, a1) and (o2, a2) are (observations, actions) of agents 1 and 2 respectively. This could be the case in team games for instance, when agents observe their own goals, but not necessarily those of teammates. In this case we have that
 Qπ(s, a) = E[
 ∞
@@ -139,7 +139,7 @@ We introduce a range of two-player domains, and experimentally evaluate the intr
 5
 
 
-Agent V. S. Id L. H. C.
+ Agent V. S. Id L. H. C.
 1 2 3 4 5 6 7 8 9
 Table 1: Agent architectures. V is value decomposition, S means shared weights and an invariant network, Id means role info was provided, L stands for lower-level communication, H for higher-level communication and C for centralization. These architectures were selected to show the advantages of the independent agent with value-decomposition and to study the benefits of additional enhancements added in a logical sequence.
 4.1 Agents
@@ -153,7 +153,7 @@ We use 2D grid worlds with the same basic functioning as Leibo et al. (2017), bu
 6
 
 
-Figure 3: Maps for Fetch and Switch: open map (top left), map with 1 corridor (bottom left) and 2 corridors (top right). The green square is the goal for the agent to the left (blue). A similar goal is seen for the other agent (red) to the left but not displayed. The agents’ observation windows are shown in the bottom left. Bottom right is the map for Checkers. Lemons are orange, apples green and agents red/blue.
+ Figure 3: Maps for Fetch and Switch: open map (top left), map with 1 corridor (bottom left) and 2 corridors (top right). The green square is the goal for the agent to the left (blue). A similar goal is seen for the other agent (red) to the left but not displayed. The agents’ observation windows are shown in the bottom left. Bottom right is the map for Checkers. Lemons are orange, apples green and agents red/blue.
 beam has no effect in our games, except for lighting up a row or column of squares straight ahead with yellow. Each player appears as a blue square in its own observation, and the other player, when in the observation window, is shown in red for Switch and Escape, and lighter blue for Fetch. We use three different maps shown in Figure 3 for both Fetch and Switch and a different one for Checkers, also shown in Figure 3 (bottom right). The tasks repeat as the agents succeed (either by full reset of the environment in Switch and Checkers or just by pickup being available again in Fetch), in training for 5,000 steps and 2,000 in testing.
 Switch: The task tests if two agents can effectively coordinate their use of available routes on two maps with narrow corridors. The task is challenging because of strong observation aliasing. The two agents appear on different ends of a map, and must reach a goal at the other end. If agents collide in a corridor, then one agent needs to leave the corridor to allow the other to pass. When both players have reached their goal the environment is reset. A point is scored whenever a player reaches a goal.
 Fetch: The task tests if two agents can synchronize their behaviour, when picking up objects and returning them to a drop point. In the Fetch task both players start on the same side of the map and have pickup points on the opposite side. A player scores 3 points for the team for pick-up, and another 5 points for dropping off the item at the drop point near the starting position. Then the pickup is available to either player again. It is optimal for the agents to cycle such that when one player reaches the pickup point the other returns to base, to be ready to pick up again.
@@ -165,7 +165,7 @@ We particularly see the benefit of shared weights on the hard task of Fetch with
 7
 
 
-Figure 4: Barplots showing normalized AUC for each agent and domain over 50000 episodes of training and the mean across domains.
+ Figure 4: Barplots showing normalized AUC for each agent and domain over 50000 episodes of training and the mean across domains.
 Figure 5: Heatmap showing each agent’s final performance, averaged over the last 5,000 episodes of 50,000 and across ten runs, normalized by the best architecture per task. The agents are ordered according to average over the domains, which can be seen in the right most column. ValueDecomposition architecture strongly outperform Individual Learners and Centralization
 Figure 6: The learned Q-decomposition in Fetch. The plot shows the total Q-function (yellow), the value of agent 1 (green), the value of agent 2 (purple), rewards from agent 1 (blue) events and agent 2 (red). Highlighted is a situation in which agent 2’s Q-function spikes (purple line), anticipating reward for an imminent drop-off. The other agent’s Q-function (green) remains relatively flat.
 better than the agent just sharing weights on Switch, where coordination, in particular with one corridor, is easier with non-identical agents. Further, shared weights are problematic for the Checkers task because the magnitude of rewards (and hence the value function) from one agent is ten times higher than for the other agent.
@@ -175,7 +175,7 @@ Figure 6 shows the learned Q-decomposition for the value-decomposition network, 
 8
 
 
-joint Q-function into sensible components which, when combined, result in an effective Q-function. This would be difficult for independent learners since many rewards would not be observed by both players, see e.g. the situation at 15-16 seconds in the corresponding video available at Video (2017).
+ joint Q-function into sensible components which, when combined, result in an effective Q-function. This would be difficult for independent learners since many rewards would not be observed by both players, see e.g. the situation at 15-16 seconds in the corresponding video available at Video (2017).
 5 Conclusions
 We study cooperative multi-agent reinforcement learning where only a single joint reward is provided to the agents. We found that the two naive approaches, individual agents learning directly from team reward, and fully centralized agents, provide unsatisfactory solutions as previous literature has found in simpler environments, while our value-decomposition networks do not suffer from the same problems and shows much better performance across a range of more complex tasks. Further, the approach can be nicely combined with weight sharing and information channels, leading to agents that consistently optimally solve our new benchmark challenges.
 Value-decomposition networks are a step towards automatically decomposing complex learning problems into local, more readily learnable sub-problems. In future work we will investigate the scaling of value-decomposition with growing team sizes, which make individual learners with team reward even more confused (they mostly see rewards from other agents actions), and centralized learners even more impractical. We will also investigate decompositions based on non-linear value aggregation.
@@ -192,7 +192,7 @@ J. N. Foerster, Y. M. Assael, N. de Freitas, and S. Whiteson. Learning to commun
 9
 
 
-C. Guestrin, M. G. Lagoudakis, and R. Parr. Coordinated reinforcement learning. In Proceedings of the Nineteenth International Conference on Machine Learning, ICML ’02, pages 227–234, San Francisco, CA, USA, 2002. Morgan Kaufmann Publishers Inc. ISBN 1-55860-873-7. URL http://dl.acm.org/citation.cfm?id=645531.757784.
+ C. Guestrin, M. G. Lagoudakis, and R. Parr. Coordinated reinforcement learning. In Proceedings of the Nineteenth International Conference on Machine Learning, ICML ’02, pages 227–234, San Francisco, CA, USA, 2002. Morgan Kaufmann Publishers Inc. ISBN 1-55860-873-7. URL http://dl.acm.org/citation.cfm?id=645531.757784.
 J. Harb and D. Precup. Investigating recurrence and eligibility traces in deep Q-networks. In Deep Reinforcement Learning Workshop, NIPS 2016, Barcelona, Spain, 2016.
 M. J. Hausknecht. Cooperation and Communication in Multiagent Deep Reinforcement Learning. PhD thesis, The University of Texas at Austin, 2016.
 M. J. Hausknecht and P. Stone. Deep recurrent Q-learning for partially observable MDPs. CoRR, abs/1507.06527, 2015.
@@ -213,7 +213,7 @@ L. Panait and S. Luke. Cooperative multi-agent learning: The state of the art. A
 10
 
 
-S. Proper and K. Tumer. Modeling difference rewards for multiagent learning (extended abstract). In Proceedings of the Eleventh International Joint Conference on Autonomous Agents and Multiagent Systems, Valencia, Spain, June 2012.
+ S. Proper and K. Tumer. Modeling difference rewards for multiagent learning (extended abstract). In Proceedings of the Eleventh International Joint Conference on Autonomous Agents and Multiagent Systems, Valencia, Spain, June 2012.
 M. Puterman. Markov Decision Processes: Discrete Stochastic Dynamic Programming. Wiley, New York, 1994.
 S. J. Russell and P. Norvig. Artificial Intelligence: A Modern Approach. Prentice Hall, Englewood Cliffs, NJ, 3nd edition, 2010.
 S. J. Russell and A. Zimdars. Q-decomposition for reinforcement learning agents. In Machine Learning, Proceedings of the Twentieth International Conference (ICML 2003), August 21-24, 2003, Washington, DC, USA, pages 656–663, 2003.
@@ -229,36 +229,36 @@ Z. Wang, T. Schaul, M. Hessel, H. van Hasselt, M. Lanctot, and N. de Freitas. Du
 11
 
 
-Appendix A: Plots
+ Appendix A: Plots
 Figure 7: Average reward with 90% confidence intervals for ten runs of the nine architectures on the Fetch domain with the open map
 Figure 8: Average reward with 90% confidence intervals for ten runs of the nine architectures on the Fetch domain with one corridor
 Figure 9: Average reward with 90% confidence intervals for ten runs of the nine architectures on the Fetch domain with two corridors
 12
 
 
-Figure 10: Average reward with 90% confidence intervals for ten runs of the nine architectures on the Switch domain with the open map
+ Figure 10: Average reward with 90% confidence intervals for ten runs of the nine architectures on the Switch domain with the open map
 Figure 11: Average reward with 90% confidence intervals for ten runs of the nine architectures on the Switch domain with one corridor
 Figure 12: Average reward with 90% confidence intervals for ten runs of the nine architectures on the Switch domain with two corridors
 13
 
 
-Figure 13: Average reward with 90% confidence intervals for ten runs of the nine architectures on the Checkers domain
+ Figure 13: Average reward with 90% confidence intervals for ten runs of the nine architectures on the Checkers domain
 14
 
 
-Appendix B: Diagrams
+ Appendix B: Diagrams
 Figure 14: Independent Agents Architecture
 Figure 15: Value-Decomposition Individual Architecture
 Figure 16: Low-level communication Architecture
 15
 
 
-Figure 17: High-level communication Architecture
+ Figure 17: High-level communication Architecture
 Figure 18: Low-level communication Architecture
 Figure 19: Independent Agents Architecture
 16
 
 
-Figure 20: Combinatorially Centralized Architecture
+ Figure 20: Combinatorially Centralized Architecture
 Figure 21: High+Low-level communication Architecture
 17

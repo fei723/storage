@@ -15,7 +15,7 @@ edges and planes) in the environments. When the UAV is operating in cluttered en
 arXiv:2010.08196v3 [cs.RO] 14 Apr 2021
 
 
-feature points, we propose a new formula for computing the Kalman gain and prove its equivalence to the conventional Kalman gain formula. The new formula has a computation complexity depending on the state dimension instead of the measurement dimension. 3) We implement our formulations into a fast and robust LiDAR-inertial odometry software package. The system is able to run on a small-scale quadrotor onboard computer. 4) We conduct experiments in various indoor and outdoor environments and with actual UAV flight tests (Fig. 1) to validate the system’s robustness when fast motion or intense vibration noise exists. The remaining paper is organized as follows: In Section. II, we discuss relevant research works. We give an overview of the complete system pipeline and the details of each key component in Section. III. The experiments are presented in Section. IV, followed by conclusions in Section. V.
+ feature points, we propose a new formula for computing the Kalman gain and prove its equivalence to the conventional Kalman gain formula. The new formula has a computation complexity depending on the state dimension instead of the measurement dimension. 3) We implement our formulations into a fast and robust LiDAR-inertial odometry software package. The system is able to run on a small-scale quadrotor onboard computer. 4) We conduct experiments in various indoor and outdoor environments and with actual UAV flight tests (Fig. 1) to validate the system’s robustness when fast motion or intense vibration noise exists. The remaining paper is organized as follows: In Section. II, we discuss relevant research works. We give an overview of the complete system pipeline and the details of each key component in Section. III. The experiments are presented in Section. IV, followed by conclusions in Section. V.
 II. RELATED WORKS
 Existing works on LiDAR SLAM are extensive. Here we limit our review to the most relevant works: LiDAR-only odometry and mapping, loosely-coupled and tightly-coupled LiDAR-Inertial fusion methods.
 A. LiDAR Odometry and Mapping
@@ -32,7 +32,7 @@ B. System Description
 1) / operator:
 
 
-LiDAR Inputs IMU Inputs Map
+ LiDAR Inputs IMU Inputs Map
 (History Feature Points)
 Odometry
 Framework
@@ -150,7 +150,7 @@ nbai
 LiDAR measurements are point coordinates in its local body frame. Since the raw LiDAR points are sampled at a very high rate (e.g., 200kHz), it is usually not possible to process each new point once being received. A more practical approach is to accumulate these points for a certain time and process them all at once. In FAST-LIO, the minimum accumulation interval is set to 20 ms, leading to up to 50 Hz full state estimation (i.e., odometry output) and map update as shown in Fig. 2 (a). Such an accumulated set of points is called a scan, and the time for processing it is denoted as tk (see Fig. 2 (b)). From the raw points, we extract planar points with high local smoothness [8] and edge points with low local smoothness as in [10]. Assume the number of feature points is m, each is sampled at time ρj ∈ (tk−1, tk] and is denoted as Lj pfj , where Lj is the LiDAR local frame at the time ρj. During a LiDAR scan, there are also multiple IMU
 
 
-F ̃x=
+ F ̃x=
 
       
 Exp (− ̂ωi∆t) 0 0 −A( ̂ωi∆t)T∆t 0 0 0 I I∆t 0 0 0 −G ̂RIi b̂aic∧∆t 0 I 0 −G ̂RIi ∆t I∆t 0 00 I 0 0 0 00 0 I 0 0 00 0 0 I
@@ -232,7 +232,7 @@ Ik ˇTIj
 I TLLj pfj . (10)
 
 
-where I TL is the known extrinsic (see Section. III-B.2). Then the projected point Lk pfj is used to construct a residual in the following section.
+ where I TL is the known extrinsic (see Section. III-B.2). Then the projected point Lk pfj is used to construct a residual in the following section.
 3) Residual computation:
 With the motion compensation in (10), we can view the scan of feature points {Lk pfj } all sampled at the same time tk and use it to construct the residual. Assume the current iteration of the iterated Kalman filter is κ, and the corresponding state estimate is ̂xκ
 k. When κ = 0, ̂xκ
@@ -379,7 +379,7 @@ K=(HT R−1H+P−1)−1HT R−1. (20)
 We prove in Appendix B that the two forms of Kalman gains are indeed equivalent based on the matrix inverse lemma [27]. Since the LiDAR measurements are independent, the covariance matrix R is (block) diagonal and hence the new formula only requires to invert two matrices both in the dimension of state instead of measurements. The new
 
 
-formula greatly saves the computation as the state dimension is usually much lower than measurements in LIO (e.g., more than 1,000 effective feature points in a scan for 10 Hz scan rate while the state dimension is only 18). 5) The algorithm:
+ formula greatly saves the computation as the state dimension is usually much lower than measurements in LIO (e.g., more than 1,000 effective feature points in a scan for 10 Hz scan rate while the state dimension is only 18). 5) The algorithm:
 Our state estimation is summarized in Algorithm 1.
 Algorithm 1: State Estimation
 Input : Last optimal estimation  ̄xk−1 and  ̄Pk−1, IMU inputs (am, ωm) in current scan; LiDAR feature points Lj pfj in current scan. 1 Forward propagation to obtain state prediction ̂xk via (4) and covariance prediction ̂Pk via (8); 2 Backward propagation to obtain Lk pfj via (9), (10);
@@ -420,7 +420,7 @@ Then we test FAST-LIO in a challenging indoor environment with large rotation sp
 5https://github.com/Livox-SDK/livox_mapping 6https://github.com/Livox-SDK/livox_horizon_loam
 
 
-TABLE III
+ TABLE III
 COMPARISON OF PROCESSING TIME FOR A LIDAR SCAN AT 10Hz
 Packages Num. of effective features Running time LOAM 1107 59 ms LOAM+IMU 1107 44 ms FAST-LIO 1430 23 ms
 Fig. 4. The angular velocity and acceleration in the indoor experiments.
@@ -437,7 +437,7 @@ A. Computation of Fx ̃ and Fw
 Recall xi = ̂xi x ̃i, denote g (x ̃i, wi) = f (xi, ui, wi)∆t = f (̂xi  ̃xi, ui, wi)∆t. Then the error state
 
 
-Fig. 7. Comparison between LINS [21] and FAST-LIO. The data is from [21] and is collected by a Velodyne VLP-16 LiDAR and an Xsens MTiG710 IMU, the green straight line in the center is the odometry output.
+ Fig. 7. Comparison between LINS [21] and FAST-LIO. The data is from [21] and is collected by a Velodyne VLP-16 LiDAR and an Xsens MTiG710 IMU, the green straight line in the center is the odometry output.
 model (5) is rewriten as:
 x ̃i+1 = ((̂xi x ̃i) g (x ̃i, wi)) (̂xi g (0, 0))
 } {{ }

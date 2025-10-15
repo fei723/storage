@@ -1,0 +1,852 @@
+IEEE TRANSACTIONS ON INTELLIGENT TRANSPORTATION SYSTEMS, VOL. 24, NO. 9, SEPTEMBER 2023 9217
+The Interacting Multiple Model Smooth Variable
+Structure Filter for Trajectory Prediction
+Salman Akhtar and Saeid Habibi, Member, IEEE
+Abstract— An autonomous vehicle would benefit from being able to predict trajectories of other vehicles in its vicinity for improved safety. In order for the self-driving car to plan safe trajectories, paths of nearby vehicles are required to be predicted for risk assessment, decision making, and motion planning. In this study, a trajectory prediction algorithm based on the Interacting Multiple Model (IMM) estimation strategy is proposed to predict paths involving lane-changing, lane-keeping, and turning motion. More specifically, the Interacting Multiple Model estimation technique is used with models defined in curvi-linear coordinates to predict a vehicle’s trajectory based on prior behavioral maneuvers. The road geometry is used to help facilitate behavior identification and prediction. Moreover, the combination of a more recently developed estimation technique known as the Generalized Variable Boundary Layer-Smooth Variable Structure Filter and the Interacting Multiple Model Estimator is applied to track, identify behaviors, and predict trajectories of a vehicle. The performance of this technique is compared with a Kalman Filter based formulation using synthetic and experimental data. This model-based strategy is also compared with machine learning-based strategies for trajectory prediction.
+Index Terms— Vehicle trajectory prediction, target tracking, interacting multiple model (IMM), smooth variable structure filter (SVSF).
+I. INTRODUCTION
+S
+ELF-DRIVING and Advanced Driver Assistance Systems (ADAS) are tools that can be instrumental to reducing driving accidents. Existing ADAS functions implemented in cars include adaptive cruise control, lane departure warning, anti-lock braking, and parking assistance. However, in order for cars to navigate more autonomously and safely, trajectory prediction is needed for understanding the traffic environment and for performing risk assessment. Risk assessment must be conducted for the vehicle to plan safe trajectories as it navigates. To perform trajectory prediction, the object tracking system must estimate the state of motion of surrounding vehicles and then path prediction should occur. For motion prediction, one category of approaches applied to project trajectories is model-based. For short-term prediction, generally, physics-based models are used [1] such as
+Manuscript received 22 November 2021; revised 31 May 2022, 24 October 2022, and 27 March 2023; accepted 4 April 2023. Date of publication 5 May 2023; date of current version 30 August 2023. This work was supported by Ontario Research Fund-Research Excellence. The Associate Editor for this article was Y. Huang. (Corresponding author: Salman Akhtar.)
+The authors are with the Department of Mechanical Engineering, McMaster University, Hamilton, ON L8S 4L8, Canada (e-mail: akhtarsm@mcmaster.ca; habibi@mcmaster.ca). Digital Object Identifier 10.1109/TITS.2023.3271295
+constant velocity (CV), constant acceleration (CA), constant turn rate and velocity (CTRV), constant turn rate and acceleration (CTRA), constant steering angle and velocity (CSAV), and constant curvature and acceleration (CCA) [2]. However, these models are generally accurate for prediction of motion to within less than 1s and if the car for example rapidly changes its motion, then their predictions become inaccurate. The models are commonly used in conjunction with state estimation techniques such as the well-known Kalman Filter (KF)-based algorithms [3], [4], [5]. However, a limitation associated with using conventional state estimation methods is that they use a singular model, which is insufficient to represent all possible maneuvers [1]. An alternative is to use multiple models using techniques such as the Autonomous Multiple Model (AMM) and the Interacting Multiple Model (IMM) [6], [7], [8], [9], [10], [11] for identifying maneuvers and predicting trajectories. In [10], the IMM is used to identify lane-changing and lane-keeping maneuvers using measurements from the global positioning system (GPS), inertial measurement unit (IMU), and odometer. However, their method is more applicable for identifying the behavior of an ego-vehicle or for cars using vehicle-to-vehicle (V2V) communication systems. In [6], the IMM is used to track vehicles and predict their trajectories using lane-changing and lane-keeping models. They used the predicted trajectories as an integral element of a model-predictive control (MPC) algorithm. In [12], lane-changing and lane-keeping motion models in lateral coordinates were used in conjunction with the IMM to detect whether the remote vehicle is changing or keeping lanes. In [9], the AMM algorithm estimated the probable behavior of a vehicle with respect to straight-line and lane-changing maneuvers. The strategy in [11] used the IMM in the curvi-linear coordinate system to perform tracking and behavior identification with road constraints incorporated. Their technique recognized behaviors of lane-keeping, lanechanging, and distracted driving. In [8], the IMM was applied to estimate a vehicle’s intent at an intersection. In [7] and [13], the IMM is used for state and maneuver estimation as well as prediction. The curvi-linear coordinate system (CCS) is applied to constrain the motion of the vehicle to within road boundaries. The IMM tracking and behavior estimation technique in [11] performs trajectory prediction as described above, but only for straight-line and turning maneuvers. In [14] and [15], a modified IMM algorithm is used for prediction only. It relied on physics and maneuver-based models to predict trajectories. In [16], the IMM-KF was utilized to find the most probable maneuver using new intention-based motion
+1558-0016 © 2023 IEEE. Personal use is permitted, but republication/redistribution requires IEEE permission. See https://www.ieee.org/publications/rights/index.html for more information.
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on October 15,2025 at 09:24:30 UTC from IEEE Xplore. Restrictions apply.
+
+
+9218 IEEE TRANSACTIONS ON INTELLIGENT TRANSPORTATION SYSTEMS, VOL. 24, NO. 9, SEPTEMBER 2023
+models and was combined with an optimization framework to ensure collision-free predictions. A motion planning algorithm is proposed in [17] for autonomous driving, which uses the IMM-Extended Kalman Filter (IMM-EKF) to predict trajectories at an intersection using intelligent driver models. Machine learning has also been widely utilized for trajectory prediction. Common algorithms include Bayesian Networks [14], [18], [19] as well as Neural Networks such as Long-term Short-term (LSTM) Networks [20], [21], [22], [23], [24], [25], [26], [27], Generative Adversarial Networks [28], [29], [30], Gated Recurrent Units (GRU) [31], Convolutional Neural Networks (CNN) [32], [33], [34], [35], [36], Graph Neural Networks [37], and a hybrid LSTM and CNN [38]. Reference [39] uses LSTMs, GRUs, and a CNN. Reference [40] proposed a trajectory prediction approach based on Memory Augmented Neural Networks. Many learning-based approaches also implement maneuver recognition and predict trajectories based on the identified maneuver. These methods are complemented by Bayesian Networks [18], [19], [41], which are commonly used for maneuver classification. However, limitations with data-driven methods are that they are computationally expensive during model training and a GPU is needed to train them fast. Whereas, modelbased approaches require no training data and because state estimation runs recursively, they can be easily implemented in real-time on traditional computer hardware [16]. Another drawback with data-driven approaches is that they are less interpretable because they are black box models [42], it is not fully understood how they obtain specific results [42], [43]. At this point, research is being done in the area of interpretable artificial intelligence (AI) to understand how neural networks function [43]. Model-based approaches are easier to interpret because they are developed based on an understanding of the mathematics and physics behind the problem. Moreover, as explained in [42], machine learning approaches rely on previous observations, thus, if the driver behavior is unlike previous observations, this may degrade performance. Lastly, data-driven strategies generally require large quantities of data, whereas state estimation techniques require little to no data to develop. Multi-modal trajectory prediction methods have also been proposed [24], [36], [40], [44], [45], which are based on machine learning (ML). Their reported aim is to predict a probability distribution of possible trajectories. These methods predict multiple trajectories at each time step and obtain a probability associated with each predicted path. While this work focuses on mainly predicting trajectories of vehicles in highways, a number of related publications have reported their application for prediction of human trajectories [46], [47], [48], [49], [50] Road geometry and information has been utilized to help facilitate trajectory prediction in [7], [13], [14], [51], and [27]. In these publications, vehicle motion is represented in roadway coordinates. Other methods incorporate road information using map features fed into a neural network [33], [35], [36], [37]. In this paper, the IMM approach presented in [7] and [13] is extended to predict lane-changing trajectories by including lane-change models in the IMM’s model-set for maneuver
+recognition and prediction. Models are selected from [11] and [16], and are used to track a vehicle as well as identify its lane-keeping and lane-changing maneuvers. The models are defined in curvi-linear coordinates and are used in an IMM context for trajectory prediction. In general, prediction techniques that use IMM estimation apply KF-based filtering [6], [7], [11], [13], [16], [17], [52], which are not sufficiently robust to modelling uncertainties when the uncertainties cannot be represented by Gaussian noise with known statistics. In this paper, a more recently developed state estimation strategy based on a technique known as the Generalized Variable Boundary Layer-Smooth Variable Structure Filter (GVBLSVSF) [53] is applied for trajectory prediction. An advantage of the GVBL-SVSF compared to the KF is that it is robust to modelling uncertainties and stable given bounded uncertainties [53], [54]. The combination of the IMM and GVBL-SVSF, called IMM-GVBL-SVSF, is utilized to perform trajectory prediction. The performances of both the IMM-KF and the IMM-GVBL-SVSF are then compared in terms of prediction accuracy and stability using synthetic and real measurements. Note that only highway scenarios are considered in this paper. The SVSF has been applied to a number of different applications including target-tracking [53], [55], [56], robot localization and mapping [56], [57], robot manipulators [58], fault detection [59], electric power grids [60], electric vehicles [61], satellite state estimation [62], and neural network training [63]. Thus, another contribution of this paper is extending the application of SVSF to trajectory prediction for autonomous driving. The contributions of this paper can be summarized as:
+• extending a trajectory prediction algorithm in curvi-linear coordinates to also predict lane-changing maneuvers; • developing a robust trajectory prediction technique using the IMM-GVBL-SVSF and extending the application of SVSF filtering to trajectory prediction; and, • comparison of the IMM-GVBL-SVSF to the IMM-KF in terms of trajectory prediction performance
+Section II provides the problem formulation. The proposed algorithm summary, synthetic measurement generation, and the curvi-linear coordinate system are described in Section III. Section IV explains the proposed approach in more detail. Section V presents the simulation and experimental results from public data-sets, and provides a comparative analysis between the IMM-KF and IMM-GVBL-SVSF. This section also compares the proposed approach to some state-of-theart machine learning strategies to get an idea of what the performance gap is between AI methods. Section VI concludes the paper.
+II. PROBLEM FORMULATION
+A vehicle is a dynamic system, systems can be mathematically modelled using state-space representations, which are commonly of the form below [64]. The state of the dynamical system evolves as:
+xk+1 = Fk xk + 0k uk + Gk vk (1)
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on October 15,2025 at 09:24:30 UTC from IEEE Xplore. Restrictions apply.
+
+
+AKHTAR AND HABIBI: INTERACTING MULTIPLE MODEL SMOOTH VARIABLE STRUCTURE FILTER FOR TRAJECTORY PREDICTION 9219
+where xk is the state vector, uk is the control vector, and vk represents zero-mean Gaussian process noise with co-variance Qk. The matrices Fk, 0k, and Gk are the state transition matrix, input gain matrix, and noise gain matrix, respectively. In general, in target-tracking and trajectory prediction, the control vector uk is unknown because the actuator inputs of remote vehicles are not accessible. However, there are some methods [16], [65], [66] that model the vehicle motion with an optimal controller, meaning that the motion is governed by an optimal feedback control law, containing a term with uk. The objective of the proposed algorithm in this paper is to perform two tasks, which are 1) to estimate the current state of motion of a vehicle given noisy measurements, also known as target-tracking, and 2) to predict its future trajectory. In target-tracking, measurements of a target are received from sensors such as radars, cameras, and/or LIDARs [67], [68]. Measurements of the target include quantities such as the target’s position and velocity. In target-tracking, typically there are clutter measurements as well, which are measurements that do not belong to the target of interest [69]. The objective of data association [69] is to determine which measurement originates from which target. In this paper it is assumed that this step is already complete. The measurement model is defined as:
+zk = Hk xk + wk (2)
+where zk is the measurement vector at the current time step k, Hk is the measurement matrix, and wk is measurement noise, which is zero-mean and Gaussian with co-variance Rk. The objective in target-tracking is to estimate the state vector at the current time step k, denoted as xˆk|k, given measurement zk. In contrast, in trajectory prediction, the objective is to estimate the future trajectory of a vehicle in a time horizon given the current state estimate xˆk|k. Let tp represent the prediction horizon and N p denote the number of samples within the horizon. The task is to estimate the future state vector of a vehicle at time steps k + 1, k + 2, and up to k + N p. The predictions can be mathematically represented as a sequence of state vectors:
+{xˆk+1|k , xˆk+2|k , . . . ., xˆk+Np|k } (3)
+In this sequence, each predicted state vector at each future time step consists of state variables such as the predicted position, velocity, and acceleration. Note the subscript j|k, according to [64], that indicates a filtered state if j = k and a predicted state if j > k. In terms of the probability distribution, many filters such as the KF assume that the current state vector xk can be represented by a Gaussian distribution with a mean of xˆk|k and a covariance of Pk|k. The sequence of predicted state vectors can also represent the mean of a multivariate Gaussian probability distribution at each future time step. If j > k, the distribution of the state prediction at time step j in the future would have a mean of xˆ j|k and an associated covariance of P j|k. In other words, equation (3) represents the mean predicted state sequence in the next N p time steps and this is outputted by the algorithms in this paper. The associated covariance at each time step can
+be outputted by the state estimation techniques as explained later, however, this is not considered in this paper.
+III. ALGORITHM OVERVIEW, MEASUREMENT
+GENERATION, AND CURVI-LINEAR COORDINATE SYSTEM
+The proposed trajectory prediction method is comprised of two stages, which are i) vehicle tracking and behavior probability estimation; and, ii) path prediction for a specified time horizon of tp seconds. A highway scene is assumed. The process is illustrated in Figure 1. In stage-(1), that pertains to target-tracking and behavior probability estimation, a measurement is received in Cartesian coordinates and is then converted to the Curvi-linear Coordinate System (CCS). The algorithm uses the CCS to perform tracking, maneuver identification, and prediction. An IMM estimator uses the converted measurement to calculate the vehicle’s state of motion as well as update the probabilities of each selected maneuver at the current time step. The estimation algorithm used is the IMM-GVBL-SVSF. The vehicle’s current states and maneuver probabilities are used to perform path prediction. In stage-(2), the target trajectory is predicted given its current state estimates and the maneuver probabilities from the previous stage. The trajectory is predicted tp seconds ahead by having the IMM-GVBL-SVSF predictor recursively project N p (prediction horizon) time steps into future. The predicted state vectors make up the outputted trajectory.
+A. Measurement Generation
+In this study, to evaluate performance in simulated synthetic scenarios, synthetic measurements were obtained by generating trajectories of a car using Cartesian motion models given in [2] and [64]. Simulated measurement noise is then added to the car’s generated trajectory to replicate realistic measurements. The Cartesian motion models used to create the trajectories were constant velocity (CV) for straight-line motion and coordinated turn (CT) for turning motion as detailed in Appendix A. In Cartesian coordinates, the state vector of the remote vehicle is:
+xk =
+[xk yk vxk vyk ωk
+]T (4)
+where xk, yk, vxk , vyk , and ωk are the x position, y position, x velocity, y velocity, and turn rate, respectively. The remote vehicle refers to a vehicle surrounding the ego-vehicle. It is assumed that the remote vehicle is detected at each time step by sensors; and noisy measurements of the vehicle’s position are given, denoted as, zk. The measurement model is:
+zk = Hk xk + wk (5)
+wk ∼ N (0, Rk) (6)
+where wk is zero-mean Gaussian measurement noise with covariance Rk. When the measurement matrix only assumes a position measurement such that:
+Hk =
+[1 0 0 0 0 01000
+]
+(7)
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on October 15,2025 at 09:24:30 UTC from IEEE Xplore. Restrictions apply.
+
+
+9220 IEEE TRANSACTIONS ON INTELLIGENT TRANSPORTATION SYSTEMS, VOL. 24, NO. 9, SEPTEMBER 2023
+Fig. 1. Algorithm overview.
+Equation (5) is used to generate noisy measurements given the simulated ground truth state xk. The Cartesian measurement from equation (5) is converted first to the CCS, which is used by the IMM algorithms to estimate the vehicle’s state. Note that in some of the experiments, the longitudinal velocity of the vehicle in the CCS is used as a measurement. Including the velocity as a measurement would change the measurement model by modifying the measurement matrix Hk in equation (8), which would indicate measurements of the x position, y position, x velocity, and y velocity.
+Hk =
+
+  
+10000 01000 00100 00010
+
+  
+(8)
+Associated white Gaussian measurement noise is added with co-variance Rk. The conversion of the model using velocity measurements from the Cartesian to the CCS coordinates is detailed in [70]. An overview of the CCS is provided in the following subsections.
+B. Curvi-Linear Coordinate System
+1) Description: Typically, target-tracking is performed in Cartesian coordinates. However, a disadvantage of Cartesian coordinates is that when the task is to perform maneuver recognition and trajectory prediction, the Cartesian plane gives no restrictions on the motion of the vehicle. In other words, it allows the car to move in any direction, which is not the case in a real driving condition. For example, if the road-way is to turn (in the future but within the prediction horizon), the conventional Cartesian coordinate models may predict the trajectory to be outside the road boundaries as road curvature information is not utilized. Whereas in the Curvi-linear Coordinate System (CCS) [11], [70], the roadway geometry model restricts the motion to be within the road boundaries [11]. As illustrated in Figure 2, the vehicle moves along the curve, and this curve is one axis of the CCS, called the s-axis. The s-axis is in turn used to provide the arc-length or distance along the road. The other perpendicular axis gives the lateral position, which is the n-axis. To construct the saxis, a roadway curve must be selected. This can include the center-line of a lane, a lane-line with road markings on them, or a road boundary. Further to the above, the s-axis represents the longitudinal position and the n-axis gives the lateral position. A position of a vehicle in the CCS can be expressed as [sk nk
+]T . Intuitively, as a car moves along a road in a highway, the car can either
+stay in its current lane or change lanes. If it stays, then the car will move along the direction of the road only. If it changes lanes, it will move in the lateral direction as well. As such, the CCS makes it easier to recognize lane-keeping and lanechanging behaviors. Hence, the motion is restricted to those two directions. Therefore, when using the CCS for prediction, the models defined in this system will predict paths according to the road boundaries.
+2) Conversion Between Coordinate Systems: Let pxy = [xp yp
+]T be the remote vehicle’s position in Cartesian coordinates at an arbitrary time index p as shown in Figure 2. Coordinates of points along the selected roadway line to form the s-axis are required in order to convert to the CCS. These can be obtained from lane-markings detected by cameras [71] or from high-definition (HD) map databases [72]. Further to the illustration of the CCS shown in Figure 2, locations of the points on the center-line are utilized to obtain the saxis by using cubic spline fitting as described in [73] and [74]. According to [72], one benefit of using Cubic splines to implement the roadway geometry is that only way-points are required to obtain a representative road geometry model with ease. However, a disadvantage is that the shape of the approximated roadway geometry model can be significantly changed if one control point is altered [72]. According to [72], the error in using cubic splines to represent road geometry is 17.5786m. The s-axis gives the distance travelled by the remote vehicle, denoted as sp and the other axis is the n-axis, which gives the closest lateral distance to the s-axis curve, represented as n p. The point on the s-axis curve that is the closest to the vehicle is denoted as cp. Note that in Figure 2, if the remote vehicle lies below the axis, the shortest lateral distance gets negated. More details on the conversion between the coordinate systems can be found in [73], [74], and [7]. Reference [70] provides information on how to obtain the velocity along the s-axis and n-axis.
+IV. PROPOSED APPROACH
+The Interacting Multiple Model (IMM) strategy is commonly used in conjunction with the Kalman Filter (KF) [6], [7], [52] to estimate the state vector. In KF estimation, if the conditions of a known model as well as a linear system with Gaussian noise are violated, it may result in instability. In this paper, the proposed algorithm for vehicle trajectory prediction is robust to uncertainties and differs from published work. It uses robust filtering, namely the Generalized Variable Boundary Layer-Smooth Variable Structure Filter in
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on October 15,2025 at 09:24:30 UTC from IEEE Xplore. Restrictions apply.
+
+
+AKHTAR AND HABIBI: INTERACTING MULTIPLE MODEL SMOOTH VARIABLE STRUCTURE FILTER FOR TRAJECTORY PREDICTION 9221
+Fig. 2. Curvi-linear coordinate system illustration [11].
+combination with IMM (IMM-GVBL-SVSF) for the targettracking. The results in simulated scenarios indicate that the proposed filter considerably outperforms the IMM-KF for prediction in the presence of modelling uncertainties. As discussed earlier, the first part of the algorithm is vehicle tracking, where the IMM-GVBL-SVSF estimator is applied to estimate the vehicle’s states and maneuvering probabilities using motion models in the CCS. Then, in the prediction stage, the vehicle’s path is predicted over a time horizon using models for lane-keeping and lane-changing motion in the filterbank. This section describes the proposed technique in more detail.
+A. Vehicle Tracking
+The IMM-GVBL-SVSF is essentially a robust target-tracking strategy and involves estimating the states of a moving object using uncertain, indirect, and/or inaccurate measurements. The measurement received at each time step is converted to the CCS, then the IMM-GVBL-SVSF technique is used to estimate the current states and behavior probabilities using the converted measurement. Multiple model (MM) estimation techniques assume that the system follows one model at each time step. There are two types of MM techniques, static and dynamic [64]. With dynamic MM techniques, it is assumed that the system follows different operating regimes overtime, with each represented by a model from a finite set [64]. In this paper, a dynamic MM is used because cars change behavior according to their maneuver overtime and each maneuver can be represented using a different motion model. The IMM estimator is computationally efficient but is a sub-optimal implementation of the dynamic MM [64]. Integral to the proposed IMM strategy is the GVBL-SVSF estimation strategy as follows [53]. 1) GVBL-SVSF: State-space systems expressed in discrete-time commonly follow the structure below:
+xk+1 = Fk xk + Gk uk + vk (9)
+zk = Hk xk + wk (10)
+vk ∼ N (0, Qk) (11)
+wk ∼ N (0, Rk) (12)
+where Fk is the state transition matrix, Gk is the input gain matrix, uk is the control vector, and vk is process noise. In the
+measurement model, Hk is the measurement matrix and wk is measurement noise. The GVBL-SVSF is a derivative of the original formulation of the Smooth Variable Structure Filter (SVSF) reported in 2007 [54]. Many advances have been proposed since, including the co-variance formulations [75], [76], combination with the Extended Kalman Filter (EKF) [77], combination with the Unscented Kalman Filter (UKF) [77], formulations with an optimal smoothing boundary layer [53], [78], 2nd-order SVSF [79], as well as the square-root SVSF [80]. The SVSF has a predictor-corrector form similar to the KF, but with a different gain formulation, based on the sliding mode control concept [54]. The SVSF gain is a discontinuous corrective term that keeps the state estimate moving back and forth across the true state trajectory [54]. A region is formed around the true trajectory and the state estimate stays within it [54], known as the existence subspace. The level of modelling uncertainties affects the width of the existence subspace [54]. The properties of stability as well as robustness to modelling error and disturbances are validated in [54], given that there exists upper limits for the level of modelling uncertainties and disturbances. However, the SVSF’s discontinuous corrective action results in chattering and to resolve this, a smoothing boundary layer, denoted by ψ may be used [54]. The smoothing boundary layer results in a linear interpolation of the discontinuous corrective action within the neighborhood ψ of the switching hyperplane [54]. This concept is illustrated in Figure 3, where β is the width of the existence subspace. In Figure 3a), the smoothing boundary layer width is larger than the existence subspace width, and in this case, chattering is removed. Conversely, in 3b), ψ is smaller than β, which results in chattering. In the GVBL-SVSF, the width of the boundary layer is made time variant and is optimally changed to within limits in order to eliminate chattering [53]. A summary of GVBL-SVSF is as follows [53]. a) Prediction [53]: Utilize a mathematical model of the system to predict the state at the next time step:
+xˆk+1|k = Fk ˆxk|k + Gk uk (13)
+Pk+1|k = Fk Pk|k FT
+k + Qk =
+[
+P11
+k+1|k P12
+k+1|k P21
+k+1|k P22
+k+1|k
+]
+(14)
+zˆk+1|k = Hk+1xˆk+1|k (15)
+Sk+1 = Hk+1Pk+1|k HT
+k+1 + Rk+1 (16)
+ez,k+1|k = zk+1 − zˆk+1|k (17)
+where ez,k+1|k and ez,k|k are the a-priori and a-posteriori measurement error vectors, respectively. b) Correction: In the correction stage, as explained in [53], measurements are used to refine the a-priori estimates into an a-posteriori form. When the number of measurements nz is less than the rank of the system nx , the measurement matrix is redefined as follows [53], [76]:
+Hk =
+[H1 H2
+] (18)
+H1 is a nz x nz matrix and H2 is a nz x (nx − nz) zero matrix. The state vector is split into two segments [53], the upper portion is for measured states, and the lower part is for
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on October 15,2025 at 09:24:30 UTC from IEEE Xplore. Restrictions apply.
+
+
+9222 IEEE TRANSACTIONS ON INTELLIGENT TRANSPORTATION SYSTEMS, VOL. 24, NO. 9, SEPTEMBER 2023
+Fig. 3. Effects of varying the boundary layer width [54].
+unmeasured states, such that:
+xk =
+[xuk
+xlk
+]
+(19)
+As described in [53], a transformation is made to the state transition matrix using a matrix T, which gives:
+8k = TFk T−1 =
+[811 812
+821 822
+]
+(20)
+Ez is the error vector associated with the upper segment of the state vector defined as [53]:
+Ez = |ez,k+1|k | + γ z|ez,k|k | (21)
+The parameter γ z is a diagonal matrix of dimensions nz x nz, the diagonal terms consist of values in this range 0 ≤ γzii < 1. Ey is the error vector associated with the lower segment of the state vector such that [53]:
+Ey = |8228−1
+12 ez,k+1|k | + γ y |8−1
+12 ez,k+1|k | (22)
+The parameter γ y is also a diagonal matrix but with dimensions (nx −nz) x (nx −nz), where each element of the diagonal has a value in this range 0 ≤ γyii < 1. Next, optimal smoothing boundary layer widths for the measured and unmeasured states are found, denoted as ψ z and ψ y, respectively, which from [53] are given as:
+ψ z = (E ̄z
+−1H1P11
+k+1|k HT
+1 S−1
+k+1)−1 (23)
+ψ y = (E ̄y
+−1P21
+k+1|k HT
+1 S−1
+k+1(8228−1
+12 )−1)−1 (24)
+where E ̄z = diag(Ez) and E ̄y = diag(Ey).
+As explained in [53], the optimal boundary layer widths in equations (23) and (24) are compared to set thresholds in ψmax , which contains upper limits on the level of modelling uncertainty for each state and limits the size of the smoothing boundary layer in order to ensure stability at the expense of chattering elimination. The filter gain consists of two terms, an upper gain to update the measured states, and a lower gain to correct the unmeasured states, expressed as [53]:
+Kk+1 =
+[Kuk+1
+Klk+1
+]
+(25)
+For the upper gain, if the boundary layer widths for each state in ψ z are above the thresholds in ψmax , then from [53], the upper GVBL-SVSF gain is set to:
+Kuk+1 = H−1
+1 di ag[Ez ◦sat (ez,k+1|k , ψ z,max )][di ag(ez,k+1|k )]−1
+(26)
+where ψ z,max contains predefined limits in ψmax for the boundary layer widths of the measured states. Otherwise, if below, the upper gain from [53] is:
+Kuk+1 = P11
+k+1|k HT
+1 S−1
+k+1 (27)
+The symbol ◦ denotes the Schur product [54], and sat (q, ψ) is a saturation function. Given that q and ψ are vectors, the function outputs a vector with the same number of elements, where i denotes the index of the element, calculated as [54]:
+sati (q, ψ) =
+
+ 
+ 
+qi
+ψi
+, if|
+qi
+ψi
+|≤1
+sign( qi
+ψi
+), if|
+qi
+ψi
+|>1
+(28)
+Next, for the lower gain, if the widths in ψ y are above the limits in ψmax , then, the lower GVBL-SVSF gain, from [53] is:
+Klk+1 = di ag[Ey ◦ sat (8228−1
+12 ez,k+1|k , ψ y,max )]
+× [di ag(8228−1
+12 ez,k+1|k )]−18228−1
+12 (29)
+where ψ y,max contains limits from ψmax for the boundary layer widths of the unmeasured states. Otherwise, if lower, the lower gain from [53] is calculated as:
+Klk+1 = P21
+k+1|k HT
+1 S−1
+k+1 (30)
+The a-posteriori state estimate, co-variance, and measurement error are calculated as:
+xˆ k+1|k+1 =
+[
+ˆxuk+1|k
+xˆ lk +1|k
+]
++
+[Kuk+1
+Klk+1
+]
+ez,k+1|k (31)
+Pk+1|k+1 = Pk+1|k −
+[Kuk+1
+Klk+1
+]
+Hk+1Pk+1|k
+− Pk+1|k HT
+k+1
+[Kuk+1
+Klk+1
+]T
++
+[Kuk+1
+Klk+1
+]
+Sk+1
+[Kuk+1
+Klk+1
+]T
+(32)
+where:
+ez,k+1|k+1 = zk+1 − Hk+1xˆk+1|k+1 (33)
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on October 15,2025 at 09:24:30 UTC from IEEE Xplore. Restrictions apply.
+
+
+AKHTAR AND HABIBI: INTERACTING MULTIPLE MODEL SMOOTH VARIABLE STRUCTURE FILTER FOR TRAJECTORY PREDICTION 9223
+2) IMM-GVBL-SVSF: In dynamic MM techniques, it is assumed that the system’s dynamics changes over-time, also known as model or mode switching [64]. Another assumption is that a Markov chain represents the process of mode switching and the associated mode transition probabilities are given by a Markov matrix (a parameter) [64], where each element is expressed as:
+pi j = P(M(k) = M j |M(k − 1) = Mi ) (34)
+M(k) is the model in effect at time step k. In the algorithm, μi
+k is the probability of model i (denoted as Mi ) in effect at time step k, or the mode probability in other words. r is the number of models. An explanation as to why IMM algorithms are useful for target-tracking and trajectory prediction is given after the algorithm summary below. Algorithm Summary [64]:
+1) The mixing probabilities from [64] are obtained as:
+μi| j
+k−1|k−1 =
+1
+c ̄ j
+pi j μi
+k−1 (35)
+c ̄ j =
+r
+∑
+i =1
+pi j μi
+k−1 (36)
+2) Computation of the initial conditions for each mode-matched filter [64]:
+xˆ0 j
+k−1|k−1 =
+r
+∑
+i =1
+xˆ i
+k−1|k−1μi| j
+k−1|k−1 (37)
+P0 j
+k−1|k−1 =
+r
+∑
+i =1
+μi| j
+k−1|k−1[Pi
+k−1|k−1 +(xˆi
+k−1|k−1 −xˆ 0 j
+k−1|k−1)
+× (ˆxi
+k−1|k−1 − ˆx0 j
+k−1|k−1)T ] (38)
+3) Using the initial conditions from 2), one iteration of each mode-conditioned filter is executed. Each filter outputs a model conditioned a-posteriori state estimate and co-variance, expressed as xˆ j
+k|k and P j
+k|k, respectively. SVSF-based estimation techniques require the a-priori measurement error vector, initiated as:
+e0 j
+k−1|k−1 = zk−1 − Hk−1xˆ 0 j
+k−1|k−1 (39)
+The likelihood function of a measurement is a multi-variate Gaussian distribution, from [64]:
+3j
+k = N (zk ; zˆ j
+k|k−1(xˆ 0 j
+k−1|k−1), S j
+k (P0 j
+k−1|k−1))
+= N (e0 j
+k ; 0, S j
+k (P0 j
+k−1|k−1)) (40)
+4) Mode probabilities of each model in effect at time step k are updated [64]:
+μj
+k=
+1
+c3j
+k c ̄j (41)
+c=
+r
+∑
+j =1
+3j
+k c ̄j (42)
+5) The state estimate and co-variance are obtained [64]:
+ˆxk|k =
+r
+∑
+j =1
+ˆx j
+k|k μ j
+k (43)
+Pk|k =
+r
+∑
+j =1
+μj
+k [P j
+k|k + (xˆ j
+k|k − xˆk|k )(xˆ j
+k|k − xˆk|k )T ] (44)
+The IMM is an interpretable model-based strategy. In terms of features, as inputs, IMM strategies take the states estimated from the previous time step and measurements to obtain as outputs the current estimated state and mode probabilities. Afterwards the current state estimates and mode probabilities are used to obtain the predicted trajectory. The IMM is an information fusion strategy in the sense that it combines multiple sources of information, which would be the outputted states from each mode-matched filter. It computes a weighted sum of the outputted states using the mode probabilities as weights. For tracking and predicting trajectories of maneuvering targets, the IMM can be more beneficial than single model filters (e.g. KF) because for vehicles typically one model is not enough to represent multiple maneuvers. The features of the estimated states as well as measurements are useful for prediction because these features are used to identify maneuvers using mode probabilities. These features are used to compute the likelihood function 3 j
+k (equation (40))
+since it depends on the a-posteriori measurement error, e0 j
+k, which is a function of the measurements and state estimates. In terms of how the mode probabilities are computed, the a-posteriori measurement error (also known as the innovation vector), e0 j
+k , determines the likelihood function value (equation (40)). When the magnitude of the innovation is closer to zero, this means that the likelihood function value would be near the
+peak of the bell-shaped curve as 3 j
+k is a Gaussian distribution. Likelihood functions can be regarded as a goodness of fit function between a model and measurement, the lower the magnitude of the innovation vector, the greater the goodness of fit. This contributes to the model with a greater goodness of fit being more probable as the mode probability update equation is proportional to the likelihood function value given in equation (41). Maneuver identification in other words is based on Bayesian inference [64] as well as the likelihood function. More details regarding IMM algorithms can be found in [64].
+B. Trajectory Prediction Based on IMM-GVBL-SVSF
+The objective of this component is to predict the path of a tracked vehicle up to tp seconds ahead of the current time. The goal in other words is to predict the trajectory of the vehicle up to N p time steps ahead of the current time step k. Each iteration of prediction works similarly to each cycle of an IMM estimator. The difference is that the mode and mixing probabilities from the current time tk are retained as being constant for prediction given that there are no measurements available from the future time steps. Also, in mode-matched filtering, only the prediction stage executes due to no measurement again being available from the future. The current mode-conditioned state estimates, co-variances,
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on October 15,2025 at 09:24:30 UTC from IEEE Xplore. Restrictions apply.
+
+
+9224 IEEE TRANSACTIONS ON INTELLIGENT TRANSPORTATION SYSTEMS, VOL. 24, NO. 9, SEPTEMBER 2023
+and mode probabilities are obtained from steps 3) and 4) of the IMM-GVBL-SVSF estimator, which initialize the predictor. In terms of the model-set in the IMM algorithms, for simulated data, in the IMM estimation component, constant velocity and lane-keeping (CVLK) as well as constant velocity and lane-changing (CVLC) are used to identify lane-changing and lane-keeping maneuvers, respectively. Appendix A gives a description of these models as well as others outlined below. In the IMM prediction part, CVLK was used to predict lane-keeping trajectories and the sinusoidal lane-change (SLC) model was utilized to predict lane-changing paths. SLC is chosen over CVLC for prediction because it has the ability to mathematically determine when the lane-change ends as described in the next sub-section. When using real data, it was found that these models do not predict trajectories as accurately, hence, velocity tracking and lane-changing (VTLC) models [16] were used. These were utilized for both state estimation and prediction in the IMM algorithms. In the VT-LC model, for the velocity tracking part, a driver tries to drive at a specific reference velocity and this behavior is represented in simulation by a Linear Quadratic Regulator (LQR) control law. In the lane-changing portion, a driver tries to reach the center-line of the lane, where the lateral position of the center-line is the reference position. This is also represented using an LQR feedback loop. Appendix B gives a description of the models based on LQR control.
+C. Mode-Matching Filtering for Prediction
+In each prediction cycle, for each filter in the filter-bank, the position and velocity are projected according to a mathematical model corresponding to the maneuver. This section gives an overview of how the selected models are utilized for prediction. Let k denote the current time step and let n ≥ k. The co-variance of each prediction is found recursively as follows:
+Pn+1|k = Fk Pn|k FT
+k + Qk (45)
+Prediction using filters that contain the CVLK and VT-LC models (as described in Appendices A and B) predict trajectories by executing the predict stage of the filter projected n-time steps ahead. When the mode-matched filter uses the CVLC model for state estimation, SLC is chosen over CVLC for prediction because it has the ability to mathematically determine when the lane-change concludes using the predicted longitudinal position and maneuver initiation point, which is explained further below and in Appendix A. For prediction, the following equation is used in the filter-bank:
+xˆn+1|k = f SLC
+k (xˆn|k ) (46)
+As illustrated in Figure 4, the lane-change is modelled by a half-cycle sinusoidal function. The lateral position of the lane change is modelled by equation (47). The state-space representation of the lane-change, which is equation (46), is given in Appendix A. The term 1s is the difference between the vehicle’s longitudinal position, sk, and the maneuver initiation point, sR. This gives the longitudinal distance of the vehicle
+Fig. 4. Sinusoidal lane-change.
+into the lane-change with respect to the starting point of the maneuver. If in any prediction time-step this distance is lower than or equal to the total length L R of the lane-change, then the predicted state is obtained using equation (46). The terms ωL and nL represent the lane-width and lateral offset, respectively. If the term exceeds the lane-change length, this indicates the lane change is no longer active based on Figure 4, thus, the CVLK model is used to get the predicted position.
+n(1s) =
+ωL
+2 sin( π
+LR
+1s −
+π
+2)+
+ωL
+2 + nL (47)
+The unknown parameters L R and sR vary for each vehicle, hence, they have to be estimated. The non-linear least-squares (LS) technique is applied to estimate these parameters. To estimate them, as soon as the lane-change maneuver is recognized, the more recent past measurements of the longitudinal and lateral position are utilized by the LS technique. Nonlinear LS is applied to equation (47). The objective of LS is to estimate L R and sR such that the difference between the measured lateral position and the output of the sinusoidal function are minimized. More information on LS estimation can be found in [64]. If a right lane-change is performed, then non-linear LS is applied to the equation representing the lateral position of the right lane-change as described in Appendix A.
+V. SIMULATION AND EXPERIMENTAL RESULTS
+The performance of the proposed approach is evaluated using synthetically generated data as well as measured and real data from two public real data-sets. The IMM-GVBL-SVSF and IMM-KF are comparatively analyzed in terms of trajectory prediction performance. They are also compared to some stateof-the-art machine learning approaches. Section V-A gives a description of the performance metrics used, section V-B shows the results with simulated data, and section V-C has the experimental results from two real data-sets that compare IMM-KF and IMM-GVBL-SVSF only. Section V-D gives a qualitative comparison of the IMM methods. Section V-E has a comparison with machine learning methods on the same experimental data-sets. Lastly, section V-F discusses limitations of the proposed approach. Note that two real data-sets were mainly used for the purpose of comparing the IMM strategies to data-driven approaches. In works that use explicit closed-form mathematical models to predict trajectories, it is common to use only one real data-set and/or synthetic data.
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on October 15,2025 at 09:24:30 UTC from IEEE Xplore. Restrictions apply.
+
+
+AKHTAR AND HABIBI: INTERACTING MULTIPLE MODEL SMOOTH VARIABLE STRUCTURE FILTER FOR TRAJECTORY PREDICTION 9225
+Works such as these in [14], [15], [16], [17], [18], [81], and [51] use one real data-set and/or a simulated data-set.
+A. Performance Metrics
+The RMSE is utilized to assess performance of the algorithms. For target-tracking, the position and velocity RMSE at time step k is computed as:
+R M S E pk =
+√ √ √ √
+1
+M
+M
+∑
+i =1
+[(xˆ i
+k|k − xk )2 + (yˆi
+k|k − yk )2] (48)
+R M S Evk =
+√ √ √ √
+1
+M
+M
+∑
+i =1
+[(vˆixk|k − vxk )2 + (vˆiyk|k − vyk )2] (49)
+where xk, yk, vxk , and vyk represent the true x position, y position, x velocity, and y velocity at time step k, respectively. i denotes the Monte Carlo run number and M is the total number of Monte Carlo runs. The quantities xˆi
+k|k , yˆi
+k|k , vˆixk|k ,
+and vˆiyk|k represent the estimated x position, y position, x velocity, and y velocity at time step k from Monte Carlo run i, respectively. Trajectory prediction RMSE at j time steps ahead is calculated as:
+RMSEpj =
+√ √ √ √
+1 M∗P
+∑M i =1
+∑N−Np
+k=k0 [(xˆi
+k+ j|k − xk+ j )2 +( yˆ i
+k+ j|k − yk+ j )2]
+(50)
+where j represents the number of time steps ahead, M is the total number of Monte Carlo runs, and P is the number of times a trajectory is predicted in a Monte Carlo run. Thus, a total of M ∗ P trajectories are predicted. xk+ j and yk+ j represent the true x and y position at j time steps ahead of the current time step k, respectively. Conversely, xˆi
+k+ j|k and yˆi
+k+ j|k
+represent the predicted x and y positions (similarly at j times steps ahead of the current time step k from Monte Carlo run i), respectively. k0 is the initial time step at which prediction begins. N is the number of samples in the simulation or the number of frames in which the car is present for. Note that for computing RMSE with experimental data, since there are no Monte Carlo runs, M = 1. The true states are set equivalent to the measurements from experimental data, thus, RMSE is computed with respect to the measurements.
+B. Simulation Results
+For evaluating the performance of the proposed approach, two different scenarios are simulated, one in which the vehicle performs a turn due to the roadway turning, and in the other, the vehicle undergoes a lane change. The IMM-KF and IMMGVBL-SVSF based techniques are compared in terms of path prediction RMSE. To obtain the ground truth trajectories, from Appendix A, the CV model is used to generate straightline motion, and the CT model is used to create turns. To generate the trajectories and measurements, the following parameter values are selected. The sampling time is set to Ts = 0.1s (corresponding to a typical sampling time when using a LIDAR system). For the measurement noise standard deviation, σw = 0.05m as recommended in [67] and this value
+is used in that work for the standard deviation of obtaining vehicle position using LIDAR sensors. In other words Rk = diag([σw2 , σw2 ]). The process noise standard deviations σax ,
+σay , and σα are set to 0.001 m/s2, 0.001 m/s2, and 0.00001 rad/s2, respectively. For the parameters used in the CCS, σas and σan represent the process noise standard deviations in the longitudinal and lateral coordinates, respectively. σs and σn represent the measurement noise standard deviations in the longitudinal and lateral directions, respectively. For target-tracking and prediction, the following parameter values were selected, σas = σan = 0.001 m/s2, σs = σn = 0.05m,
+and RCC S
+k = diag([σs2, σn2]). The process noise co-variance matrices for each model are specified in Appendix A. The number of Monte Carlo runs in the simulations is 500. In general, the prediction accuracy depends on the current state estimates, and mode probabilities at the current time step k, as well as how precise the selected models represent vehicle motion in the near-time future. For assessing the results in simulated scenarios, the algorithms are tested with and without modelling error injected into the filters. In terms of the models in synthetic data simulations, for the target-tracking component, stage i) in Figure 1, linear models of CVLK and CVLC are used. Therefore, when applying the IMM-KF algorithm, the KF is used in each mode-matched filter for the target-tracking component due to linear models. In stage ii), the trajectory prediction part, CVLK and SLC were used in the mode-matched filters to predict trajectories and SLC is nonlinear. Thus, for prediction when applying the IMM-KF algorithm, the mode-matched filter for SLC executes the predict stage of EKF as SLC is nonlinear. For CVLK, the mode-matched filter runs the KF predict stage as CVLK is linear. Since a nonlinear model is used for prediction with SLC, it is possible to use other non-linear filters such as the Unscented Kalman Filter (UKF) [82] and Cubature Kalman Filter (CKF) [83]. However, results with these filters are excluded due to page limitations and results are not significantly different compared to the EKF when applying UKF and CKF. More specifically, when using CKF and UKF to perform prediction with SLC, the RMSEs differ by no more than 1cm for both the normal and 3% modelling uncertainty cases, which is why these results are excluded. In the 5% uncertainty case, likewise to the KF, these filters also go unstable. The reason why performance is comparable is, when the sampling time and noise standard deviation are small, sigma point filters such as UKF and CKF are expected to have comparable performance to the EKF. Whereas when Ts and the noise levels are higher, sigma point filters are more effective. 1) Scenario I-Turning: In the “turning” scenario, the car moves at a constant velocity for 15s with a speed of 25 m/s. Afterwards, it performs a turn lasting 15s with a turn rate of 4 ◦/s, and then lastly, it moves with a constant velocity again for 10s at the same speed. The turn is assumed to be due to a roadway turn. The initial velocities in the x and y directions are 17.7 m/s, and the initial position is at the origin. The center-line of the lane is set to the s-axis. The generated scenario is illustrated in Figure 5. Note that to generate the lane-line, the same motion models used to obtain the vehicle trajectory were utilized, but the difference
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on October 15,2025 at 09:24:30 UTC from IEEE Xplore. Restrictions apply.
+
+
+9226 IEEE TRANSACTIONS ON INTELLIGENT TRANSPORTATION SYSTEMS, VOL. 24, NO. 9, SEPTEMBER 2023
+Fig. 5. Turning scenario.
+TABLE I
+TRAJECTORY PREDICTION RMSE(M) FOR THE TURNING SCENARIO (NORMAL CASE)
+being that no process noise was included to generate the laneline. No process noise was added because it is assumed that coordinates of the lane-line can be obtained through a HighDefinition (HD) map database with high precision. The prediction RMSE is shown in Table I. Trajectories are predicted at every point between 12s and 32.8s into the simulation inclusive.1 In general, without modelling uncertainty, the IMM-KF performs better than the IMM-GVBL-SVSF because the KF is expected to outperform any state estimator given that the system is linear, has a known model, and has Gaussian noise with known statistics. In the CCS, the trajectory will appear as a nearly straight line when the car keeps its lane as it moves along a curved road. A model equivalent to the CT model is known as constant turn rate and velocity (CTRV) [2]. Based on that model, the longitudinal velocity is constant because the tangential speed of the vehicle stays constant, which is equivalent to longitudinal velocity. The process noise for the tangential speed is Gaussian in CTRV. Because the longitudinal velocity is constant and has Gaussian noise, this indicates the longitudinal position evolves linearly with Gaussian process noise. Thus, this motion can be accurately modelled using the CVLK model because the noise is Gaussian and the motion is linear in the CCS, where the longitudinal position evolves linearly with a constant longitudinal velocity. Hence, the KF achieves optimal performance in terms of state estimation RMSE as shown in Figure 6. This then results in the predictor receiving more accurate state estimates leading to better state predictions.
+1These times are selected because 12s corresponds to 3s before the turn and 32.8s is selected as the last time for prediction because of a 7s prediction horizon. The duration of the simulation is 40s.
+Fig. 6. State estimation RMSE for Scenario I (Normal case).
+TABLE II
+TRAJECTORY PREDICTION RMSE(M) FOR THE TURNING SCENARIO (3% UNCERTAINTY CASE)
+TABLE III
+TRAJECTORY PREDICTION RMSE(M) FOR THE TURNING SCENARIO (5% UNCERTAINTY CASE)
+The trajectory prediction algorithms are also compared under the presence of modelling uncertainties by having Ts changed to a specific value when 8s of the simulation is complete. A technique that can be used to introduce modelling uncertainty into a filter is to change coefficients of the state transition matrix as described in [76] and [78]. Ts is one of the coefficients or parameters of the state transition matrices of all models shown in the Appendices. In other words, both algorithms take the incorrect sample rate at 8s on-wards to investigate the effect of modelling uncertainty.
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on October 15,2025 at 09:24:30 UTC from IEEE Xplore. Restrictions apply.
+
+
+AKHTAR AND HABIBI: INTERACTING MULTIPLE MODEL SMOOTH VARIABLE STRUCTURE FILTER FOR TRAJECTORY PREDICTION 9227
+Fig. 7. Position RMSE for Scenerio I (Uncertainty cases).
+First Ts is increased by 3%, with the results shown in Table II, and then by 5% as shown in Table III. Based on Table II, for all cases, the IMM-GVBL-SVSF outperforms the IMM-KF strategy. Therefore, under modelling error, the IMMGVBL-SVSF predicts more accurate paths. This is because the technique obtains more precise mode-conditioned position state estimates after a certain time, which gets fed into the predictor, yielding more accurate predictions. Figures 7a) and 7b) show the RMSE of the position state estimation error for 3% and 5% uncertainties, respectively. As illustrated, the RMSE curve from IMM-GVBL-SVSF converges much faster compared to IMM-KF, and as a result this algorithm provides more accurate position state estimates. The reason is that the GVBL-SVSF is robust to modelling uncertainties due to the switching gain getting the state estimate to converge to a region near the ground truth as shown in Figures 7a) and 7b), demonstrating greater robustness and stability. This indicates that there are cases where the boundary layer widths from equations (23) and (24) are above the thresholds, allowing the general SVSF gains (equations (26) and (29)) to be utilized to maintain robustness and stability, forcing the estimates to converge to within the existence subspace close to the true trajectory. In contrast, for the IMM-KF, when 3% error is injected into Ts, it takes longer for the RMSE to converge because of the KF’s lower robustness to modelling errors. With IMM-KF, the estimated trajectory significantly diverges away as shown in Figure 7a) before re-converging after a long while. When the level of uncertainty is increased further by increasing Ts by 5%, this results in track divergence and instability as illustrated in Figure 7b), indicating the KF’s lack of robustness and stability in the presence of larger uncertainties. Moreover,
+Fig. 8. Mode Probabilities for Scenario I (5% Uncertainty).
+with 5% uncertainty, as shown in Figure 8a), the maneuver is no longer detected due to the instability of IMM-KF as shown in Figure 7b). In contrast, the IMM-GVBL-SVSF still identifies CVLK in Figure 8b) because of its greater stability and robustness as illustrated by the position RMSE curve in Figure 7b). As shown in Table III, it achieves reasonable performance with 5% uncertainty in the sampling time, with the RMSE not larger than 1m. Note that the reason why IMM-KF is excluded from this table is because in Figure 7b) the estimation error rises due to filter instability. As illustrated in Figure 7b), the RMSE curve resulting from IMM-KF eventually disappears at around 10s due to instability. This is because e0 j
+k (equation (39)), the a-posteriori measurement error, rises in magnitude when the filter becomes unstable. As a result, this causes 3 j
+k (equation (40)) to approach zero because
+||e0 j
+k || going to infinity corresponds to moving to a tail of the
+bell-shaped curve represented by 3 j
+k , which has a Gaussian distribution. This causes the normalization constant c (equation (42)) in the mode probability update formula (equation (41)) to approach 0, causing instability and large RMSE as shown in Figure 7b). This shows that from a theoretical point of view, if there are high levels of modelling error in the filter, then this filter (IMM-KF) is incapable for trajectory prediction. Whereas, with IMM-GVBL-SVSF, since it can handle a larger range of modelling errors, it is still capable of predicting trajectories under higher levels of modelling uncertainty. 2) Scenario II-Lane Change: In this scenario, the car moves at a constant velocity with a speed of 25m/s for 10s, then performs a left lane-change lasting 6s, and afterwards it moves at a constant velocity for 9s. The initial position is set to half of a lane-width above the origin and the initial velocity is 25 m/s
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on October 15,2025 at 09:24:30 UTC from IEEE Xplore. Restrictions apply.
+
+
+9228 IEEE TRANSACTIONS ON INTELLIGENT TRANSPORTATION SYSTEMS, VOL. 24, NO. 9, SEPTEMBER 2023
+Fig. 9. Lane-change Scenario.
+TABLE IV
+EFFECT OF THE MEASUREMENT NOISE STANDARD DEVIATION ON THE LANE-CHANGE DETECTION LATENCY IN SECONDS
+in the x-direction. A horizontal lane-line which begins at the origin is set as the s-axis, this line represents a roadway line with lane-markings. The lane change is simulated using the CT model, similar to how it was generated in [84], where for the first 3s of the maneuver, it moves with a turn rate of 1.02 ◦/s, then for the remainder of the lane change, it turns with a turn rate of -1.02 ◦/s. Similar to other scenarios, cases with and without parametric uncertainties are considered. In Figure 9, the generated lane-change trajectory as well as the lane-line are shown. For the normal scenario without parametric error, the RMSEs for prediction at various points in the prediction horizon are shown in Table V. Paths are predicted at every point between 11.5s and 17.8s into the simulation.2 Considering the effect of the variance of the measurement noise, it can be observed from Table IV that the latency rises with the variance. Note that reducing latency is important for prediction and for recognizing maneuvers as soon as possible for autonomous driving applications. In the normal case, as shown in Table V, the two methods have comparable performance with IMM-KF marginally outperforming the IMM-GVBL-SVSF. This is again because the KF gives the optimal state estimate when the process and measurement noise is Gaussian and the system model is largely known and linear. Although, there is modelling error associated with using the linear CVLC model to represent the lane-change generated by the non-linear CT model, the process noise accommodates the uncertainty in this case. As a result, due to more accurate state estimates, the IMM-KF achieves more accurate path predictions. Plots for the state estimation RMSE are shown in Figure 10. Accordingly, at most times, IMM-KF outperforms the IMM-GVBL-SVSF in terms of position estimation.
+2The time of 11.5s, which is 1.5s into the maneuver, is chosen as the first prediction time because there is a latency of 1s for detecting the lane-change from Table IV. 17.8s is selected as the final time because of a 7s prediction horizon and the total time of the simulation is 25s.
+Fig. 10. State estimation RMSE for Scenario II (Normal case).
+Fig. 11. CVLC model probability for Scenario II (Normal case).
+Moreover, from Figure 11, the mode probabilities of the lane-change maneuver are approximately the same during the lane-change interval from 10s to 16s, with both strategies having nearly the same latency as listed in Table IV for detecting the lane-change. However, as illustrated in Figure 11, for the lane-keeping maneuver following the lane-change, the IMM-GVBL-SVSF detects the change slightly sooner, which is because the velocity RMSE begins to drop slightly earlier as shown in Figure 10b). A likely reason for this is that a linear CVLC model is used by the state estimators in each algorithm to represent the lane change, which indicates there is modelling uncertainty associated with its use as the lane-change was generated using the non-linear CT model. Hence, the robustness property of the GVBL-SVSF to uncertainty may allow the velocity RMSE to start dropping earlier compared to IMM-KF, resulting in the maneuver being recognized faster. The performances of both trajectory prediction strategies are compared with parametric uncertainty, where at 6.3s into the
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on October 15,2025 at 09:24:30 UTC from IEEE Xplore. Restrictions apply.
+
+
+AKHTAR AND HABIBI: INTERACTING MULTIPLE MODEL SMOOTH VARIABLE STRUCTURE FILTER FOR TRAJECTORY PREDICTION 9229
+TABLE V
+TRAJECTORY PREDICTION RMSE(M) FOR THE LANE-CHANGE SCENARIO (NORMAL CASE)
+TABLE VI
+TRAJECTORY PREDICTION RMSE(M) FOR THE LANE-CHANGE SCENARIO (3% UNCERTAINTY CASE)
+simulation, the algorithms are subjected to a sampling time uncertainty. Similarly to the previous example, the injected uncertainties are an increase of 3% and 5% in Ts. For the 3% uncertainty case, Table VI shows the RMSEs over the prediction horizon using the same start times as earlier. Overall, for 3% uncertainty, the IMM-GVBL-SVSF algorithm significantly outperforms the IMM-KF approach for path prediction under the presence of this parametric modelling uncertainty. The IMM-GVBL-SVSF based approach performs better because it attains more accurate initial mode-conditioned position state estimates due to the switching SVSF gain allowing greater stability, which leads to more precise path prediction. In Figures 12a) and 12b), the position estimation RMSE is shown for 3% and 5% uncertainty, respectively. In the 3% uncertainty case, the position estimate of the IMM-GVBLSVSF is comparatively more accurate. When using IMMKF, in the 5% uncertainty case, the filter becomes unstable and the estimates diverge as shown in Figure 12b), as a result in Figure 13a) the lane-change maneuver is not detected by the IMM-KF. In contrast and as shown in Figure 12b), the IMM-GVBL-SVSF is stable and robust to uncertainties, which allows the lane-change to be identified as illustrated in Figure 13b). The prediction results are provided in Table VII and the RMSEs are all under 1m, showing that the algorithm provides a reasonable performance. In that table, the reason why no comparison is made to IMM-KF is also because in Figure 12b) the RMSE curve diverges due to instability likewise to the previous scenario.
+C. Experimental Results Using Real Data: Quantitative Comparison of the IMM-KF and IMM-GVBL-SVSF
+To compare the IMM-KF and IMM-GVBL-SVSF for trajectory prediction with experimental data, two public highway data-sets are used, which are the HighD data-set [85] and Next Generation Simulation (NGSIM) [86]. The HighD data-set consists of several vehicle trajectories captured on highways
+Fig. 12. Position RMSE for Scenario II (Uncertainty cases).
+Fig. 13. Mode probabilities under the presence of 5% uncertainty for Scenerio II.
+in Germany, where unmanned aerial vehicles (UAVs) are used to record videos above highways. The NGSIM data-set was obtained using multiple cameras on tops of buildings in the US and camera information is used to estimate the position of the vehicles. Both data-sets provide the position of the
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on October 15,2025 at 09:24:30 UTC from IEEE Xplore. Restrictions apply.
+
+
+9230 IEEE TRANSACTIONS ON INTELLIGENT TRANSPORTATION SYSTEMS, VOL. 24, NO. 9, SEPTEMBER 2023
+TABLE VII
+TRAJECTORY PREDICTION RMSE(M) FOR THE LANE-CHANGE SCENARIO (5% UNCERTAINTY CASE)
+vehicles, which is what the algorithms use as measurements. The frame rate for the recordings from HighD is 25Hz, hence, a sampling time of 0.04s is used by the algorithms when testing with HighD. With NGSIM, the frame rate is 10Hz, which corresponds to a sampling time of 0.1s; this is used by the algorithms when evaluating performance using NGSIM data. For HighD, the trajectories of vehicles in all videos are predicted and for NGSIM, the paths of 11778 vehicles are predicted, which is nearly equivalent to the total number of vehicles in the US-101 and I-80 data-sets of NGSIM. Only the cases where the vehicles are present in the video for at least 7s are considered as the prediction horizon time for the experiments is 7s. For each vehicle, its trajectory is predicted once it is seen in the video for 0.5s and from 0.5s on-wards, a trajectory is predicted at every time step. State estimation and tracking occurs at the very first frame in which the vehicle occurs. The reason why 0.5s is chosen as the prediction start point is that for most state estimation algorithms there is always a delay for the state estimation error to converge. The amount of delay depends on how accurate the initial state estimate and its covariance are as well as the filter sample rate. Normally, the error associated with the initial state estimate is expected to be high. Thus, the state estimation error is generally large for the first few time steps before the error converges. This in turn results in higher error in the predicted trajectories prior to estimation error convergence. However, the estimation error does not always converge within 0.5s, thus, the error before convergence after 0.5s is still considered when comparing the filters because in theory, when there is modelling error, SVSF converges faster than the KF as discussed in the previous subsection. Hence, this would provide an indication on whether the theoretical results using simulated data agree with experiments using real data. The models selected for the experiments are velocity tracking and lane-changing (VT-LC) ones [16] because it is found these models predict trajectories more accurately with real data compared to the ones used to test the algorithms on simulated data. It is important to note these models are linear, hence, comparisons are made with IMM filters that take linear models. Thus, no comparison is made to other state-of-theart IMM filters such as IMM-EKF [64], IMM-UKF [84], and IMM-CKF [87] because EKF, UKF [82], and CKF [83] require a nonlinear system and/or measurement model. The measurement model in this paper is also linear. In VT-LC, the driver behavior is modelled by two Linear Quadratic Regulator (LQR) control loops, one in the longitudinal direction and
+one in the lateral direction. In the longitudinal direction, the behavior of velocity tracking (VT) is represented. Velocity tracking refers to the driver behavior of maintaining a specific longitudinal velocity on a highway [16]. Which means the driver tries to maintain a specific longitudinal velocity while driving on the highway, thus, the driver tries to stay at or near that velocity. Where the LQR control law models the behavior of maintaining the desired longitudinal velocity. The lane-change (LC) model is used to model the motion in the lateral direction. In this, the control loop is used to model the motion of moving to the central lateral position of a lane or staying at the central lateral position of a lane. This can represent a lane-change because drivers generally try to follow the center-line of the desired lane as they switch lanes. Although this is called a lane-changing model in [16], this can also represent lane-keeping motion because this model represents the motion of moving along the center-line of a specific lane. The central lateral position is also known as the reference lateral position used by the control law. This model can also be called the lane-converging model in the sense that this model represents the motion of the vehicle’s lateral position converging near a lane’s central lateral position, which occurs in lane-keeping and lane-changing maneuvers. In other words, this models the process of following the center-line of a specific lane, which occurs in both lane-changing and lane-keeping maneuvers. See Appendix B or [16] for more information about the VT-LC model. The number of VT-LC models used by the IMM filters is equivalent to the number of lanes, in each VT-LC model the lane’s central lateral position has to be specified to represent lane-converging motion to the specified lane. In terms of parameters, for HighD, the measurement noise co-variance is Rk = diag([0.12, 0.12]) because the positioning error from the HighD data-set is within 10cm. On the NGSIM data-set, this parameter is set to Rk =
+di ag([( 1.2192
+2 )2, ( 06096
+2 )2]). The reason why this is chosen is, as specified in [88], the accuracy of the X coordinate is 4 feet and for Y its 2 feet. The process noise co-variance as well as the Q and R weighting matrices used by the LQR controllers for each model were tuned using the Genetic Algorithm (GA) as well as trial and error. The process noise co-variance is set to Qk = diag([0.352412, 0.012, 0.52842, 1.64052, 3.14822, 0.22912, 0.05832]). The parameters of the LQR control laws used by each VT-LC model are as follows, for VT motion, QV T = 150I and RV T = 0.1. For LC motion, QLC = 100I and RLC = 1. The parameters for the GVBL-SVSF were tuned using the GA as well. First, the IMM-KF and IMM-GVBL-SVSF performances were evaluated using the HighD data-set, the prediction RMSE is shown in Table VIII. In general, the IMM-GVBLSVSF performs better, at 1s, 2s, 3s, 4s, 5s, 6s, and 7s, it performs better in RMSE by 19.4%, 12.4%, 7.8%, 5%, 4.3%, 2.1%, and 1.5%, respectively. The reason why the IMM-GVBL-SVSF performs better in these cases is likely because of non-Gaussian modelling uncertainties, or in other words, modelling errors that cannot be well approximated by additive white Gaussian process noise. The robustness to
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on October 15,2025 at 09:24:30 UTC from IEEE Xplore. Restrictions apply.
+
+
+AKHTAR AND HABIBI: INTERACTING MULTIPLE MODEL SMOOTH VARIABLE STRUCTURE FILTER FOR TRAJECTORY PREDICTION 9231
+TABLE VIII
+TRAJECTORY PREDICTION RMSE(M) OF THE IMM-KF AND IMM-GVBLSVSF ON REAL DATA-SETS
+modelling error and stability of the SVSF due to the action of the switching gain allows the filter to handle non-Gaussian modelling uncertainties. In practice, the sources of modelling errors include the use of a linear model to approximate a nonlinear system (all systems in reality are nonlinear), as well as uncertainties in model parameters, state-space matrices, noise statistics, and noise probability distribution. If these uncertainties cannot be approximated by additive Gaussian noise, then SVSF is expected to perform better than the KF. It was found that for majority of the vehicles, the SVSF-based approach predicted their trajectories more accurately. There are however a few cases when IMM-KF outperforms IMMGVBL-SVSF, for these cases, it is likely the modelling errors can be well-represented by the Gaussian process noise term. Next, when assessing the performance with the NGSIM data-set, based on Table VIII, the IMM-GVBL-SVSF outperforms the IMM-KF at each prediction horizon time, it performs better in RMSE by 2.5%, 2%, 1.8%, 1.6%, 1.5%, 1.4%, and 1.4% at 1s, 2s, 3s, 4s, 5s, 6s, and 7s, respectively. The reason why it performs better is likely for the same reasons as the case with the HighD data-set. The RMSE with both data-sets is calculated with respect to the positions of the vehicles from the data-set. It is important to note that NGSIM data-set suffers from a high noise level because of a 2-4 feet accuracy in position as mentioned earlier, making the comparison of the two methods inconclusive as position errors fall within the noise level. Whereas with the HighD data-set, since its accurate to within 10cm, the position data is much closer to the ground truth, hence, the results from HighD give a better idea of which method predicts trajectories more accurately in terms of RMSE.
+D. Experimental Results: Qualitative Comparison of the IMM-KF and IMM-GVBL-SVSF
+To compare the strategies qualitatively, two specific vehicles from the HighD data-set are selected and are analyzed in terms of trajectory prediction. In Figures 14 and 15, the entire real trajectory of the vehicle, the predicted trajectories outputted by the IMM algorithms, as well as the ground truth predicted path are shown. Note that the ground truth predicted path refers to the real trajectory in the next N p time steps from the current
+time step k. In these figures, the vertical axis gives the lateral position and the horizontal axis gives the longitudinal position. To begin, first comparisons are made for a lane-changing maneuver in Figure 14. In Figure 14a), this is when the time elapsed since the car appeared in the video is 4.48s and the predicted trajectories are shown in this figure. Note that 4.48s corresponds to roughly 2.48s into the lane-change maneuver because the lane-change begins at around 2s as shown in Figure 16, which is the lateral position of the vehicle overtime. In this case, the IMM-GVBL-SVSF predicts the trajectory slightly more accurately due to the SVSF’s properties of robustness to modelling error and stability. Next, in Figures 14b) and 14c), the predicted trajectories at 2.92s and 3.4s into the maneuver are shown, respectively. The prediction performance is comparable in both cases likely because the state estimates of both algorithms have converged at nearly the same points. As explained in section V-B, under the presence of modelling error, in theory, the state estimates of both IMM-KF and IMM-GVBL-SVSF can converge to nearly the same point as illustrated in Figure 7a) near the end of the turning simulation at about 37.5s. But its just that when modelling uncertainties are present, the state estimates of IMM-GVBL-SVSF would converge faster than IMM-KF since the KF is less stable than the SVSF. Moreover, for the lane-keeping case shown in Figure 15, the predicted trajectories are shown at 1.20s, 2.6s, and 4.24s into the maneuver. At these times the predicted trajectories are comparable from both IMM algorithms likely because the state estimates from both methods have converged to nearly the same point at those times, resulting in comparable state predictions. As stated above, the state estimates of both approaches can converge to nearly the same point, but under the presence of modelling uncertainty, the IMM-GVBL-SVSF would converge faster.
+E. Experimental Results: Comparison to Machine Learning Approaches
+Although the main objective of this paper is to compare the IMM-KF and IMM-GVBL-SVSF for trajectory prediction, comparisons are made to some state-of-the-art machine learning techniques on the same data-sets in order to get an idea of what the performance gap is between learningbased approaches. Note that when comparing state estimation techniques to other algorithms in other fields, in general, only model-based state estimation strategies such as the KF, EKF, and UKF are baselined. This is common when applying state estimation to other areas such as multi-target tracking, robot localization and mapping, fault detection, electric vehicles, electric power grids, and satellites. For example, works [53], [56], [57], [59], [60], [61], [62] compare SVSF with only model-based strategies. In terms of the experiments, in order to compare the IMM strategies to the ML approaches in [89], the settings are set similarly to [89]. For both data-sets, the sampling rate is 5Hz in [89], thus, to match these settings, the sampling time of the IMM approaches is changed to 0.2s. In the ML strategies in [89], the information from the last 3s is given at each
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on October 15,2025 at 09:24:30 UTC from IEEE Xplore. Restrictions apply.
+
+
+9232 IEEE TRANSACTIONS ON INTELLIGENT TRANSPORTATION SYSTEMS, VOL. 24, NO. 9, SEPTEMBER 2023
+Fig. 14. Qualitative comparison of IMM-KF and IMM-GVBL-SVSF for trajectory prediction for a lane-changing Maneuver.
+time step and trajectories are predicted with a horizon of 5s. Hence, to match these settings, for the IMM-KF and IMMGVBL-SVSF, prediction begins once the vehicle has been in the video for 3s and the prediction horizon time is changed to 5s. A major difference in the experimental settings for the IMM algorithms is that the entire data-set from HighD and NGSIM (I-80 and US-101 highways only) is used to
+Fig. 15. Qualitative comparison of IMM-KF and IMM-GVBL-SVSF for trajectory prediction for a lane-keeping Maneuver.
+test the IMM algorithms, whereas for the ML approaches in [89], 20% of the data is used in the testing set as stated in [89]. The cases where the vehicles are in the video for at least 5s are considered since the prediction horizon is 5s. With the HighD data-set, the IMM methods are first tested using position-only measurements but then tested with the longitudinal velocity added as a measurement. The letter P in
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on October 15,2025 at 09:24:30 UTC from IEEE Xplore. Restrictions apply.
+
+
+AKHTAR AND HABIBI: INTERACTING MULTIPLE MODEL SMOOTH VARIABLE STRUCTURE FILTER FOR TRAJECTORY PREDICTION 9233
+Fig. 16. Vehicle lateral position from HighD.
+IMM-KF (P) and IMM-GVBL-SVSF (P) in Table IX means that only the measured position of the vehicles is taken as a measurement for tracking. And for IMM-KF (V) and IMMGVBL-SVSF (V), the V indicates that the measured position and longitudinal velocity of the cars are used as measurements. For NGSIM, only position is included for the measurement because based on experiments it was observed that it does not significantly improve performance with longitudinal velocity included, which may likely be because the NGSIM data-set contains a lot of noise. These algorithms are compared to the ML strategies of Social LSTM (S-LSTM) [46], Convolutional Social LSTM (CS-LSTM) [21], Social GAN (S-GAN) [90], Multi-agent Tensor Fusion (MATF) [91], Planning Informed Prediction (PiP) [89] without the planning coupled module, called PiPnoPlan [89], then PiP [89] without the target fusion module, called PiP-noFusion, and PiP [89], which has both the planning and target fusion coupled modules. The results are in Table IX, where the values of the RMSEs for the ML methods are taken from [89]. Although Table I in [89] also has the negative loglikelihood (NLL) as a metric, this is not included in this paper because many works that perform prediction using explicit closed-form mathematical models such as [14], [15], [16], [17], [18], [81], [92], and [51] do not have NLL as a metric. Before beginning the comparison to ML approaches, it can be seen in Table IX that when comparing IMM-GVBL-SVSF to IMM-KF, the performance is comparable. This contrasts from the results in Table VIII because prediction starts at 3s instead of 0.5s. The comparable performance is likely due to the fact that by the time the filters reach 3s the state estimates have very likely converged, which results in comparable state predictions. As discussed earlier, in theory, as illustrated from the synthetic turning scenario in Figure 7a), the state estimates of IMM-KF and IMM-GVBL-SVSF can still converge to nearly the same value in the presence of modelling errors. But it is just that it would take longer for the state estimation error of IMM-KF to converge because the KF is less stable. To begin, for the HighD data-set, with position measurements used by the IMM strategies only, as shown in Table IX, ML approaches overall perform better than the model-based strategies. The PiP methods are reportedly the best according to the results published in [89], they also perform better than the IMM strategies in Table IX. Comparing the IMM-KF (P) and IMM-GVBL-SVSF (P) to S-GAN, at 1s and 2s into
+the future, the methods perform better, by 6.7% and 3.8%, respectively. At 3s, the S-GAN RMSE is equivalent to the RMSEs of the IMM strategies with position measurements only. If the longitudinal velocities of the remote vehicles are included as a measurement, performance of the IMM strategies improve and it outperforms the S-GAN, at 1s, 2s, 3s, 4s, and 5s into the future. Compared to S-GAN, the RMSE of IMMGVBL-SVSF (V) is lower by 30%, 30.8%, 23.2%, 15.8%, and 9.4%, at 1s, 2s, 3s, 4s, and 5s, respectively. Moreover, in comparison to S-LSTM, both IMM techniques outperform S-LSTM at 2s, 3s, and 4s into the future. More specifically, IMM-GVBL-SVSF (V) outperforms it by 5.3%, 5.1%, 1.5%, respectively. Next, compared to CS-LSTM, the IMM methods perform better at 2s and 3s into the future. At 2s and 3s, IMMGVBL-SVSF (V) does better by 5.3% and 3.4%, respectively. Therefore, at an expense of adding longitudinal velocity as a measurement, the IMM strategies do better than S-GAN and perform better than S-LSTM and CS-LSTM at some prediction horizon times. Next, for the NGSIM data-set, the IMM approaches do perform worse than the data-driven methods, this is likely because IMM estimation performance is sensitive to the level of noise in the measurements. As discussed earlier, the NGSIM data-set contains a lot of noise because it is accurate to within 2-4 feet. Generally, as the measurement noise variance rises, the state estimation performance becomes less accurate, which leads to less precise trajectory prediction. It can be seen in Tables VIII and IX that the IMM strategies perform significantly better with HighD data, which has lower noise levels as its accurate to within 10cm. This shows that the performance is significantly affected by the level of noise in the data. Thus, due to poorer state estimates from a larger noise variance, this results in less accurate predicted trajectories. Moreover, as discussed in section V-B, in the results with synthetic data, in theory, for IMM algorithms, the maneuver recognition delay increases with the measurement noise variance in Table IV. This indicates the detection latency will be greater with NGSIM compared to when using the HighD data-set because the noise variance is much larger in NGSIM data. Thus, a limitation of the proposed approach and IMM-KF is the sensitivity to the measurement noise variance. Since the delay rises with the measurement noise variance, this will result in less accurate predictions. The predictions in the delay period will be less accurate since the accuracy also depends on whether the identified maneuver is correct. Identifying maneuvers as soon as possible is key for IMM prediction strategies because predictions are made based on the model for the identified maneuver by assigning a larger weight to the predictions outputted from the most probable model. Thus, it is desirable for the most probable model to correspond to the correct maneuver. The weight is equivalent to the maneuver probability as discussed in section IV-B. All in all, for the most part, learning-based approaches perform better, which may be because they are able to model the motion of a vehicle better than hand-crafted models and they may be less sensitive to noise. The performance of the IMM strategies improves to being comparable on low noise data with the inclusion of velocity as a measurement. The main
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on October 15,2025 at 09:24:30 UTC from IEEE Xplore. Restrictions apply.
+
+
+9234 IEEE TRANSACTIONS ON INTELLIGENT TRANSPORTATION SYSTEMS, VOL. 24, NO. 9, SEPTEMBER 2023
+TABLE IX
+TRAJECTORY PREDICTION RMSE(M) OF THE IMM AND MACHINE LEARNING STRATEGIES ON REAL DATA-SETS
+advantages of state estimation approaches are that they require little data to tune the filter parameters and require no training, whereas data-driven approaches require large quantities of data and need a GPU to accelerate model training. Moreover, obtaining large quantities of data can be difficult. Furthermore, state estimation strategies are more interpretable because they are designed based on an understanding of the mathematics and physics behind the problem, whereas machine learning approaches are black box models. Therefore, if the noise level is low, model-based estimation strategies are competitive solutions. Furthermore, according to [67] and [27] a LIDAR sensor can obtain the position of a remote vehicle with a noise standard deviation of 5-10cm. Therefore, the noise of the HighD data-set would be more representative of the noise from LIDAR sensors compared to NGSIM because the positioning accuracy of HighD is to within 10cm. Another advantage of the IMM algorithms in this paper compared to the AI strategies in [89] is that information from the last 3 seconds is not necessary for state estimation-based approaches, and only information from the previous time step is required. In terms of the information required for prediction in IMM-KF and IMMGVBL-SVSF, only the current state estimate and maneuver probabilities from the current time step are required. To get the current state estimate and maneuver probabilities, only the state estimate and covariance from the previous time step are necessary.
+F. Limitations of Proposed Approach
+A limitation of the proposed approach as well as IMM-KF is that both algorithms are sensitive to the noise variance of the measurements. This is evident by the comparative results from the application of IMM strategies on the low noise HighD data-set compared to the high noise NGSIM data-set. In terms of the latency in detecting the maneuvers, this is also present with real data. As an example, from one vehicle in the HighD data-set, the vehicle’s lateral position is shown in Figure 16, based on that the lane-change begins at approximately 2s. Figure 17 shows the maneuver probability of the VT-LC model for the upper adjacent lane when using IMM-GVBL-SVSF, as shown, the probability is first above 0.8 at 3.12s, thus, the latency in recognizing the lane-change is about 1.12s. In the VT-LC model for the upper adjacent lane, the central lateral position of that lane is set as the reference lateral
+Fig. 17. Probability of VT-LC in the upper adjacent lane from a vehicle in the HighD Data-set.
+position. Note that the reason why from 3.12s and beyond the probability stays above 0.8 in that figure is because the VT-LC model of the adjacent upper lane represents lane-converging motion to the upper lane’s center-line. This is expected because the car stays in the adjacent upper lane after the lane-change, thus, it follows the center-line of the upper-lane. Moreover, the variance of the measurement noise affects the maneuver detection and results in a maneuver detection latency. As discussed in the previous sub-section, the trajectories predicted while the car is in the delay period would be inaccurate and adversely affects the prediction performance of IMM-based strategies. As stated earlier, the prediction accuracy is partly dependent on whether the recognized maneuver is correct, thus, identifying the correct maneuver as soon as possible is essential. Moreover, the maneuver detection latency and delay is proportional to the magnitude of the noise variance. Therefore, on NGSIM data, due to larger noise levels, the detection delay to identify a lane-change would be greater than 1.12s. Thus, with a high noise variance, there would be greater delays leading to less accurate trajectory predictions. Here is the opportunity for augmenting IMM strategies with AI-based strategies to reduce maneuver detection latency.
+VI. CONCLUSION
+In this paper, a new method for trajectory prediction based on robust multiple model state estimation is proposed that accounts for the road geometry using the curvi-linear coordinate system (CCS). This technique is referred to as the Interacting Multiple Model - Generalized Variable Boundary
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on October 15,2025 at 09:24:30 UTC from IEEE Xplore. Restrictions apply.
+
+
+AKHTAR AND HABIBI: INTERACTING MULTIPLE MODEL SMOOTH VARIABLE STRUCTURE FILTER FOR TRAJECTORY PREDICTION 9235
+Layer- Smooth Variable Structure Filter (IMM-GVBL-SVSF), where the estimated states and maneuver probabilities were utilized to predict lane-changing and lane-keeping trajectories. Motion models defined in the CCS that account for the road geometry constraints were selected to represent the lane-changing and lane-keeping maneuvers. A highway scenario was also assumed. The main contribution of the study is the comparative analysis of the IMM-KF and IMMGVBL-SVSF for trajectory prediction in simulated and real driving scenarios. In the absence of uncertainties in the simulated scenarios, the IMM-KF performs better. When modeling uncertainties are added, the IMM-GVBL-SVSF outperforms the IMM-KF strategy in terms of its performance, robustness and stability. This is because the GVBL-SVSF’s switching gain is based on the sliding mode concept and provides better robustness and stability with respect to uncertainties. In simulated cases, the IMM-KF’s performance degrades considerably as uncertainties are increased; its RMSE becomes larger than 1m and it becomes unstable. In contrast, the IMMGVBL-SVSF is robust and provides a reasonable prediction by remaining stable and detecting mode changes early in maneuvers. In terms of experimental results, IMM-GVBLSVSF performs better. In majority of the cases it outperforms IMM-KF due to robustness to non-Gaussian modelling errors, which also allows lane-changes to be recognized earlier. Moreover, the proposed approach and IMM-KF were compared to learning-based strategies to get an idea of what the performance gap is between data-driven methods. It was found that on a low noise data-set if the position and longitudinal velocity of the remote vehicles are measurements, the IMM-GVBL-SVSF provides comparable performance to learning-based approaches without requiring training data. As future work, the IMM approach may be augmented with AI strategies to improve prediction performance. A possibility is to represent maneuvers using machine learning models instead of hand-crafted models because a limitation associated with hand-crafted models is that the model may not represent future motion accurately.
+APPENDIX A
+MOTION MODELS WITHOUT A CONTROL LOOP
+The state for linear and non-linear models are assumed to evolve as [64] and [93]:
+xk+1 = Fk xk + Gk vk (51)
+xk+1 = fk (xk ) + Gk vk (52)
+where Fk is the state transition matrix, xk is the state vector, Gk is the noise gain matrix, and vk is white Gaussian process noise with co-variance Qk. fk(xk) is the non-linear state transition function.
+A. Motion Models in Cartesian Coordinates
+The state variables of the vehicle are xk, yk, vxk , vyk , and ωk, which represent the x position, y position, x velocity, y velocity, and turn rate, respectively. The terms wax , way , and wα are white noise acceleration terms, in the x, y, and angular
+directions, respectively. σa2x , σa2y , and σα2 are their respective variances. In the models below, Ts is the sampling time. • Constant Velocity (CV) [64]:
+xk =
+[xk yk vxk vyk
+]T (53)
+FC V
+k=
+
+  
+1 0 Ts 0 0 1 0 Ts 00 1 0 00 0 1
+
+  
+(54)
+GC V
+k=
+
+   
+Ts2
+20
+0 Ts2
+2
+Ts 0 0 Ts
+
+   
+(55)
+vC V
+k=
+[wax way
+]T (56)
+QC V
+k=
+[σa2x 0
+0 σa2y
+]
+(57)
+• Coordinated Turn (CT) [64]:
+xk =
+[xk yk vxk vyk ωk
+]T (58)
+FC T
+k=
+
+     
+1 0 sin(ωk Ts )
+ωk − 1−cos(ωk )
+ωk 0
+0 1 1−cos(ωk )
+ωk
+sin(ωk Ts )
+ωk 0
+0 0 cos(ωk Ts) − sin(ωk Ts) 0 0 0 sin(ωk Ts ) cos(ωk Ts ) 0 00 0 0 1
+
+     
+(59)
+GC T
+k=
+
+     
+Ts2
+2 00
+0 Ts2
+20 Ts 0 0 0 Ts 0 0 0 Ts
+
+     
+(60)
+vC T
+k=
+[wax way wα
+]T (61)
+QC T
+k=
+
+
+σa2x 0 0
+0 σa2y 0 0 0 σα2
+
+ (62)
+B. Motion Models in the Curvi-Linear Coordinate System (CCS)
+The state variables in the CCS are sk , nk , vsk , vnk , ask , and ank . Where sk and nk are the longitudinal and lateral positions, respectively. vsk and vnk are the corresponding velocities. ask and ank are the corresponding accelerations. Note in [16], the models are expressed in Cartesian coordinates, but in this paper the CCS is used, hence, the CCS representation of them is given below. was and wan are white noise acceleration terms in the longitudinal and lateral directions, respectively. Their respective variances are σa2s and σa2n . • Constant Velocity and Lane-keeping (CVLK) [11]:
+xk =
+[sk nk vsk
+]T (63)
+FC V L K
+k=
+
+
+1 0 Ts 01 0 00 1
+
+ (64)
+GC V L K
+k=
+
+
+1
+2 Ts2 0
+01
+2 Ts2 Ts 0
+
+ (65)
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on October 15,2025 at 09:24:30 UTC from IEEE Xplore. Restrictions apply.
+
+
+9236 IEEE TRANSACTIONS ON INTELLIGENT TRANSPORTATION SYSTEMS, VOL. 24, NO. 9, SEPTEMBER 2023
+vC V L K
+k=
+[was wan
+]T (66)
+QC V L K
+k=
+[σa2s 0
+0 σa2n
+]
+(67)
+• Constant Velocity and Lane-changing (CVLC) [11]:
+xk =
+[sk nk vsk vnk
+]T (68)
+FC V LC
+k=
+
+  
+1 0 Ts 0 0 1 0 Ts 00 1 0 00 0 1
+
+  
+(69)
+GC V LC
+k=
+
+  
+1
+2 Ts2 0
+01
+2 Ts2 Ts 0 0 Ts
+
+  
+(70)
+vC V LC
+k=
+[was wan
+]T (71)
+QC V LC
+k=
+[σa2s 0
+0 σa2n
+]
+(72)
+• Sinusoidal Lane Change (SLC) [18], [81]: Expressing the left lane change model in the CCS:
+n(1s) =
+ωL
+2 sin( π
+LR
+1s −
+π
+2)+
+ωL
+2 + nL (73)
+In Figure 4, a lane change is illustrated, it begins at sR, which is the maneuver initiation point along the longitudinal axis and 1s = sk+1 − sR. The lane change is modelled as a half-cycle sinusoid. Where ωL is the lane width, L R is the length of the lane change maneuver in the longitudinal direction, and nL is the lateral offset
+from the s-axis, which is ωL
+2 in the figure. The state-space representation is:
+xk =
+[sk nk vsk vnk
+]T (74)
+f SLC
+k (xk ) =
+
+  
+sk + vsk Ts
+ωL
+2 sin( π
+L R 1s − π
+2 ) + ωL
+2 + nL
+vsk
+ωL π vsk
+2L R cos( π
+L R 1s − π
+2)
+
+  
+(75)
+GSLC
+k = GC V LC
+k (76)
+vSLC
+k = vC V LC
+k (77)
+QSLC
+k = QC V LC
+k (78)
+For the right lane-change:
+n(1s) =
+ωL
+2 sin( π
+LR
+1s −
+π
+2 − π) +
+ωL
+2 + nL (79)
+The state-space model can be obtained similarly.
+APPENDIX B
+MOTION MODELS BASED ON LQR CONTROL
+The state-space representation of systems involving control inputs for linear systems is given as [64]:
+xk+1 = Fk xk + 0k uk + Gk vk (80)
+In addition to the terms from equation (51) in the previous section, 0k is the input gain matrix and uk is the control vector.
+• Velocity Tracking [16]: In this, the driver tries to move at a specific longitudinal velocity specified by vsref,k . This is augmented as a state and the IMM can be utilized to estimate the augmented state given that the system is observable.
+xk =
+[sk vsk ask vsref,k
+]T (81)
+FV T
+k=
+
+  
+1 Ts
+Ts2
+20 0 1 Ts 0 00 1 0 00 0 1
+
+  
+(82)
+0V T
+k=
+
+  
+0
+1
+2 Ts2 Ts 0
+
+  
+(83)
+The control input uk is represented by an LQR controller, expressed as:
+uVT
+k = −KL Q R ([vsk ask
+]T
+−
+[vsref,k 0]T ) (84)
+Gk = I (85)
+Qk is a nx x nx matrix, where each element on the diagonal represents the process noise variance for a specific state. • Lane-Changing [16]: In this, the driver tries to either change to an adjacent lane or stay in its current lane. Hence, this model can also represent lane-keeping motion. In other words, the vehicle attempts to follow the center-line of a lane.
+xk =
+[nk vnk ank
+]T (86)
+FLC
+k=
+
+
+1 Ts
+Ts2
+2
+0 1 Ts 00 1
+
+ (87)
+0LC
+k=
+
+
+1
+6 Ts3
+1
+2 Ts2 Ts
+
+ (88)
+The control input uk is represented by an LQR control law where it is adjusted to get the vehicle to move along the center-line of a lane denoted by nref,k, expressed as:
+uLC
+k = −KL Q R ([nk vnk ank
+]T
+−
+[nref,k 0 0]T ) (89)
+Gk = I (90)
+Qk is a nx x nx matrix, where each element on the diagonal represents the process noise variance for a specific state. • Velocity Tracking and Lane-Changing (VT-LC) [16]: This model represents simultaneous velocity tracking and lane-changing. The information from the state transition matrices and gain matrices of the above models are used to create augmented matrices as shown below. VT is used to model longitudinal motion and LC is applied to model
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on October 15,2025 at 09:24:30 UTC from IEEE Xplore. Restrictions apply.
+
+
+AKHTAR AND HABIBI: INTERACTING MULTIPLE MODEL SMOOTH VARIABLE STRUCTURE FILTER FOR TRAJECTORY PREDICTION 9237
+lateral motion.
+xk =
+[sk nk vsk ask vsref,k vnk ank
+]T (91)
+FV T LC
+k=
+
+         
+1 0 Ts
+Ts2
+2 00 0
+0 1 0 0 0 Ts
+Ts2
+2
+0 0 1 Ts 0 0 0 00 0 1 0 0 0 00 0 0 1 0 0 0 0 0 0 0 1 Ts 00 0 0 0 0 1
+
+         
+(92)
+0VT LC
+k=
+
+        
+00 01
+6 Ts3
+1
+2 Ts2 0 Ts 0 00 01
+2 Ts2 0 Ts
+
+        
+(93)
+uk =
+[uV T
+k
+uLC
+k
+]
+(94)
+Gk = I (95)
+Qk is a diagonal nx x nx matrix, where each element along the diagonal represents the process noise variance for a specific state.
+REFERENCES
+[1] S. Lefèvre, D. Vasquez, and C. Laugier, “A survey on motion prediction and risk assessment for intelligent vehicles,” ROBOMECH J., vol. 1, no. 1, pp. 1–14, Jul. 2014. [2] R. Schubert, E. Richter, and G. Wanielik, “Comparison and evaluation of advanced motion models for vehicle tracking,” in Proc. 11th Int. Conf. Inf. Fusion, Cologne, Germany, Jul. 2008, pp. 1–6. [3] S. Ammoun and F. Nashashibi, “Real time trajectory prediction for collision risk estimation between vehicles,” in Proc. IEEE 5th Int. Conf. Intell. Comput. Commun. Process., Aug. 2009, pp. 417–422.
+[4] H.-S. Tan and J. Huang, “DGPS-based vehicle-to-vehicle cooperative collision warning: Engineering feasibility viewpoints,” IEEE Trans. Intell. Transp. Syst., vol. 7, no. 4, pp. 415–428, Dec. 2006. [5] T. Batz, K. Watson, and J. Beyerer, “Recognition of dangerous situations within a cooperative group of vehicles,” in Proc. IEEE Intell. Vehicles Symp., Jun. 2009, pp. 907–912. [6] A. Gray, Y. Gao, T. Lin, J. K. Hedrick, and F. Borrelli, “Stochastic predictive control for semi-autonomous vehicles with an uncertain driver model,” in Proc. 16th Int. IEEE Conf. Intell. Transp. Syst. (ITSC), Oct. 2013, pp. 712–719. [7] G. Raipuria, “Vehicle trajectory prediction using road structure,” M.S. thesis, Fac. Mech., Maritime Mater. Eng., Delft Univ. Technol., Delft, The Netherlands, Dec. 2017. [8] D. Shin, S. Yi, K.-M. Park, and M. Park, “An interacting multiple model approach for target intent estimation at urban intersection for application to automated driving vehicle,” Appl. Sci., vol. 10, no. 6, p. 2138, Mar. 2020. [9] J. S. Gill, P. Pisu, V. N. Krovi, and M. J. Schmid, “Behavior identification and prediction for a probabilistic risk framework,” in Proc. ASME Dynamic Syst. Control Conf., Park City, UT, USA, Oct. 2019, Art. no. V002T25A004. [10] R. Toledo-Moreo and M. A. Zamora-Izquierdo, “IMM-based lanechange prediction in highways with low-cost GPS/INS,” IEEE Trans. Intell. Transp. Syst., vol. 10, no. 1, pp. 180–185, Mar. 2009. [11] K. Jo, M. Lee, J. Kim, and M. Sunwoo, “Tracking and behavior reasoning of moving vehicles based on roadway geometry constraints,” IEEE Trans. Intell. Transp. Syst., vol. 18, no. 2, pp. 460–476, Feb. 2017. [12] Y. Chen, “Detecting the driving intention of the remote vehicles using IMM estimator,” SAE Tech. Paper 2020-01-0110, Apr. 2020.
+[13] G. Raipuria, F. Gaisser, and P. P. Jonker, “Road infrastructure indicators for trajectory prediction,” in Proc. IEEE Intell. Vehicles Symp. (IV), Jun. 2018, pp. 537–543. [14] G. Xie, H. Gao, L. Qian, B. Huang, K. Li, and J. Wang, “Vehicle trajectory prediction by integrating physics- and maneuver-based approaches using interactive multiple models,” IEEE Trans. Ind. Electron., vol. 65, no. 7, pp. 5999–6008, Jul. 2018. [15] W. Xiao, L. Zhang, and D. Meng, “Vehicle trajectory prediction based on motion model and maneuver model fusion with interactive multiple models,” SAE Int. J. Adv. Current Practices Mobility, vol. 2, pp. 3060–3071, Apr. 2020. [16] V. Lefkopoulos, M. Menner, A. Domahidi, and M. N. Zeilinger, “Interaction-aware motion prediction for autonomous driving: A multiple model Kalman filtering scheme,” IEEE Robot. Autom. Lett., vol. 6, no. 1, pp. 80–87, Jan. 2021. [17] Y. Jeong and K. Yi, “Target vehicle motion prediction-based motion planning framework for autonomous driving in uncontrolled intersections,” IEEE Trans. Intell. Transp. Syst., vol. 22, no. 1, pp. 168–177, Jan. 2021. [18] M. Schreier, V. Willert, and J. Adamy, “An integrated approach to maneuver-based trajectory prediction and criticality assessment in arbitrary road environments,” IEEE Trans. Intell. Transp. Syst., vol. 17, no. 10, pp. 2751–2766, Oct. 2016. [19] D. Richardos, B. Anastasia, D. Georgios, and A. Angelos, “Vehicle maneuver-based long-term trajectory prediction at intersection crossings,” in Proc. IEEE 3rd Connected Automated Vehicles Symp. (CAVS), Nov. 2020, pp. 1–6. [20] K. Messaoud, I. Yahiaoui, A. Verroust-Blondet, and F. Nashashibi, “Non-local social pooling for vehicle trajectory prediction,” in Proc. IEEE Intell. Vehicles Symp. (IV), Jun. 2019, pp. 975–980.
+[21] N. Deo and M. M. Trivedi, “Convolutional social pooling for vehicle trajectory prediction,” in Proc. IEEE/CVF Conf. Comput. Vis. Pattern Recognit. Workshops (CVPRW), Jun. 2018, pp. 1468–1476.
+[22] M. Khakzar, A. Rakotonirainy, A. Bond, and S. G. Dehkordi, “A dual learning model for vehicle trajectory prediction,” IEEE Access, vol. 8, pp. 21897–21908, 2020. [23] B. Kim, C. M. Kang, J. Kim, S. H. Lee, C. C. Chung, and J. W. Choi, “Probabilistic vehicle trajectory prediction over occupancy grid map via recurrent neural network,” in Proc. IEEE 20th Int. Conf. Intell. Transp. Syst. (ITSC), Oct. 2017, pp. 399–404. [24] N. Deo and M. M. Trivedi, “Multi-modal trajectory prediction of surrounding vehicles with maneuver based LSTMs,” in Proc. IEEE Intell. Vehicles Symp. (IV), Jun. 2018, pp. 1179–1184.
+[25] L. Xin, P. Wang, C.-Y. Chan, J. Chen, S. E. Li, and B. Cheng, “Intentionaware long horizon trajectory prediction of surrounding vehicles using dual LSTM networks,” in Proc. 21st Int. Conf. Intell. Transp. Syst. (ITSC), Nov. 2018, pp. 1441–1446. [26] F. Altche and A. de La Fortelle, “An LSTM network for highway trajectory prediction,” in Proc. IEEE 20th Int. Conf. Intell. Transp. Syst. (ITSC), Oct. 2017, pp. 353–359. [27] Y. Yoon, T. Kim, H. Lee, and J. Park, “Road-aware trajectory prediction for autonomous driving on highways,” Sensors, vol. 20, no. 17, p. 4703, Aug. 2020. [28] X. Li et al., “Vehicle trajectory prediction using generative adversarial network with temporal logic syntax tree features,” IEEE Robot. Autom. Lett., vol. 6, no. 2, pp. 3459–3466, Apr. 2021. [29] D. Roy, T. Ishizaka, C. K. Mohan, and A. Fukuda, “Vehicle trajectory prediction at intersections using interaction based generative adversarial networks,” in Proc. IEEE Intell. Transp. Syst. Conf. (ITSC), Oct. 2019, pp. 2318–2323. [30] L. Lin, W. Li, H. Bi, and L. Qin, “Vehicle trajectory prediction using LSTMs with spatial–temporal attention mechanisms,” IEEE Intell. Transp. Syst. Mag., vol. 14, no. 2, pp. 197–208, Mar. 2022. [31] J. Li, F. Yang, M. Tomizuka, and C. Choi, “EvolveGraph: Multi-agent trajectory prediction with dynamic relational reasoning,” in Proc. Adv. Neural Inf. Process. Syst., vol. 33, Dec. 2020, pp. 19783–19794. [32] H. Cui et al., “Multimodal trajectory predictions for autonomous driving using deep convolutional networks,” in Proc. Int. Conf. Robot. Autom. (ICRA), May 2019, pp. 2090–2096. [33] S. Casas, W. Luo, and R. Urtasun, “IntentNet: Learning to predict intention from raw sensor data,” in Proc. Conf. Robot Learn. (CoRL), Zürich, Switzerland, Oct. 2018, pp. 947–956. [34] N. Nikhil and B. T. Morris, “Convolutional neural network for trajectory prediction,” in Proc. Eur. Conf. Comput. Vis. (ECCV) Workshops, Munich, Germany, Sep. 2018, pp. 186–196.
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on October 15,2025 at 09:24:30 UTC from IEEE Xplore. Restrictions apply.
+
+
+9238 IEEE TRANSACTIONS ON INTELLIGENT TRANSPORTATION SYSTEMS, VOL. 24, NO. 9, SEPTEMBER 2023
+[35] J. Hong, B. Sapp, and J. Philbin, “Rules of the road: Predicting driving behavior with a convolutional model of semantic interactions,” in Proc. IEEE/CVF Conf. Comput. Vis. Pattern Recognit. (CVPR), Jun. 2019, pp. 8454–8462. [36] Y. Chai, B. Sapp, M. Bansal, and D. Anguelov, “Multipath: Multiple probabilistic anchor trajectory hypotheses for behavior prediction,” in Proc. Conf. Robot Learn., (PMLR), Osaka, Japan, Oct. 2019, pp. 86–99. [37] J. Gao et al., “VectorNet: Encoding HD maps and agent dynamics from vectorized representation,” in Proc. IEEE/CVF Conf. Comput. Vis. Pattern Recognit. (CVPR), Jun. 2020, pp. 11525–11533. [38] R. Chandra, U. Bhattacharya, A. Bera, and D. Manocha, “TraPHic: Trajectory prediction in dense and heterogeneous traffic using weighted interactions,” in Proc. IEEE/CVF Conf. Comput. Vis. Pattern Recognit. (CVPR), Jun. 2019, pp. 8483–8492. [39] T. Salzmann, B. Ivanovic, P. Chakravarty, and M. Pavone, “Trajectron++: Dynamically-feasible trajectory forecasting with heterogeneous data,” in Proc. Eur. Conf. Comput. Vis., Dec. 2020, pp. 683–700.
+[40] F. Marchetti, F. Becattini, L. Seidenari, and A. D. Bimbo, “Multiple trajectory prediction of moving agents with memory augmented networks,” IEEE Trans. Pattern Anal. Mach. Intell., early access, Jul. 10, 2020, doi: 10.1109/TPAMI.2020.3008558. [41] T. Gindele, S. Brechtel, and R. Dillmann, “A probabilistic model for estimating driver behaviors and vehicle trajectories in traffic environments,” in Proc. 13th Int. IEEE Conf. Intell. Transp. Syst., Sep. 2010, pp. 1625–1631. [42] F. Leon and M. Gavrilescu, “A review of tracking and trajectory prediction methods for autonomous driving,” Mathematics, vol. 9, no. 6, p. 660, Mar. 2021. [43] D. V. Carvalho, E. M. Pereira, and J. S. Cardoso, “Machine learning interpretability: A survey on methods and metrics,” Electronics, vol. 8, no. 8, p. 832, Jul. 2019. [44] J. Liang, L. Jiang, K. Murphy, T. Yu, and A. Hauptmann, “The garden of forking paths: Towards multi-future trajectory prediction,” in Proc. IEEE/CVF Conf. Comput. Vis. Pattern Recognit. (CVPR), Jun. 2020, pp. 10508–10518. [45] M. Hasan, E. Paschalidis, A. Solernou, H. Wang, G. Markkula, and R. Romano, “Maneuver-based anchor trajectory hypotheses at roundabouts,” 2021, arXiv:2104.11180.
+[46] A. Alahi, K. Goel, V. Ramanathan, A. Robicquet, L. Fei-Fei, and S. Savarese, “Social LSTM: Human trajectory prediction in crowded spaces,” in Proc. IEEE Conf. Comput. Vis. Pattern Recognit. (CVPR), Jun. 2016, pp. 961–971. [47] A. Robicquet, A. Sadeghian, A. Alahi, and S. Savarese, “Learning social etiquette: Human trajectory understanding in crowded scenes,” in Proc. Eur. Conf. Comput. Vis., Sep. 2016, pp. 549–565.
+[48] A. Rasouli, I. Kotseruba, T. Kunic, and J. Tsotsos, “PIE: A large-scale dataset and models for pedestrian intention estimation and trajectory prediction,” in Proc. IEEE/CVF Int. Conf. Comput. Vis. (ICCV), Oct. 2019, pp. 6262–6271. [49] P. Zhang, W. Ouyang, P. Zhang, J. Xue, and N. Zheng, “SR-LSTM: State refinement for LSTM towards pedestrian trajectory prediction,” in Proc. IEEE/CVF Conf. Comput. Vis. Pattern Recognit. (CVPR), Jun. 2019, pp. 12085–12094. [50] R. Quan, L. Zhu, Y. Wu, and Y. Yang, “Holistic LSTM for pedestrian trajectory prediction,” IEEE Trans. Image Process., vol. 30, pp. 3229–3239, 2021. [51] A. Houenou, P. Bonnifait, V. Cherfaoui, and W. Yao, “Vehicle trajectory prediction based on motion model and maneuver recognition,” in Proc. IEEE/RSJ Int. Conf. Intell. Robots Syst., Nov. 2013, pp. 4363–4369. [52] C. Barrios, Y. Motai, and D. Huston, “Trajectory estimations using smartphones,” IEEE Trans. Ind. Electron., vol. 62, no. 12, pp. 7901–7910, Dec. 2015. [53] M. Attari, Z. Luo, and S. Habibi, “An SVSF-based generalized robust strategy for target tracking in clutter,” IEEE Trans. Intell. Transp. Syst., vol. 17, no. 5, pp. 1381–1392, May 2016. [54] S. Habibi, “The smooth variable structure filter,” Proc. IEEE, vol. 95, no. 5, pp. 1026–1059, May 2007. [55] A. Gadsden, S. Habibi, D. Dunne, and T. Kirubarajan, “Nonlinear estimation techniques applied on target tracking problems,” J. Dyn. Syst., Meas., Control, vol. 134, no. 5, Jun. 2012, Art. no. 054501. [56] F. Demim, A. Rouigueb, A. Nemra, R. Bouguessa, and A. Chahmi, “A new filtering strategy for target tracking application using the second form of smooth variable structure filter,” Proc. Inst. Mech. Eng., I, J. Syst. Control Eng., vol. 236, no. 6, pp. 1224–1249, Mar. 2022.
+[57] A. Mosbah, F. Demim, A. Mansoul, M. Benssalah, and A. Nemra, “Simultaneous localization and mapping navigation of unmanned ground vehicle based on second-order smooth variable structure filter with improved technique to combat fading for advanced wireless communications,” Proc. Inst. Mech. Eng., I, J. Syst. Control Eng., vol. 235, no. 7, pp. 1258–1271, Oct. 2020. [58] J. Goodman, J. Kim, A. S. Lee, S. A. Gadsden, and M. Al-Shabi, “A variable structure-based estimation strategy applied to an RRR robot system,” J. Robot., Netw. Artif. Life, vol. 4, no. 2, pp. 142–145, 2017. [59] H. H. Afshari, S. A. Gadsden, and S. R. Habibi, “Robust fault diagnosis of an electro-hydrostatic actuator using the novel dynamic secondorder SVSF and IMM strategy,” Int. J. Fluid Power, vol. 15, no. 3, pp. 181–196, Nov. 2014. [60] M. AlShabi and A. Elnady, “Recursive smooth variable structure filter for estimation processes in direct power control scheme under balanced and unbalanced power grid,” IEEE Syst. J., vol. 14, no. 1, pp. 971–982, Mar. 2020. [61] H. H. Afshari, M. Attari, R. Ahmed, A. Delbari, S. Habibi, and T. Shoa, “Reliable state of charge and state of health estimation using the smooth variable structure filter,” Control Eng. Pract., vol. 77, pp. 1–14, Aug. 2018. [62] L. Cao, Y. Chen, Z. Zhang, H. Li, and A. K. Misra, “Predictive smooth variable structure filter for attitude synchronization estimation during satellite formation flying,” IEEE Trans. Aerosp. Electron. Syst., vol. 53, no. 3, pp. 1375–1383, Jun. 2017. [63] R. Ahmed, M. El Sayed, S. A. Gadsden, J. Tjong, and S. Habibi, “Artificial neural network training utilizing the smooth variable structure filter estimation strategy,” Neural Comput. Appl., vol. 27, no. 3, pp. 537–548, Apr. 2016.
+[64] Y. Bar-Shalom, X. R. Li, and T. Kirubarajan, Estimation With Applications to Tracking and Navigation: Theory Algorithms and Software. New York, NY, USA: Wiley, 2004.
+[65] L. Svensson and J. Gunnarsson, “A new motion model for tracking of vehicles,” in Proc. 14th IFAC Symp. Syst. Identificat., Mar. 2006, pp. 1376–1381. [66] J. Sorstedt, L. Svensson, F. Sandblom, and L. Hammarstrand, “A new vehicle motion model for improved predictions and situation assessment,” IEEE Trans. Intell. Transp. Syst., vol. 12, no. 4, pp. 1209–1219, Dec. 2011. [67] T. Kim and T.-H. Park, “Extended Kalman filter (EKF) design for vehicle position tracking using reliability function of radar and LiDAR,” Sensors, vol. 20, no. 15, p. 4126, Jul. 2020. [68] M. Manz, T. Luettel, F. von Hundelshausen, and H.-J. Wuensche, “Monocular model-based 3D vehicle tracking for autonomous vehicles in unstructured environment,” in Proc. IEEE Int. Conf. Robot. Autom., May 2011, pp. 2465–2471.
+[69] Y. Bar-Shalom and X. R. Li, Multisensor, Multitarget Tracking: Principles and Techniques. Storrs, CT, USA: YBS Publishing, 1995. [70] J. Kim, K. Jo, W. Lim, M. Lee, and M. Sunwoo, “Curvilinear-coordinatebased object and situation assessment for highly automated vehicles,” IEEE Trans. Intell. Transp. Syst., vol. 16, no. 3, pp. 1559–1575, Jun. 2015. [71] K. Kluge, “Extracting road curvature and orientation from image edge points without perceptual grouping into features,” in Proc. Intell. Vehicles Symp., Oct. 1994, pp. 109–114. [72] K. Jo and M. Sunwoo, “Generation of a precise roadway map for autonomous cars,” IEEE Trans. Intell. Transp. Syst., vol. 15, no. 3, pp. 925–937, Jun. 2014. [73] H. Wang, J. Kearney, and K. Atkinson, “Arc-length parameterized spline curves for real-time simulation,” in Proc. 5th Int. Conf. Curves Surf., 2002, pp. 387–396. [74] H. Wang, J. Kearney, and K. Atkinson, “Robust and efficient computation of the closest point on a spline curve,” in Proc. 5th Int. Conf. Curves Surf., 2002, pp. 397–406. [75] S. A. Gadsden and S. R. Habibi, “A new form of the smooth variable structure filter with a covariance derivation,” in Proc. 49th IEEE Conf. Decis. Control (CDC), Dec. 2010, pp. 7389–7394. [76] M. Attari, S. Habibi, and S. A. Gadsden, “Target tracking formulation of the SVSF with data association techniques,” IEEE Trans. Aerosp. Electron. Syst., vol. 53, no. 1, pp. 12–25, Feb. 2017. [77] S. A. Gadsden, S. Habibi, and T. Kirubarajan, “Kalman and smooth variable structure filters for robust estimation,” IEEE Trans. Aerosp. Electron. Syst., vol. 50, no. 2, pp. 1038–1050, Apr. 2014.
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on October 15,2025 at 09:24:30 UTC from IEEE Xplore. Restrictions apply.
+
+
+AKHTAR AND HABIBI: INTERACTING MULTIPLE MODEL SMOOTH VARIABLE STRUCTURE FILTER FOR TRAJECTORY PREDICTION 9239
+[78] S. A. Gadsden and S. R. Habibi, “A new robust filtering strategy for linear systems,” J. Dyn. Syst., Meas., Control, vol. 135, no. 1, Jan. 2013, Art. no. 014503. [79] H. H. Afshari, S. A. Gadsden, and S. Habibi, “Gaussian filters for parameter and state estimation: A general review of theory and recent trends,” Signal Process., vol. 135, pp. 218–238, Jun. 2017. [80] S. Gadsden, M. Al-Shabi, and T. Kirubarajan, “Square-root formulation of the SVSF with applications to nonlinear target tracking problems,” Proc. SPIE, vol. 9474, May 2015, Art. no. 947408. [81] L. Zhang, W. Xiao, Z. Zhang, and D. Meng, “Surrounding vehicles motion prediction for risk assessment and motion planning of autonomous vehicle in highway scenarios,” IEEE Access, vol. 8, pp. 209356–209376, 2020. [82] E. A. Wan and R. van der Merwe, “The unscented Kalman filter for nonlinear estimation,” in Proc. IEEE Adapt. Syst. Signal Process., Commun., Control Symp. (AS-SPCC), Lake Louise, AB, Canada, Oct. 2000, pp. 153–158. [83] I. Arasaratnam and S. Haykin, “Cubature Kalman filters,” IEEE Trans. Autom. Control, vol. 54, no. 6, pp. 1254–1269, Jun. 2009. [84] Y.-S. Kim and K.-S. Hong, “An IMM algorithm for tracking maneuvering vehicles in an adaptive cruise control environment,” Int. J. Control, Autom., Syst., vol. 2, no. 3, pp. 310–318, 2004. [85] R. Krajewski, J. Bock, L. Kloeker, and L. Eckstein, “The highD dataset: A drone dataset of naturalistic vehicle trajectories on German highways for validation of highly automated driving systems,” in Proc. 21st Int. Conf. Intell. Transp. Syst. (ITSC), Dec. 2018, pp. 2118–2125.
+[86] US Department of Transportation. (Dec. 2006). Next Generation Simulation (NGSIM). [Online]. Available: https://ops.fhwa. dot.gov/trafficanalysistools/ngsim.htm [87] M. Wan, P. Li, and T. Li, “Tracking maneuvering target with angle-only measurements using IMM algorithm based on CKF,” in Proc. Int. Conf. Commun. Mobile Comput., Apr. 2010, pp. 92–96.
+[88] US Department of Transportation. (Dec. 2006). Next Generation Simulation (NGSIM) Vehicle Trajectories and Supporting Data. Accessed: Aug. 20, 2022. [Online]. Available: https://data.transportation. gov/Automobiles/Next-Generation-Simulation-NGSIM-VehicleTrajector/8ect-6jqj [89] H. Song, W. Ding, Y. Chen, S. Shen, M. Y. Wang, and Q. Chen, “PiP: Planning-informed trajectory prediction for autonomous driving,” in Proc. Eur. Conf. Comput. Vis., Nov. 2020, pp. 598–614.
+[90] A. Gupta, J. Johnson, L. Fei-Fei, S. Savarese, and A. Alahi, “Social GAN: Socially acceptable trajectories with generative adversarial networks,” in Proc. IEEE Conf. Comput. Vis. Pattern Recognit. (CVPR), Jun. 2018, pp. 2255–2264. [91] T. Zhao et al., “Multi-agent tensor fusion for contextual trajectory prediction,” in Proc. IEEE/CVF Conf. Comput. Vis. Pattern Recognit. (CVPR), Jun. 2019, pp. 12126–12134.
+[92] H. Gao, Y. Qin, C. Hu, Y. Liu, and K. Li, “An interacting multiple model for trajectory prediction of intelligent vehicles in typical road traffic scenario,” IEEE Trans. Neural Netw. Learn. Syst., early access, Dec. 31, 2021, doi: 10.1109/TNNLS.2021.3136866.
+[93] M. S. Grewal and A. P. Andrews, Kalman Filtering: Theory and Practice With MATLAB. Hoboken, NJ, USA: Wiley, 2014.
+Salman Akhtar received the B.Eng. degree in electrical engineering from McMaster University, Hamilton, ON, Canada, in 2019, where he is currently pursuing the Ph.D. degree in mechanical engineering. During his bachelor’s degree, as a co-op student, he was with Defence Research & Development Canada (DRDC), where he developed algorithms to de-interleave and identify cognitive radar signals using signal processing and machine learning techniques. His current research interests include state and parameter estimation theory, systems and control theory, signal processing, multi-target tracking, sensor fusion, autonomous driving, and machine learning.
+Saeid Habibi (Member, IEEE) received the Ph.D. degree in control engineering from the University of Cambridge, U.K., in 1990. He is currently a Tier I Canada Research Chair and a Full Professor with the Department of Mechanical Engineering, McMaster University. He is the Founder and the Director of the Centre for Mechatronics and Hybrid Technologies (CMHT). CHMT has created one of the most advanced and best equipped automotive research laboratories in Canada and internationally specializing in predictive algorithms, tracking, prognostics, and diagnostics. CMHT currently supports a number of large projects and being a resource to automotive companies and start-ups. CMHT research is supported by industry and funding from Ontario Research Fund Research Excellence Awards and NSERC. His academic backgrounds include research into artificial intelligence, intelligent control, state and parameter estimation, fault diagnosis, and prediction. He has published over 200 peer reviewed papers. He is a fellow of the American Society of Mechanical Engineers (ASME) and the Canadian Society of Mechanical Engineers (CSME). He was the Chair of the Department of Mechanical Engineering from 2008 to 2013.
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on October 15,2025 at 09:24:30 UTC from IEEE Xplore. Restrictions apply.

@@ -35,7 +35,7 @@ FM with a modular skill library. The FM handles high-level cognitive tasks such 
 arXiv:2503.12533v2 [cs.RO] 11 May 2025
 
 
-Being-0: A Humanoid Robotic Agent with Vision-Language Models and Modular Skills
+ Being-0: A Humanoid Robotic Agent with Vision-Language Models and Modular Skills
 with dexterous hands and active vision. Extensive experiments in large indoor environments demonstrate Being-0’s effectiveness in solving complex, long-horizon tasks that require challenging navigation and manipulation subtasks. For further details and videos, visit our project page.
 1. Introduction
 In the evolving field of embodied AI, humanoid robots represent an ideal platform for achieving human-level intelligence, enabling physical interactions with the real world in ways akin to humans. To realize the ultimate goal of allowing humanoid robots to autonomously perform tasks like humans, current research primarily focuses on improving individual skills, including locomotion (Radosavovic et al., 2024; Zhuang et al., 2024), bimanual manipulation (Ze et al., 2024a; Li et al., 2024a; Zhou et al., 2024), and whole-body control (He et al., 2024a; Fu et al., 2024a). However, building fully autonomous agents for humanoid robots remains a significant and largely unexplored challenge.
@@ -54,7 +54,7 @@ As illustrated in Figure 1, we consider a humanoid robot with 41 degrees of free
 2
 
 
-Being-0: A Humanoid Robotic Agent with Vision-Language Models and Modular Skills
+ Being-0: A Humanoid Robotic Agent with Vision-Language Models and Modular Skills
 Connector
 FM
 Skill
@@ -83,7 +83,7 @@ Stable Locomotion with Joystick Commands. The locomotion skill, which controls t
 3
 
 
-Being-0: A Humanoid Robotic Agent with Vision-Language Models and Modular Skills
+ Being-0: A Humanoid Robotic Agent with Vision-Language Models and Modular Skills
 conditioned proprioceptive policy πL(al|ql, qu, q ̇, ω; vg) in simulation (Makoviychuk et al., 2021), followed by sim-to-real deployment at a control frequency of 50 Hz. Here, vg represents the joystick velocity command. By incorporating domain randomization and external forces during simulation, this skill enables the robot to walk according to joystick commands while maintaining balance. To integrate this into the skill library, we define a set of locomotion skills based on different joystick commands, along with skills for adjusting the head for active vision: {no action, go straight, walk backwards, turn left, turn right, sidestep left, sidestep right, tilt head, turn head}.
 Acquiring Manipulation Skills. Teleoperation and imitation learning have emerged as promising approaches for acquiring diverse robotic manipulation skills at low cost. To collect high-quality, human-like manipulation data for the humanoid equipped with two dexterous hands and active vision, we use Apple VisionPro for teleoperation, following recent work (Cheng et al., 2024b). Binocular image observations ol, or are projected to the VisionPro, and the captured human motions of the head, wrists, and fingers are retargeted to robot actions at a control frequency of 10 Hz. For each skill, teleoperation trajectories τ = {(olt, otr, qtu, qth, atu, ath)}tT=1 are recorded, including robot observations and actions (excluding the lower body). We use ACT (Zhao et al., 2023), a behavior-cloning method with a Transformer architecture, to train the policy πMi [au
 j , ah
@@ -102,7 +102,7 @@ To equip the VLM with spatial and object understanding, as well as the ability t
 4
 
 
-Being-0: A Humanoid Robotic Agent with Vision-Language Models and Modular Skills
+ Being-0: A Humanoid Robotic Agent with Vision-Language Models and Modular Skills
 tecture, using image observations and text instructions as inputs. The model is optimized through multi-task learning, encompassing image description, skill prediction, and object detection. The trained VLM achieves an average inference time of approximately 1 second on onboard devices across all tasks, significantly outperforming the latency of GPT-4o on cloud services. Further details on the dataset and training process are provided in Appendix B.2.
 4.2. Grounded Skill Planning
 The main usage of the VLM is to convert the FM’s languagebased plans and real-time image observations into actionable skill plans, such as navigation targets or manipulation skills. By leveraging its enhanced understanding of relative 3D object locations, the VLM not only grounds the FM’s plans into executable skills but also corrects or refines them when necessary. For example: If the FM generates a plan to “grasp a cup” but the robot is still far from the table, the VLM interprets “grasp a cup” as a long-term goal and outputs the feasible skill (e.g., “move towards(table).”). Conversely, if the FM plans to “find a table” but the robot is already at the table, the VLM’s navigation functionality (Section 4.3) signals success to the FM, prompting it to proceed to the next skill through reasoning. This capability ensures that the planned skills remain grounded in the physical environment, reducing errors and improving task success rates.
@@ -121,7 +121,7 @@ To build the manipulation skill library, we collect data for a variety of daily 
 5
 
 
-Being-0: A Humanoid Robotic Agent with Vision-Language Models and Modular Skills
+ Being-0: A Humanoid Robotic Agent with Vision-Language Models and Modular Skills
 Table 1. Task completion rates for Being-0 with and without the Connector across various long-horizon tasks. The results demonstrate significant performance improvements when the Connector is used.
 Task w/o Connector Being-0
 Fetch-bottle 0.00 0.90 Deliver-basket 0.00 0.80 Prepare-coffee 0.00 0.75 Make-coffee 0.90 0.90 Deliver-coffee 0.33 0.87
@@ -147,7 +147,7 @@ Active Vision. The active camera is a core hardware component of our system, sig
 6
 
 
-Being-0: A Humanoid Robotic Agent with Vision-Language Models and Modular Skills
+ Being-0: A Humanoid Robotic Agent with Vision-Language Models and Modular Skills
 Table 3. Success rates of navigation and manipulation tasks with different active camera configurations. The number following Fixed Cam. denotes the pitch angle set for the camera in the absence of active neck movement.
 Method Navigation Manipulation
 table coffee machine grasp coffee place coffee
@@ -172,7 +172,7 @@ Furthermore, the same framework used for acquiring manipulation skills can be ex
 7
 
 
-Being-0: A Humanoid Robotic Agent with Vision-Language Models and Modular Skills
+ Being-0: A Humanoid Robotic Agent with Vision-Language Models and Modular Skills
 Table 6. Performance of manipulation skills across different scene configurations, including seen objects, unseen objects, and scenarios with visual perturbations. * denotes the use of dexterous hands equipped with tactile sensors.
 Task Seen Obj.
 Unseen Obj.
@@ -190,7 +190,7 @@ Despite these advancements, the current system does not incorporate complex loco
 8
 
 
-Being-0: A Humanoid Robotic Agent with Vision-Language Models and Modular Skills
+ Being-0: A Humanoid Robotic Agent with Vision-Language Models and Modular Skills
 Future research could explore lightweight Foundation Models tailored for robotics applications to further improve the system’s efficiency.
 Impact Statement
 This work explores advancements in humanoid robotic agents, which come with specific safety concerns. The use of Foundation Models and skill libraries introduces the potential risks of predicting incorrect skills or executing actions in out-of-distribution scenarios. For full-sized humanoid robots, such errors could lead to damage to surroundings or harm to people. At present, these systems should be tested only in controlled, experimental environments to ensure safety. Future work should prioritize robust error handling, fail-safes, and ethical guidelines to mitigate these risks and enable safer deployment of humanoid agents.
@@ -216,7 +216,7 @@ Firoozi, R., Tucker, J., Tian, S., Majumdar, A., Sun, J., Liu, W., Zhu, Y., Song
 9
 
 
-Being-0: A Humanoid Robotic Agent with Vision-Language Models and Modular Skills
+ Being-0: A Humanoid Robotic Agent with Vision-Language Models and Modular Skills
 Fu, Z., Zhao, Q., Wu, Q., Wetzstein, G., and Finn, C. Humanplus: Humanoid shadowing and imitation from humans. arXiv preprint arXiv:2406.10454, 2024a.
 Fu, Z., Zhao, T. Z., and Finn, C. Mobile aloha: Learning bimanual mobile manipulation with low-cost whole-body teleoperation. arXiv preprint arXiv:2401.02117, 2024b.
 Goswami, A. and Vadakkepat, P. Humanoid robotics: a reference. Springer Publishing Company, Incorporated, 2018.
@@ -243,7 +243,7 @@ Liu, S., Yuan, H., Hu, M., Li, Y., Chen, Y., Liu, S., Lu, Z., and Jia, J. Rl-gpt
 10
 
 
-Being-0: A Humanoid Robotic Agent with Vision-Language Models and Modular Skills
+ Being-0: A Humanoid Robotic Agent with Vision-Language Models and Modular Skills
 Maaz, M., Rasheed, H. A., Khan, S., and Khan, F. Videochatgpt: Towards detailed video understanding via large vision and language models. In ACL, 2024.
 Makoviychuk, V., Wawrzyniak, L., Guo, Y., Lu, M., Storey, K., Macklin, M., Hoeller, D., Rudin, N., Allshire, A., Handa, A., et al. Isaac gym: High performance gpu-based physics simulation for robot learning. arXiv preprint arXiv:2108.10470, 2021.
 Miura, H. and Shimoyama, I. Dynamic walk of a biped. The International Journal of Robotics Research, 3(2):60–74, 1984.
@@ -272,7 +272,7 @@ Zhuang, Z., Yao, S., and Zhao, H. Humanoid parkour learning. arXiv preprint arXi
 11
 
 
-Being-0: A Humanoid Robotic Agent with Vision-Language Models and Modular Skills
+ Being-0: A Humanoid Robotic Agent with Vision-Language Models and Modular Skills
 A. Additional Results
 In this section, we provide detailed additional results from our experiments. Video recordings are included in the supplementary material.
 A.1. First-Person Video Records
@@ -299,7 +299,7 @@ Figure 4. Recordings from the ablation study on the active camera. Each row repr
 12
 
 
-Being-0: A Humanoid Robotic Agent with Vision-Language Models and Modular Skills
+ Being-0: A Humanoid Robotic Agent with Vision-Language Models and Modular Skills
 navigation
 w/o Adjustment Being-0
 manipulation end navigation manipulation end
@@ -317,7 +317,7 @@ Figure 6. First-person view recordings of the learned manipulation skills. Each 
 13
 
 
-Being-0: A Humanoid Robotic Agent with Vision-Language Models and Modular Skills
+ Being-0: A Humanoid Robotic Agent with Vision-Language Models and Modular Skills
 A.2. Foundation Model Planning Traces
 Information Gathering Image_Description: 1. The image shows a room with a grey pattern carpet. There are chairs and a table visible in the upper part of the image. The floor has a distinct pattern of grey tones. 2. Based on the grey pattern carpet and the presence of chairs and a table, this room matches the description of the Robot Laboratory Room. 3. The target task is to get a cup from the table and get coffee from the machine. The table and chairs are visible, but the cup and coffee machine are not in the current frame. 4. The target task is not yet successful as the cup and coffee machine are not visible in the current frame. Target_name: null Reasoning_for_target: The current frame does not show the cup or the coffee machine. There is no new target to detect in this image. Area_location: Robot Laboratory Room
 Self-reflection None
@@ -331,7 +331,7 @@ Figure 7. Planning traces of the Foundation Model in Being-0 for the task “Pre
 14
 
 
-Being-0: A Humanoid Robotic Agent with Vision-Language Models and Modular Skills
+ Being-0: A Humanoid Robotic Agent with Vision-Language Models and Modular Skills
 Task Inference
 History_summary: The task to get a cup from the table and get coffee from the machine has not been completed. The robot is currently in the Robot Laboratory Room, which has a grey pattern carpet. The previous subtask was to move towards the wooden table with a cup, and it has been successfully completed as the table with the cup is now visible in the frame. The robot needs to grab the cup from the table next. Subtask_reasoning: 1. The overall task is to get a cup from the table and get coffee from the machine. 2. The next step is to grab the cup from the table. 3. The previous subtask was to move towards the wooden table with a cup, and it has been successfully completed. 4. The robot was previously in the Robot Laboratory Room and is still in the same room, now closer to the wooden table. 5. The robot needs to grab the cup from the table. 6. The robot should grab the cup from the table. 7. If the cup is successfully grabbed, the robot should then search for the coffee machine. 8. If the cup is not successfully grabbed, the robot should attempt to grab it again. Subtask_description: The current subtask is to grab the cup from the table.
 Action Planning Action: ```python grab(object_name="cup") ```
@@ -345,7 +345,7 @@ Figure 8. (Continued) Planning traces of the Foundation Model in Being-0 for the
 15
 
 
-Being-0: A Humanoid Robotic Agent with Vision-Language Models and Modular Skills
+ Being-0: A Humanoid Robotic Agent with Vision-Language Models and Modular Skills
 Information Gathering Image_Description: 1. The image shows a room with grey pattern carpet flooring. There is a black divider, a wooden table with a cup, some machines, and a workspace with computers and desks. There is also a water dispenser and some cables on the floor. 2. Based on the semantic map and the details in the image, you are currently in the Robot Laboratory Room. 3. The target task of finding the coffee machine has not yet been successful. 4. The coffee machine is not visible in the current image frame. 5. The cup is visible in the lower right corner of the image, indicating that you are holding it. Target_name: coffee machine Reasoning_for_target: The current task is to search for the coffee machine in the Robot Laboratory Room. The coffee machine is the most relevant object to complete this task. Area_location: Robot Laboratory Room
 Self-reflection
 Self_Reflection_Reasoning: 1. The last executed action was `search_and_move_towards(target_name="coffee machine")`. 2. Based on the images, the robot has successfully grabbed the cup from the table. The current image shows the robot holding the cup and moving towards the coffee machine. 3. The robot is still in the Robot Laboratory Room, as indicated by the grey pattern carpet and the presence of the coffee machine in the background. 4. The last executed action was successful. The robot has moved towards the coffee machine while holding the cup, as evidenced by the sequential frames showing the robot's movement and the cup in its grasp. Success_Detection: The overall task is not yet successful. The robot has successfully grabbed the cup and moved towards the coffee machine, but it still needs to get coffee from the machine. The next step should be to approach the coffee machine and get coffee.
@@ -359,7 +359,7 @@ Figure 9. (Continued) Planning traces of the Foundation Model in Being-0 for the
 16
 
 
-Being-0: A Humanoid Robotic Agent with Vision-Language Models and Modular Skills
+ Being-0: A Humanoid Robotic Agent with Vision-Language Models and Modular Skills
 Task Inference
 History_summary: The summary is that the robot is tasked with getting a cup from the table and getting coffee from the machine. The robot successfully moved towards the wooden table with the cup and grabbed the cup from the table. The robot is currently in the Robot Laboratory Room, holding the cup, and has successfully moved towards the coffee machine. The coffee machine is now visible in the robot's view, and the cup is still in the robot's hand. The next step is to put the cup on the coffee machine to get coffee. Subtask_reasoning: 1. The overall task is to get a cup from the table and get coffee from the machine. 2. The next step is to get coffee from the machine. 3. The previous subtask was to put the cup on the coffee machine. 4. The robot is currently in the Robot Laboratory Room, very close to the coffee machine .5. The previous subtask was successfully finished as the robot has moved towards the coffee machine while holding the cup. 6. The next subtask should be to put the cup on the coffee machine to get coffee. 7. The robot is very close to the coffee machine, and the cup is visible in the robot's hand. 8. The next subtask should be to put the cup on the coffee machine to get coffee. Subtask_description: The current subtask is to put the cup on the coffee machine.
 Action Planning Action: ```python put(object_name="cup") ```
@@ -373,7 +373,7 @@ Figure 10. (Continued) Planning traces of the Foundation Model in Being-0 for th
 17
 
 
-Being-0: A Humanoid Robotic Agent with Vision-Language Models and Modular Skills
+ Being-0: A Humanoid Robotic Agent with Vision-Language Models and Modular Skills
 Information Gathering Image_Description: 1. The image shows a room with grey pattern carpet flooring. There are several desks with computers and office supplies on them. There are also some open cardboard boxes on the floor, a chair, and some scattered items. The room appears to be a workspace with various equipment and supplies. 2. Based on the semantic map and the details in the image, this room is the Robot Laboratory Room. 3. The target task of getting a cup from the table has not been completed yet. 4. The target task of getting a cup from the table has not been completed yet. 5. There is no visible cup on the table in the current image frame. 6. The target location is the table in the Robot Laboratory Room where a cup might be found. 7. The target object (cup) is not visible in the current image frame. The table in the Robot Laboratory Room should be checked for the cup. 8. No new possible targets are observed in the current image frame. Target_name: cup Reasoning_for_target: The task is to get a cup from the table. The cup is the relevant object needed to complete the current task. Area_location: Robot Laboratory Room
 Self-reflection None
 Task Inference
@@ -384,7 +384,7 @@ Figure 11. Planning traces of the Foundation Model in Being-0 w/o Connector for 
 18
 
 
-Being-0: A Humanoid Robotic Agent with Vision-Language Models and Modular Skills
+ Being-0: A Humanoid Robotic Agent with Vision-Language Models and Modular Skills
 Information Gathering Image_Description: 1. The image shows a room with grey pattern carpet flooring. There are several desks with computers and monitors on the left side of the image. There is a white drawer unit next to the desks. In the center of the image, there is a black office chair and some scattered boxes and items on the floor. On the right side, there are more boxes and a black object that appears to be a helmet or similar item. The room has dark walls and ceiling. 2. Based on the semantic map and the description of the room, you are currently in the Robot Laboratory Room. 3. The target area, which is the wooden table, is not visible in the current image frame. 4. The task of finding the cup on the wooden table has not been completed yet. Target_name :null Reasoning_for_target: The wooden table, which is the target area to find the cup, is not visible in the current image frame. Therefore, there is no need to detect a new target at this moment. Area_location: Robot Laboratory Room
 Self-reflection
 Self_Reflection_Reasoning: 1. The last executed action was `turn_left(""small"")`. 2. Based on the images, the robot has turned left but has not yet located the cup on the wooden table. The target object, a cup, is not visible in the current image frame. 3. The robot is still in the Robot Laboratory Room, as indicated by the grey pattern carpet and the surrounding environment. The robot has not yet completed the subtask of finding the cup on the wooden table. 4. The last executed action was partially successful. The robot did turn left, but it did not achieve the desired outcome of locating the cup on the table. 5. The most probable cause for the partial success is that the turn range was too small to bring the cup into view. The robot needs to adjust its position or turn further to locate the cup. Success_Detection: The overall task was unsuccessful because the subtask of getting a cup from the table has not been completed. The robot needs to correct the turn action parameter and continue searching for the cup on the table in the Robot Laboratory Room.
@@ -396,7 +396,7 @@ Figure 12. (Continued) Planning traces of the Foundation Model in Being-0 w/o Co
 19
 
 
-Being-0: A Humanoid Robotic Agent with Vision-Language Models and Modular Skills
+ Being-0: A Humanoid Robotic Agent with Vision-Language Models and Modular Skills
 Information Gathering Image_Description: 1. The image shows a room with grey pattern carpet flooring. There is a black office chair in front of a desk with a computer monitor. To the right, there is a wooden table with a cup on it. The background has a black divider with the label “xxx” in blue. 2. Based on the semantic map and the details in the image, this is the Robot Laboratory Room. 3. The target area has been reached, and the target task of locating the cup on the wooden table is successful. 4. The cup is located on the wooden table to the right side of the image. Target_name: cup Reasoning_for_target: The cup is the target object needed to complete the current subtask of getting a cup from the table. Area_location: Robot Laboratory Room
 Self-reflection
 Self_Reflection_Reasoning: 1. The last executed action was `turn_left(turn_range=""LARGE"")`. 2. Based on the images, the current subtask of finding the cup on the wooden table has not been completed. The wooden table is not visible in the current frame, indicating that the turn did not bring the table into view. 3. The robot is still in the Robot Laboratory Room, as indicated by the grey pattern carpet and the presence of desks and computers. The target location (wooden table) is not yet in view. 4. The last executed action was not successful. The turn did not bring the wooden table into view, which means the robot's position did not change sufficiently to achieve the desired outcome. 5. The most probable cause for the unsuccessful action is that the turn range was too large, causing the robot to overshoot the target area. Success_Detection: The overall task was unsuccessful because the subtask of getting a cup from the table has not been completed. The robot needs to correct the turn action parameter and continue searching for the cup on the table in the Robot Laboratory Room.
@@ -408,7 +408,7 @@ Figure 13. (Continued) Planning traces of the Foundation Model in Being-0 w/o Co
 20
 
 
-Being-0: A Humanoid Robotic Agent with Vision-Language Models and Modular Skills
+ Being-0: A Humanoid Robotic Agent with Vision-Language Models and Modular Skills
 A.3. Details of Experimental Setup and Results
 Table 7. Detailed sub-processes required to complete each long-horizon task, along with the success rates of Being-0 and the baseline.
 Task Sub-Process w/o Connector Being-0
@@ -434,7 +434,7 @@ Our dataset consists of two major types of tasks: Visual Understanding (VLU) tas
 21
 
 
-Being-0: A Humanoid Robotic Agent with Vision-Language Models and Modular Skills
+ Being-0: A Humanoid Robotic Agent with Vision-Language Models and Modular Skills
 Table 9. Hyperparameters used for training the ACT policy.
 Hyperparameter Value
 Training steps 500,000 Batch size 90 Learning rate 1e-5 Gradient clip norm 10 Chunk size (train) 30 Chunk size (test) 10
@@ -456,7 +456,7 @@ We fine-tuned our vision-language model using the VideoLLaMA2 framework with a m
 22
 
 
-Being-0: A Humanoid Robotic Agent with Vision-Language Models and Modular Skills
+ Being-0: A Humanoid Robotic Agent with Vision-Language Models and Modular Skills
 Table 12. Category data overview for the bounding box task.
 Category Value
 Kitchen Area 792 Hallway 3,834 Robot Laboratory Room 896 Reception Area 247 Coffee machine 1,323 Workspace 118 Meeting Room 1,590 Wooden Table 414 Closed door 727 Workspace Area 697 Reception Desk 1,026 Door label 513 Doorway 706 Reception 114 Digital screen 428 Cup area 338 Espresso coffee button 496 Confirm button 286 Cancel button 239
@@ -468,7 +468,7 @@ Total 20,536 Number of Categories 18
 23
 
 
-Being-0: A Humanoid Robotic Agent with Vision-Language Models and Modular Skills
+ Being-0: A Humanoid Robotic Agent with Vision-Language Models and Modular Skills
 while the projection module was implemented using a multi-layer perceptron (MLP). We grouped multimodal samples by modality length, selected vision features from the second-to-last layer, and applied image padding to maintain aspect ratios. Each sample contained 16 frames.
 The overall training process is divided into two stages. First, we finetune the model with the filtered 300K general visual grounding dataset based on the checkpoint provided by VideoOrion+(Feng et al., 2024), which shares the same architecture with VideoLLaMA2 but offers better object-centric understanding capabilities. Considering the training efficiency, we modify VideoOrion by removing the object-centric branch. Then we finetune the resulting model with our collected dataset including VLU tasks and AP tasks together.
 This training setup ensures efficient vision-language modeling, leveraging optimized data handling, memory-efficient techniques, and distributed computation for improved performance.
@@ -487,7 +487,7 @@ Algorithm 1 Move Towards Target
 24
 
 
-Being-0: A Humanoid Robotic Agent with Vision-Language Models and Modular Skills
+ Being-0: A Humanoid Robotic Agent with Vision-Language Models and Modular Skills
 Search for. We define the search for skill as constantly turning to one direction until the target object is found in the view. The bounding box generated by the VLM is leveraged in this skill to determine the existence of the target object. The pseudo code for this skill is shown in Algorithm 2.
 Algorithm 2 Search for Target
 1: Input: target name
@@ -504,7 +504,7 @@ Algorithm 3 Adjustment
 25
 
 
-Being-0: A Humanoid Robotic Agent with Vision-Language Models and Modular Skills
+ Being-0: A Humanoid Robotic Agent with Vision-Language Models and Modular Skills
 B.3. Prompt Design
 We present prompts designed to enable the foundation model to perform various levels of agent abilities. Specifically, we include prompts for information gathering, self-reflection, and subtask inference in Tables 14, 16, and 15, respectively. Additionally, we provide the action planning prompt for scenarios where the embodied Connector is not used in Table 17. For cases involving the embodied Connector, we utilize a more concise version of the prompt for action planning, which is shown in Table 18.
 Table 14. The prompt we used for information gathering process.
@@ -530,7 +530,7 @@ Area Location: area name
 26
 
 
-Being-0: A Humanoid Robotic Agent with Vision-Language Models and Modular Skills
+ Being-0: A Humanoid Robotic Agent with Vision-Language Models and Modular Skills
 Table 15. The prompt for summarizing task progress and proposing a new subtask.
 Task Reflection and Subtask Proposal
 Overall task description: <task description>
@@ -557,7 +557,7 @@ Subtask description: The current subtask is...
 27
 
 
-Being-0: A Humanoid Robotic Agent with Vision-Language Models and Modular Skills
+ Being-0: A Humanoid Robotic Agent with Vision-Language Models and Modular Skills
 Table 16. The prompt for reflecting on the task and evaluating success.
 Task Reflection and Success Evaluation
 You are a helpful AI assistant integrated with a humanoid robot body equipped to handle diverse tasks in the real world. Your advanced capabilities enable you to process textual and visual information, including computer application screenshots, and to control the robot body. Your task is to examine any inputs, interpret the context, and determine whether the last executed action has succeeded and caused the correct effect.
@@ -580,7 +580,7 @@ Success Detection: ...
 28
 
 
-Being-0: A Humanoid Robotic Agent with Vision-Language Models and Modular Skills
+ Being-0: A Humanoid Robotic Agent with Vision-Language Models and Modular Skills
 Table 17. The prompt for decision-making and action execution in humanoid robot tasks.
 Action Planning
 You are a helpful AI assistant integrated with a humanoid robot body equipped to handle diverse tasks in the real world. Your advanced capabilities enable you to process textual and visual information, including computer application screenshots, and to control the robot body. By analyzing these inputs, you can understand the current context and situation of the robot. Use these insights to select the most suitable action for the robot to take next, given the current task.
@@ -607,7 +607,7 @@ Key reason of last action: ...
 29
 
 
-Being-0: A Humanoid Robotic Agent with Vision-Language Models and Modular Skills
+ Being-0: A Humanoid Robotic Agent with Vision-Language Models and Modular Skills
 Table 18. The shorter version of the prompt we used for decision making and action execution of humanoid robot
 Decision Making and Action Execution for Humanoid Robot
 <image introduction>
