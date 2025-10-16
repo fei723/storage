@@ -1,0 +1,306 @@
+12326 IEEE TRANSACTIONS ON VEHICULAR TECHNOLOGY, VOL. 72, NO. 9, SEPTEMBER 2023
+Correspondence
+Split-KalmanNet: A Robust Model-Based Deep Learning Approach for State Estimation
+Geon Choi , Graduate Student Member, IEEE,
+Jeonghun Park , Member, IEEE, Nir Shlezinger , Member, IEEE, Yonina C. Eldar , Fellow, IEEE,
+and Namyoon Lee , Senior Member, IEEE
+Abstract—Estimation of the state of a discrete-time state-space model from noisy measurements is a crucial aspect of signal processing. The extended Kalman filter (EKF) is widely used as a low-complexity solution based on a state evolution and measurement model of the state-space model. However, obtaining precise information about these models can be difficult in practice, and model mismatch greatly reduces state estimation accuracy. In this paper, we introduce Split-KalmanNet, a robust EKF algorithm that utilizes the power of deep learning for state estimation. Split-KalmanNet is inspired by the recent KalmanNet and calculates the Kalman gain using the Jacobian matrix of a measurement function and two recurrent neural networks (RNNs) with a split structure. The RNNs independently learn the covariance matrices of the prior state estimate and the innovation from data. The proposed split structure in calculating the Kalman gain allows for compensation of both state and measurement model mismatch effects. Numerical simulations show that Split-KalmanNet outperforms traditional EKF and the state-of-the-art KalmanNet algorithm in various scenarios of model mismatch.
+Index Terms—Kalman filter, model-based deep learning, state-space model, sequential state estimation.
+I. INTRODUCTION
+The problem of estimating the state of a discrete-time state-space (SS) model from noisy measurements in real-time is a crucial task in signal processing and finds application in various domains, such as object tracking and localization [1], [2], [3], [4]. To address this problem, low-complexity recursive Bayesian filtering algorithms have been developed. The Kalman filter (KF) is simple optimal sequential estimator that achieve minimum mean-squared error (MMSE) performance in linear state models under additive white Gaussian noise. Several efforts have been made to extend the KF to more general SS models [5], [6], [7], [8], [9].
+Manuscript received 10 October 2022; revised 5 February 2023; accepted 17 April 2023. Date of publication 8 May 2023; date of current version 19 September 2023. This work was supported in part by the National Research Foundation of Korea (NRF) grant funded by the Ministry of Science and ICT (MSIT), Korea Government under Grant 2022R1A5A1027646 and in part by the National Research Foundation of Korea (NRF) Grant funded by the Korea Government (MSIT), under Grant RS-2023-00208552. The review of this article was coordinated by Prof. Rui Dinis. (Corresponding author: Namyoon Lee.) Geon Choi is with the Department of Electrical Engineering, POSTECH, Pohang 37673, South Korea (e-mail: simon03062@postech.ac.kr). Jeonghun Park is with the School of Electrical and Electronic Engineering, Yonsei University, Seoul 03722, South Korea (e-mail: jhpark@yonsei.ac.kr). Nir Shlezinger is with the School of Electrical and Computer Engineering, Ben-Gurion University of the Negev, Beer-Sheva 84105, Israel (e-mail: nirshl@bgu.ac.il). Yonina C. Eldar is with the Math and CS Faculty, Weizmann Institute of Science, Rehovot 7610001, Israel (e-mail: yonina.eldar@weizmann.ac.il). Namyoon Lee is with the School of Electrical Engineering, Korea University, Seoul 02841, South Korea (e-mail: namyoon@korea.ac.kr). Digital Object Identifier 10.1109/TVT.2023.3270353
+The most widely used state estimation algorithm for non-linear SS models is the Extended Kalman Filter (EKF). This method leverages the model knowledge gained from the physical dynamics of the SS model, and alternately performs state updates according to a predefined state evolution model and measurement updates based on a measurement model that relates the current state to the noisy measurements. The EKF is a generalization of the KF for non-linear SS models, and remains mathematically tractable and optimal for linear and Gaussian processes [10], [11]. Despite its versatility, this model-based online estimation method is susceptible to physical and statistical model mismatch effects, which may result in divergence when these effects are pronounced [12]. Recently, KalmanNet, a model-based deep neural network (DNN)assisted Kalman filter algorithm, was proposed in [13]. KalmanNet learns the Kalman gain matrix with model-less DNNs [14], [15] and integrates it into the KF algorithm’s state and measurement updates. The trained Kalman gain matrix is robust to model mismatch, thanks to deep learning. However, KalmanNet underutilize the model-based structure when computing the Kalman gain, leading to performance loss in state estimation when state and measurement model mismatch coexist. In this paper, we introduce a deep learning algorithm referred to as Split-KalmanNet for state estimation. Our algorithm employs a modelbased approach, with the main concept being the independent training of the prior state estimate and innovation covariance matrices using two parallel DNNs. The Kalman gain matrix is then calculated by combining the learned covariance matrices with the knowledge of the measurement function’s Jacobian matrix, according to the standard Kalman gain update rule. The split learning structure of Split-KalmanNet makes it robust to both state and measurement model mismatch effects, as it decouples these effects through the independent optimization of the two DNNs. Our simulations demonstrate that the proposed algorithm provides a considerable reduction in mean-squared error (MSE) compared to traditional model-based EKF and KalmanNet algorithms, even under state and measurement model mismatch conditions. The paper is organized as follows. In Section II, we present a SS model and state estimation problem. Then, we briefly review conventional model-based EKF and KalmanNet algorithms for state estimation in Section III. Section IV introduces the proposed Split-KalmanNet algorithm. Section V shows the effectiveness of the proposed method via simulations.
+II. SYSTEM MODEL AND PROBLEM FORMULATION
+In this section, we present a discrete-time non-linear SS model, consisting of both a state evolution model and a measurement model. State evolution model: Let xt ∈ RN be the hidden state vector at time t. The state evolution model is given by
+xt = f (xt−1, ut) + wt. (1)
+The underlying model of the system dynamics is described by a nonlinear function f : RN × RL → RN , where ut ∈ RL represents the control input. The state xt−1 transitions to xt with the addition of a Gaussian random vector wt, which has zero mean and an unknown covariance matrix Qt.
+0018-9545 © 2023 IEEE. Personal use is permitted, but republication/redistribution requires IEEE permission. See https://www.ieee.org/publications/rights/index.html for more information.
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on October 16,2025 at 01:56:18 UTC from IEEE Xplore. Restrictions apply.
+
+
+IEEE TRANSACTIONS ON VEHICULAR TECHNOLOGY, VOL. 72, NO. 9, SEPTEMBER 2023 12327
+Measurement model: For each time t, we measure the noise observation yt ∈ RM corrupted by additive noise. The measurement model is given by
+yt = h(xt) + vt, (2)
+where h : RN → RM is a non-linear measurement function and vt is zero-mean Gaussian random vector with unknown covariance Rt. State estimation problem: The state estimation problem aims to recover the hidden state xt using the noisy measurements up to time t in terms of MMSE. Mathematically, we need to solve the following optimization problem in each time t:
+arg min xˆk
+E
+[
+(xt − ˆxt)2 |y1, . . . , yt
+]
+. (3)
+The EKF algorithm offers a recursive solution to this problem. Its successful implementation, however, relies on accurate knowledge of both process and measurement noise distributions. Under the assumption of zero-mean Gaussian noise, it is essential to have a precise understanding of the covariance matrices Qt and Rt. Unfortunately, obtaining such information perfectly can be challenging in practical scenarios, leading to a significant performance degradation in the EKF algorithm due to model mismatch. Hence, a robust sequential state estimation algorithm that can handle model mismatch is imperative. Remark 1: The SS model considered in this paper is a generic model, and it can be applicable to diverse applications, including multiobject tracking and simultaneous localization and mapping (SLAM) applications. In these applications, each object and landmark in an environment is modeled as its own SS model and associating sensor measurements with specific SS model (i.e., data association) is a challenging problem. A framework incorporating the random finite set and probability hypothesis density filter can resolve the data association problem by fully integrating data association uncertainty into state estimation problem [16], [17]. However, these approaches require prior knowledge of the model parameters, such as noise covariance matrices, and still faces the challenge of model mismatch.
+III. CONVENTIONAL APPROACHES
+In this section, we briefly review the EKF and KalmanNet algorithm in [13] to solve the state estimation problem in (3).
+A. Model-Based Extended Kalman Filter
+The EKF algorithm performs i) state-update and ii) measurement update recursively. To present the algorithm concisely, we first define some notations. Let a priori mean and covariance of the state vector at time t be ˆxt|t−1 and Σt|t−1 = E[(xt − xˆt|t−1)(xt − ˆxt|t−1) ]. We also denote a posteriori mean and its covariance at time t by xˆt|t and Σt|t = E[(xt − xˆt|t)(xt − xˆt|t) ].
+State-update: The state-update step predicts a priori mean xˆt|t−1 and covariance Σt|t−1 of the state vector using a posteriori mean ˆxt−1|t−1 and covariance matrix Σt−1|t−1, which are obtained in the previous measurement-update step:
+ˆxt|t−1 = f (xˆt−1|t−1, ut
+),
+Σt|t−1 = Ft−1Σt−1|t−1Ft−1 + Qt, (4)
+where Ft = ∂f
+∂x |x=ˆxt|t is the Jacobian of f (·) evaluated at xˆt|t.
+Measurement-update: In the measurement-update step, a posteriori mean xˆt|t and covariance matrix Σt|t are computed using a priori mean ˆxt|t−1 and covariance matrix Σt|t−1 attained in the previous state-update step. In detail, measurement prediction yˆt|t−1 = h(xt|t−1) is computed.
+Then, the Kalman gain matrix refines a priori mean ˆxt|t−1 using the innovation yt − yˆt|t−1 acquired in time t toward minimizing the MSE. The Kalman gain matrix is given by
+Kt = Σt|t−1Ht S−1
+t , (5)
+where Ht = ∂h
+∂x |x=ˆxt|t−1 is the Jacobian of h(·) evaluated at ˆxt|t−1 and St = E[(yt − yˆt|t−1)(yt − yˆt|t−1) ] is the covariance matrix of the innovation. Using the Kalman gain in (5), a posteriori mean and covariance are updated as
+ˆxt|t = xˆt|t−1 + Kt
+(yt − yˆt|t−1
+),
+Σt|t = Σt|t−1 − KtStKt . (6)
+The model-based EKF algorithm experiences significant degradation in the presence of model mismatch. To address this issue, the conventional solutions of worst case error minimization and system identification methods such as covariance matrix adaptation and expectation-maximization algorithm has been used [18], [19], [20]. However, these methods often lead to reduced performance as they struggle to adapt to multiple SS models. An alternative solution is to adopt a data-driven approach, which leverages available data to overcome the model mismatch while minimizing performance loss. KalmanNet uses a model-based data-driven approach to overcome the degradation caused by model mismatch.
+B. KalmanNet - A Hybrid Approach
+The KalmanNet [13] is a hybrid approach that exploits the power of a DNN while maintaining the recursive EKF algorithm structures in (4), (5), and (6). The noticeable difference from the model-based EKF algorithm is in computing the Kalman gain matrix. Instead of using the Kalman gain matrix in (5) for the measurement-update, KalmanNet performs the measurement-update using a learned Kalman gain matrix, denoted by Kt(Θ), with trainable parameters Θ ∈ RΞ, i.e.,
+ˆxt|t = ˆxt|t−1 + Kt(Θ) (yt − yˆt|t−1
+) . (7)
+The Kalman gain is trained by optimizing the squared-error loss function with respect to the parameters Θ in an end-to-end fashion. Let D = {(X( ), Y( ))}L=1 be a dataset comprised of L different trajectories of the state-measurement pairs. The th trajectory contains T data samples (X( ), Y( )) with X( ) = [x( )
+1 , x( )
+2 , . . . , x( )
+T ] and Y( ) = [y( )
+1 , y( )
+2 , . . . , y( )
+T ]. We also define the empirical loss function for the ith training trajectory as
+L(Θ) = 1
+L
+L ∑
+=1
+1 T
+T ∑
+t=1
+∥∥∥x( )
+t − ˆxt|t
+(
+y( )
+t ; Kt(Θ)
+)∥∥∥
+2
+2 . (8)
+Let Δx( )
+t = x( )
+t − ˆx( )
+t|t−1 and Δy( )
+t = y( )
+t − yˆ( )
+t|t−1 be the state prediction error and the measurement innovation at time t for trajectory l. The partial derivative of the loss function with respective to the Kalman gain matrix is
+∂L(Θ)
+∂Kt(Θ) = 1
+LT
+L ∑
+=1
+T ∑
+t=1
+∂
+∥∥∥Δx( )
+t − Kt(Θ)Δy( )
+t
+∥∥∥
+2
+2
+∂Kt(Θ)
+=2
+LT
+L ∑
+=1
+T ∑
+t=1
+(
+Kt(Θ)Δy( )
+t − Δx( )
+t
+)(
+Δy( )
+t
+)
+. (9)
+By plugging (9) into the following chain rule:
+∂L(Θ)
+∂Θ = ∂L(Θ)
+∂Kt(Θ)
+∂Kt(Θ)
+∂Θ , (10)
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on October 16,2025 at 01:56:18 UTC from IEEE Xplore. Restrictions apply.
+
+
+12328 IEEE TRANSACTIONS ON VEHICULAR TECHNOLOGY, VOL. 72, NO. 9, SEPTEMBER 2023
+one can find a local optimal parameter Θ such that ∂L(Θ )
+∂Θ = 0 using a stochastic gradient descent algorithm. To track the covariance matrices implicitly, recurrent neural networks (RNNs) were used to train the parameter using the innovation difference Δyt = yt − yˆt|t−1 and the state update difference Δˆxt = xˆt|t − xˆt|t−1 as input features. We refer to [13] for the detailed structure of the KalmanNet. This DNN-aided EKF algorithm does not require knowledge of the covariance matrices for process and measurement noise, i.e., Qt and Rt. Rather, these matrices are implicitly learned from data for the Kalman gain computation; thereby, it can diminish statistical model mismatch effects compared to the model-based EKF method. In addition, it simplifies the state and time update procedures because a priori and a posteriori covariance matrices Σt|t−1 and Σt|t can be discarded. Notwithstanding, this joint learning approach of the Kalman gain can lead to performance loss when one of Qt and Rt mismatch effects dominates the other. For instance, the dominant mismatch error in measurement Rt hinders learning the covariance matrix of states Qt. This fact motivates us to consider a split learning structure when computing the Kalman gain matrix.
+IV. SPLIT-KALMANNET
+In this section, we put forth a DNN-aided EKF algorithm, called Split-KalmanNet. To illustrate the proposed idea, it is instructive to rethink the Kalman gain matrix in the model-based EKF algorithm. As in (5), the Kalman gain matrix is computed by multiplying three factors: i) a priori covariance matrix of the state Σt|t−1, ii) the Jacobian matrix of the measurement function Ht, iii) the inverse of the covariance matrix of the innovation S−1
+t . The first term, Σt|t−1, is a function of both Qt
+and Ft. In addition, the last term, S−1
+t , changes according to the secondorder moment of the measurement noise Rt. When the uncertainties in Qt and Rt are heterogeneous, the end-to-end KalmanNet can be less robust because Kt(Θ) cannot separate the statistical model mismatch effects in Qt and Rt. Harnessing the statistical independence property between the process and measurement noise vectors and the model-based knowledge in computing the Kalman gain matrix, our approach is to train the Kalman gain matrix with two separate DNNs to form the Kalman gain matrix:
+Gt(Θ1, Θ2, Ht) = G1
+t (Θ1)Ht G2
+t (Θ2), (11)
+where G1
+t (Θ1) is the DNN that learns a priori covariance matrix of the
+state Σt|t−1 implicitly with parameter Θ1 ∈ RΞ1 . In addition, G2
+t (Θ2) is another DNN that learns the inverse of the covariance matrix of the innovation St implicitly with parameter Θ2 ∈ RΞ2 . Using this trained Kalman gain matrix, the Split-KalmanNet performs the state-update as
+ˆxt|t = ˆxt|t−1 + Gt(Θ1, Θ2, Ht) (yt − yˆt|t−1
+) . (12)
+The overall structure of Split-KalmanNet is illustrated in Fig. 1. The Split-KalmanNet allows independently learning the model uncertainties caused by the state update (Ft, Qt) and the measurement update (Ht, Rt). Furthermore, the Split-KalmanNet decouples the effect of aforementioned model uncertainties from the Jacobian matrix of the measurement function Ht in computing (11). As a result, it is more robust than the end-to-end KalmanNet in the presence of heterogeneous model mismatch effects thanks to the split learning structure. Loss function: In analogy to (8), given dataset D = {(X( ), Y( ))}L=1, we define a loss function in terms of two parameter sets Θ1 and Θ2:
+L2(Θ1, Θ2) = 1
+L
+L ∑
+=1
+1 T
+T ∑
+t=1
+∥∥∥x( )
+t −xˆt|t
+(
+y( )
+t ; Gt(Θ1, Θ2, Ht)
+)∥∥∥
+2 2.
+(13)
+Fig. 1. Block diagram of the proposed Split-KalmanNet algorithm.
+Alternating optimization for training: We also provide an alternating optimization method to train two DNNs. We start by computing the partial derivative of the loss function with respective to the Kalman gain matrix:
+∂L2(Θ1, Θ2) ∂Gt(Θ1, Θ2, Ht)
+=1
+LT
+∑ L
+=1
+T ∑
+t=1
+∂
+∥∥∥Δx( )
+t − Gt(Θ1, Θ2, Ht)Δy( )
+t
+∥∥∥
+2
+2
+∂Gt(Θ1, Θ2, Ht)
+=2
+LT
+∑ L
+=1
+T ∑
+t=1
+(
+Gt(Θ1, Θ2, Ht)Δy( )
+t − Δx( )
+t
+)(
+Δy( )
+t
+) .
+(14)
+Then, for given  ̄Θ2, we first optimize Θ1 by solving the first-order optimally condition:
+∂L2(Θ1,  ̄Θ2) ∂Θ1
+= ∂L2
+(Θ1,  ̄Θ2
+)
+∂Gt(Θ1, Θ ̄ 2, Ht)
+∂G1
+t (Θ1) ∂Θ1
+Ht G2
+t
+(  ̄Θ2
+) = 0. (15)
+Using the updated  ̄Θ1, we optimize Θ2 such that
+∂L2(  ̄Θ1, Θ2) ∂Θ2
+= ∂L2(  ̄Θ1, Θ2)
+∂Gt
+(  ̄Θ1, Θ2, Ht
+) G1
+t
+(Θ ̄ 1
+) Ht
+∂G2
+t (Θ2) ∂Θ2
+= 0.
+(16)
+Using the updated  ̄Θ2, we again optimize Θ1 by solving (15). We repeat (15) and (16) until the parameters converge. Complexity: In contrast to KalmanNet, our algorithm needs to compute Ht at every time step. Nevertheless it should be noted that in numerous scenarios, closed form expression Ht can be readily obtained and its evaluation results in only a minimal increase in complexity. Input features: The DNN G1
+t (Θ1) learns a priori covariance matrix of the state Σt|t−1 and the DNN G2
+t (Θ2) learns the inverse of the covariance matrix of the innovation St implicitly. To track these covariance matrices, we consider the following input features:
+F1 The state update difference Δˆxt = ˆxt|t − ˆxt|t−1. The available feature at time t is Δˆxt−1.
+F2 The state evolution difference Δ ̃xt = ˆxt|t − ˆxt−1|t−1. The available feature at time t is Δ ̃xt−1.
+F3 The innovation difference Δyt = yt − yˆt|t−1.
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on October 16,2025 at 01:56:18 UTC from IEEE Xplore. Restrictions apply.
+
+
+IEEE TRANSACTIONS ON VEHICULAR TECHNOLOGY, VOL. 72, NO. 9, SEPTEMBER 2023 12329
+F4 The measurement difference Δy ̃t = yt − yt−1. F5 The linearization error h(ˆxt|t−1) − Htˆxt|t−1.
+F6 The Jacobian matrix of measurement function Ht.
+Features F1 and F3 characterize the uncertainty of state estimates, while features F2 and F4 characterize the information about the state and measurement evolution process. In addition, features F5 and F6 encapsulate the local behavior of the measurement function.
+V. SIMULATION RESULTS
+We use the uniform circular motion and Michigan NCLT dataset [21] to demonstrate the effect of the proposed split architecture in computing the Kalman gain and applicability to real world dynamics.1 State estimation algorithm: We compare the following algorithms: EKF (perfect): The model-based EKF for reference purpose. The exact model parameters are used. EKF (mismatch): The EKF using predetermined model parameters. KalmanNet: The KalmanNet using input features {F1, F2, F3, F4} as presented in [13]. Split-KalmanNet: The proposed Split-KalmanNet. The input features {F1, F2, F3, F4, F5, F6} are used. We omit the comparison with other state estimation algorithms such as unscented Kalman filter and particle filter, because the KalmanNet outperforms them according to [13]. Test metric: We use the MSE, which is defined as
+MSE [dB] = 10 log10
+( 1 LT
+∑ L
+=1
+T ∑
+t=1
+‖xt − ˆxt|t‖2
+)
+. (17)
+A. Uniform Circular Motion
+To illustrate the impact of split architecture on noise heterogeneity and non-linearity, we adopt the following two-dimensional state evolution model:
+xt+1 =
+[
+cos θ − sin θ sin θ cos θ
+]
+xt + wt, (18)
+where xt = [xt yt] ∈ R2 is the position vector in the Euclidean plane and θ is constant rotation speed. As a measurement model, we consider both linear and non-linear measurement
+yt =
+⎧⎨
+⎩
+xt + vt, linear,
+[
+‖xt‖2
+2 atan2(xt)
+]
++ vt, non − linear, (19)
+where the angle between the x-axis and the state vector xt in the Euclidean plane is represented by atan2(xt) in radians. The noise covariance matrices, Qt and Rt, are set to σ2
+wI and σ2
+vI respectively. To model the variability of the noise, we set a fixed value of σ2
+w = 10−3 and vary ν = σ2
+v /σ2
+w. In the case of mismatched EKF, we use σ2
+w = 10−3 and σ2
+v = 1, resulting in a ν value of 30 dB. Convergence: To demonstrate the convergence of our SplitKalmanNet, we present the validation error during each training round for both linear and non-linear measurement models in Fig. 2. We set significant noise heterogeneity (i.e., ν = 40 dB). As evident from the figures, Split-KalmanNet converges at a faster pace compared to KalmanNet and almost reaches the MSE of a perfect EKF.
+1The source code used in this simulation with the complete set of hyperparameters can be found online at https://github.com/geonchoi/Split-KalmanNet.
+Fig. 2. Convergence rates of different algorithms as increasing training rounds. Noise statistics are σ2w = −30 dB and ν = 40 dB. The length of trajectory is
+T = 15 for training, and T = 50 for validation. (a) and (b) correspond to linear and non-linear measurement models.
+Fig. 3. MSE (y-axis) comparison according to noise parameters (σ2w = −30
+dB, σ2v = νσ2w) for linear measurement model. The length of trajectory is T =
+15 for training, and T = 100 for testing.
+Noise heterogeneity and non-linearity: We investigate the MSE performance of Split-KalmanNet and KalmanNet for different levels of noise heterogeneity ν. As illustrated in Fig. 3, when the noise heterogeneity is low, both algorithms achieve MMSE, equivalent to the perfect EKF. However, as the noise heterogeneity increases, KalmanNet fails to learn the Kalman gain matrix and its MSE exceeds that of perfect EKF. On the other hand, Split-KalmanNet continues to achieve MMSE, demonstrating its robustness to noise heterogeneity. In the non-linear measurement model, as seen in Fig. 4, the perfect EKF does not achieve the optimal MSE and the data-driven methods surpass it for low levels of noise heterogeneity. Specifically, the SplitKalmanNet outperforms KalmanNet with slightly lower MSE, as it exploits the nonlinearity to a greater extent in optimizing the Kalman gain. Even as the noise heterogeneity increases, the Split-KalmanNet remains effective in learning the Kalman gain, while KalmanNet struggles. This highlights the superior robustness of Split-KalmanNet to noise heterogeneity compared to KalmanNet. Time-varying noise: To simulate time-varying noise statistics, we set Rt = σ2
+v,tI and σ2
+v,t to be
+σ2
+v,t[dB] =
+{t
+2 + t0 mod 50, 0 ≤ t ≤ 14, train,
+t
+10 + 30 mod 50, 0 ≤ t ≤ 999, test, (20)
+where t0 ∈ {0, 10, 20, 30} is randomly selected for each training sequence.
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on October 16,2025 at 01:56:18 UTC from IEEE Xplore. Restrictions apply.
+
+
+12330 IEEE TRANSACTIONS ON VEHICULAR TECHNOLOGY, VOL. 72, NO. 9, SEPTEMBER 2023
+Fig. 4. MSE (y-axis) comparison according to noise parameters (σ2w = −30
+dB, σ2v = νσ2w) for non-linear measurement model. The length of trajectory is
+T = 15 for training, and T = 100 for testing.
+Fig. 5. Instantaneous loss (MSE) for a particular trajectory with time-varying statistics. The non-linear measurement model is used.
+In Fig. 5, we present the plot of the instantaneous loss (‖xt − ˆxt|t‖2) for a specific test sequence. For the mismatched EKF, we arbitrarily set σ2
+v,t to 0 [dB]. The results indicate that Split-KalmanNet has the ability to adapt to slow variations in noise statistics mismatch. However, the degree of adaptation may vary depending on the nature of the training dataset. Alternatively, we can adopt online semi-supervised learning approach as in [22]. After applying the supervised training technique, Split-KalmanNet can optimize the parameters in an unsupervised manner to adapt to variations in the SS model.
+B. Real World Dynamics: Michigan NCLT Dataset
+The effectiveness of the Split-KalmanNet is evaluated using the Michigan NCLT dataset [21]. This dataset consists of moving trajectories of a Segway robot, with the ground truth locations and odometry readings being impacted by noise. Our aim is to localize the position of the robot by utilizing the noisy velocity readings obtained through odometry. To achieve this, we adopt the nearly constant acceleration motion model for the Segway robot, as described in [23, Ch. 19].
+Fig. 6. NCLT dataset trajectory. Training and validation data with a sampling rate of 1 Hz and a date of 2012-01-22. Test data with a sampling rate of 1 Hz and a date of 2012-04-29. The length and number of of trajectory is T = 50, L = 80 for training, T = 200, L = 5 for validation, and T = 2000, L = 1 for testing.
+We employed the trajectory with a sampling rate of 1 Hz and a date of 2012-01-22 for the training and validation of KalmanNet and Split-KalmanNet. For testing purposes, we used a trajectory with a sampling rate of 1 Hz and a date of 2012-04-29. The effectiveness of Split-KalmanNet was compared to other algorithms in Fig. 6 which highlights its superiority. The trajectory obtained through the EKF was rotated due to the accumulation of velocity error. However, SplitKalmanNet overcomes this limitation by learning the Kalman gain matrix from the data and providing more accurate positioning results. This demonstrates the potential of Split-KalmanNet for real-world applications and its ability to provide improved state estimates.
+VI. CONCLUSION
+In this paper, we introduced a reliable sequential state estimation algorithm called Split-KalmanNet, which is designed to handle SS models with model mismatch. The Split-KalmanNet uses a unique approach of training the covariance matrices of the prior state estimate and innovation through two parallel DNNs. By utilizing the structure of the Kalman gain, the algorithm composes the Kalman gain matrix using the trained covariance matrices and the measurement function’s Jacobian matrix. Simulation results demonstrate that the proposed SplitKalmanNet significantly improves the MSE compared to traditional methods in various model mismatch scenarios.
+REFERENCES
+[1] S. I. Roumeliotis and G. A. Bekey, “Bayesian estimation and kalman filtering: A unified framework for mobile robot localization,” in Proc. IEEE Int. Conf. Robot. Automat., 2000, vol. 3, pp. 2985–2992.
+[2] M. Bertozzi, A. Broggi, A. Fascioli, A. Tibaldi, R. Chapuis, and F. Chausse, “Pedestrian localization and tracking system with kalman filtering,” in Proc. IEEE Intell. Veh. Symp., 2004, pp. 584–589.
+[3] S. Chen, “Kalman filter for robot vision: A survey,” IEEE Trans. Ind. Electron., vol. 59, no. 11, pp. 4409–4420, Nov. 2012. [4] I. Ullah, Y. Shen, X. Su, C. Esposito, and C. Choi, “A localization based on unscented Kalman filter and particle filter localization algorithms,” IEEE Access, vol. 8, pp. 2233–2246, 2020. [5] R. E. Kalman, “A new approach to linear filtering and prediction problems,” ASME J. Basic Eng., vol. 82, pp. 34–45, Mar. 1960. [6] S. J. Julier and J. K. Uhlmann, “Unscented filtering and nonlinear estimation,” Proc. IEEE, vol. 92, no. 3, pp. 401–422, Mar. 2004.
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on October 16,2025 at 01:56:18 UTC from IEEE Xplore. Restrictions apply.
+
+
+IEEE TRANSACTIONS ON VEHICULAR TECHNOLOGY, VOL. 72, NO. 9, SEPTEMBER 2023 12331
+[7] N. J. Gordon, D. J. Salmond, and A. F. Smith, “Novel approach to nonlinear/non-Gaussian Bayesian state estimation,” IEE Proc. F (Radar Signal Process.), vol. 140, no. 2, pp. 107–113, Apr. 1993. [8] O. Cappé, S. J. Godsill, and E. Moulines, “An overview of existing methods and recent advances in sequential monte carlo,” Proc. IEEE, vol. 95, no. 5, pp. 899–924, May 2007. [9] I. Arasaratnam and S. Haykin, “Cubature kalman filters,” IEEE Trans. Autom. Control, vol. 54, no. 6, pp. 1254–1269, Jun. 2009. [10] G. A. Terejanu et al., “Extended Kalman filter tutorial,” University at Buffalo, 2008. [Online]. Available: https://homes.cs.washington.edu/todorov/ courses/cseP590/readings/tutorialEKF.pdf [11] B. Hajek, Random Processes for Engineers. New York, NY, USA: Cambridge Univ. Press, 2015. [12] G. A. Einicke and L. B. White, “Robust extended Kalman filtering,” IEEE Trans. Signal Process., vol. 47, no. 9, pp. 2596–2599, Sep. 1999. [13] G. Revach, N. Shlezinger, X. Ni, A. L. Escoriza, R. J. V. Sloun, and Y. C. Eldar, “KalmaNet: Neural network aided Kalman filtering for partially known dynamics,” IEEE Trans. Signal Process., vol. 70, pp. 1532–1547, 2022. [14] N. Shlezinger, Y. C. Eldar, and S. P. Boyd, “Model-based deep learning: On the intersection of deep learning and optimization,” IEEE Access, vol. 10, pp. 115384–115398, 2022. [15] A. L. Escoriza, G. Revach, N. Shlezinger, and R. J. V. Sloun, “Data-driven Kalman-based velocity estimation for autonomous racing,” in Proc. IEEE Int. Conf. Auton. Syst., 2021, pp. 1–5.
+[16] B.-N. Vo and W.-K. Ma, “The Gaussian mixture probability hypothesis density filter,” IEEE Trans. Signal Process., vol. 54, no. 11, pp. 4091–4104, Nov. 2006. [17] J. Mullane, B.-N. Vo, M. D. Adams, and B.-T. Vo, “A random-finiteset approach to Bayesian SLAM,” IEEE Trans. Robot., vol. 27, no. 2, pp. 268–282, Apr. 2011. [18] L. Xie, Y. C. Soh, and C. E. De Souza, “Robust Kalman filtering for uncertain discrete-time systems,” IEEE Trans. Autom. Control, vol. 39, no. 6, pp. 1310–1314, Jun. 1994. [19] M. Zorzi, “Robust Kalman filtering under model perturbations,” IEEE Trans. Autom. Control, vol. 62, no. 6, pp. 2902–2907, Jun. 2017. [20] S. Akhlaghi, N. Zhou, and Z. Huang, “Adaptive adjustment of noise covariance in Kalman filter for dynamic state estimation,” in Proc. IEEE Power Energy Soc. Gen. Meeting, 2017, pp. 1–5. [21] N. Carlevaris-Bianco, A. K. Ushani, and R. M. Eustice, “University of michigan north campus long-term vision and lidar dataset,” Int. J. Robot. Res., vol. 35, no. 9, pp. 1023–1035, Aug. 2016. [22] G. Revach, N. Shlezinger, T. Locher, X. Ni, R. J. V. Sloun, and Y. C. Eldar, “Unsupervised learned Kalman filtering,” in Proc. 30th Eur. Signal Process. Conf., 2022, pp. 1571–1575. [23] M. A. Richards, J. Scheer, and W. A. Holm, Principles of Modern Radar: Basic Principles. New York, NY, USA: Scitech, 2010.
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on October 16,2025 at 01:56:18 UTC from IEEE Xplore. Restrictions apply.

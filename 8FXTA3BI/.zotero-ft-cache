@@ -1,0 +1,261 @@
+Learning the tuned liquid damper dynamics by means of a robust EKF
+Alberta Longhini, Michele Perbellini, Stefano Gottardi, Shenglun Yi, Hao Liu and Mattia Zorzi
+Abstract— The tuned liquid dampers (TLD) technology is a feasible and cost-effective seismic design. In order to improve its efficiency it is fundamental to find accurate models describing their dynamic. A TLD system can be modeled through the Housner model and its parameters can be estimated by solving a nonlinear state estimation problem. We propose a robust extended Kalman filter which alleviates the model discretization and the fact that the noise process is not known. We test the effectiveness of the proposed approach by using some experimental data corresponding to two classical seismic waves, namely the El Centro wave and the Hachinohe wave.
+I. INTRODUCTION
+It is estimated that about 50,0000 detectable earthquakes occur every year, and some of them are extremely destructive, like the Sichuan earthquake in 2008 or the Aceh earthquake in 2012. Earthquakes can cause great loss of life and buildings, most of which come from damage to houses. The tuned liquid dampers (TLD) technology is a feasible and cost-effective seismic design. A TLD is a passive mechanical damper placed on the top of a building for suppressing the structural vibrations. More precisely, it is a water tank whose damping effect depends on the sloshing of shallow liquid. Clearly, this technology is also easy to install in existing structures and applicable for temporary use. In order to design an efficient TLD we need to have an accurate model describing it. Housner proposed a nonlinear model for TLD using the analysis of the dynamic behavior for the response of elevated water tanks to earthquake ground motion [1]. Then, numerical models have been introduced to solve the equations of the liquid motion [2], [3]. Since then, TLD is widely used in the flexible and weakly-damped structures such as high-rise buildings, towers and suspension bridges [4]–[6]. In this paper we consider the problem to learn the parameters of the Housner model for a TLD system from the acceleration and the force applied to the bottom of the tank. Such a problem can be cast as a nonlinear state estimation problem, [7]. A natural way to tackle this problem is to use the Extended Kalman (EKF) filter, [8]–[10]. In the practical TLD application, however, the implementation of the EKF requires the design of the noise variances which is lacking
+S. Yi is with the School of Automation, Beijing Institute of Technology, Beijing 100081, China; A. Longhini, M. Perbellini, S. Gottardi and M. Zorzi is with the Department of Information Engineering, University of Padova, Via Gradenigo 6/B, 35131 Padova, Italy; Liu Hao is with College of Architecture and Civil Engineering, Beijing University of Technology Emails: alberta.longhini@studenti.unipd.it, michele.perbellini@studenti.unipd.it, stefano.gottardi@studenti.unipd.it, 3120185460@bit.edu.cn, zorzimat@dei.unipd.it, liuhao vv@email.s.bjut.edu.cn
+relative prior knowledge. Moreover, the experimental data is collected with a certain sampling time, so the original continuous model needs to be discretized in order to be used in the EKF. Accordingly, there is a mismatch between the discretized model and the actual one. Risk sensitive filtering aims to address the model uncertainty [11]–[13]. More precisely, compared with the traditional way, the standard quadratic loss function is replaced by an exponential quadratic loss function so that large errors are severely penalized. This severity is tuned by the so called risk sensitive parameter, [14]–[17]. A refined version of such a paradigm is the robust Kalman filter proposed in [18] as well as its extensions [19]–[25]. Here, the uncertainty is expressed incrementally at each time step t. More precisely, the state estimator is designed according to the least favorable model at time t belonging to the ambiguity set which is a ball about the nominal model in the Kullback-Leibler (KL) topology. Although there are some robust versions of EKF, see [26][28], nobody generalized this paradigm for EKF. The contribution of this paper is to propose a robust extended Kalman filter, where the uncertainty is expressed incrementally, to learn the TLD dynamics. We adopt the realtime hybrid simulation technology, while two classical seismic waves, namely the El Centro wave and the Hachinohe wave are employed as our input earthquake signals. The aim of this work is to show how the robust algorithm is able to produce a better parameter estimation than the standard one. It turns out that the estimated parameters with the robust approach tend not to deviate from the reference parameter (i.e. the actual parameters) keeping the relative error of the estimated parameter very small. The outline of the paper is as follows. The proposed robust extended Kalman filter is introduced in Section II. Section III introduces the problem to learn the parameters of the Housner model as well as its nonlinear state estimation formulation. Then, the experimental results based on the seismic waves are presented in Section IV. Finally, Section V regards the conclusions and future research directions.
+II. ROBUST EXTENDED KALMAN FILTER
+We consider the following discrete time state space model:
+{
+xt+1 = f (xt, ut) + Bvt
+yt = h(xt, ut) + Dvt
+(1)
+where xt ∈ Rn is the state process, ut ∈ Rq is a known deterministic input, and vt ∈ Rm is white Gaussian noise (WGN) with E[vtvsT ] = Imδt−s, where δs is the Kronecker delta function. Our aim is to estimate, in a recursive way, the state xt+1 from the observation process yt ∈ Rp. If the
+arXiv:2103.03520v1 [math.OC] 5 Mar 2021
+
+
+functions f (·) and g(·) are linear the problem has a well known solution which is given by the Kalman Filter. On the contrary, if the two functions, or one of these, are nonlinear we can use the EKF, which aims to find an approximate solution of the problem:
+argmin E [||xt+1 − gt(yt)||2|Yt−1
+] (2)
+where Yt−1 = {ys, 0 ≤ s ≤ t − 1}. This filter adopts at each step a linearization of the nominal model (1) around the previous estimate. It is well known that the evolution of the estimates of the problem are:
+xˆt|t = xˆt + Lt(yt − h(xˆt, ut)) (3)
+xˆt+1 = f (xˆt|t, ut)
+where xˆt|t and xˆt represent the estimate of xt given Yt and Yt−1, respectively; Lt is the filtering gain. However, in the real scenarios the nominal model does not match the actual one. This is due to two main facts. First, the model parameters are affected by uncertainty, like the real structure of f (·) and the variances of the noises. The second one is that physical models have a natural description using continuous time models. Thus, to use them we have to perform a discretization step, and so what we obtain is an approximation. Therefore we propose a robust approach to compute the gain in (3) that takes into account the presence of uncertainties. Consider model (1) and, as in EKF, let us consider that the state equation is linearized with respect to xˆt|t while the measurement equation is linearized with respect to xˆt:
+{
+xt+1 = Atxt − Atxˆt|t + f (xˆt|t, ut) + Bvt
+yt = Ctxt − Ctxˆt + h(xˆt, ut) + Dvt
+(4)
+where At = ∂f (x, ut)/∂x|x=xˆt|t , Ct = ∂h(x, ut)/∂x|x=xˆt .
+Let zt = [xtT+1 ytT
+]T . Then, (4) is characterized by the nominal transition probability of zt given xt:
+φt(zt|xt) (5)
+∼N
+([Atxt − Atxˆt|t + f (xˆt|t, ut) Ctxt − Ctxˆt + h(xˆt, ut)
+]
+,
+[B
+D
+]
+[BT DT ]
+)
+.
+(6)
+We assume that the noise vt affects all the components of the dynamic observations in (1) and (4), therefore the covariance matrix:
+Kz|x =
+[B
+D
+]
+[BT DT ]
+is positive definite. To derive the robust filter we adopt the minimax approach on the linearized model (4) proposed in the recent works [18], [29], [30]. Let φ ̃t(zt|xt) denote the actual transition probability density of zt given xt. It is worth
+noting that φ ̃t is not necessarily Gaussian distributed. Then, we measure the mismatch between the probability densities φt and φ ̃t using the KL divergence:
+D(φ ̃t, φt) =
+∫∫
+φ ̃t(zt|xt)pt(xt|Yt−1)
+ln
+( φt(zt|xt)
+φ ̃t(zt|xt)
+)
+dztdxt.
+(7)
+Then, we assume that φ ̃t belongs to Bt, i.e. a ball about the nominal density, with
+Bt =
+{ φ ̃(zt|xt) s.t. D(φ ̃t, φt) ≤ ct
+}
+(8)
+where ct > 0 is the tolerance specified at each time step. The latter measures the mismodeling budget between the nominal and the actual model at time t in terms of KL divergence. The main idea is to compute the gain Lt in Equation (3) in a robust way by considering the minimax optimization problem:
+xˆt+1 = arg min
+gt ∈Gt
+max
+φ ̃t ∈Bt
+ ̃E [||xt+1 − gt(yt)||2|Yt−1
+] (9)
+where
+ ̃E [||xt+1 − gt(yt)||2|Yt−1
+]=
+∫∫
+||xt+1 − gt(yt)||2φ ̃(zt|xt)pt(xt|Yt−1) dxtdzt
+(10)
+denotes the mean square error of the estimator xˆt+1 = gt(yt)
+of xt+1 evaluated with respect to the density φ ̃t; Gt is the
+set of estimators for which (10) is bounded for any φ ̃t ∈ Bt. Therefore, here the gain is computed using as reference the least favorable description, and not the nominal one as in Problem (2). Under the assumption that the a priori probability density of xt conditioned on the observations Yt−1 is:
+pt(xt|Yt−1) ∼ N (xˆt, Vt), (11)
+then the solution to Problem (9) is a Kalman like filter, see [18, Theorem 1] and [29], [31], [32]. More precisely, the least favorable solution to (9) is Gaussian with the same mean of φt defined in (5), while its variance changes. Since the least favorable (linearised) model is Gaussian, the estimator solution to (9) is the Bayes estimator and thus the estimator corresponding to the original model is (3) where the filtering gain now is
+Lt = VtCT
+t (CtVtCT
+t + DDT )−1 (12)
+with:
+Vt+1 = (P −1
+t+1 − θtI)−1
+Pt+1 = AtVtAT
+t
+− AtVtCT
+t (CtVtCT
+t + DDT )−1CtVtAT
+t + BBT
+where θt > 0 is the unique solution to γ(Pt+1, θt) = ct and
+γ(P, θ) = 1
+2
+{log det (I − θP ) + tr [(I − θP )−1 − I])} .
+It is worth noting that the filtering gain is different from the standard one because the variance of φ ̃t is different from the one of φt. Thus, the idea is to use this robust approach to find the gain in the linearized version of model in (1). This leads to the robust extended Kalman filter (REKF), reported in Algorithm 1. It is worth noting that the full procedure is similar to the EKF, except for the presence of Vt, which requires (at step 8) the computation of θt. The latter computation is done in a numerical way, since a closed form solution does not exist.
+
+
+Algorithm 1 Robust Extended Kalman filter at time t Input xˆt, Vt, ct, yt, ut Output xˆt|t, xˆt+1, Vt+1
+1: Ct = ∂h(x,ut)
+∂x
+∣ ∣
+∣x=xˆt
+2: Lt = VtCtT (CtVtCtT + DDT )−1 3: xˆt|t = xˆt + Lt[yt − h(xˆt, ut)]
+4: At = ∂f (x,ut)
+∂x
+∣ ∣
+∣x=xˆt|t
+5: xˆt+1 = f (xˆt|t, ut) 6: Pt+1 = AtVtAtT
+7: −AtVtCtT (CtVtCtT + DDT )−1CtVtAtT + BBT 8: find θt s.t. γ(Pt+1, θt) = ct 9: Vt+1 = (P −1
+t+1 − θtI)−1
+III. LEARNING THE TLD DYNAMIC
+TLD is a very important technology nowadays: it attenuates the effect of vibrations in the building at a low price. Learning the model dynamics of TLD’s is then crucial for future design needs. A TLD is identified by the Housner model [1], which describes the relative displacement of water (here called d) in the following way:
+d ̈+ 2ξωd ̇ + ω2d = −u (13)
+where u is the acceleration on the bottom of the water tank; ξ is the damping ratio; β is the ratio between the mass of water that can oscillate horizontally against a restraining spring and the total mass of water in the tank mt; ω is the frequency of oscillation of water. The goal is to estimate the parameters of the model, through the measurement of the reactive force applied to the bottom of the water tank:
+F = −(1 − β)mtu + mtβωd + mtβωξd ̇. (14)
+The total mass of water mt is known. The parameter ξ is considered as a known constant because it is possible to tune it as we wish using baffles into the tank. Thus, the parameters to estimate are β and ω. The latter can be treated as states components. Indeed, Housner model in (13)-(14) can be rewritten as the state space model
+x ̇ =
+
+  
+x ̇ 1 x ̇ 2 x ̇ 3 x ̇ 4
+
+  
+=
+
+  
+−u − 2x5x4x1 − x24x2
+x1 0 0
+
+  
++ v, (15)
+y = −(1 − x3)mtu + mtx3x4x2 + mtx3x4ξx1 + w (16)
+where:
+x1 = d ̇, x2 = d, x3 = β, x4 = ω.
+Accordingly, the problem becomes to estimate the state of the nonlinear state model in (15)-(16). Here, we assume the process noise v and the measurement noise w are Gaussian white noises with variances Q and R, respectively. The process variance Q is a diagonal matrix such that:
+Q = diag(σ1, σ2, σ3, σ4). (17)
+Note that we choose the first two components of the diagonal (corresponding to x1 and x2) with high magnitude to ensure variability over time, while the other two components (relative to x3 and x4) are selected with small value so that the estimated parameters change a little over time. In plain words σ3 and σ4 tune the a priori information about the changing rate of x3 and x4, respectively, in the stochastic hypermodel for β and ω in (15), [33]. Then, the initial state x0 is modeled as a Gaussian random vector with mean xˆ0 and variance V0:
+V0 = diag(λ1, λ2, λ3, λ4). (18)
+Finally, it is necessary to discretize the state equations (15)-(16) because the data is collected with a certain sampling time. Here, the fourth-order Runge-Kutta method is used. Clearly this procedure induces an error that deviates the obtained model from the actual one. Furthermore, the implementation of the EKF requires the design of the noises v, w that nobody knows how they are really distributed in practice. In other words, there is some model uncertainty between the nominal model and actual model. In order to overcome this problem we propose to use the robust version of the EKF presented in the previous section.
+IV. EXPERIMENTAL RESULTS
+Firstly, we adopt the real-time hybrid simulation technology [34], which divides the test object into two parts: the physical substructure (i.e. TLD system) for which we would like to learn the model from the collected data; the numerical substructure which simulates the dynamics of a prescribed building. As shown in Fig. 1, after we input the earthquake signal under the structure, the relative displacement between the top of the structure and the TLD system can be transferred equivalently as the input of the shaking table so that we can measure the relative acceleration u for the bottom of the water tank via the accelerometer. Then the reactive force F of the water is considered as the output which is measured by the three-component force sensor. The setting of this test object can be seen in Fig. 2: it is composed by a water tank of dimensions 0.8 × 0.8 × 0.268 m3 (length × width × depth) placed above the shaking table. Moreover, the earthquake signals considered here are two classical seismic waves, namely the El Centro wave and the Hachinohe wave. Finally, the relative acceleration u and reactive force F signals gathered from this procedure were filtered in order to reduce the noise and then taken into account to build the datasets for learning the model parameters. These two signals, sampled with sampling time Ts = 0.001s, correspond respectively to the variables u and y introduced in Section III. The evaluation of the Algorithm 1 was performed in MATLAB. In order to evaluate the effectiveness of the proposed approach, the simulations were done using both the EKF and the REKF. The fixed model parameters are mt = 171.520 kg and ξ = 0.005, while the reference values of the objects of interest drawn from the Housner model are β = 0.612 and w = 5.489 rad/s. Both datasets were
+
+
+Water Tank
+Shaking table
+Load cell
+Reactive force (output data)
+structure
+Earthquake signal
+Computer solution
+Acceleration (Input data)
+Numerical substructure
+Physical substructure
+Fig. 1: Conceptual view of real-time hybrid simulation technology.
+Fig. 2: Laboratory experiment setup composed by a water tank installed above a shaking table.
+tested in two different scenarios. The first one considers the initial conditions (I.C.) of β and ω approximately known. The second case supposes instead that we do not have this a priori knowledge, so they are set equal to the lower bounds. Accordingly, the I.C. of the predicted state vector for these frameworks are respectively:
+x0 = [0.01, −0.01, 0.5, 5] (19)
+x0 = [0.01, −0.01, 0.1, 1]. (20)
+The output noise variance R was assumed to be equal to 1 for all the simulations. Regarding the value of the tolerance ct, it has been designed as an exponential with decay rate of 0.01 starting from the initial value c0 = 0.001: ct = c0e−0.001t. In plain word, we need robustness only at the early stage where the linearisation may be inaccurate due by the poor knowledge of the actual values for x3 and x4. In what follows, the initial state error estimation covariance matrix V0, the process covariance matrix Q = BBT and the estimation results are going to be presented for the two datasets separately.
+El Centro wave dataset. The covariance matrix for the initial state is:
+V0 = diag(1, 1, 0.001, 0.1).
+For what concerns the process variance matrix, it was necessary to tune the variances of β and ω depending on whether the values of the initial conditions of their estimated states were assumed to be close to the reference ones or not. The values of Q used in the simulations for (19) and (20) were, respectively:
+Q = diag(1, 1, 0.00115, 0.065), (21)
+Q = diag(1, 1, 0.0018, 0.145). (22)
+The results obtained from these initial states of the REKF parameters can be seen respectively in Fig. 3 and 4. It is worth noting that σ3 and σ4 in (21), corresponding to the I.C. for β and ω close from the reference values, are smaller than the ones in (22), corresponding to the I.C. for β and ω far away from the reference values. In a plain word, these two choices hinge on this principle: if the initial estimates of β and ω are not close to the actual one, then we expect that the changing rate of the estimates of β and ω is high. Such an a priori information is embedded in the stochastic hypermodel by choosing σ3 and σ4 “sufficiently large”.
+0 20 40 60 80 100
+0.5
+0.52
+0.54
+0.56
+0.58
+0.6
+0.62
+0 20 40 60 80 100
+4.9
+5
+5.1
+5.2
+5.3
+5.4
+5.5
+5.6
+Fig. 3: Estimation profiles of β and ω given the initial conditions close to the reference ones (i.e. corresponding to (19) and (21)) and input u measured from the El Centro wave.
+
+
+0 20 40 60 80 100
+0.2
+0.25
+0.3
+0.35
+0.4
+0.45
+0.5
+0.55
+0.6
+0.65
+0 20 40 60 80 100
+0
+1
+2
+3
+4
+5
+6
+Fig. 4: Estimation profiles of β and ω given the initial conditions equal to their lower bounds (i.e. corresponding to (19) and (23)) and input u measured from the El Centro wave.
+Hachinohe wave dataset. The covariance matrix of the initial state is:
+V0 = diag(1, 1, 0.002, 0.15).
+Following the same principle of before, we consider the following covariance matrices for (19) and (20), respectively:
+Q = diag(1, 1, 0.0013, 0.07), (23)
+Q = diag(1, 1, 0.0018, 0.15). (24)
+Fig. 5 and 6 show the estimation results obtained with the discussed initial conditions. From Fig. 3-6 it is possible to observe how the REKF is able to identify correctly the parameters β and ω for both datasets. Moreover, the robust approach performs always better with respect to the standard one, as expected. Taking into account only the profiles of the REKF, they always reach the reference values in at most 40s out of 100s. Furthermore, once the true value has been reached, the estimate tends not to deviate from the reference parameter keeping the relative error not larger than 1% for β and 0.5% for ω. These relative errors for the standard EKF are 2% for β and 1% for ω. We conclude that, for both the initial conditions, the performance of the REKF is satisfactory and outperforms the standard EKF.
+0 20 40 60 80 100
+0.5
+0.52
+0.54
+0.56
+0.58
+0.6
+0.62
+0 20 40 60 80 100
+4.9
+5
+5.1
+5.2
+5.3
+5.4
+5.5
+5.6
+Fig. 5: Estimation profiles of β and ω given the initial conditions close to the reference ones (i.e. corresponding to (20) and (24)) and input u measured from the Hachinohe wave.
+V. CONCLUSION
+In this paper, we learn the TLD dynamics by means of a robust extended Kalman filter whose uncertainty is expressed incrementally. The aim of this robust approach is to alleviate the model uncertainty given by the discretization of the Housner model as well as the poor knowledge of the noise process of the state space model. The robust algorithm has been tested with experimental data whose earthquake signal takes classical seismic waves (i.e. the El Centro wave and the Hachinohe wave). It is worth noting that the computational time required by (the present implementation of) the proposed approach is larger than that of the standard one. However, the experimental results showed that the proposed method not only achieve a satisfactory accuracy, but it is also able to deal with two different initial conditions. Although this is a promising result and since we have collected hundreds of datasets, we envision to perform a large number of experiments to verify the reliability of the proposed algorithm.
+VI. ACKNOWLEDGMENTS
+This work is partially supported by NSFC under Grant Nos. 51978016. The authors would like to thank Prof. Zhenyun Tang at Beijing University of Technology for his support in the experimental platform and data collection.
+
+
+0 20 40 60 80 100
+0.3
+0.35
+0.4
+0.45
+0.5
+0.55
+0.6
+0.65
+0 20 40 60 80 100
+0
+1
+2
+3
+4
+5
+6
+Fig. 6: Estimation profiles of β and ω given the initial conditions equal to their lower bounds (i.e. corresponding to (20) and (22)) and input u measured from the Hachinohe wave.
+REFERENCES
+[1] G. W. Housner, “The dynamic behavior of water tanks,” Bulletin of the seismological society of America, vol. 53, no. 2, pp. 381–387, 1963. [2] S. Limin, “Semi-analytical modelling of tuned liquid damper (tld) with emphasis on damping of liquid sloshing,” University of Tokyo, 1991. [3] T. Wakahara, T. Ohyama, and K. Fujii, “Suppression of wind-induced vibration of a tall building using tuned liquid damper,” Journal of Wind Engineering and Industrial Aerodynamics, vol. 43, no. 1-3, pp. 18951906, 1992. [4] R. Kamgar, F. Gholami, H. R. Z. Sanayei, and H. Heidarzadeh, “Modified tuned liquid dampers for seismic protection of buildings considering soil–structure interaction effects,” Iranian Journal of Science and Technology, Transactions of Civil Engineering, vol. 44, no. 1, pp. 339–354, 2020. [5] Y. An, Z. Wang, G. Ou, S. Pan, and J. Ou, “Vibration mitigation of suspension bridge suspender cables using a ring-shaped tuned liquid damper,” Journal of Bridge Engineering, vol. 24, no. 4, p. 04019020, 2019. [6] A. Pandit and K. Biswal, “Seismic control of multi degree of freedom structure outfitted with sloped bottom tuned liquid damper,” in Structures, vol. 25, pp. 229–240, Elsevier, 2020. [7] Y. Ding, B. Zhao, B. Wu, X. Zhang, and L. Guo, “Simultaneous identification of structural parameter and external excitation with an improved unscented Kalman filter,” Advances in Structural Engineering, vol. 18, no. 11, pp. 1981–1998, 2015. [8] K. Reif, S. Gunther, E. Yaz, and R. Unbehauen, “Stochastic stability of the discrete-time extended Kalman filter,” IEEE Transactions on Automatic control, vol. 44, no. 4, pp. 714–728, 1999. [9] X. Wang and E. E. Yaz, “Second-order fault tolerant extended Kalman filter for discrete time nonlinear systems,” IEEE Transactions on Automatic Control, vol. 64, no. 12, pp. 5086–5093, 2019. [10] A. Barrau and S. Bonnabel, “The invariant extended Kalman filter as a stable observer,” IEEE Transactions on Automatic Control, vol. 62, no. 4, pp. 1797–1812, 2016.
+[11] B. Hassibi, A. Sayed, and T. Kailath, Indefinite-Quadratic Estimation and Control- A Unified Approach to H2 and H∞ Theories. Philadelphia: Society for Industrial and Applied Mathematics, 1999. [12] P. Whittle, Risk-sensitive Optimal Control. Chichester, England: J. Wiley, 1980. [13] B. C. Levy and M. Zorzi, “A contraction analysis of the convergence of risk-sensitive filters,” SIAM Journal on Control and Optimization, vol. 54, no. 4, pp. 2154–2173, 2016. [14] R. Boel, M. James, and I. Petersen, “Robustness and risk-sensitive filtering,” IEEE Trans. Automat. Contr., vol. 47, no. 3, pp. 451–461, 2002. [15] L. P. Hansen, T. J. Sargent, et al., “Robust estimation and control under commitment,” Journal of economic Theory, vol. 124, no. 2, pp. 258–301, 2005. [16] M.-G. Yoon, V. A. Ugrinovskii, and I. R. Petersen, “Robust finite horizon minimax filtering for discrete-time stochastic uncertain systems,” Systems & control letters, vol. 52, no. 2, pp. 99–112, 2004. [17] J. Speyer, C. Fan, and R. Banavar, “Optimal stochastic estimation with exponential cost criteria,” in Proc. 31st IEEE Conf. Decision Control, (Tucson, AZ), pp. 2293–2298, Dec. 1992. [18] B. Levy and R. Nikoukhah, “Robust state-space filtering under incremental model perturbations subject to a relative entropy tolerance,” IEEE Trans. Automat. Contr., vol. 58, pp. 682–695, Mar. 2013. [19] M. Zorzi and B. C. Levy, “Robust Kalman filtering: Asymptotic analysis of the least favorable model,” in IEEE Conference on Decision and Control (CDC), pp. 7124–7129, 2018. [20] S. Abadeh, V. Nguyen, D. Kuhn, and P. Esfahani, “Wasserstein distributionally robust Kalman filtering,” in Advances in Neural Information Processing Systems, pp. 8474–8483, 2018. [21] M. Zorzi, “Distributed Kalman filtering under model uncertainty,” IEEE Trans. Control. Netw. Syst., vol. 7, no. 2, pp. 990–1001, 2019. [22] A. Emanuele, F. Gasparotto, G. Guerra, and M. Zorzi, “Robust distributed Kalman filtering: On the choice of the local tolerance,” Sensors, vol. 20, no. 11, p. 3244, 2020. [23] A. Zenere and M. Zorzi, “On the coupling of model predictive control and robust Kalman filtering,” IET Control Theory & Applications, vol. 12, no. 13, pp. 1873–1881, 2018. [24] S. Yi and M. Zorzi, “Low-rank Kalman filtering under model uncertainty,” in 59th IEEE Conference on Decision and Control (CDC), pp. 2930–2935, 2020. [25] V. A. Nguyen, S. Shafieezadeh-Abadeh, D. Kuhn, and P. M. Esfahani, “Bridging Bayesian and minimax mean square error estimation via Wasserstein distributionally robust optimization,” arXiv preprint arXiv:1911.03539, 2019.
+[26] A. G. Kallapur, I. R. Petersen, and S. G. Anavatti, “A discrete-time robust extended Kalman filter for uncertain systems with sum quadratic constraints,” IEEE Transactions on Automatic Control, vol. 54, no. 4, pp. 850–854, 2009. [27] K. Sahraoui, K. Kouzi, and A. Ameur, “A robust sensorless iterated extended Kalman filter for electromechanical drive state estimation,” Electrotehnica, Electronica, Automatica, vol. 65, no. 2, p. 46, 2017. [28] S. Kim, V. Deshpande, and R. Bhattacharya, “Robust Kalman filtering with probabilistic uncertainty in system parameters,” IEEE Contr. Syst. Lett., vol. 5, no. 1, pp. 295–300, 2020. [29] M. Zorzi, “Robust Kalman filtering under model perturbations,” IEEE Trans. Automat. Control, vol. 62, no. 6, pp. 2902–2907, 2016. [30] M. Zorzi, “Convergence analysis of a family of robust Kalman filters based on the contraction principle,” SIAM Journal on Control and Optimization, vol. 55, no. 5, pp. 3116–3131, 2017. [31] B. Levy and R. Nikoukhah, “Robust least-squares estimation with a relative entropy constraint,” IEEE Trans. Informat. Theory, vol. 50, no. 1, pp. 89–104, 2004. [32] M. Zorzi, “On the robustness of the Bayes and Wiener estimators under model uncertainty,” Automatica, vol. 83, pp. 133–140, 2017. [33] M. Niedzwiecki, Identification of time-varying processes. Wiley New York, 2000. [34] Z. Tang, M. Dietz, Y. Hong, and Z. Li, “Performance extension of shaking table-based real-time dynamic hybrid testing through full state control via simulation,” Structural Control and Health Monitoring, vol. 27, no. 10, p. e2611, 2020.

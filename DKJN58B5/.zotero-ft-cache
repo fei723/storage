@@ -1,0 +1,190 @@
+326 IEEE SIGNAL PROCESSING LETTERS, VOL. 32, 2025
+Cholesky-KalmanNet: Model-Based Deep Learning
+With Positive Definite Error Covariance Structure
+Minhyeok Ko and Abdollah Shafieezadeh
+Abstract—State estimation from noisy observations is crucial across various fields. Traditional methods such as Kalman, Extended Kalman, and Unscented Kalman Filter often struggle with nonlinearities, model inaccuracies, and high observation noise. This letter introduces Cholesky-KalmanNet (CKN), a model-based deep learning approach that considerably enhances state estimation by providing and enforcing transiently precise error covariance estimation. Specifically, the CKN embeds mathematical constraints associated with the positive definiteness of error covariance in a recurrent DNN architecture through the Cholesky decomposition. This architecture enhances statistical reliability and mitigates numerical instabilities. Furthermore, introducing a novel loss function that minimizes discrepancies between the estimated and empirical error covariance ensures a comprehensive minimization of estimation errors, accounting for interdependencies among state variables. Extensive evaluations on both synthetic and real-world datasets affirm CKN’s superior performance vis-a-vis state estimation accuracy, robustness against system inaccuracies and observation noise, as well as stability across varying training data partitions, an essential feature for practical scenarios with suboptimal data conditions.
+Index Terms—Deep learning, kalman filter, recurrent neural network, state estimation, uncertainty quantification.
+I. INTRODUCTION
+A
+CCURATE state estimation from noisy observations is essential in many applications [1], [2], [3], [4], [5]. Sensor noise and unmeasurable states often obscure the true state, requiring estimation techniques to reconstruct internal states. The Kalman Filter (KF) [6] provides optimal estimation for linear systems with Gaussian noise. However, the Extended Kalman Filter (EKF) [7] struggles with high nonlinearity and Jacobian computations [8], while the Unscented Kalman Filter (UKF) [9] may suffer from numerical instability [10]. These filters also rely on accurate system models, which are often unavailable in complex, real-world scenarios [11], [12]. KalmanNet (KN) [13], combining KF’s structure with the adaptability of Deep Neural Networks (DNNs), addresses nonlinear dynamics and model inaccuracies by learning the Kalman
+Received 8 November 2024; accepted 9 December 2024. Date of publication 17 December 2024; date of current version 27 December 2024. This work was supported in part by the U.S. National Science Foundation under Grant CMMI-2000156, in part by the Korea Institute of Energy Technology Evaluation and Planning (KETEP), in part by the Ministry of Trade, Industry & Energy (MOTIE) of the Republic of Korea under Grant 20224B10200040, and in part by the Lichtenstein endowment at The Ohio State University. The associate editor coordinating the review of this article and approving it for publication was Dr. Xiao-Lei Zhang. (Corresponding author: Abdollah Shafieezadeh.)
+The authors are with the Risk Assessment and Management of Structural and Infrastructural Systems (RAMSIS) Laboratory, Department of Civil, Environmental, and Geodetic Engineering, The Ohio State University, Columbus, OH 43210 USA (e-mail: ko.444@osu.edu; shafieezadeh.1@osu.edu). Digital Object Identifier 10.1109/LSP.2024.3519265
+gain directly from data, removing the need to tune noise covariances. Split-KalmanNet (SKN) [14] further improves KN by using two separate DNNs for state and innovation covariance estimation, effectively handling mismatches in process and measurement models. The KN framework has been extended in various ways to tackle different state estimation challenges [15], [16], [17], [18], [19], [20]. Robust Uncertainty Quantification (UQ) is crucial in many applications [21], [22], [23], [24], [25]. In the KN framework, UQ can be derived analytically for linear state-space models with full-column ranked observation matrices [26], while SKN estimates error covariance through DNNs [27]. However, both approaches face limitations, including the requirement for fullrank observation matrices and risks of producing non-positive definite covariances, which may limit their applicability across a wide range of real-world scenarios. In this letter, we introduce Cholesky-KalmanNet (CKN), which significantly advances the KN framework to enhance the accuracy, robustness, and stability of state estimation. Our key contributions are summarized as follows: i) Enabling Precise Error Covariance Estimation: By enforcing mathematical constraints through Cholesky decomposition within a recurrent DNN architecture, we ensure positive definite error covariance matrices, enabling UQ for estimated states in any problem. Additionally, the proposed enforcement of the mathematical constraints reduces the parameter space estimated by DNNs to nearly half compared to SKN, reducing training time, lowering training data requirements, and mitigating overparameterization; ii) Enhanced State Estimation: The CKN architecture integrates estimated error covariance through a proposed hybrid loss function, improving the accuracy of state estimates. Furthermore, Confidence Intervals (CIs) generated by CKN can capture the transient fluctuation in the error estimates; and iii) Rigorous Benchmark Validation: We demonstrate superior accuracy, robustness, and stability of CKN across diverse scenarios including varying noise levels, different degrees of system model inaccuracies, and model training variance with respect to training sets.
+II. PROBLEM FORMULATION AND PRELIMINARIES
+Dynamic systems are analyzed using discrete-time statespace models, defined at each time step t, given as:
+xt = f (xt−1) + wt, xt ∈ Rm (1a)
+yt = h (xt) + vt, yt ∈ Rn (1b)
+where xt is the state vector, evolving through a nonlinear state function f (·), and yt is the observation vector obtained via a nonlinear observation function h(·). The random processes wt
+1070-9908 © 2024 IEEE. All rights reserved, including rights for text and data mining, and training of artificial intelligence and similar technologies. Personal use is permitted, but republication/redistribution requires IEEE permission. See https://www.ieee.org/publications/rights/index.html for more information.
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on October 16,2025 at 01:25:12 UTC from IEEE Xplore. Restrictions apply.
+
+
+KO AND SHAFIEEZADEH: CHOLESKY-KALMANNET: MODEL-BASED DEEP LEARNING WITH POSITIVE DEFINITE ERROR COVARIANCE 327
+and vt are white Gaussian with zero mean and covariances
+E[wtwtT ] = Qt and E[vtvtT ] = Rt.
+A. Model-Based Extended Kalman Filter
+The EKF is widely used for state estimation in dynamic systems with nonlinear state and observation models. The main filter equations are as follows: Prediction Step:
+xˆt|t−1 = f (xˆt−1|t−1
+) (2a)
+Σˆ t|t−1 = Ft−1 ˆΣt−1|t−1FT
+t−1 + Qt (2b)
+Update Step:
+xˆt|t = xˆt|t−1 + Kt
+(yt − yˆt|t−1
+) (3a)
+Σˆ t|t = (I − KtHt) ˆΣt|t−1 (3b)
+Kt = Σˆ t|t−1HT
+t Sˆ−1
+t|t−1 (3c)
+where Ft = ∂f
+∂x |x=xˆt|t , Ht = ∂h
+∂x |x=xˆt|t−1 , yˆt|t−1 = h(xˆt|t−1),
+and Sˆt|t−1 = HtΣˆ t|t−1HtT + Rt.
+EKF’s dependence on the physical model, which may be inaccurate, has led to integrating Deep Learning (DL) techniques within the KF framework for improved performance.
+B. Deep Learning-Aided Kalman Filters
+In KN, the Kalman gain Kt(Θ), where Θ represents the set of trainable parameters, is estimated using Recurrent Neural Networks (RNNs), particularly the Gated Recurrent Unit (GRU). The update equation for the KN is defined as xˆt|t = xˆt|t−1 + Kt(Θ)(yt − yˆt|t−1), where Kt(Θ) is adjusted continuously through training. For a comprehensive overview of KN, we refer to [13]. Unlike the conventional KN where a single network estimates the Kalman gain, SKN employs two separate networks. The first
+network, Gt1(Θ1), is designed to learn the prior covariance ma
+trix of the state Σt|t−1 implicitly. The second network, Gt2(Θ2), focuses on learning the inverse of the innovation covariance
+matrix S−1
+t|t−1 implicitly. The Kalman gain matrix is then con
+structed as Kt(Θ1, Θ2, Ht) = Gt1(Θ1)HtT Gt2(Θ2). This architectural split enables SKN to effectively handle discrepancies in process and measurement noises. For further details of SKN, we refer to [14].
+III. CHOLESKY-KALMANNET
+A. Uncertainty Quantification in DNN-Aided KFs
+Klein et al. [26] introduced a method for KN to estimate
+the error covariance, Σˆ t|t, through analytical matrix operations,
+involving an inverse of matrix product, H ̃ t = (HtHtT )−1, which
+requires Ht to be full-column rank, thus limiting its applicability. Additionally, this approach may result in non-positive definite covariance matrices. SKN, in contrast, uses RNNs to estimate Σt|t−1 and St|t−1, and subsequently derives the posterior covari
+ance Σˆ t|t [27]. However, the covariances estimated from RNNs may not consistently be positive definite, leading to inaccurate or even invalid UQ. To address these issues, we propose integrating a new neural layer within the RNN architecture, which enforces positive definiteness in covariance matrices, significantly enhancing stability and applicability across diverse contexts.
+B. Positive Definite Enforcing Layer for Error Covariance
+The proposed CKN integrates a Positive Definite Enforcing Layer (PDEL) within the RNN architecture to ensure that prior and error residual covariance matrices remain positive definite, as shown in Fig. 1. The PDEL leverages Cholesky decomposition to produce positive definite matrices from any real input [28]. For a symmetric matrix C, the decomposition is C = LLT , where L is a lower triangular matrix with positive diagonal values, ensuring C is positive definite. In CKN, the PDEL transforms a vector Ap×1 from RNN outputs into a positive definite matrix Cq×q, with the relation p = q(q + 1)/2. This process involves reshaping A into a lower
+triangular matrix L′ as:
+A=
+⎡
+⎢⎢⎢⎣
+a1 a2
+...
+ap
+⎤
+⎥⎥⎥⎦ → L′ =
+⎡
+⎢⎢⎢⎣
+p(a1) a2 p(a3) 0
+... ... . . .
+· · · · · · · · · p(ap)
+⎤
+⎥⎥⎥⎦ (4)
+where the function p(·) represents any strictly positive function, such as exponential, square, or ReLU. In this work, we empirically selected the absolute function, defined as p(a) = |a| + ε where ε >0 is a small positive constant ensuring positive diagonal terms. This function was chosen empirically, as it provided smoother and more effective training compared to other functions such as exponential or ReLU, leading to more accurate results. The positive definite matrix is then obtained as C =
+L′L′T . In addition, PDEL reduces the number of entries in the covariance matrix by nearly 50%, allowing efficient training on smaller datasets, which is beneficial in real-world scenarios with limited data. The matrix (I − KtHt), in (3b), is essential for estimating
+Σˆ t|t by adjusting the prior covariance Σˆ t|t−1 with new measurement information. This matrix is typically non-symmetric and not inherently positive definite. Nevertheless, when Ht and Rt are such that Kt remains well-bounded, it generally serves as a stable transformation matrix.
+C. Training to Predict Error Covariance
+The additional PDEL enables the estimation of the positive definite posterior covariance Σˆ t|t. However, training based on (6), focused solely on state estimation, does not ensure that Σˆ t|t accurately reflects the true error covariance. To address this, we propose an alternative loss function as:
+Ltotal = (1 − β)L 2 + βLcov (5)
+where
+L2= 1
+N
+N ∑
+i=1
+1
+Ti
+T ∑i
+t=1
+∥∥∥x(i)
+t − xˆ(i)
+t|t
+∥∥∥
+2
+2 , and (6)
+Lcov = 1
+N
+N ∑
+i=1
+1
+Ti
+T ∑i
+t=1
+∑ m
+j=1
+∑ m
+k=1
+∣∣∣∣
+[
+e(i)
+t e(i)T
+t
+]
+j,k −
+[Σˆ (i)
+t|t
+]
+j,k
+∣∣∣∣ .
+(7)
+The superscript (i) denotes the ith data sample; for example,
+x(i)
+t represents the true state at time step t for the ith sample.
+Additionally, e(i)
+t = x(i)
+t − xˆ(i)
+t|t represents the estimation errors,
+and β ∈ [0, 1] balances the emphasis between L 2 and Lcov. The first term L 2 minimizes the MSE between true and estimated states, ensuring precise state tracking. The second term
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on October 16,2025 at 01:25:12 UTC from IEEE Xplore. Restrictions apply.
+
+
+328 IEEE SIGNAL PROCESSING LETTERS, VOL. 32, 2025
+Fig. 1. Block diagrams for CKN: (a) Split-GRU architecture used to estimate the innovation covariance ˆSt|t−1 and the state covariance ˆPt|t−1. The architecture includes GRU layers combined with the Positive Definite Enforcing Layer (PDEL). (b) Detailed CKN architecture, comprising a fully connected (FC) input layer, followed by a GRU layer, another FC output layer, and ending with the PDEL, which reshapes the output, applies Cholesky decomposition, and enforces positive definiteness in the output covariance matrix.
+Lcov minimizes discrepancies between actual residuals and the estimated covariance Σˆ t|t, capturing interdependencies among state variables by incorporating both diagonal and off-diagonal elements. Together, these terms enable the network to provide accurate state estimates and reliable error covariance estimates. Furthermore, this total loss function explicitly guides training to produce the posterior covariances that are not only aligned with the observed data discrepancies but also meet the fundamental statistical requirements for valid covariances.
+IV. NUMERICAL EXAMPLES
+In this section, unless stated otherwise, the noise covariances,
+Qt and Rt, are defined as σ2wI and σv2I, respectively. We compare EKF, KN, SKN, and CKN. To model the variability
+of the noise, we define a noise ratio ν = σv2/σ2w. The code for
+CKN has been made available via GitHub.1
+A. Synthetic Linear State and Nonlinear Observation Models
+The first benchmark example consists of linear state evolution and nonlinear observation models as [14]:
+xt+1 =
+[cos( π
+18 ) − sin( π
+18 )
+sin( π
+18 ) cos( π
+18 )
+]
+xt + wt xt ∈ R2 (8a)
+yt = [‖xt‖2 atan2 (xt)]T + vt yt ∈ R2 (8b)
+where xt = [x1 x2]T . In this example, we want to examine the DNN-aided KFs under varying noise ratio ν=0 to 50 [dB], while
+fixing the process variance σ2w=10−3. For each noise ratio, data sets comprising 1,000 training time sequences and 300 testing time sequences were generated synthetically. Each set features different realizations of measurement and process noise, with training and testing data having Ttrain = 30 and Ttest = 50. Fig. 2 presents the MSE comparison for a range of ν. CKN consistently achieves the lowest MSE across all ν values, making it the most robust method among those evaluated. Fig. 3 present the error plots for x2 with 99% CIs for a case of ν=0. The gray lines represent the error time series for the 300 individual state estimates. Both EKF and KN exhibit large deviations. Additionally, the observed negative variances for KN is a clear sign of instability in the estimation process. SKN also produces negative variance estimates, which is statistically
+1[Online]. Available: https://github.com/RAMSIS-Lab/ckn-spl-public
+Fig. 2. MSE comparison for different method as varying ν [dB] for Section IV-A.
+Fig. 3. Comparison for Error and 99% CI for ν = 0 for IV-A: (a) EKF, (b) KN, (c) SKN, and (d) CKN.
+invalid. In contrast, CKN demonstrates improved accuracy and avoids negative variances observed in KN and SKN. Moreover, the CKN’s CIs effectively capture the transient fluctuation around t=35, showcasing CKN’s ability for precise UQ.
+B. Synthetic Nonlinear State and Nonlinear Observation Models
+We explore a nonlinear system with sinusoidal state evolution and second-order polynomial observation model [13]:
+f (x) = α · sin (β · x + φ) + δ x ∈ R2 (9a)
+h(x) = a · (b · x + c)2 y ∈ R2 (9b)
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on October 16,2025 at 01:25:12 UTC from IEEE Xplore. Restrictions apply.
+
+
+KO AND SHAFIEEZADEH: CHOLESKY-KALMANNET: MODEL-BASED DEEP LEARNING WITH POSITIVE DEFINITE ERROR COVARIANCE 329
+TABLE I PARAMETERS OF INACCURATE SYSTEM MODELS FOR SECTION IV-B
+TABLE II MSE FOR THREE TIERS OF PARAMETERS FOR SECTION IV-B
+Fig. 4. (a) Estimated trajectory comparison and (b) MSE variation for 10 different data splits for IV-C.
+We consider three cases, i.e., Tier 1, Tier 2, and Tier 3, with increasing levels of inaccuracy in system parameters as tabulated in Table I. In the following, training and testing data were
+generated with σ2w = 10−3 and ν =10 [dB]. Table II summarizes the MSE values, where the results underscore CKN’s ability to maintain high accuracy and reliable performance even under significant model mismatches, making it the most robust method among those evaluated.
+C. Real World Dynamics: Michigan NCLT Data Set
+We evaluate CKN using the Michigan NCLT dataset [29]. This dataset includes various labeled trajectories, documenting noisy sensor data such as GPS and odometer readings, along with the ground truth positions of a Segway robot. A nearly constant acceleration motion model is adopted as the state evolution model [30]. Our goal is to track the underlying state vector using only noisy velocity observations. We selected the session dated 2012-01-22 with 5,850 time steps. After preprocessing, we retained 5,150 time steps (103 sequences of T = 50) and split the trajectory into two sections: 80 sequences for training and 10 sequences for validation. For testing, we used another trajectory dated 2012-04-29. An ideal stable model should exhibit minimal performance variation across different data splits. To evaluate the stability of DNN-aided KFs under varying training and testing conditions, we trained networks using three different algorithms (KN, SKN, and CKN) 10 times. Each training instance involved the random selection of 80 training sequences and 10 validation sequences from the 103 shuffled sequences of T = 50. Fig. 4(a) presents one of the 10 different estimated trajectories for each algorithm together with the ground truth trajectory. The
+Fig. 5. Performance variance for 10 runs of DNN-aided KFs for IV-C: (a) Median of SE for position with a band of SE variation and (b) Width of SE variation for testing data.
+CKN result exhibits the closest alignment to the ground truth. Fig. 4(b) shows the box plot of MSE variations of position, illustrating that CKN achieves the lowest MSE values overall as well as the smallest MSE variation. Fig. 5(a) illustrates the Squared Error (SE) of position with respect to time for each algorithm together with the width of SE variation for the 10 different runs. The solid line represents the median SE for the 10 runs. Results indicate that CKN consistently achieves the lowest median SE at most time steps. The shaded area represents the width of SE variations for the 10 runs. Fig. 5(b) depicts the width of SE variations (maximum SE - minimum SE) for the 10 runs for each DNN-aided KF due to variance in training. The narrowest width of SE variations for CKN indicates its superior stability in performance.
+V. CONCLUSION
+Our proposed approach, Cholesky-KalmanNet (CKN), enhances the accuracy, robustness, and stability of state and error covariance estimation. By integrating a new layer to embed mathematical constraints through the Cholesky decomposition, CKN ensures that the resulting posterior error covariance inherently satisfies the condition of positive definiteness, which is crucial for the statistical accuracy of state estimation. Furthermore, we propose a novel hybrid loss function that minimizes discrepancies between the estimated and empirical error covariance, accounting for interdependencies among state variables. This comprehensive loss function maintains the positive definiteness throughout the training phase and ensures a thorough minimization of estimation errors, even effectively capturing transient fluctuations in error estimates. Extensive evaluations on both synthetic and real-world datasets demonstrate CKN’s superior performance, offering more accurate state estimations and greater robustness against system inaccuracies and observation noise. CKN also shows enhanced stability across varying training data partitions. These attributes position CKN as an accurate and stable method for state estimation in complex and noisy environments.
+ACKNOWLEDGMENT
+Any opinions, findings, and conclusions are those of the authors and do not necessarily reflect those of the sponsoring organization.
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on October 16,2025 at 01:25:12 UTC from IEEE Xplore. Restrictions apply.
+
+
+330 IEEE SIGNAL PROCESSING LETTERS, VOL. 32, 2025
+REFERENCES
+[1] O. El-Khoury, C. Kim, A. Shafieezadeh, J. E. Hur, and G. H. Heo, “Mitigation of the seismic response of multi-span bridges using MR dampers: Experimental study of a new SMC-based controller,” J. Vib. Control, vol. 24, no. 1, pp. 83–99, 2018. [2] M. Sun, M. E. Davies, I. K. Proudler, and J. R. Hopgood, “Adaptive kernel Kalman filter based belief propagation algorithm for maneuvering multitarget tracking,” IEEE Signal Process. Lett., vol. 29, pp. 1452–1456, 2022. [3] Z. Wei, G. Dong, X. Zhang, J. Pou, Z. Quan, and H. He, “Noise-immune model identification and state-of-charge estimation for lithium-ion battery using bilinear parameterization,” IEEE Trans. Ind. Electron., vol. 68, no. 1, pp. 312–323, Jan. 2021. [4] S. Battilotti, “Performance optimization via sequential processing for nonlinear state estimation of noisy systems,” IEEE Trans. Autom. Control, vol. 67, no. 6, pp. 2957–2972, Jun. 2022. [5] Y. Wang, Y. Sun, and V. Dinavahi, “Robust forecasting-aided state estimation for power system against uncertainties,” IEEE Trans. Power Syst., vol. 35, no. 1, pp. 691–702, Jan. 2020. [6] R. E. Kalman, “A new approach to linear filtering and prediction problems,” J. Basic Eng., vol. 82, no. 1, pp. 35–45, Mar. 1960.
+[7] A. H. Jazwinski, Stochastic Processes and Filtering Theory. North Chelmsford, MA, USA: Courier Corporation, 2007. [8] R. Zhan and J. Wan, “Neural network-aided adaptive unscented Kalman filter for nonlinear state estimation,” IEEE Signal Process. Lett., vol. 13, no. 7, pp. 445–448, Jul. 2006. [9] S. Julier, J. Uhlmann, and H. Durrant-Whyte, “A new method for the nonlinear transformation of means and covariances in filters and estimators,” IEEE Trans. Autom. Control, vol. 45, no. 3, pp. 477–482, Mar. 2000. [10] J. Qi, K. Sun, J. Wang, and H. Liu, “Dynamic state estimation for multi-machine power system by unscented Kalman filter with enhanced numerical stability,” IEEE Trans. Smart Grid, vol. 9, no. 2, pp. 1184–1196, Mar. 2018. [11] I. Grooms, Y. Lee, and A. J. Majda, “Ensemble Kalman filters for dynamical systems with unresolved turbulence,” J. Comput. Phys., vol. 273, pp. 435–452, 2014. [12] R. Dehghannasiri, M. S. Esfahani, and E. R. Dougherty, “Intrinsically Bayesian robust Kalman filter: An innovation process approach,” IEEE Trans. Signal Process., vol. 65, no. 10, pp. 2531–2546, May 2017. [13] G. Revach, N. Shlezinger, X. Ni, A. L. Escoriza, R. J. G. van Sloun, and Y. C. Eldar, “KalmanNet: Neural network aided Kalman filtering for partially known dynamics,” IEEE Trans. Signal Process., vol. 70, pp. 1532–1547, 2022. [14] G. Choi, J. Park, N. Shlezinger, Y. C. Eldar, and N. Lee, “Split-KalmanNet: A robust model-based deep learning approach for state estimation,” IEEE Trans. Veh. Technol., vol. 72, no. 9, pp. 12326–12331, Sep. 2023. [15] I. Buchnik, G. Revach, D. Steger, R. J. Van Sloun, T. Routtenberg, and N. Shlezinger, “Latent-KalmanNet: Learned Kalman filtering for tracking from high-dimensional signals,” IEEE Trans. Signal Process., vol. 72, pp. 352–367, 2023.
+[16] I. Buchnik, G. Sagi, N. Leinwand, Y. Loya, N. Shlezinger, and T. Routtenberg, “GSP-KalmanNet: Tracking graph signals via neural-aided Kalman filtering,” IEEE Trans. Signal Process., vol. 72, pp. 3700–3716, 2024. [17] D. Shen, Y. Ma, G. Liu, J. Hu, Q. Weng, and X. Zhu, “Dynamical variational autoencoders and KalmanNet: New approaches to robust highprecision navigation,” Int. Arch. Photogrammetry Remote Sens. Spatial Inf. Sci., vol. 48, pp. 1141–1146, 2023. [18] X. Ni, G. Revach, and N. Shlezinger, “Adaptive KalmanNet: Data-driven Kalman filter with fast adaptation,” in Proc. 2024 IEEE Int. Conf. Acoust. Speech Signal Process., 2024, pp. 5970–5974.
+[19] P. Hao, O. Karakus, and A. Achim, “RKFNet: A novel neural network aided robust Kalman filter,” 2024, arXiv:2403.16756. [20] N. Piperigkos, A. Gkillas, C. Anagnostopoulos, and A. S. Lalos, “Cooperative plug-and-play-KalmanNet for 4D situational awareness in autonomous driving,” in Proc. IEEE 7th Int. Conf. Ind. Cyber- Phys. Syst., 2024, pp. 1–6. [21] Z. Quan, S. Han, and W. H. Kwon, “A robust FIR filter for linear discretetime state–space signal models with uncertainties,” IEEE Signal Process. Lett., vol. 14, no. 8, pp. 553–556, Aug. 2007. [22] Z. K. Nagy and R. D. Braatz, “Robust nonlinear model predictive control of batch processes,” AIChE J., vol. 49, no. 7, pp. 1776–1786, 2003. [23] S. Wang, Z. Wu, and A. Lim, “Robust state estimation for linear systems under distributional uncertainty,” IEEE Trans. Signal Process., vol. 69, pp. 5963–5978, 2021. [24] M.-Y. Zhao, W.-J. Yan, K.-V. Yuen, and M. Beer, “Non-probabilistic uncertainty quantification for dynamic characterization functions using complex ratio interval arithmetic operation of multidimensional parallelepiped model,” Mech. Syst. Signal Process., vol. 156, 2021, Art. no. 107559. [25] M. Imholz, M. Faes, D. Vandepitte, and D. Moens, “Robust uncertainty quantification in structural dynamics under scarse experimental modal data: A Bayesian-interval approach,” J. Sound Vib., vol. 467, 2020, Art. no. 114983. [26] I. Klein, G. Revach, N. Shlezinger, J. E. Mehr, R. J. van Sloun, and Y. C. Eldar, “Uncertainty in data-driven Kalman filtering for partially known state-space models,” in Proc. 2022 IEEE Int. Conf. Acoust. Speech Signal Process., 2022, pp. 3194–3198. [27] Y. Dahan, G. Revach, J. Dunik, and N. Shlezinger, “Uncertainty quantification in deep learning based Kalman filters,” in Proc. 2024 IEEE Int. Conf. Acoust. Speech Signal Process., 2024, pp. 13121–13125.
+[28] K. Xu, D. Z. Huang, and E. Darve, “Learning constitutive relations using symmetric positive definite neural networks,” J. Comput. Phys., vol. 428, 2021, Art. no. 110072. [29] N. Carlevaris-Bianco, A. K. Ushani, and R. M. Eustice, “University of Michigan North Campus long-term vision and LiDAR dataset,” Int. J. Robot. Res., vol. 35, no. 9, pp. 1023–1035, 2015. [30] M. A. Richards, J. A. Scheer, and W. A. Holm, Eds., Principles of Modern Radar: Basic Principles. Raleigh, NC, USA: SciTech Publishing, 2010.
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on October 16,2025 at 01:25:12 UTC from IEEE Xplore. Restrictions apply.
