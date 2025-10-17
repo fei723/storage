@@ -1,0 +1,364 @@
+Neural Extended Kalman Filters for Learning and Predicting Dynamics of Structural Systems
+Journal Title XX(X):1–14 ©The Author(s) 2022 Reprints and permission: sagepub.co.uk/journalsPermissions.nav DOI: 10.1177/ToBeAssigned www.sagepub.com/
+SAGE
+Wei Liu1,2, Zhilu Lai2,3,4,5, Kiran Bacsa2,3 and Eleni Chatzi2,3
+Abstract
+Accurate structural response prediction forms a main driver for structural health monitoring and control applications. This often requires the proposed model to adequately capture the underlying dynamics of complex structural systems. In this work, we utilize a learnable Extended Kalman Filter (EKF), named the Neural Extended Kalman Filter (Neural EKF) throughout this paper, for learning the latent evolution dynamics of complex physical systems. The Neural EKF is a generalized version of the conventional EKF, where the modeling of process dynamics and sensory observations can be parameterized by neural networks, therefore learned by end-to-end training. The method is implemented under the variational inference framework with the EKF conducting inference from sensing measurements. Typically, conventional variational inference models are parameterized by neural networks independent of the latent dynamics models. This characteristic makes the inference and reconstruction accuracy weakly based on the dynamics models and renders the associated training inadequate. In this work, we show that the structure imposed by the Neural EKF is beneficial to the learning process. We demonstrate the efficacy of the framework on both simulated and real-world structural monitoring datasets, with the results indicating significant predictive capabilities of the proposed scheme.
+Keywords
+Neural Extended Kalman Filters, variational inference, learnable filters, deep learning, structural dynamics, structural health monitoring, digital twin
+Introduction
+Digital twins have attracted interest in a wide range of applications, among which structural digital twins have shown promise in virtual health monitoring, decisionmaking and predictive maintenance 1. A digital twin is a virtual representation of a connected physical asset and encompasses its entire product lifecycle 2. They acquire and assimilate observational data from the physical system and adopt this information to update dynamics models, which represent the evolving physical system 3. The underlying dynamic model thus significantly underpins the establishment of a digital twin 4. Unlike physics-based modeling, which relies on first principles 5, data-driven modeling resorts to use of learning algorithms to infer the underlying mechanisms that drive a system’s response 6. The latter class of models plays an essential role in vibration-based structural health monitoring (SHM) 7, as a main approach to understanding the actual properties of the assessed structural systems, and to performing accurate dynamical response prediction with the established models. Diverse data-driven techniques have been developed in the context of SHM, including vibration-based modeling based on modal parameters derived from measured structural response signals 8 and conventional time series analysis techniques, including those of the AutoRegressive class 9,10. These methods are typically non-trivial to apply on complex structures with large inherent uncertainties, such as largescale civil infrastructure systems. Further to classical data-driven approaches, which draw from system identification, machine learning (ML)
+and deep learning (DL), in particular, offer powerful and promising tools for modeling complex systems or capturing latent phenomena. Important applications include image recognition 11–13, speech recognition 14, autonomous driving 15, and more. Their aptitude in recognizing patterns in data and doing so via use of reduced latent features renders such schemes potent tools for large complex structural dynamics modeling 7,16,17, which exhibit complex, oftentimes nonlinear, behaviour. Many recent works have been focusing on bridging deep learning and structural dynamics 18,19. We classify these methods into two main categories, namely direct mappings and generative models. The first class essentially learns a function that maps the input (force/load) to the output (response) of the system. This class of methods
+1Department of Industrial Systems Engineering and Management, National University of Singapore, Singapore, Singapore 2Chair of Structural Mechanics and Monitoring, Department of Civil, Environmental and Geomatic Engineering, ETH Z  ̈urich, Z  ̈urich, Switzerland 3Future Resilient Systems, Singapore-ETH Centre, Singapore 138602, Singapore 4Internet of Things Thrust, Information Hub, HKUST(GZ), Guangzhou, China 5Department of Civil and Environmental Engineering, HKUST, Hong Kong, China
+Corresponding author:
+Zhilu Lai, Internet of Things Thrust, Information Hub, HKUST(GZ), Guangzhou 511458, China. Formerly at Singapore-ETH Centre. Email: zhilulai@ust.hk
+Prepared using sagej.cls [Version: 2017/01/17 v1.20]
+arXiv:2210.04165v2 [cs.LG] 3 Jul 2023
+
+
+2 Journal Title XX(X)
+exploits neural networks with customized architectures and physical constraints tailored to the problem at hand 20–23, such as recurrent neural networks (RNN) and convolutional neural networks (CNN). The caveat of these methods lies in constructing a mere input-output mapping without explicitly modeling the governing dynamics, thus implying that interpretability and generalizability may not be guaranteed. Meanwhile, vibration data measured from operating engineered systems usually embody and reflect the underlying governing dynamics of that system. In this respect, the second class of methods, which fall in the generative model class, attempts to learn a dynamical model that best captures the underlying dynamic evolution. Deep learning-based state space modeling, either in continuous or in discretized format, has been employed to perform datadriven modeling with various deep learning methods 24–30. This class of methods aligns with the common approach to modeling dynamics, rendering such a representation interpretable, even though it is delivered via learned neural network functions. This paper will be focusing on the second class.
+Figure 1. Learning a dynamical system from data using a DL-based state space approach.
+As shown in Figure 1, the key idea of this second class lies in learning three models: (i) the inference model: modeling how the latent variable vector z can be estimated from observation/data x; (ii) the transition model: modeling how the latent variable z evolves over time; and (iii) the observation model: modeling how the measured data x are generated from z. For convenience, the transition and observation models are collectively referred to as dynamics models throughout this paper. Dynamical variational autoencoders (VAEs) 29,31 is a class of methods following the architecture described in Figure 1, for modeling a dynamical system from data (x → z → x). In addition to the dynamics models, the inference models in VAE-based methods are typically parameterized by neural networks. As shown in 27,32 and studied further in 33, in this setting, the variational objective depends mainly on the inference model, while the dynamic models are relegated to a regularizer for the inference network. Often, this makes the learned model unsuitable for prediction due to the inaccuracy of the dynamics models employed to generate predictions. On the other hand, while VAEs can be too flexible with both dynamics models and inference models parameterized by neural networks, the conventional Bayesian filtering methods 34–36 go to the other extreme, requiring known dynamics models, usually derived from physics-based representations, and conduct the inference only using these dynamics models with no further inference models. Formulating suitable transition and observation models can be infeasible and challenging in many scenarios, especially when the dynamics of the system is not easily modeled
+or fully understood, or the sensory observations stem from vision-based data (images, videos). Over the past years, deep learning has become the method of choice for processing such data. Recent work 33,37–40 showed that it is also possible to render the dynamics models of Bayesian filters learnable and train them end-to-end, leveraging deep learning techniques and filtering algorithms. For Kalman Filters 37, Extended Kalman Filters 33, Unscented Kalman Filters 38 and Particle Filters 39,40, the respective works showed that such learnable filters systematically outperform unstructured neural networks like RNN, LSTM and CNN 38.
+Combining the benefits of the VAE- and Kalman filteringbased strategies, and inspired by related work in the robotics community 33,37–40, we utilize the learnable EKF proposed in 33 and name it as Neural Extended Kalman Filter (Neural EKF) in this paper for learning and predicting complex structural dynamics in real scenarios, based on these main principles: (i) we use EKF formulas to conduct closed-form inference instead of implementing an additional neural network to overtake this task, thus allowing for the training to focus on the dynamics models rather than the inference task; and (ii) we eliminate the requirement of explicitly known transition and observation models imposed by conventional Bayesian filtering approaches. At this point, we wish to clarify that the idea we here present is originally adapted from 33, where a Replay Overshooting framework is presented. The Neural EKF presented in this paper is a modified version of the previous scheme, adapted to structural dynamics problems. We further wish to clarify that an existing framework termed Neural EKF 41 appears in existing literature, which is however different to what we here propose. In that work, the transition model comprises the Jacobian of estimated system dynamics as a prior, with an error correction term modeled by neural networks. That framework is termed Neural EKF due to the use of the Jacobian in the transition model, while the neural network simply learns a discrepancy term. There is no actual extended Kalman filtering process, while further the observation and inference models are not considered, as carried out in this work. Here we choose to term this framework the Neural EKF since our suggested scheme comprises a fully learnable version of the original EKF.
+From the perspective of Kalman filtering, the Neural EKF is a learnable implementation of the EKF, where the transition and observation models can be learned by endto-end training. From the perspective of VAE modeling, the Neural EKF draws from a variational learning methodology with the EKF serving as the inference model, which conducts inference using only dynamics models and does not impose additional hyper-parameters to be learned. We use Figure 2 to summarize the comparisons between VAEs, the Neural EKF and the EKF. We validate the framework on three different scenarios to demonstrate its value in learning dynamical systems. Further to verification on simulated data, two experimental case studies on seismic and wind turbine monitoring are presented to validate the capability of the framework to capture the underlying dynamics of complex physical systems. The scheme is shown to perform accurate predictions, which is essential for adoption in downward applications, such as structural health monitoring and decision making.
+Prepared using sagej.cls
+
+
+Liu et al. 3
+Figure 2. Comparison of the variational autoencoder, Neural EKF, and EKF, using a single node as an instance. Solid lines denote the dynamics model. In the VAE and the Neural EKF, the transition model pθt (z) and observation model pθo (x|z), are parameterized by neural networks with parameters θ = θt
+S θo; dashed lines denote the inference model. Variational autoencoder: the inference network qφ(z|x) is configured using a separate set of parameters φ than the generative model parameters θ. Throughout this paper, the Deep Markov Model (DMM) is adopted as the standard dynamical VAE. Neural EKF: there are no additional parameters φ involved for the inference model. Instead, as inference is performed via the linearized Kalman filter equations, the inference model implicitly uses θ that parameterizes the dynamics model. The training process exclusively relies on the parameters θ, thus resulting in a more accurate dynamics model. EKF: there are no learnable parameters involved, and all the governing equations are known, as dictated by the structure of conventional Extended Kalman Filters.
+Preliminaries
+Variational Autoencoders and Deep Markov Models
+Variational autoencoders (VAEs) 31 are popularly used for capturing useful latent representations z from data x by reconstructing the VAE input to an output vector. The VAE can be extended to a dynamical version by considering the temporal evolution of the latent variables 29. Among various dynamical VAEs, Deep Markov Models (DMMs 32) offer a primary example of unsupervised training of a deep state-space model. By chaining an approximate inference model with a generative model and using the variational lower bound maximization approach, DMMs deliver the most direct extension of static VAEs to account for temporal data 29. The DMM couples a transition model pθ(zt|zt−1), describing temporal evolution of the latent states, with an observation model pθ(zt|xt), serving as a decoder and describing the process from latent states to observations, and an inference model qφ(zt|x1:T ), serving as an encoder, which approximates the true posterior distribution p(zt|x1:T ).
+The training of a VAE consists in maximizing a variational lower bound of the data log-likelihood log p(x). Upon application of the variational principle on the inference model qφ(zt|x1:T ), the evidence lower bound (ELBO) of the data log-likelihood is given as follows:
+log pθ(x) ≥ L(θ, φ; x) := Eqφ(z|x)[log pθe (x|z)]
+− KL[qφ(z|x)||pθt (z|x)], (1)
+where the KL-divergence is defined as KL[q(z)||p(z)] := R q(z) log q(z)
+p(z) dz. Apart from the parameters θ involved
+Figure 3. Comparison of predictive capabilities of the DMM versus a Neural EKF on a 2-DOF Duffing oscillator system. The displacement response is assumed to serve as the measurements set.
+in transition and observation models, the VAE architecture typically employs an additional inference network, which is independently parameterized by the hyper-parameters φ of the corresponding neural networks. The key idea of VAE is to approximate the posterior distribution with the introduced inference network. However, the objective function ELBO largely depends on the quality of the inference model through the first reconstruction term, which does not involve a transition model, and the influence of the transition models is indirectly relegated to a regularizer for the inference model, reflected in the second KL-divergence term 33. The KL-divergence itself is a regularization term and it attempts to only make the single-step dynamics transition similar to the posterior given by the inference network. The above arguments indicate that the quality of VAE reconstructions, as measured by the value of the objective ELBO, strongly depends on the inference model but rather weakly on the transition models. This characteristic of the training objective makes the learned model capable of delivering accurate inference results under availability of observation (monitoring) data, but unsuitable for prediction due to the insufficient training of the transition models. As shown in Fig. 3, the result demonstrates the advantages of the Neural EKF over the DMM, which is, as mentioned, a dynamical VAE model that directly extends the static VAE to account for temporal data. The results are demonstrated on a 2-DOF Duffing system, defined by Equation (28) appearing in the Applications section. It is observed that the DMM fails to deliver sufficiently accurate predictions, while the predicted responses, furnished by the Neural EKF, very well fit the true (reference) responses.
+Extended Kalman Filtering and Smoothing
+For nonlinear state estimation and parameter identification in civil and mechanical engineering, the Extended Kalman Filter (EKF) has been a popular choice for weakly nonlinear systems, mainly due to its ease of implementation, robustness and suitability for real-time applications. It
+Prepared using sagej.cls
+
+
+4 Journal Title XX(X)
+assumes a sequence of measurements x1:T from a monitored dynamical system, which are generated by some latent states z1:T that are not necessarily directly observed. The transition from a state zt−1 to the next state zt is termed as transition, and the process from a state zt1 to its corresponding observation xt is termed as observation. Compared to dynamical VAEs, the EKF assumes that the transition and observation models are given, as described by the following two equations:
+zt = f (zt−1, ut−1) + wt, (transition) (2)
+xt = g(zt) + vt, (observation) (3)
+where f and g are two known linear/nonlinear functions governing the transition and observation models, and wt ∼ N (0, Qt), vt ∼ N (0, Rt) are Gaussian noise sources with mean zero and covariances Qt and Rt, respectively. EKF assumes that the inferred posterior distributions of latent states are based on past and current observations x1:t and driving force u1:t, and follow a Gaussian distribution:
+q(zt|x1:t, u1:t) = N (μt|t, Σt|t) (4)
+Here μt|t and Σt|t represent the mean and covariance of the posterior distribution. The Kalman Filter (KF) 42 offers a closed-form of the posterior distributions q(zt|x1:t, u1:t) of latent states and provides exact inference for linear systems. The EKF conducts approximate inference, employing a linearization of the nonlinear equations. For EKF, the inference of the posterior distribution is obtained by iteratively executing the following two steps. The first step predict is to compute the posterior distribution q(zt|x1:t−1, u1:t−1) = N (μt|t−1, Σt|t−1), which is simply based on previous observations x1:t−1:
+μt|t−1 = f (μt−1|t−1, ut−1), (5)
+Σt|t−1 = At−1Σt−1|t−1AT
+t−1 + Qt−1, (6)
+where At−1 = ∂f (μt−1|t−1,ut−1)
+∂μt−1|t−1 is the Jacobian of f at
+μt−1|t−1. The second step update pertains in updating the posterior distribution from the predict step using the current observation xt:
+Kt = Σt|t−1CT
+t (CtΣt|t−1CT
+t + Rt)−1, (7)
+μt|t = μt|t−1 + Kt[xt − g(μt|t−1)], (8)
+Σt|t = (I − KtCt)Σt|t−1, (9)
+where Ct = ∂g(μt|t−1)
+∂μt|t−1 is the Jacobian of g at μt|t−1.
+The Jacobian matrices At and Ct are used as linear approximations of the original nonlinear functions f and g, respectively, for conveniently computing the involved covariances Σt|t−1 and Σt|t. The EKF is a recursive filtering method for conducting inference based on x1:t, i.e., the observations until the present time t. Since we assume that a sequence of observations x1:T is available, it is possible and reasonable to further update the inference of posterior distributions with the whole sequence of observations, with respect to a time step within the sequence. This process is termed as smoothing. The Rauch-Tung-Striebel smoothing 43 is a Kalman smoothing algorithm to infer such posterior
+distributions q(zt|x1:T , u1:T ) = N (μt|T , Σt|T ) of latent states based on the whole sequence of available observations. The smoothing process can fully make use of available data when computing the posterior distributions and generate more accurate inference results with adequate information, instead of only utilizing information before each time step, which is the case for the Kalman filtering process. Note that, compared to Eq.(4), now the posterior depends on the whole sequence of x1:T and u1:T . Once the EKF process is completed, the smoothing algorithm operates in a backward manner, from time T to 1, to update the posteriors:
+Ks
+t = Σt|tAT
+t (Σt+1|t)−1, (10)
+μt|T = μt|t + Ks
+t (μt+1|T − μt+1|t), (11)
+Σt|T = Σt|t + Ks
+t (Σt+1|T − Σt+1|t)(Ks
+t )T . (12)
+The intermediate quantities μt|t, μt+1|t, Σt|t and Σt+1|t in this smoothing process are already available at Eqs.(5)-(9), in the EKF stage.
+Prior and posterior distributions
+Here we introduce the prior and posterior distributions that will be used for computing the loss function of Neural EKFs in the later section. The final posterior distribution after application of the EKF algorithm and the smoothing step is given as q(zt|x1:T , u1:T ) = N (μt|T , Σt|T ), where μt|T and Σt|T are given in Eqs.(11) and (12). Furthermore, given zt−1 ∼ N (μt−1|T , Σt−1|T ), we can compute the distribution of each evolved zt:
+p(zt|zt−1, ut−1)
+= N (f (μt−1|T , ut−1), At−1|T Σt−1|T AT
+t−1|T + Qt−1),
+(13)
+where At−1|T = ∂f (μt−1|T ,ut−1)
+∂μt−1|T is the Jacobin of f
+at μt−1|T . Subsequently, the distribution of observation p(xt|zt), given zt ∼ N (μt|T , Σt|T ), can be derived as
+p(xt|zt) = N (g(μt|T ), Ct|T Σt|T CT
+t|T + Rt) (14)
+where Ct|T = ∂f (μt|T ,ut)
+∂μt|T .
+Neural Extended Kalman Filters
+A salient limitation of the EKF when applied to learning dynamical systems lies in the requirement for the transition model f and the observation model g to be explicitly defined or at least of known functional format. However, this is not practically feasible when applied to real-world complex systems. In tackling this limitation, the key idea of the proposed Neural EKF is to replace f and g by learnable functions, typically by neural networks. By doing this, the transition and observation models turn to be trainable and efficiently learned by minimizing the defined loss function, making the Neural EKF a flexible tool for learning the dynamics of complex systems. Also, another benefit compared to VAEs, where the inference model is parameterized by neural networks, is that the inference model of the Neural EKF follows a closed-form model. In this section, we will detail the modeling and training of the Neural EKF framework.
+Prepared using sagej.cls
+
+
+Liu et al. 5
+Extended Kalman Filters with Learnable Dynamics Models
+In Eqs.(2) and (3), if we replace f and g by learnable transition and observation functions, the framework can be described as:
+zt = fθt (zt−1, ut−1) + wt, (transition) (15)
+xt = gθo (zt) + vt, (observation) (16)
+where fθt and gθo are the learnable functions governing the transition and observation models, both parameterized by neural networks with parameters θ = θt
+S θo. The process noise sources wt and observation noise vt are assumed to follow Gaussian distributions, with respective time-invariant covariances, i.e., wt ∼ N (0, Q) and vt ∼ N (0, R) for all time steps t. The time-invariant covariances Q and R are also set as learnable parameters during the training process. It is noted that here the latent dynamics is formulated as a discrete model. Alternatively, continuous models such as Neural Ordinary Differential Equations 18 can also be implemented to model the latent dynamics if one wants to treat the latent dynamics as a continuous model, as explained in Appendix. The inference model of the Neural EKF follows the format of the EKF. This is different from the inference model in VAEs, where qφ is a separate inference network parameterized by φ independent of parameters within fθt and gθo . Since the objective ELBO largely depends on the goodness of reconstruction and inference, a separate inference network is thus weakening the training of the transition and observation models.
+Evidence Lower Bound and Training
+With Kalman filters conducting inference, the parameters to be learned are summarized in the vector θ, which includes neural network parameters of both the transition model fθt and the observation model gθo . In addition, the initial values μ0|0 and Σ0|0 and covariances Q, R for respective noises are also parameters to be learned. Similar to the VAE, the training of Neural EKFs is embedded in the variational inference methodology, with the EKF algorithm charged with conducting inference. Given any inference model qφ(zt|x) and Markovian property implied by the dynamics, the ELBO in Eq.(1) can be expressed in a factorized form (x1:T and u1:T are abbreviated as x and u in the following formulations for simplicity):
+L(θ, φ; x) =
+T
+X
+t=1
+Eqφ(zt|x,u)[log pθo (xt|zt)]
+− Eqφ(zt−1|x,u) KL qφ(zt|x, u)||pθt (zt|zt−1, ut−1) ,
+(17)
+where, in the Neural EKF, qφ(zt|x, u) is actually qθ(zt|x, u), which alleviates the requirement of additional parameters, further to θ, within the transition and observation models, and thus L(θ, φ; x) reduces to L(θ; x). Since the posterior distributions qθ(zt|x, u) can be computed in closed form by EKF, the distributions in Eq.(17) can thus be computed explicitly given zt ∼ N (μt|T , Σt|T ), as shown in Section Prior and posterior distributions. Thus, the ELBO
+Eq.(17) can be computed in a surrogate way as:
+L(θ; x) =
+T
+X
+t=1
+log pθo (xt|zt)
+− KL qθ(zt|x, u)||pθt (zt|zt−1, ut−1) ,
+given zt ∼ qθ(zt|x, u).
+(18)
+The above involved distributions are based on the prior zt ∼ N (μt|T , Σt|T ). The log-probability and KL-divergence can be computed analytically when all the involved distributions are Gaussian. The log-probability of a Gaussian distribution p(x) = N (μ, Σ) has an explicit format as:
+log p(x) = − 1
+2 log |Σ| + (x − μ)T Σ−1(x − μ)
++ dx log(2π)
+(19)
+where dx is the dimension of x. As stated in Eq.(14), since zt ∼ qθ(zt|x, u) = N (μt|T , Σt|T ) and replace g by gθo , we have p(xt|zt) = N (gθo (μt|T ), Ct|T Σt|T CT
+t|T + R) . Using Eq.(19), the log-likelihood term log pθo (xt|zt) in Eq.(18) can be computed approximately as:
+log pθo (xt|zt) given zt ∼ qθ(zt|x, u)
+=− 1
+2 log |Ct|T Σt|T CT
+t|T + R| + dx log(2π)
++ (xt − gθo (μt|T ))T (Ct|T Σt|T CT
+t|T + R)−1
+(xt − gθo (μt|T ))
+(20)
+Similarly, the KL-divergence term KL(q(z)||p(z)), when p(z) = N (μp, Σp) and q(z) = N (μq, Σq) are both Gaussian distributions, comprises an analytical form as:
+KL(q(z)||p(z)) = 1
+2
+h
+log |Σp|
+|Σq| − dz + Tr(Σ−1
+p Σq)
++ (μp − μq)T Σ−1
+p (μp − μq)
+i
+,
+(21)
+where dz is the dimension of z. As stated in Eq.(13), and replace f by fθt ,
+pθt (zt|zt−1, ut−1)
+=N (fθt (μt−1|T , ut−1), At−1|T Σt−1|T AT
+t−1|T + Q) (22)
+since we have zt−1 ∼ qθ(zt−1|x, u) = N (μt−1|T , Σt−1|T ) and zt ∼ qθ(zt|x, u) = N (μt|T , Σt|T ). Substitute these mean and covariance into Eq.(21), the KL-divergence term in Eq.(18) can be computed as:
+KL(qθ(zt|x, u)||pθt (zt|zt−1, ut−1))
+given zt−1 ∼ qθ(zt−1|x, u) = N (μt−1|T , Σt−1|T )
+=1
+2
+h
+log
+|At−1|T Σt−1|T AT
+t−1|T + Q|
+|Σt|T | − dz
++Tr((At−1|T Σt−1|T AT
+t−1|T + Q)−1Σt|T )
++(fθt (μt−1|T ) − μt|T )T (At−1|T Σt−1|T AT
+t−1|T + Q)−1
+(fθt (μt−1|T ) − μt|T )
+i
+(23)
+Prepared using sagej.cls
+
+
+6 Journal Title XX(X)
+Thus the final objective ELBO enforced by EKF and smoothing formulas can be written as:
+L(θ; x) = − 1
+2
+T
+X
+t=1
+h
+log |Ct|T Σt|T CT
+t|T + R|
++ (xt − gθo (μt|T ))T (Ct|T Σt|T CT
+t|T )−1(xt − gθo (μt|T ))
++ dx log(2π) + log
+|At−1|T Σt−1|T AT
+t−1|T + Q|
+|Σt|T | − dz
++ Tr((At−1|T Σt−1|T AT
+t−1|T + Q)−1Σt|T )
++ (fθt (μt−1|T ) − μt|T )T (At−1|T Σt−1|T AT
+t−1|T
++ Q)−1(fθt (μt−1|T ) − μt|T )
+i
+.
+(24)
+Typically, the variational objective function for the dynamical VAE framework focuses on the reconstruction loss, which largely depends on the inference model (encoder) and observation model (decoder), whereas the transition model plays a minor role in the variational objective and works as an intermediate process for training. This often results in an accurate inference model and a less meaningful transition model, which is not applicable for prediction because the transition model cannot reflect the true underlying dynamics. Therefore, it is necessary that the objective function also takes the accuracy of the transition model into consideration to ensure its closeness to the true latent dynamic process. To address this issue, we adopt the overshooting method proposed in 33, which is termed as replay overshooting. The key point lies in simply introducing the prediction loss of the generative model into the objective function. After obtaining a sequence of means and covariances {(μt|T , Σt|T )}, the initial value (μ ̄0, Σ ̄ 0) = (μ0|T , Σ0|T ) will be further used for prediction process. Then similarly as the prediction step in EKF, the predicted values are obtained via the generative model as:
+μ ̄t = f (μ ̄t−1, ut), (25)
+Σ ̄ t = At−1Σ ̄ t−1AT
+t−1 + Q, (26)
+and we receive another set of distributions q ̄(zt) =
+N (μ ̄t, Σ ̄ t) from the generative model. The final reconstruction loss is composed of the both sets of posterior distributions, i.e., the posterior distributions obtained from the Kalman inference model in Eq.(20), as well as those obtained from the transition model, weighted by α (in this paper, we set α = 0.5). These form the objective function combined with the KL loss, expressed as:
+L(θ; x) =
+T
+X
+t=1
+αEqθ(zt)[log pθ(xt|zt)]
++ (1 − α)Eq ̄θ(zt)[log pθ(xt|zt)]
+− Eqθ(zt−1)[KL(q(zt)||p(zt|zt−1, ut))] ,
+(27)
+where the first and third term are the same as in (24), while the second term is for overshooting. The pipeline of the Neural EKF is summarized in Algorithm 1.
+Algorithm 1 Neural Extended Kalman Filters Initialize parameters θ, μ0|0, Σ0|0, Q, R while θ not converged do
+for batch b = 1, ..., B do
+(μt|t, Σt|t) = EKF(θ, x1:T , Q, R)
+(Extended Kalman Filtering using Eqs.(5)-(9)) (μt|T , Σt|T ) = EKS(θ, x1:T , Q, R)
+(Extended Kalman Smoothing using Eqs.(10)-(12)) (μ ̄t, Σ ̄ t) = RO(θ, μ0|0, Σ0|0, Q, R)
+(Replay overshooting using Eqs.(25) and (26)) Compute the objective value L(θ; x) Update θ, μ0|0, Σ0|0, Q, R with stochastic gradient ascent on L end for end while
+Neural EKF for Response Predictions
+Once a Neural EKF model is trained, the learned function fθt and gθo is available and can be used for response prediction. The prediction is performed using zt = fθt (zt−1, ut−1) and xt = gθo (zt), given a new initial condition z0 and corresponding driving forces u1:T . Note that a new initial condition can be either specified by the user, or inferred from actual data via use of the inference model of the Neural EKF. The Neural EKF is capable of generating predictions in real-time to detect structural anomalies and changes as they occur for structural health monitoring. On the other hand, it requires offline training on a characteristic batch of operational data, prior to it being applied in prediction mode. However, in intervals where loads significantly increase with respect to the training set, possibly triggering more severe nonlinearity, or if the system experiences damage, the model must be updated offline using newly acquired data for training, in order to adapt to the changed dynamics. This is a trade-off that is often present in real-time monitoring systems, where the need for accurate predictions must be balanced with the need for timely updates.
+Application Case Studies
+We verify and validate the proposed Neural EKF framework on both simulated and real-world datasets. The numerical simulation aims to demonstrate the predictive capabilities of the learned model via Neural EKF, as compared against the commonly adopted option of variational autoencoders. The experiments involving real-world monitoring datasets aim to further demonstrate the Neural EKF’s ability to learn the dynamics when the system is considerably complex. In this case, physics-based modeling can be challenging due to the unknown model structure, or computationally unaffordable. In the employed seismic monitoring case study, we validate the effectiveness of the Neural EKF in predicting seismic responses on the basis of available ground motion inputs (earthquakes). Furthermore, in the experimentally tested wind turbine case study, we perform a thorough analysis on dynamic response prediction, damage detection and structural health monitoring based on the learned Neural EKF model. The transition function fθt and observation functions gθo are modeled as multilayer perceptrons consisting of three
+Prepared using sagej.cls
+
+
+Liu et al. 7
+hidden layers. Each hidden layer comprises 64 nodes for the Duffing and seismic response examples, and 128 nodes for the wind turbine example. The dimension of the latent states zt is assumed to correspond to twice the DOFs of the modeled system, which is an assumption commonly adopted in conventional state-space modeling. The dimension of latent states is a predefined hyperparameter and can be finetuned if needed. This is different from conventional Kalman filters, where a fixed state equation, and thus a corresponding dimension, has to be assumed. In this case, issues may arise in terms of the observability of the system’s states, in case the observed variables are not carefully chosen, and particularly if they are lower than the number of predefined latent states. However, in our proposed method, the latent state mainly serves as an intermediate quantity to optimally reconstruct and predict the observed quantities. Similar to the width and depth of neural networks, a larger latent state dimension usually benefits the training result but may lead to overfitting. In our examples, we opted for a latent state dimension that equals twice the number of DOFs of the modeled system, as this is a natural choice. The data and codes used in this paper are publicly available on GitHub at https://github.com/liouvill/NeuralEKF.
+Duffing Oscillator System
+Figure 4. Predicted results for the simulated 2DOF Duffing system.
+We first demonstrate the performance of the Neural EKF framework for predicting the dynamic response through a numerical example. In this example, we consider a 2 degreesof-freedom (DOF) nonlinear duffing oscillator subjected to random excitations. The data used for this case study are simulated by the following differential equation:
+x ̇
+x ̈ = 0 I
+−M−1K −M−1C
+x
+ ̇x +
+
+  
+0 0
+−knx31 0
+
+  
+, (28)
+where x = x1
+x2
+, the mass matrix M = 1 0
+0 1 , the stiffness
+matrix K = 4 −0.5
+−0.5 4 , the damping matrix C =
+0.5 0
+0 0.5 and the coefficient of the cubic stiffness term
+kn = 1. Here the displacements of both DOFs x1 and x2 are assumed available as measurements. It is noted that this parameter setting falls into the scenario where the Duffing oscillator presents a single stable equilibrium point at the origin. We consciously make this choice, as we here adopt this as a nonlinear example, in order to demonstrate the capability of the Neural EKF to deal with nonlinearity, but not rare instabilities or chaotic behavior, which would require a more complex treatment.
+For this numerical case study, a number of 1000 random trajectories are generated with both transition and observation noise variances equal to 0.001 for training by the simulated 2-DOF nonlinear Duffing system shown in Eq.(28). Another 5 randomly generated trajectories are used as an unknown dataset for testing the prediction capability of the Neural EKF framework. The prediction results for the free vibration case are shown in Figure 4. As indicated by the results, the Neural EKF is capable of producing satisfactory predictions that reasonably match the reference well for this simulated nonlinear system. As comparison, which is already shown in Fig 3, it is observed that the DMM, which is a pure VAE-based method, fails to capture the dynamics and the predictions are much less accurate.
+Noise variance RMSE1 RMSE2
+0.001 0.04865 0.01691 0.01 0.03770 0.01331 0.1 0.05192 0.01709
+Table 1. Comparison with noise-free system responses under different noise levels: RMSE1 is for x1 and RMSE2 is for x2.
+To further demonstrate the robustness of the proposed model, we have generated artificial observations (measured data) with different levels of noise contamination. The data is generated by Eq.(28) using the same initial values across three cases, but with different levels of additive Gaussian observation noise. More specifically, we generate three different simulated cases corresponding to an observation noise variance of 0.001, 0.01 and 0.1, respectively. The “process noise” is set to be zero, when generating artificial observation data, since integration of a larger transition process noise would cause the solution of the ODE to diverge due to nonlinearity of the Duffing system. The root mean squared error between the predicted and true (noisefree) system response is reported in Table 1. Our results indicate that the difference between the predicted and noisefree system response, for training and prediction under assumed contaminated measurements, are similar across different noise covariance levels. The proposed method thus proves particularly robust to noise contamination, as revealed by the results shown in Figure 5 for the case with different observation noise variances. As comparison, the DMM-predicted results are plotted in dark green, which deviate significantly from the ground-truth and fail to provide accurate and reliable predictions.
+Prepared using sagej.cls
+
+
+8 Journal Title XX(X)
+(a) noise variance = 0.1 (b) noise variance = 0.01 (c) noise variance = 0.001
+Figure 5. Comparison of predicted responses versus noise-free responses. The noisy measurements are used as training data.
+Figure 6. Sensor placement of the 6-story hotel building in San Bernardino, California.
+Seismic Response Data
+The framework is further investigated using real-world seismic data obtained from the Center for Engineering Strong Motion Data (CESMD) 44 for a 6-story hotel building in San Bernardino, California. It is a mid-rise concrete building installed with a total of nine accelerometers on the first, third and roof floors in different directions. The sensor placement is shown in Figure 6, where three accelerometers are mounted on each of the ground floor, third floor, and roof. The sensors have recorded multiple seismic events from 1987 to 2021. 17 corresponding structural response and ground motion datasets are used to train the Neural EKF with one dataset reserved for evaluating prediction performance, which corresponds to the San Bernardino earthquake in 2009. The data we used are extracted from sensors 1, 4 and 7, which lie along the same direction. The data from sensor 1 are used as the input ground motion, while the data from sensors 4 and 7 are used as output responses. Due to the inconsistency of the sample frequencies, we first preprocess the data using resampling techniques. The signals are uniformly resampled at 50 Hz (the downloaded data was already pre-processed by the website with noise filtering, baseline and sensor offset corrections). After training the Neural EKF model with a pre-processed training dataset, the predictions on another independent test dataset are obtained by simply feeding the new seismic inputs into the trained model. The predictions and ground truth values are compared in Figure 7. A strong agreement between prediction responses and ground truth responses can be observed. While the data are sampled at different frequencies and earthquakes vary widely in magnitudes,
+Figure 7. Relative accelerations of the building under seismic excitations.
+directions, and frequencies, the Neural EKF essentially learns dynamics of the building, thus generating highly consistent predictions.
+Experimentally Tested Wind Turbine Blade
+Among various application fields of Structural Health Monitoring (SHM), wind turbines are gaining increased attention due to their critical significance and competitiveness as a major source of renewable energy. To further demonstrate the value of the framework in SHM for assessing performance and assisting decision making, we validate use of the Neural EKF for vibration monitoring of operational wind turbines.
+Figure 8. Experiment setup of the wind turbine blade.
+Prepared using sagej.cls
+
+
+Liu et al. 9
+Figure 9. Sensor placement of the wind turbine blade. There are totally eight accelerometers mounted on the blade, marked with red color and label ax. The data from these accelerometers are the output responses, while the data from the force transducer f1 are the input excitations.
+Figure 10. Predicted and true responses of accelerations a1 to a8 for the wind turbine blade. The model is trained on a dataset of the healthy state under 25◦C and used to generate predictions on another dataset of the same state.
+The data used in this paper were obtained and illustrated in 45 by experimentally testing a small-scale wind turbine blade, as shown in Figure 8, in both healthy and damaged states under varying environmental temperature conditions. All the testing cases are listed in Table 2. Multiple accelerometers and strain gauges are implemented on different positions of the wind turbine. We only make use of accelerometer measurements as the system outputs and the external forces measured at the force transducer f1 as the system input to conduct a vibration-based assessment in this case study. The sensor configuration is shown in Figure 9, where the red dots
+indicate the positions of accelerometers ai (i = 1, 2, ..., 8), with i denoting the label of each sensor. The measured signals are low-pass filtered with a cut-off frequency of 380 Hz.
+Structural response prediction We train the model using the R(+25) dataset (the healthy state under 25◦C) and leverage the trained model to carry out response predictions given the corresponding forcing data for each case. Figure 10 shows an example of the prediction results for the case R(+25), plotted against the measured true responses. Note that the shown prediction results are based on an independent
+Prepared using sagej.cls
+
+
+10 Journal Title XX(X)
+Figure 11. Predicted and true responses of accelerations a1 to a8 for the cracked wind turbine blade. The model is trained on a dataset of the healthy state under 25◦C and used to generate predictions on a dataset of the damaged state with three 15cm cracks under 25◦C.
+experiment different from the dataset used for training. Strong agreement between the predictions and true responses can be observed for all the eight channels, with an average root mean squared error (RMSE) of 1.08 . Also, the DMM is trained on the same training dataset and performs prediction on the same test dataset. The results are also plotted in gray in Figure 10, with an average RMSE of 3.82, and it is obvious that the conventional VAE type model fails to generate accurate predictions as Neural EKF.
+Anomaly detection As stated, the model we trained uses the data from the healthy state. It is expected that for cases that deviate from the healthy baseline, such as damage, added mass, and diversified temperature conditions, the measured responses should bear discrepancies to the response predicted from the model trained on healthy data. An example of predicting the response for the case L(+25) is shown in Figure 11, where apparent inconsistency in the response prediction is observed. We quantify the prediction errors of 8 channels for each case using RMSE, also presented in Figure 12 using a box plot. For each case, the RMSE is 8-dimensional (as we have 8 channels of response measurement). We leverage principal
+component analysis (PCA) and K-means clustering, to reduce the dimension and cluster the RMSE values in terms of the first two principal components, as shown in Figure 13. Three distinct clusters are formed, and the data points inside each cluster suggest that the RMSEs have similar features:
+• the first cluster in green contains Case R (+25) (baseline model), Case R (+20), Case A and Case D to Case G, which are of minor discrepancy from the baseline model
+• the second cluster in yellow contains Case B, C, and Case H, I, all of which are of medium discrepancy from the baseline model;
+• the third cluster in purple contains Case R (-15), Case R (+40) and Case J, K, L, all of which are of the most discrepant situations.
+Notably, the clustering of RMSEs is consistent with the different degrees of anomaly. This clustering result concludes that the RMSEs are reasonable and can be used as an appropriate indicator of the anomaly degree. Here
+Prepared using sagej.cls
+
+
+Liu et al. 11
+Case label Description
+R (+25) Healthy state R (+20) Healthy state R (-15) Healthy state R (+40) Healthy state A (+25) Added mass 1 × 44g B (+25) Added mass 2 × 44g C (+25) Added mass 3 × 44g D (+25) Cracks = (5cm, 0cm, 0cm) E (+25) Cracks = (5cm, 5cm, 0cm) F (+25) Cracks = (5cm, 5cm, 5cm) G (+25) Cracks = (10cm, 5cm, 5cm) H (+25) Cracks = (10cm, 10cm, 5cm) I (+25) Cracks = (10cm, 10cm, 10cm) J (+25) Cracks = (15cm, 10cm, 10cm) K (+25) Cracks = (15cm, 15cm, 10cm) L (+25) Cracks = (15cm, 15cm, 15cm)
+Table 2. Testing Cases and prediction RMSE via Neural EKF (the model is trained using the R (+25) dataset)
+Figure 12. Distributions of RMSEs (the color code is the same as Figure 13)
+Figure 13. K-means clustering results based PCA.
+we simply use clustering to visualize the implication of RMSEs, instead of making it more quantifiable. Advanced investigation can be employed to further perform damage quantification and localization in future work.
+Conclusions
+In this work, we utilize a Neural Extended Kalman Filter (Neural EKF) that blends the benefits from both VAE and EKF, for data-driven modeling and response prediction of complex dynamical systems. The structure of the Extended Kalman Filters is exploited for conducting inference under the variational inference approach, which guarantees a more accurate dynamics model compared to conventional variational autoencoders. We investigate the framework on different vibration-based datasets from realworld structural/mechanical systems. The results validate the capability of the proposed Neural EKF to adequately capture the underlying dynamics of complex systems and
+therefore to generate accurate prediction. This is essential for downward applications, such as structural health monitoring and predictive maintenance planning. The Neural EKFlearned model offers a potent surrogate for real-world operating systems and provides the potential to establish robust structural digital twins for complex monitored systems.
+Declaration of conflicting interests
+The authors declared no potential conflicts of interest with respect to the research, authorship, and publication of this article.
+Acknowledgements
+The research was conducted at the Future Resilient Systems at the Singapore-ETH Centre, which was established collaboratively between ETH Zurich and the National Research Foundation Singapore. This research is supported by the National Research Foundation Singapore (NRF) under its Campus for Research Excellence and Technological Enterprise (CREATE) programme. The project is also supported by the Stavros Niarchos Foundation through the ETH Zurich Foundation and the ETH Zurich Postdoctoral Fellowship scheme.
+References
+1. Tao F, Zhang H, Liu A et al. Digital twin in industry: Stateof-the-art. IEEE Transactions on industrial informatics 2018; 15(4): 2405–2415. 2. Committee ADEI et al. Digital twin: Definition & value. AIAA and AIA Position Paper 2020; .
+3. Kapteyn MG, Pretorius JV and Willcox KE. A probabilistic graphical model foundation for enabling predictive digital twins at scale. Nature Computational Science 2021; 1(5): 337347. 4. Wagg D, Worden K, Barthorpe R et al. Digital twins: stateof-the-art and future directions for modeling and simulation in
+Prepared using sagej.cls
+
+
+12 Journal Title XX(X)
+engineering dynamics applications. ASCE-ASME J Risk and Uncert in Engrg Sys Part B Mech Engrg 2020; 6(3).
+5. Kerschen G, Worden K, Vakakis AF et al. Past, present and future of nonlinear system identification in structural dynamics. Mechanical systems and signal processing 2006; 20(3): 505592. 6. Brunton SL and Kutz JN. Data-driven science and engineering: Machine learning, dynamical systems, and control. Cambridge University Press, 2022.
+7. Farrar CR and Worden K. Structural health monitoring: a machine learning perspective. John Wiley & Sons, 2012.
+8. D ̈ohler M, Lam XB and Mevel L. Uncertainty quantification for modal parameters from stochastic subspace identification on multi-setup measurements. Mechanical Systems and Signal Processing 2013; 36(2): 562–581. 9. Bogoevska S, Spiridonakos M, Chatzi E et al. A data-driven diagnostic framework for wind turbine structures: A holistic approach. Sensors 2017; 17(4): 720. 10. Avendan ̃o-Valencia LD, Abdallah I and Chatzi E. Virtual fatigue diagnostics of wake-affected wind turbine via gaussian process regression. Renewable Energy 2021; 170: 539–561. 11. He K, Zhang X, Ren S et al. Deep residual learning for image recognition. In Proceedings of the IEEE conference on computer vision and pattern recognition. pp. 770–778.
+12. Svensen M, Powrie H and Hardwick D. Deep neural networks analysis of borescope images. In Proceedings of the European Conference of the PHM Society, volume 4.
+13. Krizhevsky A, Sutskever I and Hinton GE. Imagenet classification with deep convolutional neural networks. Advances in neural information processing systems 2012; 25. 14. Hinton G, Deng L, Yu D et al. Deep neural networks for acoustic modeling in speech recognition: The shared views of four research groups. IEEE Signal processing magazine 2012; 29(6): 82–97. 15. Bojarski M, Del Testa D, Dworakowski D et al. End to end learning for self-driving cars. arXiv preprint arXiv:160407316 2016; . 16. Ljung L, Andersson C, Tiels K et al. Deep learning and system identification. IFAC-PapersOnLine 2020; 53(2): 1175–1181. 17. Dervilis N. A machine learning approach to structural health monitoring with a view towards wind turbines. PhD Thesis, University of Sheffield, 2013. 18. Chen RT, Rubanova Y, Bettencourt J et al. Neural ordinary differential equations. Advances in neural information processing systems 2018; 31.
+19. Jiang X, Mahadevan S and Yuan Y. Fuzzy stochastic neural network model for structural system identification. Mechanical Systems and Signal Processing 2017; 82: 394–411.
+20. Raissi M, Perdikaris P and Karniadakis GE. Physics-informed neural networks: A deep learning framework for solving forward and inverse problems involving nonlinear partial differential equations. Journal of Computational Physics 2019; 378: 686–707. 21. Zhang R, Chen Z, Chen S et al. Deep long short-term memory networks for nonlinear structural seismic response prediction. Computers & Structures 2019; 220: 55–68.
+22. Zhang R, Liu Y and Sun H. Physics-guided convolutional neural network (phycnn) for data-driven seismic response modeling. Engineering Structures 2020; 215: 110704. 23. Xu S and Noh HY. Phymdan: Physics-informed knowledge transfer between buildings for seismic damage diagnosis
+through adversarial learning. Mechanical Systems and Signal Processing 2021; 151: 107374. 24. Liu W, Lai Z, Bacsa K et al. Physics-guided deep markov models for learning nonlinear dynamical systems with uncertainty. Mechanical Systems and Signal Processing 2022; 178: 109276. 25. Lai Z, Mylonas C, Nagarajaiah S et al. Structural identification with physics-informed neural ordinary differential equations. Journal of Sound and Vibration 2021; 508: 116196.
+26. Fraccaro M, Kamronn S, Paquet U et al. A disentangled recognition and nonlinear dynamics model for unsupervised learning. arXiv preprint arXiv:171005741 2017; .
+27. Karl M, Soelch M, Bayer J et al. Deep variational bayes filters: Unsupervised learning of state space models from raw data. arXiv preprint arXiv:160506432 2016; .
+28. Gedon D, Wahlstr ̈om N, Sch ̈on TB et al. Deep state space models for nonlinear system identification. arXiv preprint arXiv:200314162 2020; .
+29. Girin L, Leglaive S, Bie X et al. Dynamical variational autoencoders: A comprehensive review. arXiv preprint arXiv:200812595 2020; .
+30. Bacsa K, Lai Z, Liu W et al. Symplectic encoders for physicsconstrained variational dynamics inference. Scientific Reports 2023; 13(1): 2643. 31. Kingma DP and Welling M. Auto-encoding variational bayes. arXiv preprint arXiv:13126114 2013; .
+32. Krishnan R, Shalit U and Sontag D. Structured inference networks for nonlinear state space models. In Proceedings of the AAAI Conference on Artificial Intelligence, volume 31.
+33. Li AH, Wu P and Kennedy M. Replay overshooting: Learning stochastic latent dynamics with the extended kalman filter. In 2021 IEEE International Conference on Robotics and Automation (ICRA). IEEE, pp. 852–858.
+34. Chatzi EN and Smyth AW. The unscented kalman filter and particle filter methods for nonlinear structural system identification with non-collocated heterogeneous sensing. Structural Control and Health Monitoring: The Official Journal of the International Association for Structural Control and Monitoring and of the European Association for the Control of Structures 2009; 16(1): 99–123.
+35. Azam SE, Chatzi E and Papadimitriou C. A dual kalman filter approach for state estimation via output-only acceleration measurements. Mechanical systems and signal processing 2015; 60: 866–886. 36. Chatzis MN, Chatzi EN and Triantafyllou SP. A discontinuous extended kalman filter for non-smooth dynamic problems. Mechanical systems and signal processing 2017; 92: 13–29. 37. Haarnoja T, Ajay A, Levine S et al. Backprop kf: Learning discriminative deterministic state estimators. Advances in neural information processing systems 2016; 29.
+38. Kloss A, Martius G and Bohg J. How to train your differentiable filter. Autonomous Robots 2021; 45(4): 561–578. 39. Jonschkowski R, Rastogi D and Brock O. Differentiable particle filters: End-to-end learning with algorithmic priors. arXiv preprint arXiv:180511122 2018; .
+40. Karkus P, Hsu D and Lee WS. Particle filter networks with application to visual localization. In Conference on robot learning. PMLR, pp. 169–178. 41. Owen MW and Stubberud AR. A neural extended kalman filter multiple model tracker. In Oceans 2003. Celebrating the Past... Teaming Toward the Future (IEEE Cat. No. 03CH37492),
+Prepared using sagej.cls
+
+
+Liu et al. 13
+volume 4. IEEE, pp. 2111–2119. 42. Kalman RE. A New Approach to Linear Filtering and Prediction Problems. Journal of Basic Engineering 1960; 82(1): 35–45. DOI:10.1115/1.3662552. 43. Rauch HE, Tung F and Striebel CT. Maximum likelihood estimates of linear dynamic systems. AIAA journal 1965; 3(8): 1445–1450. 44. Haddadi H, Shakal A, Stephens C et al. Center for engineering strong-motion data (cesmd). In 14th World Conference on Earthquake Engineering, Beijing, China.
+45. Ou Y, Tatsis KE, Dertimanis VK et al. Vibration-based monitoring of a small-scale wind turbine blade under varying climate conditions. part i: An experimental benchmark. Structural Control and Health Monitoring 2021; 28(6): e2660.
+Appendix
+Latent Dynamics
+Given that both the transition and observation models are constructed using neural networks, there exist non-unique combinations of these two models that can comparably produce reasonable system responses. It is possible to achieve a good output response with incorrect dynamics and an appropriate selection of parameters Q and R, which is in fact the philosophy of Kalman filters. Q and R represent the process and measurement noise covariance matrices, which are meant to account for modeling and measurement noise, but which nonetheless necessitate a fairly competent process and measurement model for successful operation. The difference in a Deep version of such a Bayesian filter (as the Neural EKF) is that the state-space equations (process and measurement equations), as well as the noise sources, are not prescribed, but learned. This is why the dynamics, as stated in the title, is actually learnable. This is a main difference with respect to standard Bayesian filters, where these parameters, including the noise covariances, need to be preset. As in conventional filtering, here as well, different combinations of transition and observation models with different Q and R matrices exist that can accurately reconstruct the response; the algorithm is searching for a local optimum that represents one of these solutions. This implies that the transition model may not be aligned with the actual dynamics of the system, but rather a nonlinear transformation of it, as the observation model is not explicitly defined. Figure 14 illustrates the rotated learned latent states by identifying an optimal linear relationship with the true system states. The rotated latent states exhibit a similar pattern to the true system states, albeit with presence of some stretching. This is because the relationship between learned and true states is not a simple linear relationship, but rather a nonlinear transformation. In contrast, the DMM-predicted latent states are plotted on the bottom and exhibit distinctly different patterns to the true system states, even after optimal rotation. When inference of such true latent states is of interest, we suggest the use of a continuous model, such as Neural Ordinary Differential Equations (Neural ODEs18), which allows to directly obtain the derivative of the latent state variables. Neural ODEs parameterize the derivative of the latent state (vector field) using a neural network. The output
+of the network is computed using a black-box differential equation solver. Neural ODEs have proven to be particularly useful for continuous-time latent variable models and can be used to model continuous dynamics, thereby enabling the introduction of derivative relations in the latent space and structure our observation model. We do not illustrate more on this approach here, since this comprises an extension which is beyond the objective of this work, which aimed to illustrated the benefits of the EKF structure in learning dynamical systems. We note z = [z1, z2], where z1 and z2 represent the first and second half elements of the latent state, respectively. Similar to the formulations in Eq.(2) and Eq.(3), but now set in a continuous form with the Neural ODE modeling the transition function, the dynamics can be modeled as:
+z ̇1 = z2, (29)
+z ̇2 = f (z1, z2, u) + w, (30)
+x = f (z1, z2, u) + v, (31)
+(a) Phase portraits of the latent states z1 versus z3, estimated via the Neural EKF (middle) and DMM (bottom), compared to the ground-truth displacements x1 versus velocities x ̇ 1 of the first DOF (top).
+(b) Phase portraits of the optimally rotated latent states z1 versus z3, estimated via the Neural EKF (middle) and DMM (bottom), compared to the ground-truth displacements x1 versus velocities x ̇ 1 of the first DOF (top).
+Figure 14. Comparison of the latent states estimated via the Neural EKF and DMM against the ground-truth phase portraits. The results are obtained on the Duffing system, which has been simulated in Section Duffing Oscillator System with observation noise variance of 0.1.
+The first set of equations serves for enforcing the second half of the latent state to assume the form of the derivatives of the first half, while the second equation models the dynamics. Again, this is only when it is of interest to specifically infer a physical latent space. Since the second set of equations is usually chosen to generate a system’s
+Prepared using sagej.cls
+
+
+14 Journal Title XX(X)
+Transition process Observation process
+Noise variance q1 q2 q3 q4 r1 r2
+0.001 0.000 0.7886e-26 4.9305e-34 6.7735e-25 3.3331e-9 6.8190e-8 0.01 9.4104e-35 2.8987e-14 5.4440e-15 1.1494e-27 2.4185e-5 2.7647e-5 0.1 6.0510e-31 6.3190e-09 2.6425e-11 1.6114e-19 0.0030 0.0029
+Table 3. Estimated covariance matrices Q and R under different noise levels
+accelerations (as derived from a physics-based equation of motion), it is possible in this case to eliminate the requirement for an additional neural network, for example g in Eq.(3), for modeling the observation process, and the observation function is merelyf in this case, as indicated in Eq.(31). However, in this case the purpose of the network is modified, since the idea here is to impose some sort of physics-based structure, as opposed to more freely learn the unknown underlying dynamics.
+Discussion on Noises
+As described in the theoretical section, the covariance matrices Q and R are assumed diagonal, thus for the duffing oscillator example, these are represented by Q = diag(q1, q2, q3, q4) and R = diag(r1, r2), respectively. The estimated diagonal elements are listed in Table 3. It is observed that 1) the estimated values of Q are close to zero and much smaller than the defined values of R, as no process noise was in this example added to the simulated data. 2) Without structuring the observation model, both transition and observation models are parameterized by neural networks, jointly optimized to reconstruct system response. Thus, it is not surprising that the estimated Q and R are not exactly matching the true value, but one can still observe that the estimated values of R increase when larger observation variances are added to the simulated data, thereby accounting for increasing uncertainty in the measured data. It is important to underline that, unlike the conventional EKF, the proposed Neural EKF is a deep learning-based method, meant to learn (infer) the transition and emission models from data. The results in Figure 5 show that even with highly noisy data, Neural EKF is able to recover the true response with high confidence, thus the estimated R is observed to be smaller. Using the estimated standard deviations, which are the square roots of the estimated variances, 99.7% confidence intervals for predicted responses can be calculated. These intervals should be highly precise around mean values, considering the extremely low values of estimated variances.
+Prepared using sagej.cls
