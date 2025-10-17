@@ -1,0 +1,1230 @@
+A Code for Unscented Kalman Filtering on
+Manifolds (UKF-M)
+Martin BROSSARD†, Axel BARRAU∗ and Silve`re BONNABEL†
+†MINES ParisTech, PSL Research University, Centre for Robotics, 60 Boulevard Saint-Michel, 75006, Paris, France
+∗Safran Tech, Groupe Safran, Rue des Jeunes Bois-Chˆateaufort, 78772, Magny Les Hameaux Cedex, France
+Abstract
+The present paper introduces a novel methodology for Unscented Kalman Filtering (UKF) on manifolds that
+extends previous work by the authors on UKF on Lie groups. Beyond filtering performance, the main interests of
+the approach are its versatility, as the method applies to numerous state estimation problems, and its simplicity of
+implementation for practitioners not being necessarily familiar with manifolds and Lie groups. We have developed the
+method on two independent open-source Python and Matlab frameworks we call UKF-M, for quickly implementing and
+testing the approach. The online repositories contain tutorials, documentation, and various relevant robotics examples
+that the user can readily reproduce and then adapt, for fast prototyping and benchmarking. The code is available at
+https://github.com/CAOR-MINES-ParisTech/ukfm.
+I. INTRODUCTION
+Over the past fifty years, the Kalman filter has been a pervasive tool in aerospace engineering and beyond, to estimate the state of a system subject to dynamical evolution, see e.g. [1]. When the system’s dynamics are governed by nonlinear equations, one generally resorts to a variant called the Extended Kalman Filter (EKF), or to the more recent Unscented Kalman Filter (UKF) [2,3]. There has been various attempts to adapt the EKF and (respectively) UKF to the case where the system’s state lives in a manifold M, see respectively [4] and [5]–[8].
+In this paper we introduce UKF-M, a novel and general method for UKF on manifolds whose versatility allows direct application to numerous manifolds encountered in practice. The theory is supported with independent Python and Matlab open sourced implementations. The framework is well documented, and contains a number of examples that can be readily run and then adapted, where our methodology spares the analytic computation of Jacobians (contrary to EKF) and is thus well suited to fast prototyping and benchmarking.
+Filtering on manifolds is historically motivated by aerospace applications where one seeks to estimate (besides other quantities) the orientation of a body in space. Much work has been devoted to making the EKF work with orientations, namely quaternions or rotation matrices. The idea is to make the EKF estimate an error instead of the state directly, leading to error state EKFs [4,9]–[11] and their UKF counterparts [12]–[14]. The set of orientations of a body in space is the Lie group SO(3) and efforts devoted to estimation on SO(3) have paved the way to EKF on Lie groups, see [1,15]–[19] and unscented Kalman filtering on Lie groups, see [7,8,13,20]–[23].
+Lie groups play a prominent role in robotics [24]. In the context of state estimation and localization, viewing poses as elements of the Lie group SE(3) has proved relevant [25]–[31]. The use of the novel Lie group SE2(3) introduced
+in [19] has led to drastic improvement of Kalman filters for robot state estimation [1,19,31]–[36]. Similarly, using group SEk(n) introduced for Simultaneous Localization And Mapping (SLAM) in [37,38] makes EKF consistent or
+convergent [38]–[43]. Finally, there has been attempts to devise UKFs respecting natural symmetries of the systems’ dynamics, namely the invariant UKF, see [44,45].
+Besides providing a comprehensive code, our main contribution in terms of methodology is to introduce a novel and general framework for UKF on manifolds that is simpler than existing methods, and whose versatility allows direct application to all manifolds encountered in practice. Indeed, [7,8] proposes UKF implementations based on
+arXiv:2002.00878v2 [cs.RO] 11 Mar 2020
+
+
+Fig. 1: The cylinder is a parallelizable manifold. We can define vector fields V1, V2 that form a basis of the tangent
+space at any point.
+the Levi-Civita connection but mastering differential geometry is difficult. [7,13,20,21] are reserved for SO(3) and SE(3), while [23] is reserved for Lie groups and requires more knowledge of Lie theory than the present paper.
+In Section II, we introduce a user-friendly approach to UKF on parallelizable manifolds. Section III applies the approach in the particular case where the manifold is a Lie group and recovers [22], but without requiring much knowledge of Lie groups. Section IV describes the open sourced framework. We then show in Section V the method may actually be extended to numerous manifolds encountered in robotics. The conclusion section discusses theoretical issues and provides clarifications related to Kalman filtering on manifolds.
+II. UNSCENTED KALMAN FILTERING ON PARALLELIZABLE MANIFOLDS
+In this section we describe our simple methodology for UKF on parallelizable manifolds. Owing to space limitation, we assume the reader to have approximate prior knowledge and intuition about manifolds and tangent spaces.
+A. Parallelizable Manifolds
+In order to “write” the equations of the extended or the unscented Kalman filter on a manifold, it may be advantageous to have global coordinates for tangent spaces.
+Definition 1: A smooth manifold M of dimension d is said parallelizable if there exists a set of smooth vector fields {V1, V2, · · · , Vd} on the manifold such that for any point χ ∈ M the tangent vectors {V1(χ), V2(χ), · · · , Vd(χ)}
+form a basis of the tangent space at χ.
+Example 1: The cylinder {(x, y, z) ∈ R3 | x2 + y2 = 1} is a basic example with d = 2. V1(x, y, z) = (y, −x, 0)
+and V2 = (0, 0, 1) are two tangent vectors that form a local basis at (x, y, z), see Figure 1. The cylinder is a
+simple case but the notion of parallelizable manifolds is much broader. In particular, all Lie groups are parallelizable manifolds.
+Example 2: For the rotation matrices C ∈ SO(3) let us first define the “wedge” symbol via
+ω∧ =
+
+ 0 −ω3 ω2
+ω3 0 −ω1 −ω2 ω1 0
+
+ , (1)
+where ω = (ω1, ω2, ω3)T , and choose as vector fields:
+V1(C) = Ce1∧, V2(C) = Ce2∧, V3(C) = Ce3∧, (2)
+where e1 = (1, 0, 0)T , e2 = (0, 1, 0)T , and e3 = (0, 0, 1)T .
+It should be noted, though, that not all manifolds fall in this category. However, we will see in Section V how this issue can be addressed over-parameterizing the state.
+
+
+B. Uncertainty Representation on Parallelizable Manifolds
+Our goal is to estimate the state χ ∈ M given all the sensor measurements. As sensors are flawed, it is impossible to exactly reconstruct χ. Instead, a filter maintains a “belief” about the state, that is, its statistical distribution given
+past sensors’ readings. The Kalman filter in Rd typically maintains a Gaussian belief such that χ ∼ N ( ˆχ, P) , which
+may be re-written in the form:
+χ = χˆ + ξ, ξ ∼ N (0, P) . (3)
+We see that the belief is encoded using only a mean estimate ˆχ, and a covariance matrix P that encodes the extent of dispersion of the belief around the estimate.
+Consider a parallelizable manifold M, and let {V1, V2, · · · , Vd} denote the associated vector fields. To devise
+a similar belief on M, one needs of course local coordinates to write the mean ˆχ ∈ M. This poses no problem,
+though. The harder part is to find a way to encode dispersion around the estimate ˆχ. It is now commonly admitted that
+the tangent space at ˆχ should encode such dispersion, and that covariance P should hence reflect dispersion in the
+tangent space. As additive noise (3) makes no sense for χ ∈ M, we define a probability distribution χ ∼ Nφ(χˆ , P),
+for the random variable χ ∈ M as
+χ = φ ( ˆχ, ξ) , ξ ∼ N (0, P) , (4)
+where φ : M × Rd → M is a smooth function chosen by the user and satisfying φ ( ˆχ, 0) = ˆχ. In (4), ξ ∈ Rd
+is a random Gaussian vector that encodes directions of the tangent space at χˆ , N (., .) is the classical Gaussian distribution in Euclidean space, and P ∈ Rd×d the associated covariance matrix; and we also impose the Jacobian of
+φ at ( ˆχ, 0) w.r.t. ξ to be Identity, see [46]. Using the parallelizable manifold property, we implicity use coordinates
+in the tangent space, as ξ = (ξ(1), ξ(2), · · · , ξ(d))T ∈ Rd encodes the tangent vector ξ(1)V1( ˆχ) + · · · + ξ(d)Vd(χˆ ).
+Hence φ is called a “retraction”, see [46]. In (4), the noise-free quantity ˆχ is viewed as the mean, and the dispersion arises through φ. We stress that the distribution defined at (4) is not Gaussian. It is “only” Gaussian in coordinates related to map φ.
+Example 3: Consider Example 2. Recall tangent vectors at C indicate small motions around C ∈ SO(3). Tangent vector Cω∧ indeed writes ω1V1(C) + ω2V2(C) + ω3V3(C), see (2). We can then choose for φ the following
+φ(C, ω) = C exp (ω∧), with exp the exponential map on SO(3).
+Finding an appropriate map φ is not always straightforward. However there exists in theory some “canonical” φ.
+Proposition 1: One may define define φ( ˆχ, ξ) as the point of M obtained by starting from χˆ and integrating the
+vector field ∑d
+i=1 ξ(i)Vi during one unit of time. In that case we call φ an “exponential map”.
+However, we sometimes have no closed form for the exponential map and one resorts to simpler retractions φ.
+C. Bayesian Estimation Using the Unscented Transform
+Consider a random variable χ ∈ M with prior probability distribution p (χ). Suppose we obtain some additional information about χ through a measurement y. The goal is to compute the posterior distribution p(χ|y). Let
+y = h (χ) + v, (5)
+be a measurement, where h(.) : M → Rp represents the observation function and v ∼ N (0, R) is a white Gaussian
+noise in Rp with known characteristics. The problem of Bayesian estimation we consider is as follows:
+1) assume the prior distribution to follow (4) with known parameters χˆ and P; 2) assume one measurement y of (5) is available; 3) approximate the posterior distribution as
+p(χ|y) ≈ φ(χˆ +, ξ+), (6)
+where ξ+ ∼ N (0, P+), and find parameters ˆχ+ and P+.
+
+
+Algorithm 1: Bayesian updating on parallelizable manifolds with prior (4) and observation (5)
+Input: χˆ , P, y, R;
+// set sigma points
+1 ξj = col(√(λ + d)P)j, j = 1, . . . , d,
+ξj = − col(√(λ + d)P)j−d, j = d + 1, . . . , 2d;
+// compute measurement sigma points 2 y0 = h(φ( ˆχ, 0));
+3 yj = h(φ(χˆ , ξj)), j = 1, . . . , 2d;
+// infer covariance matrices
+4 y ̄ = wmy0 + ∑2d
+j=1 wj yj ;
+5 Pyy = ∑2d
+j=0 wj(yj − y ̄)(yj − y ̄)T + R;
+6 Pξy = ∑2d
+j=1 wj ξj (yj − y ̄)T ;
+// update state and covariance 7 K = PξyPy−y1 ; // gain matrix
+8 ˆχ+ = φ(χˆ , K(y − y ̄));
+9 P+ = P − KPyyKT ;
+Output: χˆ +, P+;
+Letting χ = φ ( ˆχ, ξ) in (5), we see y provides an information about ξ ∼ N (0, P) and we may use the unscented transform of [2,3] to approximate the posterior p(ξ|y) for ξ as follows, see Algorithm 1: we compute a finite number of samples ξj, j = 1, . . . , 2d, and pass each of these so-called sigma points through the measurement function
+yj = h (φ( ˆχ, (ξj)) , j = 1, . . . , 2d. (7)
+By noting y0 = h(φ(χˆ , 0)) we then compute successively the measurement mean y ̄ = wmy0 + ∑2d
+j=1 wjyj, the mea
+surement covariance Pyy = ∑2d
+j=0 wj(yj − y ̄)(yj − y ̄)T + R and the cross-covariance Pξy = ∑2d
+j=1 wjξj (yj − y ̄)T ,
+where wm and wj are weights defined in [3,22] (see definition of scale parameter λ therein also). We then derive
+the conditional distribution of ξ ∈ Rd as
+p(ξ|y) ∼ N (ξ ̄, P+) , where (8)
+K = PξyPyy, ξ ̄ = K (y − y ̄) , P+ = P − KPyyKT . (9)
+This may be viewed as a Kalman update on the error ξ, in the vein of error state Kalman filtering, see e.g. [11]. The problem is then to convert this into a distribution on the manifold in the form (4). We first represent p(ξ|y) as
+ξ ̄ + ξ+ with ξ+ ∼ N (0, P+) and ξ ̄ considered as a noise free mean. We suggest to define the posterior p(χ|y) as
+χ ≈ φ(χˆ +, ξ+), ξ+ ∼ N (0, P+) , (10)
+where we have let ˆχ+ = φ ( ˆχ, ξ ̄) . (11)
+Note the approximation done in (10)-(11) actually consists in writing φ ( ˆχ, ξ ̄ + ξ+) ≈ φ (φ ( ˆχ, ξ ̄) , ξ+).
+When M = Rd the latter equality holds up to the first order in the dispersions ξ ̄, ξ+, both assumed small. In the
+case where M is not a vector space, it may be geometrically interpreted as saying that moving from ˆχ along the
+direction ξ ̄ + ξ+ approximately consists in moving from ˆχ along ξ ̄ and then from the obtained point on M along ξ+.
+
+
+D. Unscented Kalman Filtering on Parallelizable Manifolds
+Consider the dynamics
+χn = f (χn−1, ωn, wn) , (12)
+where the state χn lives in a parallelizable manifold M, ωn is a known input variable and wn ∼ N (0, Qn) is a
+white Gaussian noise in Rq. We consider observations of the form
+yn = h (χn) + vn, (13)
+where vn ∼ N (0, Rn) is a white Gaussian noise with known covariance that we assume additive for clarity of
+the algorithm derivation only. For system equation (12)-(13), we model the state posterior conditioned on past measurements using the uncertainty representation (4). To propagate the state, we start from the prior distribution
+p (χn−1) ∼ φ(χˆ n−1, ξn−1) with ξn−1 ∼ N (0, Pn−1) and χˆ n−1, Pn−1 known, and we seek to compute the state
+propagated distribution in the form
+p (χn|χn−1) ∼ φ(χˆ n, ξn) with ξn ∼ N (0, Pn). (14)
+We define sigma points using (4) and the statistics of noise wn, and pass them through (12). Then, to find χˆ n one
+is faced with the optimization problem of computing a weighted mean on M. This route has already been advocated in [12]–[14,23]. However, to keep the implementation simple and analog to the EKF, we suggest to merely propagate the mean using the unnoisy state model, leading to
+χˆ n = f ( ˆχn−1, ωn, 0). (15)
+To compute the covariance Pn from Pn−1 of ξn−1 we use the fact wn and ξn−1 are uncorrelated and proceed
+in two steps. 1) we generate sigma points in Rd corresponding to Pn−1 and pass them through the unnoisy model
+(15) for nonlinear propagation of Pn−1 through f . We obtain points χjn on the manifold M, and the distribution
+of propagated state is described as φ ( ˆχn, ξn
+), with χˆ n known from (15). We need to be able to locally invert
+ξ 7→ φ( ˆχ, ξ), i.e., to find a map denoted by φ−1
+χˆ (·) : M → Rd such that
+φ−1
+ˆχ
+(φ(χˆ , ξ)) = ξ + O(||ξ||2), (16)
+that is, a map that allows one to assess the discrepancy between ˆχ and φ( ˆχ, ξ) is ξ indeed. Then we use φ−1
+χˆ n
+to
+map sigma points χjn back into Rd and compute their empirical covariance Σn. 2) we then generate sigma points
+for process noise wn similarly and obtain another covariance matrix encoding dispersion in Rd owed to noise, that
+adds up to Σn and thus clearly distinguish the contribution of the state error dispersion ξn from noise wn. When a
+new measurement arrives, belief is updated via Algorithm 1. Algorithm 2 summarizes both steps, where the weights defined through set weights(d, α) depend on a scale parameter α (generally set between 10−3 and 1), and sigma point dimension, see [3,22] and documentation in source code.
+Using (15) to propagate the mean while using sigma points to compute covariance is also done in [30], in the particular case of pose compounding on SE(3), with φ the SE(3) exponential map.
+III. APPLICATION TO UKF ON LIE GROUPS
+To apply the preceding methodology to any d-dimensional group G = M, one first defines a basis of the Lie algebra. Then, to any vector ξ ∈ Rd, one may associate an element denoted by ξ∧ of the Lie algebra g. Let the vee
+operator ∨ denote its inverse, as in e.g., [30]. The Lie exponential map “exp” maps elements of the Lie algebra to the
+group. In (4) we may choose φ( ˆχ, ξ) := ˆχ exp(ξ∧), which corresponds to left concentrated Gaussians on Lie groups [18]. Note that, in the Lie group case, choosing left invariant vector fields for the Vi’s and following Proposition 1
+we exactly recover the latter expression.
+
+
+Algorithm 2: UKF on parallelizable manifolds
+Input: χˆ n−1, Pn−1, ωn, Qn, yn, Rn, α;
+Propagation
+// propagate mean state 1 χˆ n = f ( ˆχn−1, ωn, 0);
+// propagate state error covariance 2 λ,{wj }j=0,...,2d = set weights(d, α);
+3 ξj = col(√(λ + d)Pn−1)j, j = 1, . . . , d,
+ξj = − col(√(λ + d)Pn−1)j−d, j = d + 1, . . . , 2d; // use retraction onto manifold 4 χjn = f (φ(χˆ n−1, ξj), ωn, 0), j = 1, . . . , 2d;
+// inverse retract to go back in Rd
+5 Σn = ∑2d
+j=1 wj φ−1
+ˆχn
+(χjn)
+(
+φ−1
+ˆχn
+(χjn)
+)T ;
+// proceed similarly for noise 6 λ, {wj }j=0,...,2q = set weights(q, α);
+7 wj = col(√(λ + q)Qn)j, j = 1, . . . , q,
+wj = − col(√(λ + q)Qn)j−d, j = q + 1, . . . , 2q;
+8  ̃χj
+n = f ( ˆχn−1, ωn, wj), j = 1, . . . , 2q;
+9 Pn = Σn + ∑2q
+j=1 wj φ−1
+χˆ n
+(  ̃χj
+n)(φ−1
+ˆχn
+(  ̃χj
+n))T ;
+Update (when measurement yn arrives)
+Compute ˆχ+
+n , Pn+ from Algorithm 1 with ˆχn, Pn;
+Output: χˆ +
+n , Pn+;
+We may invert φ using the logarithm map exp−1 := log of G, and we get
+φ(χˆ , ξ) := χˆ exp(ξ∧), φ−1
+ˆχ (χ) := log
+(χˆ −1χ)
+. (17)
+If we alternatively privilegiate right multiplications we have
+φ( ˆχ, ξ) := exp(ξ∧) ˆχ, φ−1
+ˆχ (χ) := log
+(χχˆ −1)
+. (18)
+A. Applications in Mobile Robotics: the Group SEk(d)
+It is well known that orientations of body in spaces are described by elements of SO(3). It is also well known that the use of SE(3) is advantageous to describe the position and the orientation of a robot (pose), especially for estimation, see [25]–[31]. In [19,47] the group of double direct isometries SE2(3) was introduced to address
+estimation problems for robot navigation when the motion equations are based on an Inertial Measurement Unit (IMU). In [37,38] the group of multiple spatial isometries SEk(d) was introduced in the context of SLAM. The
+group SEk(d), allows recovering SE(3) with k = 1, d = 3, SE(2) with k = 1, d = 2 and SO(3) with k = 0, d = 3.
+It seems to cover virtually all robotics applications where the Lie group methodology has been so far useful (along with trivial extensions to be mentioned in Section III-B). Since it was introduced for navigation and SLAM, this group has been successfully used in various contexts, see [1,19,31]–[36,38]–[43,48]. For more information see the code documentation.
+B. The Mixed Case
+We call mixed the case where M = G × RN . This typically arises when one wants to estimate some additional
+parameters besides the state assumed to live in the group G, such as sensor biases. By decomposing the state as
+χˆ = ( ˆχ1, ˆχ2) ∈ G × RN and letting ξ = (ξ1, ξ2), we typically define φ through right multiplication as
+φ ( ˆχ, ξ) = (exp (ξ1) ˆχ1, ˆχ2 + ξ2) (19)
+
+
+or if left multiplications are privilegiated φ ( ˆχ, ξ) = (χˆ 1 exp (ξ1) , ˆχ2 + ξ2). This way, as many additional quantities
+as desired may be estimated along the same lines.
+Remark 1: When G = SE(3) for example, it is tempting to let G′ = SO(3) and to treat SE(3) as SO(3) × R3
+along the lines of mixed systems. However, in robotics contexts, it has been largely argued the Lie group structure of SE(3) to treat poses is more relevant than SO(3)×R3, as accounting for the coupling between orientation and position
+leads to important properties, see [25]–[31]. In the same way, SEk(3) resembles SO(3) × R3k but has a special
+noncommutative group structure having recently led to many successes in robotics, see [1,19,31]–[36,38]–[43,48].
+Example 4: The state χ for fusing IMU with GNSS may be divided into the vehicle state χ1 ∈ SE2(3)
+(orientation, velocity and position of the vehicle) and IMU biases χ2 = b ∈ R6, see e.g. our example on the
+KITTI dataset [49]. Further augmenting χ2 with new parameters, e.g. time synchronization and force variables [50],
+is straightforward.
+IV. UKF-M IMPLEMENTATION
+We have released both open source Python package and Matlab toolbox UKF-M implementations of our method at https://github.com/CAOR-MINES-ParisTech/ukfm. Both implementations are wholly independent, and their design guidelines pursue simplicity, intuitiveness and easy adaptation rather than optimization. We adapt the code to the user preferences as follow: the Python code follows class-object paradigm and is heavily documented through the Sphinx documentation generator, whereas the Matlab toolbox contains equivalent functions without class as we believe choosing well function names is best suited for the Matlab use as compared to class definition. The following code snippets are based on the Python package that we recommend using.
+A. Recipe for Designing a UKF on Manifolds
+To devise an UKF for any fusion problem on a parrallelizable manifold (or Lie group) M the ingredients required in terms of implementation are as follows, see Snippet 1.
+1) A model that specifies the functions f and h used in the filter; 2) An uncertainty representation (4). This implies an expression for the function φ and its inverse φ−1, defined by the user; 3) Filter parameters, that define noise covariance matrices Qn, Rn and weights (λ, wm, and wj) through α.
+Noise covariance values are commonly guided by the model and tuned by the practitioner, whereas α is generally set between 10−3 and 1 [3].
+4) Initial state estimates ˆχ0 and P0.
+Example 5: Consider a 3D model whose state contains a rotation matrix Rot ∈ SO(3), the velocity v ∈ R3 and
+position p ∈ R3 of a moving vehicle. Defining φ and φ−1 allows computing (respectively) a new state and a state
+error. One possibility is given in Snippet 2, where χ ∈ SO(3)×R6, φ( ˆχ, ξ) = (R^ot exp(ξ(0:3)), ˆv + ξ(3:6), pˆ + ξ(6:9))
+and φ−1
+χˆ (χ) = (log(R^otT Rot), v − vˆ, p − pˆ).
+In the particular case where M is a Lie group we follow the rules above but we simplify step 2) as follows: we pick an uncertainty representation, either (17) or (18). This directly implies an expression for the map ∧ and its inverse ∨, as well as for the exponential exp and its (local) inverse log. Applying the present general methodology for the particular case of Lie groups, we recover the method of [22].
+Example 6: We may modify the representation used in Example 5 by viewing the state as an element χ ∈ SE2(3)
+instead. This defines two alternative retractions. See e.g. implementation for corresponding φ−1’s in Snippet 3. A quick comparison displayed in Figure 2 indicates the SE2(3)-UKF with right multiplications (18) outperforms the
+other filters, notably the one based on the naive structure of Example 5.
+
+
+Snippet 1: how to devise an UKF on manifolds
+ukf = ukfm.UKF( f=model.f, # propagation model h=model.h, # observation model phi=user.phi, # retraction phi_inv=user.phi_inv, # inverse retraction Q=model.Q, # process cov. R=model.R, # observation cov. alpha=user.alpha # sigma point param. state0=state0, # initial state P0=P0) # initial covariance
+Snippet 2: setting φ, φ−1 for χ := (Rot ∈ SO(3), v, p)
+def phi(state, xi): return STATE( Rot=state.Rot.dot(SO3.exp(xi[0:3])), v=state.v + xi[3:6] p=state.p + xi[6:9])
+def phi_inv(state, hat_state): return np.hstack([ # concatenate errors SO3.log(hat_state.Rot.T.dot(state.Rot)), state.v - hat_state.v, state.p - hat_state.p])
+Snippet 3: defining φ−1 via (17) or (18) for χ ∈ SE2(3)
+def phi_inv(state, hat_state): chi = state2chi(state) hat_chi = state2chi(hat_state) # if left multiplication (17) return SEK3.log(SEK3.inv(hat_hat).dot(chi)) # if right multiplication (18) return SEK3.log(chi.dot(SEK3.inv(hat_hat)))
+B. Implemented Examples
+In the code, we implement the frameworks on relevant vanilla robotics examples which are listed as follows:
+• 2D vanilla robot localization tutorial based on odometry and GNSS measurements;
+• 3D attitude estimation from an IMU equipped with gyro, accelerometer and magnetometer;
+• 3D inertial navigation on flat Earth where the vehicle obtains observations of known landmarks;
+• 2D SLAM where the UKFs follows [51] to limit computational complexity and adding new observed landmarks in the state;
+• IMU-GNSS fusion on the KITTI dataset [49];
+• an example where the state lives on the 2-sphere manifold, modeling e.g., a spherical pendulum [52].
+We finally enhance code framework, documentation and examples with filter performance comparisons: for each
+
+
+0 5 10 15 20 25 30
+0
+0.5
+1
+1.5
+t (s)
+error position norm (m)
+EKF SO(3) × R6 UKF [19] SE2(3) UKF
+Fig. 2: Inertial navigation with heavy initial errors in the setting of [19]. SE2(3)-UKF obtains the best results.
+example we simulate Monte-Carlo data and benchmark UKFs and EKFs based on different choices of uncertainty representation (4) through accuracy and consistency metrics.
+Example 7: Figure 2 displays two EKFs and two UKFs for inertial navigation in the setting of [19], where initial heading and position errors are large, respectively 45 degrees and 1 m. The second UKF, whose uncertainty representation (4) is based on SE2(3) exponential, see Section III-A, clearly outperforms the EKF, the first UKF,
+and improves the EKF of [19] during the first 10 seconds of the trajectory.
+V. EXTENSION TO GENERAL MANIFOLDS
+The main problem when M is not parallelizable is that one cannot define a global uncertainty representation through a map φ as in (4). Indeed ξ = (ξ(1), · · · , ξ(d)) encodes at any χ ∈ M coordinates in the tangent space related to a basis (V1(χ), · · · , Vd(χ)) of the tangent space. On general manifolds, though, it is always possible to cover
+the manifold with “patches” M1, · · · , MK, such that on each patch i we have a set of vector fields (V (i)
+1 , · · · , V (i)
+d)
+allowing one to apply our methodology. For instance on the 2-sphere one could choose a North-East frame in between the polar circles, and then some other smooth set of frames beyond polar circles. However two main issues arise. First, we feel such a procedure induces discontinuities at the polar circles that will inevitably degrade the filter
+perfomances. Indeed by moving ˆχ slightly at the polar circle, one may obtain a jump in the distribution Nφ( ˆχ, P)
+with fixed covariance P, see Figure 3. Then, we see the obtained filter wholly depends on the way patches are chosen, which is undesirable.
+A. The Lifting “Trick”
+It turns out a number of manifolds of interest called homogeneous spaces may be “lifted” to a Lie group, hence a
+parallelizable manifold. By simplicity1 we consider as a tutorial example the 2-sphere M = S2 = {x ∈ R3 | ||x|| = 1}
+with state xn ∈ S2. As xn+1 and xn necessarily lie on the sphere, they are related by a rotation, that is,
+xn+1 = Ωnxn (20)
+with Ωn ∈ SO(3) that may be written as exp(ωn∧) exp(wn∧) where ωn is a known input, and wn ∼ N (0, Qn)
+represents a noise, see (1) for the definition of wedge operator, and exp is the usual matrix exponential of SO(3). We assume xn is measured through a linear observation, that is,
+yn = Hxn + vn ∈ Rp. (21)
+Example 8: We provide a (novel) script which simulates a point of a pendulum with stiff wire living on a sphere, where two components are measured through e.g. a monocular camera, i.e. H = [e1, e2]T .
+1Generalizations to the Stiefel manifold St(p, n), that is, a set of p orthonormal vectors of Rn, and hence to the set of p-dimensional
+subspaces of Rn called the Grassmann manifold are then straightforward.
+
+
+Fig. 3: We see covering the 2-sphere with 3 parallelizable patches (in between polar circles, and beyond each) inevitably induces discontinuities that may degrade filtering performances. This is a consequence of the theorem that states it is not possible to “comb a hairy ball”, see [53].
+The dynamics can be lifted into SO(3) by writing xn via a rotation matrix Rn, that is, we posit xn = RnL with
+L ∈ R3. In terms of Rn, dynamics (20) may be lifted letting Rn+1 = ΩnRn as then RnL satisfies (20) indeed.
+Similarly, the output in terms of Rn writes yn = HRnL + vn =  ̃h(Rn) + vn. Having transposed the problem into
+estimation on the parallelizable manifold SO(3), we can then apply the two UKFs by setting φ to either (17) or (18).
+B. Covariance Retrieval
+The practitioner may wonder how to retrieve the covariance in the original variables. Assume we have a Gaussian vector x ∼ (μ, Σ), and we want to approximate g(x) as a Gaussian. This might addressed resorting to the unscented transform but a more basic and direct approach is as follows. Consider A a matrix and b a vector. Then it is known from probability theory that
+Ax + b ∼ (Aμ + b, AΣAT ). (22)
+Then, we can write x = μ + e with e ∼ N (0, Σ) and linearizing we find g(x) ≈ g(μ) + ∂g
+∂x (μ)e and applying linear
+Gaussian vectors transform yields approximately g(x) ∼ (g(μ), AΣAT ), where we let A := ∂g
+∂x (μ).
+In the 2-sphere example of the present section, our uncertainty representation may be taken as Rn = exp(ξ∧) ˆRn
+with ξ ∼ N (0, P), see (18) and Example 3. As a result it is rather easy to compute the covariance matrix of RnL as
+follows. We may use linearizations to write that exp(ξ∧) ≈ I+ξ∧ and thus RnL = exp(ξ∧) ˆRnL ≈ ˆRnL+ξ∧Rˆ nL =
+ˆRnL − (Rˆ nL)∧ξ = ˆRnL + Aξ with A = −( ˆRnL)∧. As a result, the probability distribution of RnL is under a
+linear approximation N (Rˆ nL, APAT ).
+VI. CONCLUDING REMARKS
+If we step back a little and look at the bigger picture, we see the main problem when designing filters on a manifold M is that we often lack coordinates to write down the filter equations on M. Even if we do, e.g. longitude and latitude on the sphere, this implicitly defines probability distributions on the manifold in a way that may not suit the problem well, see Fig. 3. Over the past decades, researchers have advocated the intrinsic approach based on the tangent space [54]. This way the filter becomes independent of a particular choice of coordinates on the manifold, but it depends on the way tangent spaces at different locations correspond. Notably, we see at lines 5, 6, 7, 9 of
+Algorithm 1 the covariance matrix P+ is computed using local information at χˆ , in total disregard of ˆχ+, although
+P+ is supposed to encode dispersion at χˆ +! This means it is up to the user to define the way “Gaussians” are
+transported over M from ˆχ to ˆχ+, as early noticed in [7], see also [8]. The route we have followed herein consists
+
+
+in focusing on parallelizable manifolds where a global coordinate system of tangent spaces exists, and readily provides a transport operation over M.
+However, there are multiple choices for the parallel transport operation. In [7,8] the authors advocate using the Levi-Civita connection for parallel transport, which depends on the chosen metric, and argue its virtue is that it is torsion free. In the context of state estimation on Lie groups, though, the transport operations that lead to the best performances are not torsion free, see [1]. In cases where it is unclear to the user which transport operation (in our case parallelization+retraction) shall be best, we suggest using our code for quick benchmarking, as done in Figure 2. Indeed, the group structures SE2(3) versus SO(3) × R6 actually boil down to particular choices of parallelization
+(hence transport), and the filter based on SE2(3) outperforms the other.
+REFERENCES
+[1] A. Barrau and S. Bonnabel, “Invariant Kalman Filtering,” Annual Review of Control, Robotics, and Autonomous Systems, vol. 1, no. 1,
+pp. 237–257, 2018. [2] S. Julier and J. Uhlmann, “Unscented Filtering and Nonlinear Estimation,” Proceedings of the IEEE, vol. 92, no. 3, pp. 401–422, 2004. [3] S. Julier and J. Uhlmann, “A New Extension of the Kalman Filter to Nonlinear Systems,” AeroSense’97, pp. 182–193, 1997.
+[4] C. Hertzberg, R. Wagner, U. Frese, and L. Schro ̈der, “Integrating Generic Sensor Fusion Algorithms with Sound State Representations
+through Encapsulation of Manifolds,” Information Fusion, vol. 14, no. 1, pp. 57–77, 2013.
+[5] S. Hauberg, F. Lauze, and K. S. Pedersen, “Unscented Kalman Filtering on Riemannian Manifolds,” Journal of Mathematical Imaging
+and Vision, vol. 46, no. 1, pp. 103–120, 2013.
+[6] H. M. T. Menegaz, J. Y. Ishihara, and H. T. M. Kussaba, “Unscented Kalman Filters for Riemannian State-Space Systems,” Transactions
+on Automatic Control, vol. 64, no. 4, pp. 1487–1502, 2019.
+[7] G. Loianno, M. Watterson, and V. Kumar, “Visual Inertial Odometry for Quadrotors on SE(3),” in International Conference onRobotics
+and Automation (ICRA), pp. 1544–1551, IEEE, 2016.
+[8] J. Svacha, G. Loianno, and V. Kumar, “Inertial Yaw-Independent Velocity and Attitude Estimation for High-Speed Quadrotor Flight,”
+Robotics and Automation Letters (RA-L), vol. 4, no. 2, pp. 1109–1116, 2019.
+[9] E. Leffens, F. Markley, and M. Shuster, “Kalman Filtering for Spacecraft Attitude Estimation,” Journal of Guidance, Control, and
+Dynamics, vol. 5, no. 5, pp. 417–429, 1982.
+[10] J. R. Forbes, A. H. de Ruiter, and D. E. Zlotnik, “Continuous-Time Norm-Constrained Kalman Filtering,” Automatica, vol. 50, no. 10,
+pp. 2546–2554, 2014. [11] J. Sol`a, “Quaternion Kinematics for the Error-State Kalman Filter,” p. 94, 2012.
+[12] E. Kraft, “A Quaternion-Based Unscented Kalman Filter for Orientation Tracking,” in International Conference of Information Fusion,
+pp. 47–54, IEEE, 2003.
+[13] T. Lee, “Global Unscented Attitude Estimation via the Matrix Fisher Distributions on SO(3),” in American Control Conference (ACC),
+(1016), pp. 4942–4947, IEEE, 2016.
+[14] J. L. Crassidis, “Unscented Filtering for Spacecraft Attitude Estimation,” Journal of guidance, control, and dynamics, vol. 26, no. 4,
+pp. 536–542, 2003.
+[15] S. Bonnabel, “Left-Invariant Extended Kalman Filter and Attitude Estimation,” in Conference on Decision and Control, pp. 1027–1032,
+IEEE, 2007.
+[16] A. Barrau and S. Bonnabel, “Intrinsic Filtering on Lie Groups With Applications to Attitude Estimation,” IEEE Transactions on Automatic
+Control, vol. 60, no. 2, pp. 436–449, 2015.
+[17] G. Bourmaud, R. Me ́gret, M. Arnaudon, and A. Giremus, “Continuous-Discrete Extended Kalman Filter on Matrix Lie Groups Using
+Concentrated Gaussian Distributions,” Journal of Mathematical Imaging and Vision, vol. 51, no. 1, pp. 209–228, 2015.
+[18] G. Bourmaud, R. M ́egret, A. Giremus, and Y. Berthoumieu, “Discrete Extended Kalman Filter on Lie Groups,” in European Signal
+Processing Conference (EUSIPCO), pp. 1–5, IEEE, 2013.
+[19] A. Barrau and S. Bonnabel, “The Invariant Extended Kalman Filter as a Stable Observer,” Transaction on Automatic Control, vol. 62,
+no. 4, pp. 1797–1812, 2017.
+[20] J. Bohn and A. K. Sanyal, “Unscented State Estimation for Rigid Body Motion on SE(3),” in Conference on Decision and Control
+(CDC), pp. 7498–7503, IEEE, 2012.
+[21] J. J. Bohn, A. K. Sanyal, and E. A. Butcher, “Unscented State Estimation for Rigid Body Attitude Motion with a Finite-Time Stable
+Observer,” in Conference on Decision and Control (CDC), pp. 4698–4703, IEEE, 2016.
+[22] M. Brossard, S. Bonnabel, and J.-P. Condomines, “Unscented Kalman filtering on Lie groups,” in International Conference on Intelligent
+Robots and Systems (IROS), pp. 2485–2491, IEEE/RSJ, 2017.
+[23] J. R. Forbes and D. E. Zlotnik, “Sigma Point Kalman Filtering on Matrix Lie Groups Applied to the SLAM Problem,” in Geometric
+Science of Information (F. Nielsen and F. Barbaresco, eds.), vol. 10589, pp. 318–328, Cham: Springer International Publishing, 2017.
+
+
+[24] J. Sola`, J. Deray, and D. Atchuthan, “A Micro Lie theory for State Estimation in Robotics,” arXiv:1812.01537 [cs], Dec. 2018.
+[25] Y. Wang and G. Chirikjian, “Error Propagation on the Euclidean Group with Applications to Manipulator Kinematics,” Transactions on
+Robotics, vol. 22, no. 4, pp. 591–602, 2006.
+[26] W. Park, Y. Liu, Y. Zhou, M. Moses, and G. S. Chirikjian, “Kinematic State Estimation and Motion Planning for Dtochastic Nonholonomic
+Systems using the Exponential Map,” Robotica, vol. 26, no. 4, pp. 419–434, 2008.
+[27] G. Chirikjian, Stochastic Models, Information Theory, and Lie Groups, Volume 1. Birkh ̈auser, 2009.
+[28] G. Chirikjian and M. Kobilarov, “Gaussian Approximation of Non-Linear Measurement Models on Lie Groups,” in Conference on
+Decision and Control, pp. 6401–6406, IEEE, 2014.
+[29] T. Barfoot, J. R. Forbes, and P. T. Furgale, “Pose Estimation using Linearized Rotations and Quaternion Algebra,” Acta Astronautica,
+vol. 68, no. 1-2, pp. 101–112, 2011.
+[30] T. Barfoot and P. Furgale, “Associating Uncertainty With Three-Dimensional Poses for Use in Estimation Problems,” Transaction on
+Robotics, vol. 30, no. 3, pp. 679–693, 2014.
+[31] R. Hartley, M. G. Jadidi, J. W. Grizzle, and R. M. Eustice, “Contact-Aided Invariant Extended Kalman Filtering for Legged Robot State
+Estimation,” in Robotics Science and Systems, 2018.
+[32] N. Ko, W. Youn, I. Choi, G. Song, and T. Kim, “Features of Invariant Extended Kalman Filter Applied to Unmanned Aerial Vehicle
+Navigation,” Sensors, vol. 18, no. 9, p. 2855, 2018.
+[33] N. Y. Ko, G. Song, W. Youn, I. H. Choi, and T. S. Kim, “Improvement of extended kalman filter using invariant extended kalman filter,”
+in International Conference on Control, Automation and Systems (ICCAS), pp. 948–950, 2018.
+[34] M. Wang and A. Tayebi, “A Globally Exponentially Stable Nonlinear Hybrid Observer for 3D Inertial Navigation,” in Conference on
+Decision and Control (CDC), pp. 1367–1372, IEEE, 2018.
+[35] M. Brossard, S. Bonnabel, and A. Barrau, “Unscented Kalman Filter on Lie Groups for Visual Inertial Odometry,” in International
+Conference on Intelligent Robots and Systems (IROS), pp. 649–655, IEEE/RSJ, 2018.
+[36] K. Wu, T. Zhang, D. Su, S. Huang, and G. Dissanayake, “An Invariant-EKF VINS Algorithm for Improving Consistency,” in International
+Conference on Intelligent Robots and Systems (IROS), pp. 1578–1585, IEEE/RSJ, 2017.
+[37] S. Bonnabel, “Symmetries in Observer Design: Review of Some Recent Results and Applications to EKF-based SLAM,” in Robot
+Motion and Control 2011, Lecture Notes in Control and Information Sciences, pp. 3–15, Springer, London, 2012. [38] A. Barrau and S. Bonnabel, “An EKF-SLAM algorithm with consistency properties,” arXiv preprint arXiv:1510.06263, 2015.
+[39] M. Brossard, A. Barrau, and S. Bonnabel, “Exploiting Symmetries to Design EKFs with Consistency Properties for Navigation and
+SLAM,” IEEE Sensors Journal, p. 8, 2019.
+[40] S. Heo and C. G. Park, “Consistent EKF-Based Visual-Inertial Odometry on Matrix Lie Group,” Sensors Journal, vol. 18, no. 9,
+pp. 3780–3788, 2018.
+[41] S. Heo, J. H. Jung, and C. G. Park, “Consistent EKF-Based Visual-Inertial Navigation Using Points and Lines,” Sensors Journal, vol. 18,
+no. 18, pp. 7638–7649, 2018.
+[42] T. Zhang, K. Wu, J. Song, S. Huang, and G. Dissanayake, “Convergence and Consistency Analysis for A 3D Invariant-EKF SLAM,”
+Robotics and Automation Letters (RA-L), vol. 2, no. 2, pp. 733–740, 2017.
+[43] R. Mahony and T. Hamel, “A geometric Nonlinear Observer for Simultaneous Localisation and Mapping,” in Conference on Decision
+and Control (CDC), pp. 2408–2415, IEEE, 2017.
+[44] J.-P. Condomines, C. Seren, and G. Hattenberger, “Nonlinear State Estimation Using an Invariant Unscented Kalman Filter,” in AIAA
+Guidance, Navigation, and Control (GNC) Conference, 2013.
+[45] J.-P. Condomines, C. Seren, and G. Hattenberger, “Pi-Invariant Unscented Kalman Filter for Sensor Fusion,” in Conference on Decision
+and Control, pp. 1035–1040, IEEE, 2014.
+[46] P.-A. Absil, R. Mahony, and R. Sepulchre, Optimization Algorithms on Matrix Manifolds. Princeton, NJ: Princeton Univ. Press, 2009.
+OCLC: 254598475.
+[47] A. Barrau, Non-linear state error based extended Kalman filters with applications to navigation. PhD thesis, Mines Paristech, 2015.
+[48] M. Wang and A. Tayebi, “Geometric Nonlinear Observer Design for SLAM on a Matrix Lie Group,” in Annual Conference on Decision
+and Control (CDC), pp. 1488–1493, IEEE, 2018.
+[49] A. Geiger, P. Lenz, C. Stiller, and R. Urtasun, “Vision Meets Robotics: The KITTI Dataset,” The International Journal of Robotics
+Research, vol. 32, no. 11, pp. 1231–1237, 2013.
+[50] B. Nisar, P. Foehn, D. Falanga, and D. Scaramuzza, “VIMO: Simultaneous Visual Inertial Model-Based Odometry and Force Estimation,”
+Robotics and Automation Letters (RA-L), vol. 4, no. 3, pp. 2785–2792, 2019.
+[51] G. P. Huang, A. I. Mourikis, and S. I. Roumeliotis, “A Quadratic-Complexity Observability-Constrained Unscented Kalman Filter for
+SLAM,” Transactions on Robotics, vol. 29, no. 5, pp. 1226–1243, 2013.
+[52] P. Kotaru and K. Sreenath, “Variation Based Extended Kalman Filter on S2,” in European Control Conference (ECC), pp. 875–882,
+IEEE, 2019.
+[53] J. Milnor, “Analytic proofs of the “hairy ball theorem” and the brouwer fixed point theorem,” The American Mathematical Monthly,
+vol. 85, no. 7, pp. 521–524, 1978.
+
+
+[54] X. Pennec, “Intrinsic statistics on riemannian manifolds: Basic tools for geometric measurements,” Journal of Mathematical Imaging
+and Vision, vol. 25, no. 1, p. 127, 2006.
+
+
+A Code for Unscented Kalman Filtering on
+Manifolds (UKF-M)
+Martin BROSSARD†, Axel BARRAU∗ and Silv`ere BONNABEL†
+†MINES ParisTech, PSL Research University, Centre for Robotics, 60 Boulevard Saint-Michel, 75006, Paris, France
+∗Safran Tech, Groupe Safran, Rue des Jeunes Bois-Chaˆteaufort, 78772, Magny Les Hameaux Cedex, France
+Abstract—The present paper introduces a novel method
+ology for Unscented Kalman Filtering (UKF) on manifolds
+that extends previous work by the authors on UKF on Lie
+groups. Beyond filtering performance, the main interests of
+the approach are its versatility, as the method applies to
+numerous state estimation problems, and its simplicity of
+implementation for practitioners not being necessarily famil
+iar with manifolds and Lie groups. We have developed the
+method on two independent open-source Python and Matlab
+frameworks we call UKF-M, for quickly implementing and
+testing the approach. The online repositories contain tutori
+als, documentation, and various relevant robotics examples
+that the user can readily reproduce and then adapt, for
+fast prototyping and benchmarking. The code is available at
+https://github.com/CAOR-MINES-ParisTech/ukfm.
+I. INTRODUCTION
+Over the past fifty years, the Kalman filter has been
+a pervasive tool in aerospace engineering and beyond, to
+estimate the state of a system subject to dynamical evolution,
+see e.g. [1]. When the system’s dynamics are governed
+by nonlinear equations, one generally resorts to a variant
+called the Extended Kalman Filter (EKF), or to the more
+recent Unscented Kalman Filter (UKF) [2,3]. There has been
+various attempts to adapt the EKF and (respectively) UKF
+to the case where the system’s state lives in a manifold M,
+see respectively [4] and [5]–[8].
+In this paper we introduce UKF-M, a novel and general
+method for UKF on manifolds whose versatility allows direct
+application to numerous manifolds encountered in practice.
+The theory is supported with independent Python and Mat
+lab open sourced implementations. The framework is well
+documented, and contains a number of examples that can be
+readily run and then adapted, where our methodology spares
+the analytic computation of Jacobians (contrary to EKF) and
+is thus well suited to fast prototyping and benchmarking.
+Filtering on manifolds is historically motivated by
+aerospace applications where one seeks to estimate (besides
+other quantities) the orientation of a body in space. Much
+work has been devoted to making the EKF work with
+orientations, namely quaternions or rotation matrices. The
+idea is to make the EKF estimate an error instead of the
+state directly, leading to error state EKFs [4,9]–[11] and
+their UKF counterparts [12]–[14]. The set of orientations of
+a body in space is the Lie group SO(3) and efforts devoted
+to estimation on SO(3) have paved the way to EKF on Lie
+groups, see [1,15]–[19] and unscented Kalman filtering on
+Lie groups, see [7,8,13,20]–[23].
+Lie groups play a prominent role in robotics [24]. In the
+context of state estimation and localization, viewing poses as
+elements of the Lie group SE(3) has proved relevant [25]
+[31]. The use of the novel Lie group SE2(3) introduced
+in [19] has led to drastic improvement of Kalman filters
+for robot state estimation [1,19,31]–[36]. Similarly, using
+group SEk(n) introduced for Simultaneous Localization
+And Mapping (SLAM) in [37,38] makes EKF consistent
+or convergent [38]–[43]. Finally, there has been attempts to
+devise UKFs respecting natural symmetries of the systems’
+dynamics, namely the invariant UKF, see [44,45].
+Besides providing a comprehensive code, our main con
+tribution in terms of methodology is to introduce a novel and
+general framework for UKF on manifolds that is simpler
+than existing methods, and whose versatility allows direct
+application to all manifolds encountered in practice. Indeed,
+[7,8] proposes UKF implementations based on the Levi
+Civita connection but mastering differential geometry is
+difficult. [7,13,20,21] are reserved for SO(3) and SE(3),
+while [23] is reserved for Lie groups and requires more
+knowledge of Lie theory than the present paper.
+In Section II, we introduce a user-friendly approach to
+UKF on parallelizable manifolds. Section III applies the
+approach in the particular case where the manifold is a Lie
+group and recovers [22], but without requiring much knowl
+edge of Lie groups. Section IV describes the open sourced
+framework. We then show in Section V the method may
+actually be extended to numerous manifolds encountered in
+robotics. The conclusion section discusses theoretical issues
+and provides clarifications related to Kalman filtering on
+manifolds.
+II. UNSCENTED KALMAN FILTERING ON
+PARALLELIZABLE MANIFOLDS
+In this section we describe our simple methodology for
+UKF on parallelizable manifolds. Owing to space limitation,
+we assume the reader to have approximate prior knowledge
+and intuition about manifolds and tangent spaces.
+A. Parallelizable Manifolds
+In order to “write” the equations of the extended or
+the unscented Kalman filter on a manifold, it may be
+advantageous to have global coordinates for tangent spaces.
+Definition 1: A smooth manifold M of dimension d is
+said parallelizable if there exists a set of smooth vector fields
+{V1, V2, · · · , Vd} on the manifold such that for any point
+χ ∈ M the tangent vectors {V1(χ), V2(χ), · · · , Vd(χ)}
+form a basis of the tangent space at χ.
+arXiv:2002.00878v2 [cs.RO] 11 Mar 2020
+
+
+Fig. 1: The cylinder is a parallelizable manifold. We can
+define vector fields V1, V2 that form a basis of the tangent
+space at any point.
+Example 1: The cylinder {(x, y, z) ∈ R3 | x2 + y2 = 1}
+is a basic example with d = 2. V1(x, y, z) = (y, −x, 0) and
+V2 = (0, 0, 1) are two tangent vectors that form a local basis
+at (x, y, z), see Figure 1. The cylinder is a simple case but
+the notion of parallelizable manifolds is much broader. In
+particular, all Lie groups are parallelizable manifolds.
+Example 2: For the rotation matrices C ∈ SO(3) let us
+first define the “wedge” symbol via
+ω∧ =
+( 0 −ω3 ω2 ω3 0 −ω1 −ω2 ω1 0
+)
+, (1)
+where ω = (ω1, ω2, ω3)T , and choose as vector fields:
+V1(C) = Ce1∧, V2(C) = Ce2∧, V3(C) = Ce3∧, (2)
+where e1 = (1, 0, 0)T , e2 = (0, 1, 0)T , and e3 = (0, 0, 1)T .
+It should be noted, though, that not all manifolds fall in this
+category. However, we will see in Section V how this issue
+can be addressed over-parameterizing the state.
+B. Uncertainty Representation on Parallelizable Manifolds
+Our goal is to estimate the state χ ∈ M given all the
+sensor measurements. As sensors are flawed, it is impossible
+to exactly reconstruct χ. Instead, a filter maintains a “belief”
+about the state, that is, its statistical distribution given
+past sensors’ readings. The Kalman filter in Rd typically
+maintains a Gaussian belief such that χ ∼ N (χˆ , P) , which
+may be re-written in the form:
+χ = ˆχ + ξ, ξ ∼ N (0, P) . (3)
+We see that the belief is encoded using only a mean estimate
+ˆχ, and a covariance matrix P that encodes the extent of
+dispersion of the belief around the estimate.
+Consider a parallelizable manifold M, and let
+{V1, V2, · · · , Vd} denote the associated vector fields.
+To devise a similar belief on M, one needs of course
+local coordinates to write the mean ˆχ ∈ M. This poses no
+problem, though. The harder part is to find a way to encode
+dispersion around the estimate ˆχ. It is now commonly
+admitted that the tangent space at ˆχ should encode such
+dispersion, and that covariance P should hence reflect
+dispersion in the tangent space. As additive noise (3) makes
+no sense for χ ∈ M, we define a probability distribution
+χ ∼ Nφ( ˆχ, P), for the random variable χ ∈ M as
+χ = φ ( ˆχ, ξ) , ξ ∼ N (0, P) , (4)
+where φ : M×Rd → M is a smooth function chosen by the
+user and satisfying φ ( ˆχ, 0) = ˆχ. In (4), ξ ∈ Rd is a ran
+dom Gaussian vector that encodes directions of the tangent
+space at χˆ , N (., .) is the classical Gaussian distribution in
+Euclidean space, and P ∈ Rd×d the associated covariance
+matrix; and we also impose the Jacobian of φ at ( ˆχ, 0) w.r.t.
+ξ to be Identity, see [46]. Using the parallelizable manifold
+property, we implicity use coordinates in the tangent space,
+as ξ = (ξ(1), ξ(2), · · · , ξ(d))T ∈ Rd encodes the tangent
+vector ξ(1)V1( ˆχ) + · · · + ξ(d)Vd( ˆχ). Hence φ is called a
+“retraction”, see [46]. In (4), the noise-free quantity ˆχ is
+viewed as the mean, and the dispersion arises through φ. We
+stress that the distribution defined at (4) is not Gaussian. It
+is “only” Gaussian in coordinates related to map φ.
+Example 3: Consider Example 2. Recall tangent vectors
+at C indicate small motions around C ∈ SO(3). Tangent
+vector Cω∧ indeed writes ω1V1(C) + ω2V2(C) + ω3V3(C),
+see (2). We can then choose for φ the following φ(C, ω) =
+C exp (ω∧), with exp the exponential map on SO(3).
+Finding an appropriate map φ is not always straightfor
+ward. However there exists in theory some “canonical” φ.
+Proposition 1: One may define define φ(χˆ , ξ) as the
+point of M obtained by starting from ˆχ and integrating
+the vector field ∑d
+i=1 ξ(i)Vi during one unit of time. In that
+case we call φ an “exponential map”.
+However, we sometimes have no closed form for the expo
+nential map and one resorts to simpler retractions φ.
+C. Bayesian Estimation Using the Unscented Transform
+Consider a random variable χ ∈ M with prior proba
+bility distribution p (χ). Suppose we obtain some additional
+information about χ through a measurement y. The goal is
+to compute the posterior distribution p(χ|y). Let
+y = h (χ) + v, (5)
+be a measurement, where h(.) : M → Rp represents the
+observation function and v ∼ N (0, R) is a white Gaussian
+noise in Rp with known characteristics. The problem of
+Bayesian estimation we consider is as follows:
+1) assume the prior distribution to follow (4) with
+known parameters χˆ and P;
+2) assume one measurement y of (5) is available;
+3) approximate the posterior distribution as
+p(χ|y) ≈ φ(χˆ +, ξ+), (6)
+where ξ+ ∼ N (0, P+), and find parameters ˆχ+
+and P+.
+Letting χ = φ ( ˆχ, ξ) in (5), we see y provides an infor
+mation about ξ ∼ N (0, P) and we may use the unscented
+transform of [2,3] to approximate the posterior p(ξ|y) for ξ
+as follows, see Algorithm 1: we compute a finite number of
+samples ξj, j = 1, . . . , 2d, and pass each of these so-called
+sigma points through the measurement function
+yj = h (φ(χˆ , (ξj)) , j = 1, . . . , 2d. (7)
+
+
+Algorithm 1: Bayesian updating on parallelizable
+manifolds with prior (4) and observation (5)
+Input: ˆχ, P, y, R;
+// set sigma points
+1 ξj = col(√(λ + d)P)j, j = 1, . . . , d,
+ξj = − col(√(λ + d)P)j−d, j = d + 1, . . . , 2d; // compute measurement sigma points 2 y0 = h(φ(χˆ , 0));
+3 yj = h(φ(χˆ , ξj)), j = 1, . . . , 2d;
+// infer covariance matrices
+4 y ̄ = wmy0 + ∑2d
+j=1 wj yj ;
+5 Pyy = ∑2d
+j=0 wj (yj − y ̄)(yj − y ̄)T + R;
+6 Pξy = ∑2d
+j=1 wj ξj (yj − y ̄)T ;
+// update state and covariance 7 K = PξyPy−y1 ; // gain matrix
+8 χˆ + = φ(χˆ , K(y − y ̄)); 9 P+ = P − KPyyKT ;
+Output: χˆ +, P+;
+By noting y0 = h(φ( ˆχ, 0)) we then compute successively
+the measurement mean y ̄ = wmy0 + ∑2d
+j=1 wj yj , the mea
+surement covariance Pyy = ∑2d
+j=0 wj (yj −y ̄)(yj −y ̄)T +R
+and the cross-covariance Pξy = ∑2d
+j=1 wj ξj (yj − y ̄)T ,
+where wm and wj are weights defined in [3,22] (see defini
+tion of scale parameter λ therein also). We then derive the
+conditional distribution of ξ ∈ Rd as
+p(ξ|y) ∼ N (ξ ̄, P+) , where (8)
+K = PξyPyy, ξ ̄ = K (y − y ̄) , P+ = P − KPyyKT(.9)
+This may be viewed as a Kalman update on the error ξ,
+in the vein of error state Kalman filtering, see e.g. [11].
+The problem is then to convert this into a distribution on
+the manifold in the form (4). We first represent p(ξ|y) as
+ξ ̄ + ξ+ with ξ+ ∼ N (0, P+) and ξ ̄ considered as a noise
+free mean. We suggest to define the posterior p(χ|y) as
+χ ≈ φ(χˆ +, ξ+), ξ+ ∼ N (0, P+) , (10)
+where we have let
+ˆχ+ = φ ( ˆχ, ξ ̄) . (11)
+Note the approximation done in (10)-(11) actually con
+sists in writing φ ( ˆχ, ξ ̄ + ξ+) ≈ φ (φ ( ˆχ, ξ ̄) , ξ+).
+When M = Rd the latter equality holds up to the first
+order in the dispersions ξ ̄, ξ+, both assumed small. In the
+case where M is not a vector space, it may be geometrically
+interpreted as saying that moving from χˆ along the direction
+ξ ̄ + ξ+ approximately consists in moving from χˆ along ξ ̄
+and then from the obtained point on M along ξ+.
+D. Unscented Kalman Filtering on Parallelizable Manifolds
+Consider the dynamics
+χn = f (χn−1, ωn, wn) , (12)
+where the state χn lives in a parallelizable manifold M, ωn
+is a known input variable and wn ∼ N (0, Qn) is a white
+Gaussian noise in Rq. We consider observations of the form
+yn = h (χn) + vn, (13)
+where vn ∼ N (0, Rn) is a white Gaussian noise with
+known covariance that we assume additive for clarity of the
+algorithm derivation only. For system (12)-(13), we model
+the state posterior conditioned on past measurements using
+the uncertainty representation (4). To propagate the state, we
+start from the prior distribution p (χn−1) ∼ φ( ˆχn−1, ξn−1)
+with ξn−1 ∼ N (0, Pn−1) and ˆχn−1, Pn−1 known, and we
+seek to compute the state propagated distribution in the form
+p (χn|χn−1) ∼ φ(χˆ n, ξn) with ξn ∼ N (0, Pn). (14)
+We define sigma points using (4) and the statistics of
+noise wn, and pass them through (12). Then, to find ˆχn
+one is faced with the optimization problem of computing a
+weighted mean on M. This route has already been advocated
+in [12]–[14,23]. However, to keep the implementation simple
+and analog to the EKF, we suggest to merely propagate the
+mean using the unnoisy state model, leading to
+χˆ n = f ( ˆχn−1, ωn, 0). (15)
+To compute the covariance Pn from Pn−1 of ξn−1 we
+use the fact wn and ξn−1 are uncorrelated and proceed in
+two steps. 1) we generate sigma points in Rd corresponding
+to Pn−1 and pass them through the unnoisy model (15) for
+nonlinear propagation of Pn−1 through f . We obtain points
+χjn on the manifold M, and the distribution of propagated
+state is described as φ ( ˆχn, ξn
+), with ˆχn known from (15).
+We need to be able to locally invert ξ 7→ φ(χˆ , ξ), i.e., to
+find a map denoted by φ−1
+ˆχ (·) : M → Rd such that
+φ−1
+ˆχ
+(φ( ˆχ, ξ)) = ξ + O(||ξ||2), (16)
+that is, a map that allows one to assess the discrepancy
+between ˆχ and φ( ˆχ, ξ) is ξ indeed. Then we use φ−1
+ˆχn
+to map sigma points χjn back into Rd and compute their
+empirical covariance Σn. 2) we then generate sigma points
+for process noise wn similarly and obtain another covariance
+matrix encoding dispersion in Rd owed to noise, that adds
+up to Σn and thus clearly distinguish the contribution of
+the state error dispersion ξn from noise wn. When a new
+measurement arrives, belief is updated via Algorithm 1. Al
+gorithm 2 summarizes both steps, where the weights defined
+through set weights(d, α) depend on a scale parameter
+α (generally set between 10−3 and 1), and sigma point
+dimension, see [3,22] and documentation in source code.
+Using (15) to propagate the mean while using sigma
+points to compute covariance is also done in [30], in the
+particular case of pose compounding on SE(3), with φ the
+SE(3) exponential map.
+III. APPLICATION TO UKF ON LIE GROUPS
+To apply the preceding methodology to any d
+dimensional group G = M, one first defines a basis of the
+Lie algebra. Then, to any vector ξ ∈ Rd, one may associate
+an element denoted by ξ∧ of the Lie algebra g. Let the
+
+
+Algorithm 2: UKF on parallelizable manifolds
+Input: ˆχn−1, Pn−1, ωn, Qn, yn, Rn, α;
+Propagation
+// propagate mean state
+1 ˆχn = f (χˆ n−1, ωn, 0);
+// propagate state error covariance
+2 λ,{wj }j=0,...,2d = set weights(d, α);
+3 ξj = col(√(λ + d)Pn−1)j , j = 1, . . . , d,
+ξj = − col(√(λ + d)Pn−1)j−d, j = d + 1, . . . , 2d; // use retraction onto manifold 4 χjn = f (φ(χˆ n−1, ξj ), ωn, 0), j = 1, . . . , 2d;
+// inverse retract to go back in Rd
+5 Σn = ∑2d
+j=1 wj φ−1
+ˆχn
+(χjn)
+(
+φ−1
+ˆχn
+(χjn)
+)T
+;
+// proceed similarly for noise
+6 λ, {wj }j=0,...,2q = set weights(q, α);
+7 wj = col(√(λ + q)Qn)j, j = 1, . . . , q,
+wj = − col(√(λ + q)Qn)j−d, j = q + 1, . . . , 2q;
+8  ̃χj
+n = f (χˆ n−1, ωn, wj ), j = 1, . . . , 2q;
+9 Pn = Σn + ∑2q
+j=1 wj φ−1
+ˆχn
+(χ ̃ j
+n)(φ−1
+ˆχn
+(χ ̃ j
+n))T ;
+Update (when measurement yn arrives)
+Compute χˆ +
+n , Pn+ from Algorithm 1 with χˆ n, Pn;
+Output: χˆ +
+n , Pn+;
+vee operator ∨ denote its inverse, as in e.g., [30]. The Lie
+exponential map “exp” maps elements of the Lie algebra to
+the group. In (4) we may choose φ( ˆχ, ξ) := ˆχ exp(ξ∧),
+which corresponds to left concentrated Gaussians on Lie
+groups [18]. Note that, in the Lie group case, choosing left
+invariant vector fields for the Vi’s and following Proposition
+1 we exactly recover the latter expression.
+We may invert φ using the logarithm map exp−1 := log
+of G, and we get
+φ(χˆ , ξ) := ˆχ exp(ξ∧), φ−1
+ˆχ (χ) := log
+( ˆχ−1χ)
+. (17)
+If we alternatively privilegiate right multiplications we have
+φ(χˆ , ξ) := exp(ξ∧) ˆχ, φ−1
+ˆχ (χ) := log
+(χ ˆχ−1)
+. (18)
+A. Applications in Mobile Robotics: the Group SEk(d)
+It is well known that orientations of body in spaces are
+described by elements of SO(3). It is also well known
+that the use of SE(3) is advantageous to describe the
+position and the orientation of a robot (pose), especially
+for estimation, see [25]–[31]. In [19,47] the group of dou
+ble direct isometries SE2(3) was introduced to address
+estimation problems for robot navigation when the motion
+equations are based on an Inertial Measurement Unit (IMU).
+In [37,38] the group of multiple spatial isometries SEk(d)
+was introduced in the context of SLAM. The group SEk(d),
+allows recovering SE(3) with k = 1, d = 3, SE(2) with
+k = 1, d = 2 and SO(3) with k = 0, d = 3. It seems
+to cover virtually all robotics applications where the Lie
+group methodology has been so far useful (along with trivial
+extensions to be mentioned in Section III-B). Since it was
+introduced for navigation and SLAM, this group has been
+successfully used in various contexts, see [1,19,31]–[36,38]
+[43,48]. For more information see the code documentation.
+B. The Mixed Case
+We call mixed the case where M = G × RN . This
+typically arises when one wants to estimate some additional
+parameters besides the state assumed to live in the group
+G, such as sensor biases. By decomposing the state as
+ˆχ = ( ˆχ1, ˆχ2) ∈ G × RN and letting ξ = (ξ1, ξ2), we
+typically define φ through right multiplication as
+φ ( ˆχ, ξ) = (exp (ξ1) ˆχ1, ˆχ2 + ξ2) (19)
+or if left multiplications are privilegiated φ ( ˆχ, ξ) = ( ˆχ1 exp (ξ1) , ˆχ2 + ξ2). This way, as many additional quan
+tities as desired may be estimated along the same lines.
+Remark 1: When G = SE(3) for example, it is tempt
+ing to let G′ = SO(3) and to treat SE(3) as SO(3) × R3
+along the lines of mixed systems. However, in robotics
+contexts, it has been largely argued the Lie group structure
+of SE(3) to treat poses is more relevant than SO(3)×R3, as
+accounting for the coupling between orientation and position
+leads to important properties, see [25]–[31]. In the same
+way, SEk(3) resembles SO(3) × R3k but has a special
+noncommutative group structure having recently led to many
+successes in robotics, see [1,19,31]–[36,38]–[43,48].
+Example 4: The state χ for fusing IMU with GNSS may
+be divided into the vehicle state χ1 ∈ SE2(3) (orienta
+tion, velocity and position of the vehicle) and IMU biases
+χ2 = b ∈ R6, see e.g. our example on the KITTI dataset
+[49]. Further augmenting χ2 with new parameters, e.g. time
+synchronization and force variables [50], is straightforward.
+IV. UKF-M IMPLEMENTATION
+We have released both open source Python pack
+age and Matlab toolbox UKF-M implementations of
+our method at https://github.com/CAOR-MINES
+ParisTech/ukfm. Both implementations are wholly in
+dependent, and their design guidelines pursue simplicity,
+intuitiveness and easy adaptation rather than optimization.
+We adapt the code to the user preferences as follow: the
+Python code follows class-object paradigm and is heavily
+documented through the Sphinx documentation generator,
+whereas the Matlab toolbox contains equivalent functions
+without class as we believe choosing well function names
+is best suited for the Matlab use as compared to class
+definition. The following code snippets are based on the
+Python package that we recommend using.
+A. Recipe for Designing a UKF on Manifolds
+To devise an UKF for any fusion problem on a parral
+lelizable manifold (or Lie group) M the ingredients required
+in terms of implementation are as follows, see Snippet 1.
+1) A model that specifies the functions f and h used
+in the filter;
+2) An uncertainty representation (4). This implies an
+expression for the function φ and its inverse φ−1,
+defined by the user;
+3) Filter parameters, that define noise covariance ma
+trices Qn, Rn and weights (λ, wm, and wj)
+through α. Noise covariance values are commonly
+
+
+Snippet 1: how to devise an UKF on manifolds
+ukf = ukfm.UKF( f=model.f, # propagation model h=model.h, # observation model phi=user.phi, # retraction phi_inv=user.phi_inv, # inverse retraction Q=model.Q, # process cov. R=model.R, # observation cov. alpha=user.alpha # sigma point param. state0=state0, # initial state P0=P0) # initial covariance
+Snippet 2: setting φ, φ−1 for χ := (Rot ∈ SO(3), v, p)
+def phi(state, xi): return STATE( Rot=state.Rot.dot(SO3.exp(xi[0:3])), v=state.v + xi[3:6] p=state.p + xi[6:9])
+def phi_inv(state, hat_state): return np.hstack([ # concatenate errors SO3.log(hat_state.Rot.T.dot(state.Rot)), state.v - hat_state.v, state.p - hat_state.p])
+guided by the model and tuned by the practitioner,
+whereas α is generally set between 10−3 and 1 [3].
+4) Initial state estimates χˆ 0 and P0.
+Example 5: Consider a 3D model whose state contains
+a rotation matrix Rot ∈ SO(3), the velocity v ∈ R3 and
+position p ∈ R3 of a moving vehicle. Defining φ and φ−1
+allows computing (respectively) a new state and a state error.
+One possibility is given in Snippet 2, where χ ∈ SO(3) ×
+R6, φ( ˆχ, ξ) = (R^ot exp(ξ(0:3)), vˆ + ξ(3:6), ˆp + ξ(6:9)) and
+φ−1
+χˆ (χ) = (log(Ro^tT Rot), v − ˆv, p − ˆp).
+In the particular case where M is a Lie group we follow
+the rules above but we simplify step 2) as follows: we pick an
+uncertainty representation, either (17) or (18). This directly
+implies an expression for the map ∧ and its inverse ∨, as
+well as for the exponential exp and its (local) inverse log.
+Applying the present general methodology for the particular
+case of Lie groups, we recover the method of [22].
+Example 6: We may modify the representation used in
+Example 5 by viewing the state as an element χ ∈ SE2(3)
+instead. This defines two alternative retractions. See e.g. im
+plementation for corresponding φ−1’s in Snippet 3. A quick
+comparison displayed in Figure 2 indicates the SE2(3)-UKF
+with right multiplications (18) outperforms the other filters,
+notably the one based on the naive structure of Example 5.
+B. Implemented Examples
+In the code, we implement the frameworks on relevant
+vanilla robotics examples which are listed as follows:
+• 2D vanilla robot localization tutorial based on
+odometry and GNSS measurements;
+• 3D attitude estimation from an IMU equipped with
+gyro, accelerometer and magnetometer;
+Snippet 3: defining φ−1 via (17) or (18) for χ ∈ SE2(3)
+def phi_inv(state, hat_state): chi = state2chi(state) hat_chi = state2chi(hat_state) # if left multiplication (17) return SEK3.log(SEK3.inv(hat_hat).dot(chi)) # if right multiplication (18) return SEK3.log(chi.dot(SEK3.inv(hat_hat)))
+• 3D inertial navigation on flat Earth where the vehi
+cle obtains observations of known landmarks;
+• 2D SLAM where the UKFs follows [51] to limit
+computational complexity and adding new observed
+landmarks in the state; • IMU-GNSS fusion on the KITTI dataset [49];
+• an example where the state lives on the 2-sphere
+manifold, modeling e.g., a spherical pendulum [52].
+We finally enhance code framework, documentation and
+examples with filter performance comparisons: for each
+example we simulate Monte-Carlo data and benchmark
+UKFs and EKFs based on different choices of uncertainty
+representation (4) through accuracy and consistency metrics.
+Example 7: Figure 2 displays two EKFs and two UKFs
+for inertial navigation in the setting of [19], where initial
+heading and position errors are large, respectively 45 degrees
+and 1 m. The second UKF, whose uncertainty representation
+(4) is based on SE2(3) exponential, see Section III-A,
+clearly outperforms the EKF, the first UKF, and improves
+the EKF of [19] during the first 10 seconds of the trajectory.
+V. EXTENSION TO GENERAL MANIFOLDS
+The main problem when M is not parallelizable is that
+one cannot define a global uncertainty representation through
+a map φ as in (4). Indeed ξ = (ξ(1), · · · , ξ(d)) encodes at
+any χ ∈ M coordinates in the tangent space related to a
+basis (V1(χ), · · · , Vd(χ)) of the tangent space. On general
+manifolds, though, it is always possible to cover the manifold
+with “patches” M1, · · · , MK , such that on each patch i
+we have a set of vector fields (V (i)
+1 , · · · , V (i)
+d ) allowing
+one to apply our methodology. For instance on the 2-sphere
+one could choose a North-East frame in between the polar
+circles, and then some other smooth set of frames beyond
+polar circles. However two main issues arise. First, we feel
+such a procedure induces discontinuities at the polar circles
+that will inevitably degrade the filter perfomances. Indeed by
+moving ˆχ slightly at the polar circle, one may obtain a jump
+in the distribution Nφ( ˆχ, P) with fixed covariance P, see
+Figure 3. Then, we see the obtained filter wholly depends
+on the way patches are chosen, which is undesirable.
+A. The Lifting “Trick”
+It turns out a number of manifolds of interest called
+homogeneous spaces may be “lifted” to a Lie group, hence a
+parallelizable manifold. By simplicity1 we consider as a tu
+1Generalizations to the Stiefel manifold St(p, n), that is, a set of p
+orthonormal vectors of Rn, and hence to the set of p-dimensional subspaces
+of Rn called the Grassmann manifold are then straightforward.
+
+
+0 5 10 15 20 25 30
+0
+0.5
+1
+1.5
+t (s)
+error position norm (m)
+EKF SO(3) × R6 UKF [19] SE2(3) UKF
+Fig. 2: Inertial navigation with heavy initial errors in the
+setting of [19]. SE2(3)-UKF obtains the best results.
+Fig. 3: We see covering the 2-sphere with 3 parallelizable
+patches (in between polar circles, and beyond each) in
+evitably induces discontinuities that may degrade filtering
+performances. This is a consequence of the theorem that
+states it is not possible to “comb a hairy ball”, see [53].
+torial example the 2-sphere M = S2 = {x ∈ R3 | ||x|| = 1}
+with state xn ∈ S2. As xn+1 and xn necessarily lie on the
+sphere, they are related by a rotation, that is,
+xn+1 = Ωnxn (20)
+with Ωn ∈ SO(3) that may be written as exp(ωn∧) exp(wn∧)
+where ωn is a known input, and wn ∼ N (0, Qn) represents
+a noise, see (1) for the definition of wedge operator, and exp
+is the usual matrix exponential of SO(3). We assume xn is
+measured through a linear observation, that is,
+yn = Hxn + vn ∈ Rp. (21)
+Example 8: We provide a (novel) script which simulates
+a point of a pendulum with stiff wire living on a sphere,
+where two components are measured through e.g. a monoc
+ular camera, i.e. H = [e1, e2]T .
+The dynamics can be lifted into SO(3) by writing xn
+via a rotation matrix Rn, that is, we posit xn = RnL
+with L ∈ R3. In terms of Rn, dynamics (20) may be
+lifted letting Rn+1 = ΩnRn as then RnL satisfies (20)
+indeed. Similarly, the output in terms of Rn writes yn =
+HRnL+vn =  ̃h(Rn)+vn. Having transposed the problem
+into estimation on the parallelizable manifold SO(3), we can
+then apply the two UKFs by setting φ to either (17) or (18).
+B. Covariance Retrieval
+The practitioner may wonder how to retrieve the covari
+ance in the original variables. Assume we have a Gaussian
+vector x ∼ (μ, Σ), and we want to approximate g(x) as a
+Gaussian. This might addressed resorting to the unscented
+transform but a more basic and direct approach is as follows.
+Consider A a matrix and b a vector. Then it is known from
+probability theory that
+Ax + b ∼ (Aμ + b, AΣAT ). (22)
+Then, we can write x = μ + e with e ∼ N (0, Σ) and
+linearizing we find g(x) ≈ g(μ) + ∂g
+∂x (μ)e and apply
+ing linear Gaussian vectors transform yields approximately
+g(x) ∼ (g(μ), AΣAT ), where we let A := ∂g
+∂x (μ).
+In the 2-sphere example of the present section, our un
+certainty representation may be taken as Rn = exp(ξ∧)Rˆ n
+with ξ ∼ N (0, P), see (18) and Example 3. As a result it
+is rather easy to compute the covariance matrix of RnL as
+follows. We may use linearizations to write that exp(ξ∧) ≈
+I + ξ∧ and thus RnL = exp(ξ∧)Rˆ nL ≈ Rˆ nL + ξ∧Rˆ nL =
+Rˆ nL − ( ˆRnL)∧ξ = Rˆ nL + Aξ with A = −(Rˆ nL)∧. As a
+result, the probability distribution of RnL is under a linear
+approximation N (Rˆ nL, APAT ).
+VI. CONCLUDING REMARKS
+If we step back a little and look at the bigger picture, we
+see the main problem when designing filters on a manifold
+M is that we often lack coordinates to write down the filter
+equations on M. Even if we do, e.g. longitude and latitude
+on the sphere, this implicitly defines probability distributions
+on the manifold in a way that may not suit the problem well,
+see Fig. 3. Over the past decades, researchers have advocated
+the intrinsic approach based on the tangent space [54]. This
+way the filter becomes independent of a particular choice
+of coordinates on the manifold, but it depends on the way
+tangent spaces at different locations correspond. Notably,
+we see at lines 5, 6, 7, 9 of Algorithm 1 the covariance
+matrix P+ is computed using local information at χˆ , in
+total disregard of ˆχ+, although P+ is supposed to encode
+dispersion at χˆ +! This means it is up to the user to define the
+way “Gaussians” are transported over M from ˆχ to χˆ +, as
+early noticed in [7], see also [8]. The route we have followed
+herein consists in focusing on parallelizable manifolds where
+a global coordinate system of tangent spaces exists, and
+readily provides a transport operation over M.
+However, there are multiple choices for the parallel
+transport operation. In [7,8] the authors advocate using the
+Levi-Civita connection for parallel transport, which depends
+on the chosen metric, and argue its virtue is that it is torsion
+free. In the context of state estimation on Lie groups, though,
+the transport operations that lead to the best performances
+are not torsion free, see [1]. In cases where it is unclear to
+the user which transport operation (in our case paralleliza
+tion+retraction) shall be best, we suggest using our code for
+quick benchmarking, as done in Figure 2. Indeed, the group
+structures SE2(3) versus SO(3) × R6 actually boil down to
+particular choices of parallelization (hence transport), and
+the filter based on SE2(3) outperforms the other.
+REFERENCES
+[1] A. Barrau and S. Bonnabel, “Invariant Kalman Filtering,” Annual
+Review of Control, Robotics, and Autonomous Systems, vol. 1, no. 1,
+pp. 237–257, 2018.
+
+
+[2] S. Julier and J. Uhlmann, “Unscented Filtering and Nonlinear Es
+timation,” Proceedings of the IEEE, vol. 92, no. 3, pp. 401–422,
+2004.
+[3] S. Julier and J. Uhlmann, “A New Extension of the Kalman Filter
+to Nonlinear Systems,” AeroSense’97, pp. 182–193, 1997.
+[4] C. Hertzberg, R. Wagner, U. Frese, and L. Schro ̈der, “Integrating
+Generic Sensor Fusion Algorithms with Sound State Representations
+through Encapsulation of Manifolds,” Information Fusion, vol. 14,
+no. 1, pp. 57–77, 2013.
+[5] S. Hauberg, F. Lauze, and K. S. Pedersen, “Unscented Kalman Fil
+tering on Riemannian Manifolds,” Journal of Mathematical Imaging
+and Vision, vol. 46, no. 1, pp. 103–120, 2013.
+[6] H. M. T. Menegaz, J. Y. Ishihara, and H. T. M. Kussaba, “Unscented
+Kalman Filters for Riemannian State-Space Systems,” Transactions
+on Automatic Control, vol. 64, no. 4, pp. 1487–1502, 2019.
+[7] G. Loianno, M. Watterson, and V. Kumar, “Visual Inertial Odometry
+for Quadrotors on SE(3),” in International Conference onRobotics
+and Automation (ICRA), pp. 1544–1551, IEEE, 2016.
+[8] J. Svacha, G. Loianno, and V. Kumar, “Inertial Yaw-Independent
+Velocity and Attitude Estimation for High-Speed Quadrotor Flight,”
+Robotics and Automation Letters (RA-L), vol. 4, no. 2, pp. 1109
+1116, 2019.
+[9] E. Leffens, F. Markley, and M. Shuster, “Kalman Filtering for
+Spacecraft Attitude Estimation,” Journal of Guidance, Control, and
+Dynamics, vol. 5, no. 5, pp. 417–429, 1982.
+[10] J. R. Forbes, A. H. de Ruiter, and D. E. Zlotnik, “Continuous-Time
+Norm-Constrained Kalman Filtering,” Automatica, vol. 50, no. 10,
+pp. 2546–2554, 2014.
+[11] J. Sola`, “Quaternion Kinematics for the Error-State Kalman Filter,”
+p. 94, 2012.
+[12] E. Kraft, “A Quaternion-Based Unscented Kalman Filter for Orien
+tation Tracking,” in International Conference of Information Fusion,
+pp. 47–54, IEEE, 2003.
+[13] T. Lee, “Global Unscented Attitude Estimation via the Matrix Fisher
+Distributions on SO(3),” in American Control Conference (ACC),
+(1016), pp. 4942–4947, IEEE, 2016.
+[14] J. L. Crassidis, “Unscented Filtering for Spacecraft Attitude Estima
+tion,” Journal of guidance, control, and dynamics, vol. 26, no. 4,
+pp. 536–542, 2003.
+[15] S. Bonnabel, “Left-Invariant Extended Kalman Filter and Attitude
+Estimation,” in Conference on Decision and Control, pp. 1027–1032,
+IEEE, 2007.
+[16] A. Barrau and S. Bonnabel, “Intrinsic Filtering on Lie Groups
+With Applications to Attitude Estimation,” IEEE Transactions on
+Automatic Control, vol. 60, no. 2, pp. 436–449, 2015.
+[17] G. Bourmaud, R. Me ́gret, M. Arnaudon, and A. Giremus,
+“Continuous-Discrete Extended Kalman Filter on Matrix Lie Groups
+Using Concentrated Gaussian Distributions,” Journal of Mathemati
+cal Imaging and Vision, vol. 51, no. 1, pp. 209–228, 2015.
+[18] G. Bourmaud, R. M ́egret, A. Giremus, and Y. Berthoumieu, “Dis
+crete Extended Kalman Filter on Lie Groups,” in European Signal
+Processing Conference (EUSIPCO), pp. 1–5, IEEE, 2013.
+[19] A. Barrau and S. Bonnabel, “The Invariant Extended Kalman Filter
+as a Stable Observer,” Transaction on Automatic Control, vol. 62,
+no. 4, pp. 1797–1812, 2017.
+[20] J. Bohn and A. K. Sanyal, “Unscented State Estimation for Rigid
+Body Motion on SE(3),” in Conference on Decision and Control
+(CDC), pp. 7498–7503, IEEE, 2012.
+[21] J. J. Bohn, A. K. Sanyal, and E. A. Butcher, “Unscented State
+Estimation for Rigid Body Attitude Motion with a Finite-Time Stable
+Observer,” in Conference on Decision and Control (CDC), pp. 4698
+4703, IEEE, 2016.
+[22] M. Brossard, S. Bonnabel, and J.-P. Condomines, “Unscented
+Kalman filtering on Lie groups,” in International Conference on
+Intelligent Robots and Systems (IROS), pp. 2485–2491, IEEE/RSJ,
+2017.
+[23] J. R. Forbes and D. E. Zlotnik, “Sigma Point Kalman Filtering
+on Matrix Lie Groups Applied to the SLAM Problem,” in Geo
+metric Science of Information (F. Nielsen and F. Barbaresco, eds.),
+vol. 10589, pp. 318–328, Cham: Springer International Publishing,
+2017.
+[24] J. Sol`a, J. Deray, and D. Atchuthan, “A Micro Lie theory for State
+Estimation in Robotics,” arXiv:1812.01537 [cs], Dec. 2018.
+[25] Y. Wang and G. Chirikjian, “Error Propagation on the Euclidean
+Group with Applications to Manipulator Kinematics,” Transactions
+on Robotics, vol. 22, no. 4, pp. 591–602, 2006.
+[26] W. Park, Y. Liu, Y. Zhou, M. Moses, and G. S. Chirikjian, “Kinematic
+State Estimation and Motion Planning for Dtochastic Nonholonomic
+Systems using the Exponential Map,” Robotica, vol. 26, no. 4,
+pp. 419–434, 2008.
+[27] G. Chirikjian, Stochastic Models, Information Theory, and Lie
+Groups, Volume 1. Birkh ̈auser, 2009.
+[28] G. Chirikjian and M. Kobilarov, “Gaussian Approximation of Non
+Linear Measurement Models on Lie Groups,” in Conference on
+Decision and Control, pp. 6401–6406, IEEE, 2014.
+[29] T. Barfoot, J. R. Forbes, and P. T. Furgale, “Pose Estimation using
+Linearized Rotations and Quaternion Algebra,” Acta Astronautica,
+vol. 68, no. 1-2, pp. 101–112, 2011.
+[30] T. Barfoot and P. Furgale, “Associating Uncertainty With Three
+Dimensional Poses for Use in Estimation Problems,” Transaction
+on Robotics, vol. 30, no. 3, pp. 679–693, 2014.
+[31] R. Hartley, M. G. Jadidi, J. W. Grizzle, and R. M. Eustice, “Contact
+Aided Invariant Extended Kalman Filtering for Legged Robot State
+Estimation,” in Robotics Science and Systems, 2018.
+[32] N. Ko, W. Youn, I. Choi, G. Song, and T. Kim, “Features of
+Invariant Extended Kalman Filter Applied to Unmanned Aerial
+Vehicle Navigation,” Sensors, vol. 18, no. 9, p. 2855, 2018.
+[33] N. Y. Ko, G. Song, W. Youn, I. H. Choi, and T. S. Kim, “Improvement
+of extended kalman filter using invariant extended kalman filter,”
+in International Conference on Control, Automation and Systems
+(ICCAS), pp. 948–950, 2018.
+[34] M. Wang and A. Tayebi, “A Globally Exponentially Stable Nonlinear
+Hybrid Observer for 3D Inertial Navigation,” in Conference on
+Decision and Control (CDC), pp. 1367–1372, IEEE, 2018.
+[35] M. Brossard, S. Bonnabel, and A. Barrau, “Unscented Kalman
+Filter on Lie Groups for Visual Inertial Odometry,” in International
+Conference on Intelligent Robots and Systems (IROS), pp. 649–655,
+IEEE/RSJ, 2018.
+[36] K. Wu, T. Zhang, D. Su, S. Huang, and G. Dissanayake, “An
+Invariant-EKF VINS Algorithm for Improving Consistency,” in In
+ternational Conference on Intelligent Robots and Systems (IROS),
+pp. 1578–1585, IEEE/RSJ, 2017.
+[37] S. Bonnabel, “Symmetries in Observer Design: Review of Some
+Recent Results and Applications to EKF-based SLAM,” in Robot
+Motion and Control 2011, Lecture Notes in Control and Information
+Sciences, pp. 3–15, Springer, London, 2012.
+[38] A. Barrau and S. Bonnabel, “An EKF-SLAM algorithm with consis
+tency properties,” arXiv preprint arXiv:1510.06263, 2015.
+[39] M. Brossard, A. Barrau, and S. Bonnabel, “Exploiting Symmetries
+to Design EKFs with Consistency Properties for Navigation and
+SLAM,” IEEE Sensors Journal, p. 8, 2019.
+[40] S. Heo and C. G. Park, “Consistent EKF-Based Visual-Inertial
+Odometry on Matrix Lie Group,” Sensors Journal, vol. 18, no. 9,
+pp. 3780–3788, 2018.
+[41] S. Heo, J. H. Jung, and C. G. Park, “Consistent EKF-Based Visual
+Inertial Navigation Using Points and Lines,” Sensors Journal, vol. 18,
+no. 18, pp. 7638–7649, 2018.
+[42] T. Zhang, K. Wu, J. Song, S. Huang, and G. Dissanayake, “Conver
+gence and Consistency Analysis for A 3D Invariant-EKF SLAM,”
+Robotics and Automation Letters (RA-L), vol. 2, no. 2, pp. 733–740,
+2017.
+[43] R. Mahony and T. Hamel, “A geometric Nonlinear Observer for
+Simultaneous Localisation and Mapping,” in Conference on Decision
+and Control (CDC), pp. 2408–2415, IEEE, 2017.
+[44] J.-P. Condomines, C. Seren, and G. Hattenberger, “Nonlinear State
+Estimation Using an Invariant Unscented Kalman Filter,” in AIAA
+Guidance, Navigation, and Control (GNC) Conference, 2013.
+
+
+[45] J.-P. Condomines, C. Seren, and G. Hattenberger, “Pi-Invariant Un
+scented Kalman Filter for Sensor Fusion,” in Conference on Decision
+and Control, pp. 1035–1040, IEEE, 2014.
+[46] P.-A. Absil, R. Mahony, and R. Sepulchre, Optimization Algorithms
+on Matrix Manifolds. Princeton, NJ: Princeton Univ. Press, 2009.
+OCLC: 254598475.
+[47] A. Barrau, Non-linear state error based extended Kalman filters with
+applications to navigation. PhD thesis, Mines Paristech, 2015.
+[48] M. Wang and A. Tayebi, “Geometric Nonlinear Observer Design for
+SLAM on a Matrix Lie Group,” in Annual Conference on Decision
+and Control (CDC), pp. 1488–1493, IEEE, 2018.
+[49] A. Geiger, P. Lenz, C. Stiller, and R. Urtasun, “Vision Meets
+Robotics: The KITTI Dataset,” The International Journal of Robotics
+Research, vol. 32, no. 11, pp. 1231–1237, 2013.
+[50] B. Nisar, P. Foehn, D. Falanga, and D. Scaramuzza, “VIMO: Simulta
+neous Visual Inertial Model-Based Odometry and Force Estimation,”
+Robotics and Automation Letters (RA-L), vol. 4, no. 3, pp. 2785
+2792, 2019.
+[51] G. P. Huang, A. I. Mourikis, and S. I. Roumeliotis, “A Quadratic
+Complexity Observability-Constrained Unscented Kalman Filter for
+SLAM,” Transactions on Robotics, vol. 29, no. 5, pp. 1226–1243,
+2013.
+[52] P. Kotaru and K. Sreenath, “Variation Based Extended Kalman Filter
+on S2,” in European Control Conference (ECC), pp. 875–882, IEEE,
+2019.
+[53] J. Milnor, “Analytic proofs of the “hairy ball theorem” and the
+brouwer fixed point theorem,” The American Mathematical Monthly,
+vol. 85, no. 7, pp. 521–524, 1978.
+[54] X. Pennec, “Intrinsic statistics on riemannian manifolds: Basic tools
+for geometric measurements,” Journal of Mathematical Imaging and
+Vision, vol. 25, no. 1, p. 127, 2006.
