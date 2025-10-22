@@ -1,0 +1,2672 @@
+arXiv:2505.08982v1 [cs.LG] 13 May 2025
+Model-free Online Learning for the Kalman Filter: Forgetting Factor and Logarithmic Regret ∗
+Jiachen Qian1 and Yang Zheng1
+1Department of Electrical and Computer Engineering, University of California San Diego
+May 15, 2025
+Abstract
+We consider the problem of online prediction for an unknown, non-explosive linear stochastic system. With a known system model, the optimal predictor is the celebrated Kalman filter. In the case of unknown systems, existing approaches based on recursive least squares and its variants may suffer from degraded performance due to the highly imbalanced nature of the regression model. This imbalance can easily lead to overfitting and thus degrade prediction accuracy. We tackle this problem by injecting an inductive bias into the regression model via exponential forgetting. While exponential forgetting is a common wisdom in online learning, it is typically used for re-weighting data. In contrast, our approach focuses on balancing the regression model. This achieves a better trade-off between regression and regularization errors, and simultaneously reduces the accumulation error. With new proof techniques, we also provide
+a sharper logarithmic regret bound of O(log3 N ), where N is the number of observations.
+1 Introduction
+The problem of sequential online prediction in linear dynamical systems is fundamental across many fields and has a long-standing history [1]. Its applications span from control systems [2], robotics [3], natural language processing [4], and computer vision [5]. The celebrated Kalman filter [1] predicts the future system state and observation by properly filtering the past observations. When the underlying dynamics are linear with Gaussian noise, the Kalman filter achieves optimal prediction among all possible filters by minimizing the mean square error. Many structural properties of the Kalman filter, including stability and statistical properties, have been well-established [2]. Extensions to nonlinear systems have also been well developed in the past [6, 7]. All these classical developments on the Kalman filter and its variants rely on exact knowledge of the system model and noise statistics. However, when the system model and/or noise statistics are unknown, learning-based approaches are required to predict future observations. In this paper, we consider the problem of predicting observations in an unknown, partially observed, nonexplosive linear dynamical system driven by Gaussian noise using finite past observations. Learning for prediction is not a new topic and has a rich list of literature; see [8, 9] for classical textbooks. This topic has recently received renewed interest from the online learning perspective [10–12].
+∗This work is supported by NSF ECCS 2154650, NSF CMMI 2320697, and NSF CAREER 2340713. Emails: jiq012@ucsd.edu; zhengy@ucsd.edu.
+1
+
+
+Table 1: Regrets in Recent Online Prediction Algorithms
+Algorithms Regret Gaussian Forgetting
+Hazan et al., 2017 [10] O ̃(√N ) × ×
+Kozdoba et al., 2019 [19] O ̃(√N + ǫN ) × ×
+Li et al., 2024 [21] O ̃(√N ) × ×
+Rashidinejad et al., 2020 [20] O(log11 N ) √ ×
+Tsiamis and Pappa, 2023 [12] O(log6 N ) √ ×
+Our paper O(log3 N ) √ √
+In this table, “Gaussian” means whether the system noises are assumed to be Gaussian; “Forgetting” means whether any forgetting strategy is used.
+The methodology of learning for prediction can be broadly divided into two categories: the indirect method and the direct method. The indirect method first exploits the past data to build an approximation of the nominal system [13–15] and then designs a filter for prediction based on the identified model. However, learning directly the model parameters often leads to a nonlinear and nonconvex problem even for linear dynamical systems [16]. Many adaptive filtering techniques have been developed to address unknown models or changing environments [9, 17]. These developments are typically based on extended least squares and variants for parameter estimation and state prediction, and the classical analysis is often based on asymptotic tools assuming infinite samples. The direct method aims to design a filter by directly learning the optimal prediction policy from data. This perspective has gained increasing attention in the online learning framework [10, 1820]. In this context, the goal of model estimation is replaced by regret minimization in online prediction, which measures the loss compared to the best prediction in hindsight. For example, a low-rank approximation technique was proposed in [10], and [19] utilized structural properties of the Kalman filter to derive a regression model where the output is the optimal prediction and the input is previous observations. The regret guarantees in [10, 19] are sublinear. A recent study [21] also presents an online learning strategy to achieve a sublinear regret. The first algorithmic regret was established in [12], where a truncated regression model was used. Another study [20] also established a logarithmic regret for a low-rank spectral approximation strategy; see Table 1 for a comparison. One main challenge in online prediction is handling non-explosive systems, where the system state exhibits a long-term memory effect and may even grow at a polynomial rate. This long-term memory effect can introduce a persistent bias in the regression model [19]. To mitigate the bias, it is crucial to gradually expand the past data horizon for prediction [12]. However, due to the recursive nature of the Kalman filter, the resulting regression model becomes highly imbalanced, with each block potentially differing by several orders of magnitude. This imbalance can easily lead to overfitting (see Figure 1), thus degrading the regret performance of the existing online prediction algorithms [10, 12, 19, 20]. Forgetting strategies, also known as discounting, are widely used to mitigate overfitting and adapt to non-stationary environments [22–24]. These techniques prioritize recent information over outdated data, ensuring models remain responsive to changing dynamics. A common approach is exponential forgetting, where past observations are down-weighted using a forgetting factor, preventing the dominance of earlier data in recursive updates. This technique is frequently employed in recursive least squares and adaptive Kalman filtering [9, 25–27]. However, most existing forgetting strategies focus on re-weighting past and recent data, which does not effectively address the imbalanced structure inherent in online learning of the Kalman filter.
+2
+
+
+Figure 1: Illustration of the overfitting effect in a simple example. The black curve shows the ground truth that has a highly imbalanced structure, and the blue curve is the estimated model using method provided in [12] that overfits the small blocks.
+In this paper, we address the imbalanced regression model in model-free online learning of the Kalman filter. We also aim to derive a sharper logarithmic regret bound of our online prediction algorithm. Our technical contributions are twofold.
+• At the algorithmic level, we introduce an Online Prediction with Forgetting (OPF) algorithm which uses an exponentially forgetting strategy to properly re-balance the regression model. Our forgetting approach aims to directly balance the regression model, whereas most existing discounting and forgetting methods primarily aim to re-weight the online data [24, 27]. We further show that our forgetting strategy is equivalent to a generalized Ridge regression, which introduces an inductive bias reflecting the exponentially decaying structure in the regression model. Our OPF algorithm effectively mitigates the overfitting effect and demonstrates improved performance compared to existing online prediction algorithms [10, 12, 20].
+• At the level of theoretical guarantees, the best theoretical regret bound previously established is O(log6 N ) for marginally stable system [12], where N is the number of observations. In this paper, we establish a much shaper regret bound of O(log3 N ) by new analysis techniques, including Hanson-Wright inequality based martingale analysis and self-cancellation property of accumulation error. Table 1 lists a comparison of the bounds in recent online prediction algorithms. Note that our use of the forgetting factor may not directly reduce the order of the logarithmic regret bound. Instead, it effectively controls accumulation error and achieves a better trade-off between regression error and regularization error. This significantly improves the constant factors in the regret bound, as demonstrated in our numerical experiments.
+The rest of this paper is organized as follows. Section 2 presents preliminaries on the Kalman filter. We introduce the new OPF algorithm in Section 3, and its regret guarantee is established in Section 4. Numerical experiments are presented in Section 5. Section 6 concludes this paper. Further discussions and proof details are presented in the appendix.
+2 Preliminaries and Problem Formulation
+2.1 Background on the Kalman Filter
+Consider a partially observed linear stochastic system
+xk+1 = Axk + wk, wk ∼ N (0, Q)
+yk = Cxk + vk, vk ∼ N (0, R), (1)
+3
+
+
+where xk ∈ Rn is the state vector, and yk ∈ Rm is the output measurement, A ∈ Rn×n is the state transition matrix, and C ∈ Rm×n is the observation matrix. The time series wk and vk denote the process and measurement noises, respectively. We assume they are zero-mean independent identically distributed (i.i.d) Gaussian variables with covariances Q ≻ 0 and R ≻ 0 respectively. An important problem is to predict the observation yt+1 based on past measurements, a process commonly referred to as filtering or prediction1. To guarantee the existence of a stable filter, we make a standard assumption.
+Assumption 1. The system pair (A, C) is detectable.
+Let Fk , σ (y0, . . . , yk) be the filtration generated by the observations y0, . . . , yk. Given past observations up to time k, we consider the problem of optimal prediction yˆk+1 at time k + 1 in the minimum mean-square error sense:
+yˆk+1 , arg min
+z∈Fk
+E
+[
+‖yk+1 − z‖2
+2 | Fk
+]
+. (2)
+Thanks to the foundational work [1], it is now well-known that the optimal predictor takes a recursive form, known as the Kalman filter,
+xˆk+1 = Axˆk + Lk (yk − yˆk) , xˆ0 = 0
+yˆk = Cxˆk, (3)
+where Lk = APkCT (CPkCT + R)−1 with Pk satisfying
+Pk+1 = APkAT + Q − APkCT (
+CPkCT + R
+)−1 CPkAT. (4)
+With Assumption 1, Pk in the recursion (4) converges to a steady-state P exponentially fast, which leads to the well-studied algebraic Riccati equation below [28]
+P = AP AT + Q − AP CT (
+CPCT + R
+)−1 CP AT. (5)
+The steady-state Kalman gain is denoted as L. We remark that the error ek+1 = yk+1 − yˆk+1 is often referred to as the innovation noise process, which represents the amount of new information yk+1 brings beyond what is already known from previous observations up to yk.
+2.2 Model-free Prediction and Regret
+The Kalman filter in (3) requires the system matrices A and C as well as noise statistics Q and R. This is thus a model-based prediction, with its performance heavily dependent on the availability and accuracy of the system model. In this paper, we focus on model-free online learning algorithms to predict observations based only on past measurements, without requiring any knowledge of the system matrices or noise covariances. Following [12, 20], we quantify the performance of the online prediction in terms of the regret measured against the Kalman filter (3) that has full system knowledge. The goal is
+1Depending on the context, filtering and prediction may have slightly different meanings [2]; we here treat them as equivalent concepts. Also, all our discussions can be applied to linear systems with inputs; see Appendix F.1.
+4
+
+
+to design an online algorithm y ̃k = fk(y0, . . . , yk−1) such that with probability at least 1 − δ, the following regret
+RN ,
+N ∑
+k=1
+‖yk − y ̃k‖2 −
+N ∑
+k=1
+‖yk − yˆk‖2 , (6)
+where yˆk is the steady-state Kalman filter’s prediction, is bounded by poly(log 1/δ)o(N ). Note that, due to the exponential convergence of the Kalman filter to its steady-state, it is sufficient to compare the online algorithm with the steady-state predictor yˆk. The regret benchmark in (6) is much stronger than that in [10]. Still, recent advances in [12, 20] have shown that it is possible to obtain logarithmic regrets.
+One key observation is that the Kalman filter (3) has a linear regression structure after expanding the past p observations:
+yk = GpZk,p + C(A − LC)pxˆk−p + ek, (7)
+where ek = yk −yˆk, and Zk,p denotes the past p observations at time k, i.e., Zk,p , [ykT−p . . . ykT−1
+]T ,
+and Gp denotes the Markov parameters of the closed-loop filter:
+Gp , [C(A − LC)p−1L, · · · , CL] ∈ Rm×pm. (8)
+To simplify discussions, we make another assumption.
+Assumption 2. ([12, 20]) The matrix A − LC is diagonalizable.
+While (7) is straightforward to derive based on the structure of Kalman filter (3), this linear regression model provides sufficient insights: the system output at time k can be viewed as a linear combination of the past observations with an additional bias term C(A − LC)pxˆk−p and the innovation noise process ek. Under Assumption 1, it is well known that 1) the spectral radius satisfies ρ(A − LC) < 1, and 2) ek are mutually uncorrelated Gaussian random variables with zero-mean [2]. Thus, the model-free prediction can be reduced to an online least-squares problem (7). Similar ideas can be traced back to subspace identifications [29].
+2.3 Long-term Memory and Forgetting
+With (7), it is clear that the problem of model-free prediction for system (1) falls within the framework of online least squares [30]. Two recent works [11, 12] have used basic recursive auto-regression algorithms to estimate Gp and make online predictions. To reduce the dimension of Gp, [20] has embedded spectral approximation into algorithm design based on the concept of Kolmogorov width. However, the practical performance of these existing approaches can easily deteriorate due to the highly imbalanced nature of the regression model (7). Indeed, for nonexplosive systems ρ(A) ≤ 1, the state xˆk−p has a long-term memory effect and leads to a persistent bias term. A suitable past horizon length p is required to mitigate xˆk−p in (7). Since ρ(A − LC) < 1, the magnitude of each
+block in Gp exponentially decays to 0, i.e., ∥
+∥C(A − LC)tL∥
+∥2 ≤ M ρ(A − LC)t under Assumption 2,
+where M is a constant. This imbalance can easily lead to overfitting during online learning, thereby degrading the prediction accuracy of methods in [11, 12, 19, 20]. Figure 1 illustrates this overfitting effect on a simple example. The magnitude of the true regression model Gp (represented by the
+black line) is significantly smaller than the estimates G ̃p from the algorithm in [12]. The basic least-squares algorithms in [11, 12, 20] can easily overfit the small values of blocks C(A − LC)tL.
+5
+
+
+In this paper, our key idea is to use an exponentially forgetting strategy to properly re-balance the regression model and mitigate overfitting, thus improving the online prediction performance. As we will show in Section 3, our forgetting approach aims to directly balance the regression model itself, whereas most existing discounting and forgetting methods primarily aim to re-weight the online data, as seen in the recent works [24, 27]. We further show that our forgetting strategy is equivalent to a generalized Ridge regression, which introduces an inductive bias reflecting the exponentially decaying structure (8) in the regression (7).
+3 Online Prediction with Forgetting
+This section introduces a new Online Prediction with Forgetting (OPF) algorithm. We also show that our forgetting strategy is equivalent to a generalized ridge regression with an inductive bias to re-balance the regression model.
+3.1 Online Balanced Regression via Forgetting
+Our approach begins by addressing the exponentially decaying structure of the regressor Gp in (8). The key idea is to appropriately rescale the blocks as follows
+G ̃p ,
+[1
+γp−1 C(A − LC)p−1L, · · · , 1
+γ C(A − LC)L, CL
+]
+,
+where γ ∈ (0, 1). If γ is close to ρ(A − LC), then the magnitude of each bock 1
+γt C(A − LC)tL will
+remain relatively balanced across all terms. With this idea, we rewrite the regression model (7) as
+yk = G ̃pZ ̃k,p
+} {{ }
+Balanced regression
++ C(A − LC)pxˆk−p
+} {{ } Long-term bias
++ }e{k{}
+Innovation noise
+, (9)
+where we have G ̃p = GpDp−1 and Z ̃k,p := DpZk,p with
+Dp = diag(γp−1, γp−2, . . . , γ, 1) ⊗ Im (10)
+being a re-weighting matrix. The new regression model (9) does not change the long-term bias term C(A − LC)pxˆk−p or the innovation noise term ek. It is also worthwhile noting that the balanced regression (9) aims to express the output at time k as a linear combination of the past observations with exponentially forgetting. In other words, we have
+Z ̃k,p = DpZk,p =
+
+   
+γp−1yk−p γp−2yk−p+1
+...
+yk−1
+
+   
+. (11)
+Instead of optimizing over the original Markov parameters Gp in (8) which easily leads to overfitting,
+we optimize over the re-balanced G ̃p in (9). Note that optimizing over G ̃p is known as improper learning in the context of online learning [31], as we do not directly learn the true model parameters
+in the hypothesis class H = (A, C, Q, R) but re-parameterize and learn over a different class H ̃.
+6
+
+
+We learn a least-squares estimate G ̃k,p by regressing yt to past outputs Z ̃t,p, t ≤ k with exponentially forgetting, i.e.,
+G ̃k,p =
+k ∑
+t=p
+ytZ ̃tT,p
+(
+λI +
+k ∑
+t=p
+Z ̃t,pZ ̃tT,p
+)−1
+, (12)
+where λ > 0 is a regularization parameter and the matrix
+V ̃k,p , λI +
+k ∑
+t=p
+Z ̃t,pZ ̃tT,p (13)
+is called a Gram matrix, which contains the collected information of all the past knowledge Z ̃k,p. We then predict the next observation by computing
+y ̃k+1 = G ̃k,pZ ̃k+1,p. (14)
+For nonexplosive systems ρ(A) ≤ 1, the state xˆk−p retains a long-term memory effect, and its value may even grow at a polynomial rate. A persistent bias error could result in linear regret. Fortunately, classical Kalman filter theory provides two key insights: 1) the innovation noise ek is zero mean and mutually uncorrelated, and 2) ρ(A−LC) < 1. The fact that the spectral radius is less than one enables us to manage the accumulation of long-term bias errors effectively. Specifically, we can gradually increase the past horizon p, an approach aligned with the strategy in [12] and also motivated by a common “doubling trick” [32]. In particular, the entire time horizon is partitioned into multiple epochs, with each successive epoch being twice as long as the previous one. Within each epoch, the value of p past horizon remains constant. Given that ρ(A − LC)p is decreasing exponentially, it is sufficient to slowly increase the past horizon length as p = O(log T ), where T is the length of each epoch. The pseudocode of our online prediction with forgetting (OPF) is listed in Algorithm 1, which has two main phases: Warm-Up and Online Prediction. In the warm-up phase, we collect a trajectory of observations of length Tinit. In the phase of online prediction, we first initialize the parameter
+p, Dp, V ̃Tl−1,p and G ̃Tl−1,p at the beginning of each epoch Tl. At each time step k, we update the prediction y ̃k using (14) and then observe the new observation yk. Within each epoch, the predictor can be computed recursively
+V ̃k,p = V ̃k−1,p + DpZk,pZkT,pDp, (15a)
+G ̃k,p = G ̃k−1,p + (yk − y ̃k) ZkT,pDpV ̃ −1
+k,p . (15b)
+Algorithm 1 requires no knowledge of the system model or noise covariances. Even the state dimension n is not needed as we only predict the output. Note that the past horizon p = β log Tl deals with the long-term memory x ̃k−p in (9). Selecting a larger β leads to a smaller bias error but
+increases the estimation variance of G ̃p due to larger freedom.
+Remark 1 (Forgetting strategies). The idea of forgetting factor is widely used in online learning [24, 33–35]. To our knowledge, most existing studies only focus on balancing current and past data by applying a horizon-dependent forgetting factor uniformly to each sample αk−tZt,p. In our context, this leads to an updating law below:
+G ̃k,p =
+k ∑
+t=p
+αk−tytZtT,p
+(
+λI +
+k ∑
+t=p
+αk−tZt,pZtT,p
+)−1
+. (16)
+7
+
+
+Algorithm 1 Online Prediction with Forgetting (OPF)
+1: Input: parameter β, λ, γ, Tinit , NE {Warm Up:}
+2: for k = 0 to Tinit do 3: Observe yk; 4: end for
+{Recursive Online Prediction:} 5: for l = 1 to NE do
+6: Initialize Tl = 2l−1Tinit + 1, p = β log Tl, Dp in (10)
+7: Re-balance Z ̃t,p = DpZk,p in (11) for p ≤ t < Tl;
+8: Compute V ̃Tl−1, p in (13) and G ̃Tl−1,p in (12); 9: for k = Tl to 2Tl − 2 do
+10: Predict y ̃k = G ̃k−1,pZ ̃k,p; 11: Observe yk;
+12: Update V ̃k,p and G ̃k,p recursively as (15). 13: end for 14: end for
+Here, α ∈ (0, 1) is used to distinguish it from γ. However, (16) can result in information loss due to exponential forgetting, which, in turn, increases prediction errors, particularly in marginally stable systems [35, Lemma D.5]. In contrast, our OPF method leverages the forgetting factor to
+provide a non-uniform scaling for each sample Z ̃k,p = DpZk,p. This approach effectively balances the regression model with no information loss, thereby reducing the overfitting effect. Both theoretical guarantees in Section 4 and numerical experiments in Section 5 confirm our intuition.
+3.2 Inductive Bias from Forgetting
+We here show that the exponentially forgetting strategy in our OPF algorithm is equivalent to solving a generalized ridge regression with appropriate regularization. This regularization introduces an inductive bias that captures our prior belief about the underlying imbalanced structure, such that our OPF algorithm never forgets.
+Recall the re-scaled data samples at time step k in (11), i.e., Z ̃k,p = DpZk,p. We define the two matrices as
+V ̃k,p , λI +
+k ∑
+t=p
+Z ̃t,pZ ̃tT,p, V ̄k,p , λDp−2 +
+k ∑
+t=p
+Zt,pZtT,p.
+It is clear that both are positive definite. The modified cross-term is defined as S ̃k,p , ∑k
+l=p ylZ ̃lT,p =
+Sk,pDp. Then, the update of the regression coefficient in (12) becomes G ̃k,p = S ̃k,pV ̃ −1
+k,p and the prediction of OPF at time step k + 1 is given in (14). We now have the following equivalence
+S ̃k,pV ̃ −1
+k,p Z ̃k+1,p =Sk,p
+(
+λDp−2 +
+k ∑
+k=1
+Zk,pZkT,p
+)−1
+Zk+1,p
+=Sk,pV ̄ −1
+k,p Zk+1,p. (17)
+8
+
+
+Thus, applying our exponentially forgetting factor γ is mathematically equivalent to replacing the
+regularization term λI with λDp−2. More specifically, G ̃k,p in (12) is the solution to the following generalized ridge regression
+min
+G∈Rm×mp
+k ∑
+t=p
+‖yt − GZt,p‖2
+F +∥
+∥λGDp−1
+∥
+∥2
+F . (18)
+The original ridge regression for (7) is similar to (18) but with a usual regularization ‖λG‖2
+F . For
+(18), we can see that the forgetting factor γ acts as a regularization ∥
+∥λGDp−1
+∥
+∥2
+F . Indeed, this
+regularization injects our prior belief that the ground truth of G has an exponentially decaying structure as in (8), with the penalty term 1
+γt effectively reducing the effect of overfitting.
+4 Logarithmic Regret of the OPF Algorithm
+We here prove that with high probability, the regret of our OPF in Algorithm 1 is logarithmic of the order log3 N , which greatly improves the existing results (see Table 1).
+4.1 A Sharper Logarithmic Regret
+Recall that the regret RN in (6) measures against the optimal Kalman filter’s prediction with true model knowledge. We have the following logarithmic guarantee for our proposed OPF in Algorithm 1.
+Theorem 1. Consider the linear stochastic system (1) with Q ≻ 0, R ≻ 0, and suppose Assumptions 1 and 2 hold. Choose the forgetting factor γ ∈ (ρ(A − LC), 1], and the parameters in Algorithm 1 as
+β = Ω(κ)
+log(1/ρ(A − LC)) , Tinit = poly
+(
+β, log
+(1
+δ
+))
+,
+where κ represents the order of the largest Jordan block of A corresponding to the eigenvalue 1. Fix a horizon N > Tinit and a failure probability δ > 0. Then with probability at least 1 − δ, we have
+RN ≤ poly (M, β, log(1/δ)) O (log3 N ) ,
+where M is a constant only related to the system parameter.
+Achieving a logarithmic regret is not surprising since we learn the regression model (9), which is in the framework of online least-squares [30]. Given the fact that (A−LC)p is exponentially decaying and the innovation noise ek is mutually uncorrelated Gaussian, selecting a large p = O(log Tl) in each epoch is sufficient to obtain an online predictor y ̃k with logarithmic regret. In [10, 21], the system noise is not guaranteed to be i.i.d. Gaussian, hence the algorithms therein do not have logarithmic regrets. In two recent studies [12, 20] which focused on the original unbalanced regression model
+(7), the regret bound is shown to be O (log6 N ) and O (log11 N ), respectively. In Theorem 1, we have established a much shaper bound compared with the existing results; also see Table 1 for a comparison. Our proof techniques involve new tools from Hanson-Wright inequality-based martingale analysis and self-cancellation property of accumulation error. Our Theorem 1 confirms that our idea of forgetting factor effectively balances the regression model with no information loss. Note that the forgetting factor γ may not directly reduce the
+9
+
+
+order of the regret to log(N ), but it can effectively reduce the accumulation error, and balance a better trade-off between regression error and regularization error, thus significantly reducing some constant in the logarithmic regret. In Appendix D, we provide further discussions on the effect of the forgetting factor.
+4.2 Proof Sketches for the Shaper Regret
+In this subsection, we provide proof sketches for Theorem 1. Rather than presenting all proof details (which are given in Appendix C), we here highlight the main theoretical tools that achieve a sharper regret bound compared with the state-of-the-art in Table 1.
+Step 1: Accumulation error and martingale terms. From general online linear regression techniques [12, 20], we first divide the regret RN into two parts, i.e.,
+RN ,
+N ∑
+k=Tinit
+‖yk − y ̃k‖2
+2−
+N ∑
+k=Tinit
+‖yk − yˆk‖2
+2
+=
+N ∑
+k=Tinit
+‖yˆk − y ̃k‖2
+2
+} {{ } LN
++2
+N ∑
+k=Tinit
+ekT (yˆk − y ̃k)
+} {{ } martingale term
+. (19)
+The first part is the accumulation of the gap between yˆk − y ̃k, while the second part is a cross term between the innovation ek and the gap yˆk − y ̃k. Since ek is i.i.d. Gaussian, from the self-normalized martingale theory [13, 36], it is standard to bound
+N ∑
+k=Tinit
+ekT (yˆk − y ̃k) = O ̃
+(√LN
+)
+= o (LN ) , (20)
+i.e., the cross term is dominated by the accumulation term LN . In the rest of the proof, we will tightly bound LN .
+Step 2: Regularization, regression and bias errors. Following standard linear regression techniques [10, 36, 37], we can divide the gap yˆk − y ̃k into three parts:
+• 1) the regularization error induced by λDp−2,
+• 2) the regression error induced by Gaussian error ek, and
+• 3) the bias error induced by the long-term memory bk,p = C(A − KC)pxˆk−p.
+Consequently, we rewrite the gap y ̃k − yˆk at each time as
+y ̃k+1 − yˆk+1 =
+k ∑
+l=p
+bl,pZlT,pV ̄ −1
+k,p Zk+1,p − bk+1,p
+} {{ } Bias error
++
+k ∑
+l=p
+elZlT,pV ̄ −1
+k,p Zk+1,p
+} {{ } Regression error
+− λGpDp−2V ̄ −1
+k,p Zk+1,p } {{ } Regularization error
+. (21)
+One main difference between (21) with that in [12, 20] is the scaling matrix Dp induced by the forgetting factor γ (see (10)) will simultaneously affect the regularization error and the inverse
+10
+
+
+of the Gram matrix V ̄ −1
+k,p . We will provide a detailed discussion on the effect of Dp for a better trade-off between regularization and accumulation in Appendix D. From (21), we can bound LN by
+LN =
+N ∑
+k=Tinit
+‖y ̃k+1 − yˆk+1‖2
+2
+≤6 sup
+Tinit≤k≤N
+(∥ ∥ ∥
+∥λGpDp−2V ̄ − 1
+2
+k,p
+∥ ∥ ∥ ∥
+2
+2
++
+∥ ∥ ∥
+∥Bk,pZ ̄kT,pV ̄ − 1
+2
+k,p
+∥ ∥ ∥ ∥
+2
+2
++
+∥ ∥ ∥
+∥Ek,pZ ̄kT,pV ̄ − 1
+2
+k,p
+∥ ∥ ∥ ∥
+2
+2
+)
+(22)
+×
+N ∑
+k=Tinit
+∥ ∥ ∥ ∥
+V ̄ − 1
+2
+k,p Zk+1,p
+∥ ∥ ∥ ∥
+2
+2
++2
+N ∑
+k=Tinit
+‖bk+1,p‖2
+2,
+where Bk,p , [bp,p, . . . , bk,p
+], Ek,p , [ep, . . . , ek
+] and Z ̄k,p , [Zp,p, . . . , Zk,p
+] are the collections of all past bias bl,p, errors el and samples Zl,p, respectively.
+The bias factor ∥
+∥Bk,pZ ̄kT,pV ̄ − 1
+2
+k,p
+∥
+∥2
+2 can be bounded by choosing a sufficiently large β, as presented
+in Theorem 1.
+For the regularization factor ∥
+∥λGpDp−2V ̄ − 1
+2
+k,p
+∥
+∥2
+2, observing that
+λGpDp−2V ̄ −1
+k,p Dp−2GpT ≤ GpDp−1Dp−1GpT,
+we have ∥
+∥ ∥
+∥λGpDp−2V ̄ − 1
+2
+k,p
+∥ ∥ ∥ ∥
+2
+2
+≤
+∑p
+i=1
+M
+( ρ(A − LC) γ
+)i−1
+, (23)
+where M is a constant only depending on system matrices.
+For the regression factor ∥
+∥Ek,pZ ̄kT,pV ̄ − 1
+2
+k,p
+∥
+∥2
+2, note that the diagonal elements of Ek,pZ ̄kT,pV ̄ −1
+k,p Z ̄k,pEkT,p
+are quadratic forms of Gaussian random variables, hence we can adapt the Hanson-Wright inequality [38, 39] to provide a bound with order of log(N ):
+sup
+Tinit≤k≤N
+∥ ∥ ∥
+∥Ek,pZ ̄kT,pV ̄ − 1
+2
+k,p
+∥ ∥ ∥ ∥
+2
+2
+≤ poly
+(
+log 1
+δ
+)
+log(N ). (24)
+In [12, 20], self-normalized martingale theory [36] is used to bound ∥
+∥Ek,pZ ̄kT,pV ̄ − 1
+2
+k,p
+∥
+∥2
+2 in terms of the
+determinant of V ̄k,p, i.e,
+sup
+Tinit≤k≤N
+∥ ∥ ∥
+∥Ek,pZ ̄kT,pV ̄ − 1
+2
+k,p
+∥ ∥ ∥ ∥
+2
+2
+≤ log det(V ̄k,p)
+δ det(λDp−2) ,
+with high probability 1 − δ. However, the combination of persistent excitation of V ̄k,p ≥ σR
+4 kI and
+high dimension p = O(log(N )) lead to a conservative bound of log det(V ̄k,p) with order log2(N ),
+which is not sharp. Finally, we analyze the bound for the accumulation factor ∑N
+k=Tinit
+∥
+∥V ̄ − 1
+2
+k,p Zk+1,p
+∥
+∥2
+2.
+Since the term p varies with different epochs, we denote NE as the number of all epochs and let Tl = 2l−1Tinit + 1 be the initial time step at the l-th epoch and pl = β log Tl as the past horizon length in the l-th epoch. We have N = 2lTinit and
+N ∑
+k=Tinit
+∥ ∥ ∥ ∥
+V ̄ − 1
+2
+k,p Zk+1,p
+∥ ∥ ∥ ∥
+2
+2
+≤ sup
+Tinit≤k≤N
+∥ ∥ ∥ ∥
+V ̄ − 1
+2
+k,p V ̄
+1 2
+k+1,p
+∥ ∥ ∥ ∥
+2
+2
+×
+N ∑E
+l=1
+2Tl−2
+∑
+k=Tl
+∥ ∥ ∥ ∥
+V ̄ − 1
+2
+k+1,pZk+1,p
+∥ ∥ ∥ ∥
+2
+2
+.
+11
+
+
+For the cross term ∥
+∥V ̄ − 1
+2
+k,p V ̄
+1 2
+k+1,p
+∥
+∥2
+2, we can utilize the persistent-excitation condition to provide a
+uniform constant bound M1 to all cross terms, i.e.,
+∥
+∥V ̄ − 1
+2
+k,p V ̄
+1 2
+k+1,p
+∥
+∥2
+2 ≤ M1
+for all k ≥ Tinit with high probability. For the accumulation factor ∑2Tl−2
+k=Tl
+∥
+∥V ̄ − 1
+2
+k+1,pZk+1,p
+∥
+∥2
+2, we can
+provide an upper bound for the accumulation term in one epoch with the determinant of the Gram matrix, i.e.,
+2Tl−2
+∑
+k=Tl
+∥ ∥ ∥ ∥
+V ̄ − 1
+2
+k+1,pZk+1,p
+∥ ∥ ∥ ∥
+2
+2
+≤ log detV ̃2Tl−1,p
+detV ̃Tl,p
+.
+The sum of the determinant term is bounded by log det V ̃N,p and the additional tail is bounded by O(log2 N ), i.e.,
+N ∑E
+l=1
+log detV ̃2Tl−1,p
+detV ̃Tl,p
+≤ log det V ̃N,p + O(log2 N ). (25)
+One technical point is that the determinant det V ̃Tl,pl and det V ̃2Tl−1−1,pl−1 will cancel with each other with small residue (see Appendix C for more details). We further prove that with marginally
+stable A, i.e. ρ(A) = 1, the accumulation term ∑N
+k=Tinit
+∥
+∥V ̄ − 1
+2
+k,p Zk+1,p
+∥
+∥2
+2 is still with the order of
+log2(N ), rather than log4(N ) in [12]. Step 3: Add all error bounds. Putting the bounds in (24) and (25) into (22), we derive a bound for LN of order log3 N . Finally, as LN dominates the martingale term in (20), we derive the regret bound for RN of order log3 N from (19). This completes the proof sketch of Theorem 1.
+Remark 2. Our proof shows that the “doubling trick” that handles long-term memory will not induce additional regret. The cancellation effect between the successive epochs guarantees good regret performance. With new techniques, we provide a sharper bound on the regret LN from O(log6 N ) [12] to O(log3 N ). When implementing Algorithm 1, the parameter p should be an integer. Thus, we need to use p = ⌈β log Tl⌉, but rounding up to an integer will not affect the order of regret.
+5 Numerical Experiments
+In this section, we compare our proposed OPF in Algorithm 1 with the algorithm in [12] and traditional forgetting techniques [24]. Further experiments are given in Appendix E. We first consider an augmented form of the dynamical system model from [12, Section V], where the system parameters are defined as
+A = I3 ⊗ A ̃, C = I3 ⊗ C ̃, Q =
+
+
+I3 0.2I3 0.2I3 0.2I3 I3 0.2I3 0.2I3 0.2I3 I3
+
+
+where
+A ̃ =
+
+
+11 0 01 1 0 0 0.9
+
+ , C ̃ = [1 0 0] , R = I3.
+12
+
+
+(a) Our Forget
+6500 6600 6700 6800 6900 7000
+1.15
+1.2
+1.25
+1.3
+1.35
+1.4 104
+(b) Traditional Forget
+Figure 2: Performance comparison of online prediction with different forgetting strategies: (a) our proposed forgetting; (b) traditional forgetting in [24].
+This can be interpreted as a 3-D target tracking problem with an unknown correlated dynamic model [40]. The parameters in our OPF algorithm are chosen as
+β = 2.5, Tinit = 60, λ = 1, NE = 7.
+Accordingly, the total horizon is 7680. The comparison result with different forgetting factor γ for Algorithm 1 is shown in Figure 2(a), where γ = 1 represents the performance of the algorithm in [12]. From Figure 2(a), we can see that the performance of γ = ρ(A − LC) performs better than other forgetting factor γ ∈ (ρ(A − LC), 1]. We also implemented the traditional forgetting techniques (16) from [24] for online prediction of marginally stable systems. As we can see from Figure 2(b), only for α = 0.9999, almost close to 1, the performance of the online prediction algorithm is slightly improved. When α is chosen to be 0.99, the forgetting-based method performs poorly compared with the non-forgetting case α = 1, which verifies our discussions in Remark 1. Hence, the forgetting technique proposed in this paper is a more effective way to improve the performance of online prediction. This is incorporated in our OPF algorithm. In our second numerical experiment, we verify that the forgetting factor γ can effectively reduce the regret RN . In Appendix D, we prove that the forgetting factor can reduce the accumulation
+error ∑N
+k=Tinit
+∥
+∥V ̄ − 1
+2
+k,p Zk+1,p
+∥
+∥ and regression error ∥
+∥Ek,pZ ̄kT,pV ̄ − 1
+2
+k,p
+∥
+∥2
+2, while not increasing the regu
+larization error ∥
+∥λGpDp−2V ̄ − 1
+2
+k,p
+∥
+∥2
+2 too much. In Figure 3(a), we choose the accumulation error at the
+end of each epoch for different γ as the performance index. In Figure 3(b), we choose the regression error and regularization error for different γ at time step N for comparison, where the shaded area is calculated with one standard deviation. The result in Figure 3 is consistent with our claim in Appendix D.
+6 Conclusion
+In this paper, we addressed the problem of online prediction for an unknown, non-explosive linear stochastic system. To counteract the imbalanced regression model, which degrades the performance of existing prediction algorithms, we introduced an exponential forgetting strategy in our OPF
+13
+
+
+(a) Accumulation Error (b) Trade-Off
+Figure 3: Effect of our forgetting factor on different parts of regret RN in (22).
+algorithm that injects an inductive bias. This approach leads to a more balanced regression model and helps mitigate overfitting. Using refined proof techniques, we developed a structured regret analysis framework, particularly for marginally stable systems, and we established a sharper regret bound as O(log3 N ). Our findings highlight the importance of balancing the regression model rather than just re-weighting past data. Future directions include exploring adaptive forgetting strategies and extending the framework to nonlinear systems, such as special classes of structured nonlinear models [41].
+References
+[1] R. E. Kalman. A New Approach to Linear Filtering and Prediction Problems. Journal of Basic Engineering, 82(1):35–45, 03 1960.
+[2] Brian D. O. Anderson and John B. Moore. Optimal Filtering. Prentice-Hall, Englewood Cliffs, N.J, 1979.
+[3] Timothy D Barfoot. State estimation for robotics. Cambridge University Press, 2024.
+[4] David Belanger and Sham Kakade. A linear dynamical system model for text. In International Conference on Machine Learning, pages 833–842. PMLR, 2015.
+[5] Huseyin Coskun, Felix Achilles, Robert DiPietro, Nassir Navab, and Federico Tombari. Long short-term memory Kalman filters: Recurrent neural estimators for pose regularization. In Proceedings of the IEEE International Conference on Computer Vision, pages 5524–5532, 2017.
+[6] Maria Isabel Ribeiro. Kalman and extended Kalman filters: Concept, derivation and properties. Institute for Systems and Robotics, 43(46):3736–3741, 2004.
+[7] Ienkaran Arasaratnam and Simon Haykin. Cubature Kalman filters. IEEE Transactions on Automatic Control, 54(6):1254–1269, 2009.
+[8] Lennart Ljung. System identification. In Signal analysis and prediction, pages 163–173. Springer, 1998.
+[9] Ali H Sayed. Fundamentals of adaptive filtering. John Wiley & Sons, 2003.
+[10] Elad Hazan, Karan Singh, and Cyril Zhang. Learning linear dynamical systems via spectral filtering. Advances in Neural Information Processing Systems, 30, 2017.
+14
+
+
+[11] Udaya Ghai, Holden Lee, Karan Singh, Cyril Zhang, and Yi Zhang. No-regret prediction in marginally stable systems. In Conference on Learning Theory, pages 1714–1757. PMLR, 2020.
+[12] Anastasios Tsiamis and George J. Pappas. Online learning of the Kalman filter with logarithmic regret. IEEE Transactions on Automatic Control, 68(5):2774–2789, 2023.
+[13] Anastasios Tsiamis and George J Pappas. Finite sample analysis of stochastic system identification. In 2019 IEEE 58th Conference on Decision and Control (CDC), pages 3648–3654. IEEE, 2019.
+[14] Yang Zheng and Na Li. Non-asymptotic identification of linear dynamical systems using multiple trajectories. IEEE Control Systems Letters, 5(5):1693–1698, 2020.
+[15] Holden Lee. Improved rates for prediction and identification of partially observed linear dynamical systems. In International Conference on Algorithmic Learning Theory, pages 668–698. PMLR, 2022.
+[16] Moritz Hardt, Tengyu Ma, and Benjamin Recht. Gradient descent learns linear dynamical systems. Journal of Machine Learning Research, 19(29):1–44, 2018.
+[17] Tze Leung Lai and Zhiliang Ying. Recursive identification and adaptive prediction in linear stochastic systems. SIAM Journal on Control and Optimization, 29(5):1061–1090, 1991.
+[18] Oren Anava, Elad Hazan, Shie Mannor, and Ohad Shamir. Online learning for time series prediction. In Conference on Learning Theory, pages 172–184. PMLR, 2013.
+[19] Mark Kozdoba, Jakub Marecek, Tigran Tchrakian, and Shie Mannor. On-line learning of linear dynamical systems: Exponential forgetting in Kalman filters. In Proceedings of the AAAI Conference on Artificial Intelligence, volume 33, pages 4098–4105, 2019.
+[20] Paria Rashidinejad, Jiantao Jiao, and Stuart Russell. SLIP: Learning to predict in unknown dynamical systems with long-term memory. Advances in Neural Information Processing Systems, 33:5716–5728, 2020.
+[21] Jiayun Li, Yiwen Lu, and Yilin Mo. Regret analysis with almost sure convergence for OBFARX filter. arXiv preprint arXiv:2409.05390, 2024.
+[22] Hae-In Lee, Hyo-Sang Shin, and Antonios Tsourdos. Concurrent learning adaptive control with directional forgetting. IEEE Transactions on Automatic Control, 64(12):5164–5170, 2019.
+[23] Martin Zinkevich. Online convex programming and generalized infinitesimal gradient ascent. In Proceedings of the 20th international Conference on Machine Learning, pages 928–936, 2003.
+[24] Andrew Jacobsen and Ashok Cutkosky. Online linear regression in dynamic environments via discounting. arXiv preprint arXiv:2405.19175, 2024.
+[25] Richard M Johnstone, C Richard Johnson Jr, Robert R Bitmead, and Brian DO Anderson. Exponential convergence of recursive least squares with exponential forgetting factor. Systems & Control Letters, 2(2):77–82, 1982.
+[26] Silviu Ciochina, Constantin Paleologu, Jacob Benesty, and Andrei Alexandru Enescu. On the influence of the forgetting factor of the RLS adaptive filter in system identification. In 2009 International Symposium on Signals, Circuits and Systems, pages 1–4, 2009.
+[27] Brian Lai and Dennis S Bernstein. Generalized forgetting recursive least squares: Stability and robustness guarantees. IEEE Transactions on Automatic Control, 2024.
+[28] P Lancaster. Algebraic Riccati Equations. Oxford Science Publications/The Clarendon Press, Oxford University Press, 1995.
+15
+
+
+[29] Dietmar Bauer, Manfred Deistler, and Wolfgang Scherrer. Consistency and asymptotic normality of some subspace algorithms for systems without observed inputs. Automatica, 35(7):12431254, 1999.
+[30] NR Draper. Applied regression analysis. McGraw-Hill. Inc, 1998.
+[31] Dylan J Foster, Satyen Kale, Haipeng Luo, Mehryar Mohri, and Karthik Sridharan. Logistic regression: The importance of being improper. In Conference on Learning Theory, pages 167–208. PMLR, 2018.
+[32] Nicolo Cesa-Bianchi and Ga ́bor Lugosi. Prediction, learning, and games. Cambridge university press, 2006.
+[33] Constantin Paleologu, Jacob Benesty, and Silviu Ciochina. A robust variable forgetting factor recursive least-squares algorithm for system identification. IEEE Signal Processing Letters, 15:597–600, 2008.
+[34] Zhiyu Zhang, David Bombara, and Heng Yang. Discounted adaptive online learning: Towards better regularization. In Forty-first International Conference on Machine Learning, 2024.
+[35] Anastasios Tsiamis, Aren Karapetyan, Yueshan Li, Efe C Balta, and John Lygeros. Predictive linear online tracking for unknown targets. arXiv preprint arXiv:2402.10036, 2024.
+[36] Yasin Abbasi-Yadkori, D ́avid Pa ́l, and Csaba Szepesv ́ari. Improved algorithms for linear stochastic bandits. Advances in neural Information Processing Systems, 24, 2011.
+[37] Arthur E Hoerl and Robert W Kennard. Ridge regression: Biased estimation for nonorthogonal problems. Technometrics, 12(1):55–67, 1970.
+[38] David Lee Hanson and Farroll Tim Wright. A bound on tail probabilities for quadratic forms in independent random variables. The Annals of Mathematical Statistics, 42(3):1079–1083, 1971.
+[39] Roman Vershynin. High-dimensional probability: An introduction with applications in data science, volume 47. Cambridge university press, 2018.
+[40] Federico S. Cattivelli and Ali H. Sayed. Diffusion strategies for distributed Kalman filtering and smoothing. IEEE Transactions on Automatic Control, 55(9):2069–2084, 2010.
+[41] Xu Shang, Jorge Corte ́s, and Yang Zheng. Willems’ fundamental lemma for nonlinear systems with koopman linear embedding. IEEE Control Systems Letters, 2024.
+[42] Beatrice Laurent and Pascal Massart. Adaptive estimation of a quadratic functional by model selection. Annals of statistics, pages 1302–1338, 2000.
+[43] Thomas Kailath, Ali H. Sayed, and Babak Hassibi. Linear Estimation. Prentice Hall, 2000.
+[44] Jason L Speyer and Walter H Chung. Stochastic processes, estimation, and control. SIAM, 2008.
+16
+
+
+Appendix
+In this appendix, we provide extra discussions, proof details, and further numerical results. In particular, we organize this appendix as follows:
+• Appendix A provides some basic statistical properties of linear stochastic systems, including high probability upper and lower bounds for system states, prediction errors, Gram matrices, etc.
+• Appendix B provides some basic background theory, such as the Kalman filter and Hanson-Wright inequality, which are essential for the proof of logarithm regret.
+• Appendix C provides the detailed proof for Theorem 1.
+• Appendix D provides a detailed discussion on the effect of the forgetting factor γ to improve the prediction performance and the robustness to guarantee the regret RN to be sub-linear.
+• Appendix E provides supplementary numerical experiments including further discussion on the prediction algorithm, theoretical verifications and comparison with related algorithms in [20].
+• Appendix F discusses further extensions of the theoretical results, including the case with control input.
+Notation. We provide the frequently-used notations of this paper in Table 2. In the appendix, to provide a more concise proof, we will use one term M = poly(‖A‖2 , ‖C‖2 , ‖Q‖2 , ‖R‖2) to represent an uniform upper
+bound for all system related parameters.
+Table 2: Frequently-used Notations
+Notation Meaning
+Zk,p =
+[
+ykT−p · · · ykT−1
+]T Sample at time step k
+Z ̄k,p =
+[
+Zp,p · · · Zk,p
+]
+Collected samples up to time step k
+Yk,p =
+[
+yp · · · yk
+]
+Collected observations up to time step k
+Ek,p =
+[
+ep · · · ek
+]
+Collected innovation up to time step k
+bk,p = C (A − LC)p xˆk−p Truncation bias at time step k
+Bk,p =
+[
+bp,p · · · bk,p
+]
+Collected truncation bias up to time step k
+Dp = diag
+[
+γp−1 · · · 1
+]
+⊗ Im Scaling matrix induced by our forgetting factor
+Z ̃k,p = DpZk,p Scaled sample at time step k
+V ̃k,p = λI + DpZ ̄k,pZ ̄kT,pDp Gram matrix at time step k
+V ̄k,p = λDp−2 + Z ̄k,pZ ̄kT,p Equivalent form of Gram matrix for proof
+R ̄ , CP ̄CT + R Covariance of steady-state innovation
+Γk , E {xˆkxˆkT
+} Second moment of estimation xˆk
+ΓkZ,p , E
+{
+Zk,p ZkT,p
+}
+Second moment of sample Zk,p
+Ex, EZ, Ee, EP E High Probability event for the formulation of regret bound
+M = poly(‖A‖2 , ‖C‖2 , ‖Q‖2 , ‖R‖2) Uniform upper bound only related to system parameters
+σR, σ ̄R ̄ Minimal singular value of R and maximal singular value of R ̄
+Moreover, we denote ≻ as comparison in the positive semi-definite cone. We have that ‖·‖2 denotes the
+2-norm, ‖·‖F denotes the F-norm and ‖·‖1 denotes the 1-norm. ‖X‖ψ2 denotes the ψ2 norm of sub-Gaussian
+17
+
+
+random variable [39, Definition 2.5.6]. ρ(A) denotes the spectral radius of matrix A. poly(x) denotes a
+polynomial of elements x. O(f (x)) indicates the function is with the same order as f (x) and O ̃(f (x))
+indicates the function is with the same order as f (x) logn(f (x)).
+A Linear Stochastic System
+In this section, we introduce some basic properties of the linear stochastic system. Consider the following linear system model
+xk+1 = Axk + ωk,
+yk = Cxk + vk, k = 0, 1, 2, . . . (A.1)
+where xk ∈ Rn is the state vector of the system and yk ∈ Rm is the measurement vector, ωk ∈ Rn is the
+process noise with covariance matrix Q ∈ Rn×n and vk ∈ Rm is the observation noise with covariance matrix
+R ∈ Rm×m. The sequences {ωk}∞
+k=0 and {vk}∞
+k=0 are mutually uncorrelated white Gaussian noise. Q and
+R are positive definite. Besides, A is the state-transition matrix and C is the observation matrix. For the theoretical analysis of the regret, we present the following basic properties of the linear stochastic system.
+A.1 Basic statistical properties of random variables
+In this subsection, we introduce some basic statistical properties about the state predictions xˆk, samples Zk,p, and innovations ek, which are essential for the following proof. We first define the following notations,
+R ̄ = CP CT + R, Γk , E {xˆkxˆkT
+} , ΓkZ,p , E {Zk,pZkT,p
+},
+and the following events
+Ex ,
+{∥ ∥
+∥Γ−1/2
+k xˆk
+∥ ∥
+∥2 ≤ √n +
+√
+2 log 4k
+δ , ∀k ≥ Tinit
+}
+,
+EZ ,
+{∥
+∥ ∥
+(ΓkZ,p
+)−1/2 Zk,p
+∥ ∥
+∥2 ≤ √mp +
+√
+2 log 4k
+δ , ∀k ≥ Tinit
+}
+,
+Ee ,
+{∥ ∥
+∥R ̄−1/2ek
+∥ ∥
+∥2 ≤ √m +
+√
+2 log 4k
+δ , ∀k ≥ Tinit
+}
+.
+We have the following Lemma.
+Lemma 1. For any given δ ∈ (0, 1), each of event Ex, Ee and EZ holds with probability at least 1 − π2δ
+6.
+Proof. From Lemma 1 in [42], for any Gaussian random vector Xk ∼ N (0, In). we have
+P
+(
+‖Xk‖2
+2 ≥ n + 2√nt + 2t2)
+≤ e−t2 .
+Then the following statement also holds
+P
+(
+‖Xk‖2
+2≥
+(√n + √2t
+)2)
+≤ e−t2 .
+For each time step k, take t =
+√
+log k2
+δ , then we have
+P
+(
+‖Xk‖2 ≤ √n +
+√
+4 log k
+δ
+)
+≥1− δ
+k2 .
+18
+
+
+Take a union bound over all k, we have
+P
+(
+‖Xk‖2 ≤ √n +
+√
+4 log k
+δ , ∀k ∈ N
+)
+≥1−
+∞ ∑
+k=1
+δ
+k2 = 1 − π2δ
+6,
+where the inequality utilizes the facts
+P(E1 ∩ E2) = P(E1) + P(E2) − P(E1 ∪ E2)
+and P(E1 ∪E2) ≤ 1. Note that Γ−1/2
+k xˆk ∼ N (0, In), hence with the above argument, we have P(Ex) ≤ 1 − π2δ
+6.
+The other two arguments can be similarly proved.
+The above lemma illustrates that due to the zero-mean Gaussianity of the random variable xˆk, Zk,p and ek, we can find an increasing upper bound with the same order as O(log k) for the deviation between the random variables and their corresponding expectation with high probability 1 − δ. This lemma will be repeatedly used in the analysis of the regret bound.
+A.2 Upper bound of Z ̄k,pZ ̄kT,p with high probability
+The following lemma provides an upper bound for Z ̄k,pZ ̄kT,p, ∀k ≥ Tinit.
+Lemma 2. For a given probability δ, we have P
+{Z ̄k,pZ ̄kT,p ≤ poly (M, m, β, log 1
+δ
+) k2κ+1Imp
+}
+≥ 1 − δ, where
+poly(·) means polynomial operator.
+Proof. For the expectation of Gram matrix Zk,pZkT,p, we have
+∥
+∥ΓkZ,p
+∥
+∥2
+2 ≤ E {ZkT,pZk,p
+} =tr
+
+
+k−1
+∑
+i=k−p
+E {yiyiT
+}
+
+
+=ptr(R) + tr
+
+C T C
+k−1
+∑
+i=k−p
+i− ∑1
+l=0
+AlQ(Al)T
+
+
+≤mp
+(
+‖R‖2 + ‖C‖2
+2 ‖Q‖2
+k−1
+∑
+l=0
+∥
+∥Al∥
+∥2
+2
+)
+.
+Note that exists M1, such that ∥
+∥Al∥
+∥2 ≤ M1lκ−1ρ(A)l, where κ is the order of the largest Jordan block of
+matrix A. Then we have
+E {ZkT,pZk,p
+} ≤ mpM k2κ−1, ∀k ∈ N.
+Conditioned on event EZ, we have
+Zk,pZkT,p ≤ mpM
+(
+2mp + 4 log 4k
+δ
+)
+k2κ−1 I .
+Together with the selection rule of p ≤ β log k, we can obtain
+Z ̄k,pZ ̄kT,p =
+k ∑
+l=p
+Zl,pZlT,p ≤ poly
+(
+M, m, β, log 1
+δ
+)
+k2κ+1I
+with probability 1 − π2δ
+6 . We now complete the proof.
+19
+
+
+A.3 Persistent excitation for Z ̄k,pZ ̄kT,p with high probability
+In this subsection, we will provide a lower bound for Z ̄k,pZ ̄kT,p with high probability, which is also known
+as the condition of persistent excitation. The property of persistent excitation is of vital importance to guarantee the performance of online prediction Algorithm 1.
+Lemma 3. For a given system model (A.1), then for any fixed failure probability δ and horizon parameter
+β, there exists a number N0 = poly (β, log 1
+δ
+), such that for any k > N0 and p ≤ β log k, there is Z ̄k,pZ ̄kT,p ≥
+σR
+4 kI for all k with probability 1 − δ, where σR is the smallest eigenvalue of matrix R.
+Proof. From Theorem I.1 in [12], we have that for any given p, k, δ1, if
+k ≥ max {k1(p, δ1), k2(k, p, δ1)}
+where
+k1(p, δ1) , C1pm log(pm/δ1),
+k2(k, p, δ1) , C2pn
+min {4, σR} log
+(
+5p
+δ1
+n ‖Op‖2
+2 ‖Γk−p‖2 + δ1
+δ1
+)
+,
+and C1, C2 are constants not related to the system parameter and time step k. Then with probability at least 1 − 3δ1, there is
+Z ̄k,pZ ̄kT,p ≥ σR ̄
+4 kI.
+From Lemma I.1 in [12], there is ‖Op‖2
+2 ≤ M13O(pκ), and ‖Γt‖2 = M17O(t2κ−1), where M1 is only related to
+‖A‖2. Hence we have
+‖Op‖2
+2 ≤ M pκ, ‖Γt‖2 ≤ M t2κ−1.
+Replace the above δ1 with δ1
+k2 for each time step k, then we have for each k, if
+k ≥ max
+{
+k1
+(
+p, δ1
+k2
+)
+, k2
+(
+k, p, δ1
+k2
+)}
+,
+then with probability 1 − 3δ1
+k2 , the persistent excitation condition holds. For the term k1
+(p, δ1
+k2
+), we have
+k1
+(
+p, δ1
+k2
+)
+≤ C1β log(k) log
+(βm
+δ1
+k2 log(k)
+)
+,
+where the parameter C1, β, m, δ1 are unrelated with time step k. It is also easy to verify that
+C1β log(k) log
+(βm
+δ1
+k2 log(k)
+)
+≤
+(
+C1β log
+(βm
+δ1
+)
++ 3C1β
+)
+log2(k),
+which indicates that there exists a number N1 = poly(C1, β, m, log(1/δ1)), such that for all k ≥ N1, there is
+k ≥ C1β log(k) log
+(βm
+δ1
+k2 log(k)
+)
+≥ k1
+(
+p, δ1
+k2
+)
+.
+For the term k2
+(k, p, δ1
+k2
+), there is
+k2
+(
+k, p, δ1
+k2
+)
+≤ C2nβ log(k)
+min {4, σR}
+(
+log
+( 5βk2 log(k)
+δ1
+)
++ log
+( M nk2pκ ‖Γk−p‖2
+δ1
++1
+))
+≤ C2nβ log(k)
+min {4, σR}
+(
+log
+( 5βk2 log(k)
+δ1
+)
++ log
+( M 2βκnk2κ+1 logκ(k)
+δ1
++1
+))
+.
+20
+
+
+With the same argument as the analysis for k1, there exists a number N2 = poly(C2, β, 1/σR, n, M1, log(1/δ1), κ), such that for all k ≥ N2, there is
+k ≥ C2nβ log(k)
+min {4, σR}
+(
+log
+( 5βk2 log(k)
+δ1
+)
++ log
+( M12βκnk2κ+1 logκ(k)
+δ1
++1
+))
+.
+Note that n, m, κ, C1, C2, M are system related parameters. With the previous discussion, we have for any
+k ≥ max {N1, N2} with probability at least 1 − 3 ∑∞
+k=1 1
+k2 δ1, there is
+Z ̄k,pZ ̄kT,p ≥ σR
+4 kI.
+Then we only need to choose δ1 = 2
+π2 δ and N0 = max {N1, N2} .
+This lemma illustrates that with the given parameters A, C, Q, R, β, δ, we can find a sufficiently large num
+ber N0, such that the persistent excitation condition holds for all k ≥ N0. Note that N0 = poly (β, log ( 1
+δ
+))
+is polynomial to the above parameter, then we can choose the Tinit to be large enough to guarantee the
+persistent excitation condition of the Gram matrix V ̄k,p with high probability. In the following discussion, in order to simplify the analysis, we will directly assume that there is Tinit > N0.
+B Background on Kalman filter and Hanson-Wright inequality
+B.1 The Kalman Filter
+Consider the stochastic system (A.1) and the following assumption
+Assumption 3. The system pair (A, C) is detectable.
+Let Fk , σ (y0, . . . , yk) be the filtration generated by the observations y0, . . . , yk. Given the observations up to time k, the optimal prediction yˆk+1 at time k + 1 in the minimum mean square error sense is defined as
+yˆk+1 , arg min
+z∈Fk
+E
+[
+‖yk+1 − z‖2
+2 | Fk
+]
+. (B.1)
+With the Theory of Kalman Filtering [1, 2], the optimal predictor of the linear stochastic system (A.1) takes
+the form as xˆk+1 = Axˆk + Lk (yk − yˆk) , xˆ0 = 0
+yˆk = Cxˆk. (B.2)
+where Lk = APkCT (CPkCT + R)−1, and Pk satisfies the recursion
+Pk+1 = APkAT + Q − APkCT (CPkCT + R)−1 CPkAT. (B.3)
+From [43, Appendix E], with Assumption 3, we have the following results
+1. The recursion (B.3) will converge to steady-state exponentially fast with the increase of the time step k. The steady-state performance of the above recursion satisfies the discrete-time algebraic Riccati equation
+P = AP AT + Q − AP CT (CP CT + R)−1 CP AT. (B.4)
+2. Let L = AP CT (CP CT + R)−1, then there is ρ(A − LC) < 1.
+Denote ek = yk − yˆk as the prediction error, also called innovation, at time step k. Then from [44, P98], we have the following results
+1. With the basic assumptions of the stochastic system (A.1), we have
+E {elekT
+} = R ̄δl,k,
+where δl,k = 1 if l = k and δl,k = 0 if l 6= k.
+21
+
+
+B.2 Multi-dimensional self-normalizing vector martingales
+In this subsection, we will provide the basic result about Hanson-Wright inequality to provide a tighter
+bound for the quadratic form of
+∥ ∥
+∥Ek,pZ ̄k,pV ̄ − 1
+2 k,p
+∥ ∥ ∥
+2 2.
+B.2.1 Hanson-Wright inequality
+In this subsection, we first introduce the definition of sub-Gaussian random variables and the corresponding Hanson-Wright inequality for the subsequent analysis on the regression error.
+Lemma 4. (Hanson-Wright inequality [39]) Let X = (X1, . . . , Xn) ∈ Rn be a random vector with independent, mean zero, sub-Gaussian coordinates. Let A be an n × n matrix. Then, for every t ≥ 0, we have
+P {∣
+∣XTAX − EXTAX∣
+∣ ≥ t} ≤ 2 exp
+[
+−c min
+( t2
+K 4‖A‖2F
+,t
+K 2‖A‖
+)]
+,
+where K = maxi ‖Xi‖ψ2 .
+With the above lemma and ǫ-Net argument, we can provide the following result for the norm bound of a vectorized quadratic form.
+Lemma 5. (Norm bound for Vectorized Hanson-Wright Inequality with Gaussian Random Variable) Let X = (X1T, . . . , XnT
+)T ∈ Rn×m be a random vector with independent, mean zero Gaussian coordinates, i.e.,
+Xi ∼ N (0, In) and E {XiTXj
+} = O, ∀i 6= j. Let A be an n × n matrix. Then, for every t ≥ 0, we have
+P
+{∥
+∥X TAX ∥
+∥2
+2 ≥ 2 tr(A) + t
+}
+≤ 2 exp
+[
+2m − c min
+( t2
+4c′4‖A‖2F
+,t
+2c′2‖A‖
+)]
+,
+where c and c′ are uniform constant and ψ2 norm of the standard Gaussian random variable, respectively.
+Proof. In this lemma, we use the ǫ-net argument. First, consider the term ωTXTAXω for all ω in unit sphere Sm−1, note that the vector ωTXT is composed with mutually uncorrelated standard Gaussian random variable. With Lemma 4, we have
+P {ωTXTAXω − tr(A) ≥ t} ≤ 2 exp
+[
+−c min
+( t2
+c′4‖A‖2F
+,t
+c′2‖A‖
+)]
+.
+Let Nǫ be the ǫ-net (Definition 4.2.1 in [39]) of unit sphere Sm−1 and take ǫ = 1
+2 , with Corollary 4.2.13 in
+[39], there is |Nǫ| ≤ 5m. With Lemma 4.4.1 in [39], we have
+∥
+∥X TAX ∥
+∥2
+2 ≤ 2 sup
+ω∈Nǫ
+ωT X TAX ω.
+Hence there is
+P
+{∥
+∥X T AX ∥
+∥2
+2 ≥ 2 tr(A) + t
+}
+≤P
+{
+sup
+ω∈Nǫ
+ωTXTAXω ≥ tr(A) + t
+2
+}
+≤∑
+ω∈Nǫ
+P
+{
+ωTXTAXω ≥ tr(A) + t
+2
+}
+≤2 exp
+[
+2m − c min
+( t2
+4c′4‖A‖2F
+,t
+2c′2‖A‖
+)]
+,
+where the last inequality holds since 5 < e2.
+22
+
+
+C Proof of Theorem 1
+We here complete all the proof details of Theorem 1.
+C.1 General Analysis
+Denote Z ̃k,p = DpZk,p as the modified sample at time step k. Note that
+y ̃k+1 =
+
+
+k ∑
+l=p
+(GpZl,p + bl,p + el) ZlT,p
+
+ V ̄ −1
+k,p Zk+1,p
+=Gp
+(
+I − λDp−2V ̄ −1
+k,p
+)
+Zk+1,p +
+k ∑
+l=p
+bl,pZlT,pV ̄ −1
+k,p Zk+1,p +
+k ∑
+l=p
+el,pZlT,pV ̄ −1
+k,p Zk+1,p.
+Hence we have
+y ̃k+1 − yˆk+1 = − λGpDp−2V ̄ −1
+k,p Zk+1,p +
+k ∑
+l=p
+bl,pZlT,pV ̄ −1
+k,p Zk+1,p +
+k ∑
+l=p
+elZlT,pV ̄ −1
+k,p Zk+1,p − bk+1,p.
+The difference at time step k + 1 can be formulated as
+‖y ̃k+1 − yˆk+1‖2
+2 ≤6
+(∥ ∥
+∥λGpDp−2V ̄ − 1
+k,p2
+∥ ∥ ∥
+2
+2+
+∥ ∥
+∥Bk,pZ ̄kT,pV ̄ − 1
+k,p2
+∥ ∥ ∥
+2
+2+
+∥ ∥
+∥Ek,pZ ̄kT,pV ̄ − 1
+k,p2
+∥ ∥ ∥
+2
+2
+)∥ ∥
+∥V ̄ − 1
+k,p2 Zk+1,p
+∥ ∥ ∥
+2
+2 + 2 ‖bk+1,p‖2
+2.
+where bk,p = C (A − LC)p xˆk−p denotes the bias induced by truncation. Due to the fact that the parameter p varies with the time step k, we also need to divide the gap term LN into different epochs. Denote the
+number of all the epoch is NE, i.e., N = 2NE Tinit, and let Tl = 2l−1Tinit + 1 be the beginning time step of the l-th epoch, then we have
+LN =
+N ∑E
+l=1
+2Tl −2
+∑
+k=Tl
+‖y ̃k+1 − yˆk+1‖2
+2
+≤
+N ∑E
+l=1
+sup
+Tl ≤k≤2Tl −2
+6
+(∥ ∥
+∥λGpDp−2V ̄ − 1
+2 k,p
+∥ ∥ ∥
+2
+2+
+∥ ∥
+∥Bk,pZ ̄kT,pV ̄ − 1
+2 k,p
+∥ ∥ ∥
+2
+2+
+∥ ∥
+∥Ek,pZ ̄kT,pV ̄ − 1
+2 k,p
+∥ ∥ ∥
+2
+2
+)
+×
+2Tl −1
+∑
+k=Tl
+∥ ∥
+∥V ̄ − 1
+k,p2 Zk+1,p
+∥ ∥ ∥
+2
+2+2
+N ∑E
+l=1
+2Tl −2
+∑
+k=Tl
+‖bk+1,p ‖2
+2.
+Moreover, for the term ∑2Tl−2
+k=Tl
+∥ ∥
+∥V ̄ − 1
+2
+k,p Zk+1,p
+∥ ∥ ∥
+2
+2, we further have
+2Tl −2
+∑
+k=Tl
+∥ ∥
+∥V ̄ − 1
+2
+k,p Zk+1,p
+∥ ∥ ∥
+2
+2 ≤ sup
+Tl ≤k≤2Tl −2
+∥ ∥
+∥V ̄ − 1
+2
+k,p V ̄ 1
+2
+k+1,p
+∥ ∥ ∥
+2
+2
+2Tl −2
+∑
+k=Tl
+∥ ∥
+∥V ̄ − 1
+2
+k+1,p Zk+1,p
+∥ ∥ ∥
+2 2.
+In the following analysis, we will gradually analyze the above terms from a new perspective and then prove the logarithm bound provided in Theorem 1 with high probability 1 − δ.
+C.2 Uniform Boundedness of Bias error and the selection of parameter β
+Note that the bias error are in two parts, i.e., the bias regression error
+∥ ∥
+∥Bk,pZ ̄kT,pV ̄ − 1
+2 k,p
+∥ ∥ ∥
+2
+2 and bias accumulation
+error ∑2Tl−1
+k=Tl ‖bk+1,p‖2
+2 for each epoch. We first consider the first term, note that at each epoch l, for any
+23
+
+
+Tl ≤ k ≤ 2Tl − 2 there is
+∥ ∥
+∥Bk,pZ ̄kT,pV ̄ − 1
+2 k,p
+∥ ∥ ∥
+2
+2=
+∥ ∥
+∥Bk,pZ ̄kT,pV ̄ −1
+k,p Z ̄k,pBkT,p
+∥ ∥ ∥
+2
+2≤
+k ∑
+i=p
+‖bi,p‖2
+2≤
+k ∑
+i=p
+‖C(A − LC)p‖2
+2 ‖xˆi−p‖2
+2.
+where p = β log(Tl − 1). Conditioned on the event Ex, for a fixed probability δ1, we have that for all k ∈ N, there is
+‖xˆk ‖2
+2≤
+(√n +
+√
+2 log 4k
+δ1
+)2
+‖Γk‖2
+2≤
+(√n +
+√
+2 log 4k
+δ1
+)2
+‖Q‖2
+k−1
+∑
+i=0
+∥
+∥Ai∥
+∥2
+2.
+Hence there exists a number M1 = poly
+(
+M, n, log
+(1 δ1
+))
+only related to system parameter and δ1, such that
+‖xˆk ‖2
+2 ≤ M1k2κ−1 log(4k), ∀k ≥ Tinit.
+Note that there is ‖C(A − LC)p‖2
+2 ≤ M ρ(A − LC)p. We choose β = M3
+log(1/ρ(A−LC)) , then we have
+∥ ∥
+∥Bk,pZ ̄kT,pV ̄ − 1
+2 k,p
+∥ ∥ ∥
+2
+2 ≤M M1(2Tl)2κ+1ρ(A − LC) M3
+log(1/ρ(A−LC)) log(Tl−1)
+≤ poly
+(
+M, M1, n, log
+(1
+δ1
+))
+(2Tl)2κ+1 1
+(Tl − 1)M3 .
+Note that M1 is only related to system parameters, and we only need to choose M3 = 2κ + 1, then there is
+∥ ∥
+∥Bk,pZ ̄kT,pV ̄ − 1
+k,p2
+∥ ∥ ∥
+2
+2≤
+2Tl −2
+∑
+i=p
+‖bi,p‖2
+2 ≤ poly
+(
+M, n, log
+(1
+δ1
+))
+.
+Note that the above bound holds for all Tl ≤ k ≤ 2Tl − 2, together with the arbitrariness of l, we have
+sup
+1≤l≤NE
+sup
+Tl ≤k≤2Tl −2
+∥ ∥
+∥Bk,pZ ̄kT,pV ̄ − 1
+2 k,p
+∥ ∥ ∥
+2
+2 ≤ poly
+(
+M, log
+(1
+δ1
+))
+.
+Moreover, for the term ∑NE
+l=1
+∑2Tl −2
+k=Tl ‖bk+1,p‖2
+2, we have
+N ∑E
+l=1
+2Tl −2
+∑
+k=Tl
+‖bk+1,p‖2
+2 ≤ log(N/Tinit)
+log 2 poly
+(
+M, log
+(1
+δ1
+))
+= O(log N ).
+Therefore it is sufficient to guarantee the uniform boundedness of bias error only with the parameter β chosen to be proportional to 1/ log ρ(A − LC) and the order κ of the marginal stable Jordan block of A, which is independent to the time step k or the initial time Tinit.
+C.3 Persistent Excitation of the Gram matrix Z ̄k,pZ ̄kT,p for all k ≥ Tinit
+Consider the event
+EP E , {Z ̄k,pZ ̄kT,p ≥ σR
+4 kI, ∀k ≥ Tinit
+}
+.
+From Lemma 3, we can obtain that for the above fixed β and δ1, there exists a number N0 = poly
+(
+M, β, m,
+log
+(1 δ1
+))
+, such that the event EP E holds for all k > N0 with probability at least 1 − δ1. Without loss
+of generality, we can assume that the length of the warm-up horizon Tinit satisfies Tinit > N0. Then the persistent excitation condition holds for all k ≥ Tinit with probability 1−δ1. This condition will be repeatedly used in the following analysis.
+24
+
+
+C.4 Uniform boundedness of
+∥ ∥
+∥λGpD−2
+p V ̄ − 1
+2
+k,p
+∥ ∥ ∥
+2
+2
+with high probability
+For the regularization error term
+∥ ∥
+∥λGpDp−2V ̄ − 1
+2 k,p
+∥ ∥ ∥
+2
+2, we have
+λGpDp−2V ̄ − 1
+2
+k,p ∗
+(
+λGpDp−2V ̄ − 1
+2 k,p
+)T
+=λ2GpDp−1V ̃ −1
+k,p Dp−1GpT ≤ λGpDp−1Dp−1GpT
+=
+p−1
+∑
+l=0
+1
+γ2l C(A − LC)lLLT(A − LC)lTCT
+≤ ‖L‖2
+2 ‖C‖2
+2
+p−1
+∑
+l=0
+1
+γ 2l
+∥
+∥(A − LC)l∥
+∥2
+2.
+From the basic assumption of A − LC, i.e., ‖(A − LC)p‖2 ≤ M ρ(A − LC)p, we have
+∥ ∥
+∥λGpDp−2V ̄ − 1
+2 k,p
+∥ ∥ ∥
+2
+2 ≤ poly(M ) 1
+1−
+( ρ(A−LC) γ
+)2 , ∀k ≥ Tinit.
+C.5 Uniform Boundedness of
+∥ ∥
+∥Ek,pZ ̄kT,pV ̄ − 1
+2
+k,p
+∥ ∥ ∥
+2
+2
+with high probability
+In this subsection, we will provide a uniform upper bound of the regression error term
+∥ ∥
+∥Ek,pZ ̄kT,pV ̄ − 1
+k,p2
+∥ ∥ ∥
+2
+2 for
+all k ≥ Tinit. Note that ek are mutually uncorrelated Gaussian random variable, i.e., ek ∼ N (0, R ̄), hence the
+matrix R ̄− 1
+2 Ek,p = [R ̄− 1
+2 ep · · · R ̄− 1
+2 ek
+] is composed of mutually uncorrelated standard Gaussian random vectors. Then we consider the matrix
+Ek,p , R ̄− 1
+2 Ek,pZ ̄kT,pV ̄ −1
+k,p Z ̄k,pEkT,pR ̄− 1
+2,
+and denote VkZ,p = Z ̄kT,pV ̄ −1
+k,p Z ̄k,p. Then with Lemma 5, we have
+P
+{
+‖Ek,p‖2
+2 ≥ 2 tr(VkZ,p) + t
+}
+≤ 2 exp
+[
+2m − c min
+(
+t2
+4c′4 ‖VkZ,p ‖2F
+,t
+2c′2 ‖VkZ,p ‖2
+)]
+,
+where c are global constants related to ψ2-norm and c′ is the ψ2 norm of standard Gaussian random variable.
+From the fact that VkZ,p = Z ̄kT,p
+(
+λDp−2 + Z ̄k,pZ ̄kT,p
+)−1 Z ̄k,p, we have
+tr(VkZ,p) =tr
+((λDp−2 + Z ̄k,pZ ̄kT,p
+)−1 Z ̄k,pZ ̄kT,p
+)
+= mp − λtr(V ̃ −1
+k,p ),
+∥
+∥VkZ,p
+∥
+∥2
+F =tr (VkZ,p(VkZ,p)T) = tr
+((
+I − λV ̃ −1
+k,p
+)2)
+≤ mp,
+and
+∥ ∥
+∥VkZ,p
+∥ ∥
+∥2 ≤ 1.
+Then we take
+t = max
+{ 2c′2
+√c mp, 2c′2
+c
+(
+log
+( k2
+δ1
+)
++ 2m
+)}
+,
+and we can verify that
+c min
+{
+t2
+4c′4 ‖VkZ,p ‖2F
+,t
+2c′2 ‖VkZ,p ‖2
+}
+≥ max
+{
+log
+( 2k2
+δ1
+)
++ 2m, mβ log k
+}
+.
+25
+
+
+Hence for each k ≥ Tinit, we have
+P {‖Ek,p‖2 ≥ 2 tr(VkZ,p) + t} ≤ δ1
+k2 .
+Take a uniform bound over all k, and note that p ≤ β log(k), we have
+P
+{
+‖Ek,p‖2 ≤ poly
+(
+(m, β, log
+(1
+δ1
+))
+log k, ∀k ≥ Tinit
+}
+≥ 1 − π2δ1
+6,
+and
+P
+{∥ ∥
+∥Ek,pZ ̄kT,pV ̄ − 1
+k,p2
+∥ ∥ ∥
+2
+2 ≤ σ ̄R ̄ poly
+(
+(m, β, log
+(1
+δ1
+))
+log k, ∀k ≥ Tinit
+}
+≥ 1 − π2δ1
+6,
+where σ ̄R ̄ is the largest singular value of R ̄.
+C.6 Uniform Boundedness of
+∥ ∥
+∥V ̄ − 1
+2
+k,p V ̄
+1 2
+k+1,p
+∥ ∥ ∥
+2
+2
+with high probability
+Inspired by [12], we still consider the successive representation of Zk,p generated by the minimal polynomial of A. For the matrix A, suppose the minimal polynomial of A takes the form as
+Ad + ad−1Ad−1 + · · · + a0 = 0,
+where d is the dimension of the minimal polynomial of A. Then from the Lemma 2 of [12], we have the following successive representation of the sample Zk,p
+Zk,p = ad−1Zk−1,p + . . . + a0Zk−d,p +
+∑d
+s=0
+diag (Ls, . . . , Ls) E ̃k−s,p,
+where Ls = −ad−sIm − ∑s−1
+t=1 ad−s+tCAt−1L + CAs−1L and E ̃k,p = [ekT−p, . . . , ekT−1]T. We also have
+‖Ls‖2 ≤ ‖a‖1‖C‖2‖L‖2 max
+0≤i≤d
+∥
+∥Ai−1∥
+∥2 .
+Denote δk , ∑d
+s=0 diag (Ls, . . . , Ls) E ̃k−s,p, then there is
+‖δk‖2 ≤ ∆ sup
+0≤s≤d+p
+‖ek−s‖2 , ∆ , (d + 1) max
+0≤s≤d ‖Ls‖2
+√p.
+Then we consider the term
+∥ ∥
+∥V ̄ − 1
+k,p2 V ̄ 1
+k2+1,p
+∥ ∥ ∥
+2
+2, together with the structure of V ̄k,p, we have
+∥ ∥
+∥V ̄ − 1
+k,p2 V ̄ 1
+k2+1,p
+∥ ∥ ∥
+2
+2 =1 + Zk+1,pV ̄ −1
+k,p Zk+1,p
+≤1 + 2δkT+1V ̄ −1
+k,p δk+1 + 2d ‖a‖2
+2
+d−1
+∑
+s=0
+ZkT−s,pV ̄ −1
+k,p Zk−s,p.
+Conditioned on Ee and EP E, we have
+δkTV ̄ −1
+k,p δk ≤ ∆2
+λ + σR
+4 k sup
+0≤s≤d+p
+‖ek−s‖2
+2 ≤ M (d + 1)2β log(2Tl)
+λ + σR
+4 Tl
+(√m +
+√
+2 log 2Tl
+δ1
+)2
+σ ̄R ̄ .
+The above inequality holds due to the fact that for any k ≥ Tinit, there exists l ≤ NE such that Tl ≤ k ≤ 2Tl − 2. Note that the parameters d, β, M, m are not related to the time step k, hence we have
+δkTV ̄ −1
+k,p δk ≤
+poly
+(d
+MσR , β, log 1
+δ1 , σ ̄R ̄
+)
+log2(2Tl)
+Tl
+≤8
+e2 poly
+(
+M, d
+σR
+, β, log 1
+δ1
+, σ ̄R ̄
+)
+.
+26
+
+
+For the quadratic form ∑d−1
+s=0 ZkT−s,pV ̄ −1
+k,p Zk−s,p, from Woodbury Equality, there is
+ZkT,p
+(Vk−1,p + Zk,pZkT,p
+)−1 Zk,p =ZkT,pV −1
+k−1,pZk,p −
+(
+ZkT,pV −1
+k−1,p Zk,p
+)2
+1 + ZkT,pV −1
+k−1,p Zk,p
+= ZkT,pV −1
+k−1,p Zk,p
+1 + ZkT,pV −1
+k−1,p Zk,p
+.
+With a similar technique, it is easy to verify that
+2d ‖a‖2
+2
+d−1
+∑
+s=0
+ZkT−s,pV ̄ −1
+k,p Zk−s,p ≤ d2 ‖a‖2
+2.
+Then we have that conditioned on event Ee and EP E, we can find a bound M1 = poly
+(
+M, σ ̄R ̄, d
+σR , ‖a‖2 , β, log 1
+δ1
+)
+for the term
+∥ ∥
+∥V ̄ − 1
+2
+k,p V ̄ 1
+2
+k+1,p
+∥ ∥ ∥
+2
+2 with high probability 1 −
+(
+1 + π2
+6
+)
+δ1.
+C.7 Uniform Boundedness of ∑N
+k=Tinit
+∥ ∥
+∥V ̄ − 1
+2
+k,p Zk,p
+∥ ∥ ∥
+2
+2
+with high probability
+We first consider the accumulation error at the l-th epoch, where Tl = 2l−1Tinit + 1. We first have the following result for the accumulation error
+2Tl −2
+∑
+k=Tl
+∥ ∥
+∥V ̄ − 1
+2
+k+1,p Zk+1,p
+∥ ∥ ∥
+2
+2 ≤ log det(V ̄2Tl−1,p)
+det(V ̄Tl,p) .
+Moreover, consider the expression of V ̄2Tl−2,p, we also have
+det(V ̄2Tl −1,p )
+det(V ̄Tl,p) = det(V ̄2Tl−1,p) det(Dp−2)
+det(V ̄Tl,p) det(Dp−2) = det(V ̃2Tl−1,p)
+det(V ̃Tl,p) .
+Then we consider the accumulation error of two successive epochs, i.e.,
+4Tl −4
+∑
+k=Tl
+∥ ∥
+∥V ̄ − 1
+2
+k+1,p Zk+1,p
+∥ ∥ ∥
+2
+2 ≤ log det(V ̃4Tl−3,p′ )
+det(V ̃2Tl−1,p′ ) + log det(V ̃2Tl−1,p)
+det(V ̃Tl,p) ,
+where p′ = β log(2Tl − 2) and p = β log(Tl − 1), hence we have p′ − p ≤ β log 2. Note that we can separate
+the augmented samples Zk,p′ and Gram matrices V ̃k,p′ as
+Zk,p′ = [ZkT−p,p′−p ZkT,p
+]T ,
+and V ̃2Tl−1,p′ =λI + Dp′ Z ̄2Tl−1,p′ Z ̄2TTl−1,p′ Dp′
+=λI +
+2Tl −1
+∑
+k=p′
+Dp′ Zk,p′ ZkT,p′ Dp′
+=λI + Dp′
+[Z11 Z12
+Z1T2 Z22
+]
+Dp′ ,
+where Z11 = ∑2Tl−1
+k=p′ Zk−p,p′−pZkT−p,p′−p,Z12 = ∑2Tl−1
+k=p′ Zk−p,p′−pZkT,p and Z22 = ∑2Tl−1
+k=p′ Zk,pZkT,p.
+Conditioned on event EP E, we have
+Z22 ≥ σR
+4 (2Tl − 1)I.
+27
+
+
+This is because the smallest eigenvalue of a positive definite matrix is smaller than that of any diago
+nal sub-matrix, i.e., λmin(Z22) > λmin
+([Z11 Z12
+Z1T2 Z22
+])
+. Split the matrix Dp′ into two parts, i.e., Dp′ =
+diag(Dp′/p, Dp), where Dp′/p = diag(γp′ , . . . , γp+1). Then we have
+V ̃2Tl−1,p′ =
+[λI + Dp′/pZ11Dp′/p Dp′/pZ12Dp
+DpZ1T2Dp′/p λI + DpZ22Dp
+]
+=
+[λI + Dp′/pZ11Dp′/p Dp′/pZ12Dp
+DpZ1T2Dp′/p V ̃2Tl−1,p − ∑p′−1
+k=p DpZk,pZkT,pDp
+]
+,
+[Z ̃11 Z ̃12
+Z ̃1T2 Z ̃22
+]
+.
+where the last notation is for simplification. Note that
+det V ̃2Tl−1,p′ = det
+[I −Z ̃12Z ̃2−21 0I
+] [Z ̃11 Z ̃12
+Z ̃1T2 Z ̃22
+][ I
+−Z ̃2−21Z ̃1T2 I
+]
+= det Z ̃22 · det(Z ̃11 − Z ̃12Z ̃2−21Z ̃1T2).
+Moreover, consider the vector v ̃ = [vT vTZ ̃12Z ̃2−21
+]T, where v is an arbitrary vector. Then there is
+v ̃TV ̃2Tl−1,p′ v ̃ = vT (Z ̃11 − Z ̃12Z ̃2−21Z ̃1T2
+)
+vT ≥ λv ̃Tv ̃ ≥ λvTv.
+Due to the arbitrariness of v, we have
+det(Z ̃11 − Z ̃12Z ̃2−21Z ̃1T2) ≥ det(λI) ≥ λm(p′−p).
+While for the term
+det Z ̃22 = det
+
+V ̃2Tl−2 −
+p′ −1
+∑
+k=p
+Dp Zk,p ZkT,p Dp
+
+,
+conditioned on the event EP E and EZ, we have
+∥ ∥ ∥
+(ΓkZ,p
+)−1/2 Zk,p
+∥ ∥
+∥2 ≤ √mp +
+√
+2 log 4k
+δ1
+.
+Hence, we can obtain that
+Zk,pZkT,p ≤
+(
+√mp +
+√
+2 log 4k
+δ1
+)2
+ΓkZ,p
+≤
+(
+2mp + 4 log
+( 4k
+δ1
+))
+E {ZkT,pZk,p
+} Imp
+≤M
+(
+2mp + 4 log
+( 4k
+δ1
+))
+pk 2κ−1 Imp .
+We have
+p′ −1
+∑
+k=p
+Zk,pZkT,p ≤ (p′ − p)M
+(
+2mp + 4 log
+( 4p′
+δ1
+))
+p′2κ Imp .
+Conditioned on EP E, we have
+p′ −1
+∑
+k=p
+Zk,pZkT,p ≤ (p′ − p)M
+4
+(
+2mp + 4 log( 4p′
+δ1 )
+)
+p′2κ
+σR(2Tl − 1) Z22.
+28
+
+
+Note that p′ = β log(2Tl − 2), and p = β log(Tl − 1) hence there exists a uniform M1, such that
+M1 ≥
+4
+(
+2mp + 4 log( 4p′
+δ1 )
+)
+(p′)2κ
+σR(2Tl − 1) , ∀l = 1, . . . , NE, . . .
+and we can verify that
+M1 = poly
+(1
+σR
+, m, β, log
+(1
+δ1
+))
+.
+Then we have
+DpZ ̄2Tl−2,pZ ̄2TTl−2,pDp ≤ (1 + M1)DpZ22Dp,
+and V ̃2Tl−2,p ≤ (1 + M1)Z ̃22.
+Finally, we can show that for all l = 1, . . . , NE
+log det V ̃2Tl−2,p − log det V ̃2Tl−2,p′
+= log det V ̃2Tl−2,p − (log det Z ̃22 + log det(Z ̃11 − Z ̃12Z ̃2−21Z ̃1T2)) ≤mp log(1 + M1) − m(p′ − p) log(λ).
+We denote pl = β log(2l−1Tinit), then we have
+N ∑
+k=Tinit
+∥ ∥
+∥V ̄ − 1
+2
+k,p Zk,p
+∥ ∥ ∥
+2
+2=
+N ∑E
+l=1
+log det(V ̃2Tl−1,pl )
+det(V ̃Tl,pl )
+≤ log det(V ̃2TNE −2,pNE ) − log det(V ̃T1−1,p1 )
++
+N ∑E
+l=1
+(1 + M1)mpl − NEβ log(2) log(λ)
+≤ log det(V ̃N,pNE ) + log(1 + M1)NEmβ log(N ).
+Note that N = 2NE Tinit, conditioned on the event EZ, we have
+det(V ̃N,pNE ) ≤ det
+(
+poly
+(
+M, m, β, log 1
+δ1
+)
+N 2κImpNE
+)
+≤
+(
+poly
+(
+M, m, β, log 1
+δ1
+)
+N 2κImpNE
+)(mβ log(N/2))
+.
+Hence we have NE = log(N/Tinit)
+log 2 , and
+N ∑
+k=Tinit
+∥ ∥
+∥V ̄ − 1
+2
+k,p Zk,p
+∥ ∥ ∥
+2
+2 = poly
+(
+M, 1
+σR
+, m, β, log 1
+δ1
+)
+O (log2(N )) .
+C.8 Uniform Boundedness of (yˆ − y ̃)T ek
+In this subsection, in order to simplify the proof, we directly utilize the result in Theorem 1 and Theorem 3 in [12], and we have
+N ∑
+k=Tinit
+e⊤
+k (yˆk − y ̃k) = poly
+(1
+δ1
+) √LN log(LN ) = poly
+(1
+δ1
+)
+o(LN )
+with probability 1 − δ1.
+29
+
+
+C.9 Uniform logarithm bound for the whole regret
+Based on the above analysis, we have the following facts collected: for a given probability δ1, M is a constant only related to system parameters A, C, Q, R, then we have the following facts
+1. If β is chosen to be β = 2κ+1
+log(1/ρ(A−LC)) , then conditioned on Ex we have
+P
+{
+sup
+1≤l≤NE
+sup
+Tl ≤k≤2Tl −2
+∥ ∥
+∥Bk,pZ ̄kT,pV ̄ − 1
+2 k,p
+∥ ∥ ∥
+2
+2 ≤ poly
+(
+M, log
+(1
+δ1
+))}
+≥ 1 − π2δ1
+6,
+and
+P
+{ N ∑E
+l=1
+2Tl −2
+∑
+k=Tl
+‖bk+1,p ‖2
+2 ≤ poly
+(
+M, log
+(1
+δ1
+))
+log N
+}
+≥ 1 − π2δ1
+6.
+2. Conditioned on Ee, we have
+P
+{
+sup
+1≤l≤NE
+sup
+Tl ≤k≤2Tl −2
+∥ ∥
+∥Ek,pZ ̄kT,pV ̄ − 1
+2 k,p
+∥ ∥ ∥
+2
+2 ≤ poly
+(
+σ ̄R ̄, m, β, log
+(1
+δ1
+))
+log N
+}
+≥ 1 − π2δ1
+6.
+3. Conditioned on EP E and Ee, we have
+P
+{
+sup
+1≤l≤NE
+sup
+Tl ≤k≤2Tl −2
+∥ ∥
+∥V ̄ − 1
+k,p2 V ̄ 1
+k2+1,p
+∥ ∥ ∥
+2
+2 ≤ poly
+(d
+M σR
+, ‖a‖2 , β, log 1
+δ1
+, σ ̄R ̄
+)}
+≥1−
+(
+1 + π2
+6
+)
+δ1.
+4. Conditioned on EP E and EZ , we have
+P
+{ N ∑
+k=Tinit
+∥ ∥
+∥V ̄ − 1
+2
+k+1,p Zk+1,p
+∥ ∥ ∥
+2
+2 ≤ poly
+(
+M, m, β, log 1
+δ
+)
+log2 N
+}
+≥1−
+(
+1 + π2
+6
+)
+δ1.
+Together with the cross-term bound, we have for probability at least 1 −
+(
+3 + 5π2
+6
+)
+δ1, there is
+RN ≤ poly
+(
+M, m, β, log 1
+δ1
+, d, ‖a‖2
+)
+log3(N ).
+Let δ =
+(
+3 + 5π2
+6
+)
+δ1 then the result follows.
+D Regret Improvement with Forgetting
+In this section, we will analyze the effect of forgetting factor γ on the regret RN . From the proof of Theorem 1, we can have an intuitive idea that the forgetting factor γ influences the regret RN by affecting
+• the regularization term ∥
+∥λGpDp−2V ̄ − 1
+k,p2
+∥
+∥2
+2,
+• regression term ∥
+∥Ek,pZ ̄kT,pV ̄ − 1
+k,p2
+∥
+∥2
+2 and
+• accumulation term ∑N
+k=Tinit
+∥
+∥V ̄ − 1
+k,p2 Zk+1,p
+∥
+∥2
+2.
+Moreover, the theoretical analysis shows that the term ∥
+∥Ek,pZ ̄kT,pV ̄ − 1
+2 k,p
+∥
+∥2
+2 and ∑N
+k=Tinit
+∥
+∥V ̄ − 1
+2
+k,p Zk+1,p
+∥
+∥2
+2 are
+dominated by σ ̄R ̄ tr(Z ̄kT,pV ̄ −1
+k,p Z ̄k,p
+) and det(V ̃N,p) respectively. Therefore, in this subsection, to fully illustrate the essence of the effect of the forgetting factor, our analysis will mainly be based on the relationship between γ and the dominant terms.
+30
+
+
+D.1 Effect of forgetting factor γ
+For the regularization term, we have
+∥
+∥λGpDp−2V ̄ − 1
+k,p2
+∥
+∥2
+2≤
+∑p
+i=1
+M
+( ρ(A − LC) γ
+)i−1
+.
+Note that for the special case γ = ρ(A − LC), we have
+∥
+∥λGpDp−2V ̄ − 1
+k,p2
+∥
+∥2
+2 ≤ M p ≤ M β log(N ).
+while for the general case when γ > ρ(A − LC), the regularization term is uniformly bounded by Mγ
+γ −ρ(A−LC )
+for all N . Hence for all γ ≥ ρ(A − LC), the effect of γ to increase the regularization error will be bounded by O(log N ), and it will only have a sharp increase when γ is close to ρ(A − LC).
+While for the term ∥
+∥Ek,pZ ̄kT,pV ̄ − 1
+2 k,p
+∥
+∥2
+2, which is dominated by σ ̄R ̄tr(Z ̄kT,pV ̄ −1
+k,p Z ̄k,p
+). We have
+tr(Z ̄kT,pV ̄ −1
+k,p Z ̄k,p
+) = tr(V ̄ −1
+k,p Z ̄k,pZ ̄kT,p
+) = tr(Imp − λV ̃ −1
+k,p
+).
+For the term tr(λV ̃ −1
+k,p
+), we have
+λI + DpZ ̄k,pZ ̄⊤
+k,pDp ≤ λI + poly
+(
+M, β, log 1
+δ
+)
+k 2κ Dp2 .
+with high probability 1 − δ, where M is only related to system parameter. Then we have
+tr(Z ̄kT,pV ̄ −1
+k,p Z ̄k,p
+)≤
+p−1
+∑
+l=0
+m − mλ
+λ+poly(M, β, log 1
+δ
+)k2κγ2l .
+The above inequality shows that the forgetting factor γ can reduce the regression term ∥
+∥Ek,pZ ̄kT,pV ̄ − 1
+2 k,p
+∥
+∥2
+2through
+reducing poly (M, β, log 1
+δ
+) k2κγ2l. Consider the case γ = ρ(A − LC), from the selection of parameter β and p ≤ β log k, we have
+ρ(A − LC)p = O( 1
+k2κ+1 ).
+Hence for any l ≥ p
+2 , there is
+mλ
+λ + poly (M, β, log 1
+δ
+) k2κγ2l ≤ mλ
+λ + O(1/k) ≈ m
+and
+tr(Z ̄kT,pV ̄ −1
+k,p Z ̄k,p
+) . mp
+2.
+Hence we can find that the reduction effect of the forgetting factor to the regression term is efficient. Hence we have the intuitive idea that the forgetting factor can balance a better trade-off between the regularization error and the regression error, which will also be verified with numerical simulation in Section 5.
+We then consider the connection between γ and det(V ̃N,p). With similar technique, for the case γ = ρ(A − LC), we can obtain
+det(V ̃N,p) ≤
+p∏−1
+l=0
+(
+λ + poly
+(
+M, β, log 1
+δ
+)
+N 2κγ2l
+)
+.λp/2
+p/ ∏2
+l=0
+(
+λ + poly
+(
+M, β, log 1
+δ
+)
+N 2κγ2l
+)
+.
+Hence we can find that the effect of γ = ρ(A − LC) to reduce the regression term and accumulation term is at least proportional to the case with γ = 1, which verifies the effectiveness of applying forgetting factor from a theoretical perspective.
+31
+
+
+D.2 Robust analysis for the selection of parameter γ
+Note that when γ > ρ(A − LC), the logarithm regret RN of Algorithm 1 with optimal Kalman filter can be guaranteed. In this subsection, we aim to provide essential discussion on the robustness of choosing parameter γ, which indicates there are still some margin ǫ to allow γ ≤ ρ(A − LC) − ǫ and still guarantee
+the regret RN to be sub-linear, i.e., RN = poly ( 1
+δ
+) o(N ), for all time step N .
+We first consider the regularization error ∥
+∥λGpDp−2V ̄ − 1
+2 k,p
+∥
+∥2
+2, note that with the previous analysis, there
+is
+∥ ∥
+∥λGpDp−2V ̄ − 1
+k,p2
+∥ ∥ ∥
+2
+2≤
+∑p
+i=1
+M
+( ρ(A − LC) γ
+)i−1
+,
+where M is only related to system parameters. Then consider γ = 1
+1+c ρ(A − LC), c > 0. Note that when
+c<e1
+β′ − 1 we have
+∥ ∥
+∥λGpDp−2V ̄ − 1
+2 k,p
+∥ ∥ ∥
+2
+2≤M
+p ∑
+i=1
+(1 + c)i ≤ e p
+β′
+e
+1
+β′ − 1 .
+Together with p ≤ β log k, we can obtain
+sup
+Tinit ≤k≤N
+∥ ∥
+∥λGpDp−2V ̄ − 1
+2 k,p
+∥ ∥ ∥
+2
+2 ≤ O(N β
+β′ ).
+With a similar proof as Theorem 1, we can prove that all the other terms in the regret upper bound (22) are with the same order as poly(log N ), hence we can obtain that for all β′ > β, c ≤ e 1
+β′ −1 and γ = 1
+1+c ρ(A−LC),
+we have
+RN = poly(M, log(1/δ))O(N β
+β′ poly(log N )) = o(N ).
+Hence the robust margin for the selection of γ is not larger than
+ǫ , ρ(A − LC) − γ =
+(
+1− 1
+e1
+β
+)
+ρ(A − LC).
+E Additional Experiments
+In the additional experiments, without special statement, the system model is chosen to be the same as that in Section 5.
+E.1 Comparison with low rank approximation based method
+In the first supplementary experiment, we provide a fair comparison with the low rank approximation-based algorithm proposed in [20] by considering an ill-conditioned system, where low rank approximation techniques are used for dealing with the case when ρ(A − LC) is close to 1. We apply the system parameters to be in severe condition, i.e.,
+A=
+
+
+0.98 0.8 0 0 0.98 0.8 0 0 0.9
+
+ , C = I3, Q = I3, R = 100I3.
+Then we can compute ρ(A − LC) = 0.78. Note that the algorithm proposed in [20] requires a relatively long backward horizon length p to guarantee the performance; we choose β = 6, Tinit = 500, and NE = 3. The result is shown in Figure 4, where the blue line represents the regret of the truncated algorithm in [12], the yellow line represents the regret of the prediction algorithm in [20] and the red line represents the regret of the prediction algorithm proposed in this paper. From the comparison result we can see that our algorithm performs better than the low rank approximation based method even for noisy data and slow converge of C(A − LC)pL, and we also verify that the performance of Algorithm 1 is still better than that of [12] even when γ < ρ(A − LC), the full potential of the forgetting based Algorithm 1 still requires further discussion.
+32
+
+
+Figure 4: Illustration figure for the comparison of regret for different methods.
+E.2 Discussion on numerical stability
+In this subsection, we discuss the numerical robustness of the initialization process for each epoch. Note that at the beginning of each time epoch with initial time step as Tl = 2l−1Tinit+1, we need to perform the initialization process, i.e.,
+V ̃Tl−1,p =λI +
+Tl −1
+∑
+t=p
+Dp Zt,p ZtT,p Dp ,
+G ̃Tl−1,p =
+(Tl −1
+∑
+t=p
+ytZtT,pDp
+)
+V ̃ −1
+Tl −1,p ,
+(E.1)
+for the following online regression and prediction. However, with the increase of time Tl, the cross term
+∑Tl−1
+t=p ytZtT,pDp will be large, then the numerical error of taking matrix inverse V ̃ −1
+Tl−1,p, i.e., ∆V ̃ will have a
+significant effect on the parameter G ̃Tl−1,p. That is
+∆G =
+Tl −1
+∑
+t=p
+ytZtT,pDp∆V ̃ ,
+which will have a significant effect on the regret RN , especially for the case with γ = 1.
+To solve this numerical problem, we need to apply the iterative update law for computing G ̃Tl−1,p, that
+is V ̃k,p =V ̃k−1,p + DpZk,pZkT,pDp,
+y ̃ ̃k =G ̃k−1,pDpZk,p,
+G ̃k,p =G ̃k−1,p + (yk − y ̃k) ZkT,pDpV ̃ −1
+k,p .
+(E.2)
+Here we use y ̃ ̃k to indicate that the prediction is nominal and will only be used for initialization.
+Figure 5 compare the performance of Algorithm 1 with different initialize law for G ̃Tl−1,p. The first sub-figure depicts the regret of Algorithm 1 with direct update law (E.1). The second sub-figure depicts the regret of Algorithm 1 with iterative update law (E.2) and the last sub-figure is the trajectory of observation.
+From Figure 5, we can see that the direct calculation of G ̃Tl−1,p with (E.1) will cause a sharp increase in the regret, i.e., a large prediction error at the beginning of each epoch. Hence, from the perspective of numerical stability, the iterative update law (E.2) performs much better than the direct update law (E.1).
+E.3 Discussion on the selection of β
+In Appendix C.2, we show that if the term β is chosen as 2κ+1
+log(1/ρ(A−LC)) , then the bias term C(A − LC)pbk,p will be sufficiently small such that the error induced by bias will also be neglectable. Then the logarithmic regret of the online prediction Algorithm 1 can be guaranteed.
+33
+
+
+Figure 5: Illustration figure for the problem of numerical stability
+(a) Bias Cancellation (b) Traditional Forget
+Figure 6: Supplementary experiments
+We find in numerical simulation that the bias error term ∑k
+l=p bl,pZlT,pV ̄ −1
+k,p Zk+1,p − bk+1,p has an effect of
+cancellation. That is, even if the term bk+1,p is large, the difference between bk+1,p and ∑k
+l=p bl,pZlT,pV ̄ −1
+k,p Zk+1,p
+is much smaller than that of bk+1,p; see the Figure 6(a) for more details. In Figure 6(a), the blue line represents the average of the bias term bk+1,p over all k in the last epoch with
+difference parameter β. While the red line represents the average of canceled bias term ∑k
+l=p bl,pZlT,pV ̄ −1
+k,p Zk+1,p−
+bk+1,p over k with different β. As we can see from Figure 6(a) that the canceled bias term is much smaller than the real bias term bk+1,p. This phenomenon indicates that it is possible for us to choose a relatively smaller β to reduce the length of the past horizon p and balance a better trade-off between prediction error, effect of overfitting and computation cost.
+E.4 Further experiments for theoretical verification
+In this subsection, we provide numerical verification for our theoretical statements. In Fig. 6(b), we compare
+the upper bound of regression term ∥
+∥Ek,pZ ̄k,pV ̄ − 1
+2 k,p
+∥
+∥2
+2 provided in [12, 20, 36] and in this paper.
+In [36], it is shown that the regression term ∥
+∥Ek,pZ ̄k,pV ̄ − 1
+k,p2
+∥
+∥2
+2 is upper bounded by the determinant of
+V ̄k,p, i.e.,
+∥
+∥Ek,pZ ̄k,pV ̄ − 1
+k,p2
+∥
+∥2
+2≤O
+(
+log det V ̄k,p
+δ det λDp−2
+)
+with high probability 1 − δ. However, in Appendix C, we managed to prove that the dominant term of
+∥
+∥Ek,pZ ̄k,pV ̄ − 1
+k,p2
+∥
+∥2
+2 is around tr(Z ̄k,pV ̄ −1
+k,p Z ̄kT,p
+). In Figure 6(b), we compare the two different theoretical bounds
+with the real ∥
+∥Ek,pZ ̄k,pV ̄ − 1
+2 k,p
+∥
+∥2
+2, we select the value at k = 2Tl − 2, i.e., the end of each epoch, for comparison.
+34
+
+
+4000 5000 6000
+200
+400
+600
+800
+4000 5000 6000
+50
+100
+150
+200
+250
+4000 5000 6000
+20
+40
+60
+80
+100
+4000 5000 6000
+5
+10
+15
+20
+25
+30
+4000 5000 6000
+2
+4
+6
+8
+10
+4000 5000 6000
+1
+2
+3
+4
+4000 5000 6000
+0.2
+0.4
+0.6
+0.8
+1
+1.2
+1.4
+4000 5000 6000
+0.1
+0.2
+0.3
+0.4
+0.5
+Figure 7: Illustration figure for the verification of theoretical regret bound.
+Then we can see that the determinant bound provided by [12, 20, 36] is, to some extent, conservative. The bound provided in this paper is sharper, but there is still some potential to be optimized. Then we want to verify the theoretical result in Theorem 1. In Figure 7, we compare the regret with different orders of log N . The performance index is defined as
+p(i, N ) = RN
+logi N ,
+where the blue line denotes the performance of the online prediction algorithm proposed in [12] and the red line denotes the performance of Algorithm 1 proposed in this paper. It can be verified from this simulation
+that the regret of the online prediction algorithm appears to be O(log2 N ). The utilization of forgetting factor can improve the prediction performance, but cannot reduce the order of regret with log N .
+35
+
+
+F Further Discussions
+F.1 Extension to systems with control input
+In this subsection, we provide a summary on how to directly extend the theoretical results and techniques proposed in this paper to the case with control input, i.e., to predict the stochastic system
+xk+1 = Axk + Buk + wk, wk ∼ N (0, Q) yk = Cxk + Duk + vk, vk ∼ N (0, R).
+With a similar technique in Section 2.2, we can obtain the regression model as
+yk = GpZk,p + Duk + C(A − LC)xˆk−p + ek
+where G and Zk,p are modified to be G = [G(p1), G(p2)], Zk,p = [Z(1)T
+k,p , Z (2)T
+k,p ]T where
+G(p1) , [C(A − LC)p−1L · · · CL] ,
+G(p2) , [C(A − LC)p−1(B − LD) · · · C(B − LD)] ,
+and
+Z (1)
+k,p = [ykT−p, . . . , ykT−1
+]T , Z(2)
+k,p = [ukT−p, . . . , ukT−1
+]T .
+The forgetting process can be modified as
+Z ̃k,p =
+[
+D(p1)
+D(p2)
+][
+Z (1)
+k,p
+Z (2)
+k,p
+]
+,
+where D(p1) and D(p2) are diagonal matrices with proper dimension. Then for uniformly bounded input uk, we can verify that our algorithm directly guarantees a logarithmic regret RN to the optimal predictor. The regression process can directly follow the steps in Algorithm 1.
+F.2 Matrix forgetting factor
+For technical improvement, we can also consider applying the matrix-based forgetting factor to balance the regression model, i.e.,
+Dp = diag(Γp−1, Γp−2, . . . , Γ, I),
+and the corresponding balanced model takes the form as
+G ̃p , [C(A − LC)p−1LΓ−(p−1), · · · , CL] ,
+where the forgetting matrix Γ can be designed with some system identification based techniques [8, 13, 14]. Developing the prediction technique by potentially bridging the direct and indirect methods together to improve performance might be possible.
+36
