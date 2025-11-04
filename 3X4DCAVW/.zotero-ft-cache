@@ -1,0 +1,686 @@
+Skip to content
+1
+/
+15
+search
+group_add
+more_horiz
+get_app
+Received: 11 August 2022
+ 
+Revised: 2 December 2022
+ 
+Accepted: 8 January 2023
+ 
+IET Generation, Transmission & Distribution
+
+
+DOI: 10.1049/gtd2.12763
+
+
+ORIGINAL RESEARCH
+
+
+A deep LSTM-CNN based on self-attention mechanism with input
+
+
+data reduction for short-term load forecasting
+
+
+Shiyan Yi
+ 
+1
+ 
+Haichun Liu
+ 
+2
+ 
+Tao Chen
+3,4
+ 
+Jianwen Zhang
+5
+ 
+Yibo Fan
+1
+
+
+1
+ 
+The State Key Laboratory of ASIC and System, Fudan University, Shanghai, China
+
+
+2
+ 
+Department of Automation, Shanghai Jiao Tong University, Shanghai, China
+
+
+3
+ 
+Department of Economics, Department of Statistic and Actuarial Science, Big Data Research Lab, University of Waterloo, Waterloo, Canada
+
+
+4
+ 
+Senior Research Fellow, Harvard University, Cambridge, Massachusetts, USA
+
+
+5
+ 
+The Key Laboratory of Control of Power Transmission and Conversion of Ministry of Education, Department of Electrical Engineering, School of Electronic Information and Electrical
+
+
+Engineering, Shanghai Jiao Tong University, Minhang District, Shanghai, China
+
+
+Correspondence
+
+
+Jianwen Zhang, The Key Laboratory of Control of
+
+
+Power Transmission and Conversion of Ministry of
+
+
+Education, Department of Electrical Engineering,
+
+
+School of Electronic Information and Electrical
+
+
+Engineering, Shanghai Jiao Tong University,
+
+
+Minhang District, Shanghai 200240, China.
+
+
+Email: icebergzjw@sjtu.edu.cn
+
+
+Yibo Fan, The State Key Laboratory of ASIC and
+
+
+System, Fudan University, Shanghai 201203, China.
+
+
+Email: fanyibo@fudan.edu.cn
+
+
+Funding information
+
+
+Fudan-ZTE Joint Lab; National Natural Science
+
+
+Foundation of China, Grant/Award Numbers:
+
+
+52277193, 62031009; Pioneering Project of
+
+
+Academy for Engineering and Technology Fudan
+
+
+University, Grant/Award Number: gyy2021-001;
+
+
+Fudan University-CIOMP Joint Fund, Grant/Award
+
+
+Number: FC2019-001; CCF-Alibaba Innovative
+
+
+Research Fund For Young Scholars; Alibaba
+
+
+Innovative Research (AIR) Program; Shanghai
+
+
+Committee of Science and Technology,
+
+
+Grant/Award Number: 19DZ1205403
+
+
+Abstract
+
+
+Numerous studies on short-term load forecasting (STLF) have used feature extraction
+
+
+methods to increase the model’s accuracy by incorporating multidimensional features con-
+
+
+taining time, weather and distance information. However, less attention has been paid to
+
+
+the input data size and output dimensions in STLF. To address these two issues, an STLF
+
+
+model is proposed based on output dimensions using only load data. First, the load data’s
+
+
+long-term behavior (trend and seasonality) is extracted through the long short-term mem-
+
+
+ory network (LSTM), followed by convolution to obtain the load data’s non-stationarity.
+
+
+Then, using the self-attention mechanism (SAM), the crucial input load information is
+
+
+emphasized in the forecasting process. The calculation example shows that the proposed
+
+
+algorithm outperforms LSTM, LSTM-based SAM, and CNN-GRU-based SAM by more
+
+
+than 10% in eight different buildings, demonstrating its suitability for forecasting with only
+
+
+load data. Additionally, compared to earlier research utilizing two well-known public data
+
+
+sets, the MAPE is optimized by 2.2% and 5%, respectively. Also, the method has good
+
+
+prediction accuracy for a wide variety of time granularities and load aggregation levels, so
+
+
+it can be applied to various load forecasting scenarios and has good reference signiﬁcance
+
+
+for load forecasting instrumentation.
+
+
+1
+ 
+INTRODUCTION
+
+
+Short-term load forecasting (STLF) is a technique that fore-
+
+
+casts the next few hours’ electric loads based on the changing
+
+
+pattern of load data. STLF is the foundation for micro-
+
+
+grid “source–grid–load–storage” operation and dispatch [1, 2].
+
+
+STLF can coordinate ﬂexible energy storage (ES) systems or
+
+
+advanced demand response (DR) technologies for peak regula-
+
+
+tion [3]. In addition, STLF can effectively reduce the uncertainty
+
+
+This is an open access article under the terms of the Creative Commons Attribution-NonCommercial-NoDerivs License, which permits use and distribution in any medium, provided the
+
+
+original work is properly cited, the use is non-commercial and no modiﬁcations or adaptations are made.
+
+
+© 2023 The Authors.
+ 
+IET Generation, Transmission & Distribution
+ 
+published by John Wiley & Sons Ltd on behalf of The Institution of Engineering and Technology.
+
+
+of distributed generation resources (DGRs) such as small
+
+
+and medium photovoltaic (PV) generators and ﬂexible loads
+
+
+such as renewable electric vehicles (EVs) in order to achieve
+
+
+amicable microgrid and grid access [4, 5]. For reliable load
+
+
+forecasting, the majority of existing load forecasting algorithms
+
+
+require multidimensional data inputs such as the load, mete-
+
+
+orological, and calendar [6–9]. However, precise ﬁne-grained
+
+
+meteorological data and long-term calendar data are challeng-
+
+
+ing to obtain in microgrid applications [10, 11]. The short-term
+
+
+1538
+ 
+wileyonlinelibrary.com/iet-gtd
+ 
+IET Gener. Transm. Distrib.
+ 
+2023;17:1538–1552.
+YI
+ 
+ET AL
+ 
+.
+ 
+1539
+
+
+TABLE 1
+ 
+Related works on short-term load forecasting
+
+
+Category
+ 
+Author
+ 
+Method
+ 
+Description
+ 
+Advantage
+ 
+Shortcoming
+
+
+DNN
+ 
+X. Kong [21]
+ 
+DBN
+ 
+Improved DBN for STLF
+ 
+Can abstract nonlinear interactions
+
+
+layer by layer
+
+
+Cannot extract temporal
+
+
+features
+
+
+K. Chen [22]
+ 
+ResNet
+ 
+An end-to-end model
+
+
+W. Kong [23]
+ 
+LSTM
+ 
+Extract temporal features
+ 
+More accurate than other DNNs
+ 
+The structure is too simple.
+
+
+Feature
+
+
+extraction
+
+
+Kim [6]
+ 
+CNN-LSTM
+ 
+Accurate but many parameters
+ 
+Handle raw data at a higher degree
+
+
+of abstraction
+
+
+Needs many input features as
+
+
+temperature, humidity, date
+
+
+information. Besides, the SD
+
+
+information may not be
+
+
+suitable for STLF.
+
+
+Yao [24]
+ 
+CNN-GRU
+ 
+GRU can reduce parameters.
+
+
+H. Chen [25]
+ 
+SD-FOA
+ 
+Each factor’s weight assigned
+
+
+by optimization algorithm
+Zheng [26]
+ 
+SD-Xgboost
+
+
+Park [27]
+ 
+SD-RL
+ 
+Using RL to choose SD
+
+
+Load modeling
+ 
+W. Kong [28]
+ 
+LSTM
+ 
+Can learn residential behavior
+ 
+Appliance-level forecasting
+
+
+techniques provide ﬁner
+
+
+granularity and more accuracy
+
+
+Needs appliances’ load
+
+
+Ji [29]
+ 
+HSMM
+ 
+Can adjust different situation
+ 
+Necessitates complex dynamical
+
+
+models
+
+
+Data
+
+
+decompose
+
+
+Liu and
+
+
+Zhao [30]
+
+
+K-means
+
+
+EMD
+
+
+Using K-means to classify
+
+
+IMFs and Res
+
+
+Can handle low-dimensional data
+ 
+Requires massive amount of
+
+
+calculations and time
+
+
+Deng [31]
+ 
+EEMD
+ 
+Reduce mode mixing in EMD
+
+
+Model selection
+ 
+Feng [32]
+ 
+Q-learning
+ 
+Selects the most appropriate
+
+
+model in the model pool
+
+
+Able to handle complex situations
+ 
+Model pool affects accuracy,
+
+
+calculations lead to
+
+
+tremendous complexity
+
+
+Li [33]
+ 
+Meta-learning
+
+
+load data generated by distributed smart meters can represent
+
+
+meteorological and calendar information. Effective mining of
+
+
+real-time load data can produce accurate load forecasts with-
+
+
+out the need for meteorological and calendar data. This can
+
+
+effectively reduce the required data dimension and avoid the
+
+
+transmission and storage of large amounts of data, meeting the
+
+
+requirements of the independent operation and autonomous
+
+
+architecture of the microgrid, the improved overall performance
+
+
+of the microgrid, and the friendliness of the system dispatch.
+
+
+Conventional STLF approaches often relate to statistical
+
+
+models, such as the autoregressive moving average (ARMA)
+
+
+[12], autoregressive integrated moving average (ARIMA) [13],
+
+
+and exponential smoothing model [14]. These approaches are
+
+
+straightforward to implement and interpretable, but their ability
+
+
+to anticipate nonlinear series is low, so they cannot effec-
+
+
+tively handle the STLF problem. In comparison to conventional
+
+
+STLF approaches, machine learning has better nonlinear ﬁt-
+
+
+ting capabilities. The back-propagation neural network [15] and
+
+
+support vector regression (SVR) [16] are commonly employed
+
+
+machine learning time-series prediction algorithms. The back-
+
+
+propagation neural network has excellent parameter ﬁtting
+
+
+skills, but owing to its simple structure, it has low generaliza-
+
+
+tion abilities and is prone to the local optimum. As SVR is
+
+
+based on the learning criterion of structural reduction, it has a
+
+
+high degree of generalizability. SVR performs well with small
+
+
+data sample sizes, but it fails to converge with high sample
+
+
+sizes. Machine learning can learn nonlinear correlations between
+
+
+sequences better than conventional methods, but it typically
+
+
+has drawbacks including weak generalization capabilities, trou-
+
+
+ble establishing hyper-parameters, and prediction accuracy that
+
+
+frequently depends on the quality and quantity of input data.
+
+
+Deep learning superimposes multilayer neural networks, which
+
+
+may realize multilayer nonlinear mapping. With their nonlin-
+
+
+ear mapping and adaptable capacities, systems based on deep
+
+
+learning provide a viable solution for load forecasting [17–20].
+
+
+Table 1 shows the related works on STLF. X. Kong [21] pro-
+
+
+posed an improved deep belief network (DBN) method from
+
+
+the three aspects of model structure, parameter optimization,
+
+
+and data selection for better use in load forecasting. In [22], a
+
+
+prediction method of a novel end-to-end neural network model
+
+
+using deep residual neural networks (ResNets) was proposed.
+
+
+Deep learning can abstract nonlinear interactions layer by
+
+
+layer, which can increase the accuracy of STLF in comparison to
+
+
+machine learning. However, a deep neural network (DNN), like
+
+
+DBN and ResNet, is insensitive to temporal correlation, mak-
+
+
+ing it difﬁcult to obtain better prediction outcomes. Considering
+
+
+energy consumption is a typical time series, the model’s output
+
+
+should relate to the past input. LSTM, a variant of the recurrent
+
+
+neural network (RNN), is highly competitive in various ﬁelds
+
+
+and can take the temporal dependencies of the time series. In
+
+
+[23], LSTM was employed to predict loads for individual users,
+
+
+and its superiority to traditional methods was demonstrated. In
+
+
+consideration of the temporal features of the load data, LSTM
+
+
+was used as a basis for the model in consideration of the tem-
+
+
+poral characteristics of the load data.There are numerous STLF
+
+
+methods based on LSTM. The most common method is fea-
+
+
+ture extraction. CNN is the most popular feature extraction
+
+
+method in STLF, which can extract high-dimensional correla-
+
+
+tions of a feature set [34–36]. Kim [6] proposed a CNN-LSTM
+
+
+neural network, which can improve prediction accuracy by ana-
+
+
+lyzing features that inﬂuence the load. In [24], LSTM is being
+
+
+replaced by a gated recurrent unit (GRU) to reduce the number
+
+
+of parameters. Similar-day selection is another feature extraction
+
+
+method in STLF used to discover the similar forecasting day
+×
+拖拽到此处完成下载
+图片将完成下载
+AIX智能下载器

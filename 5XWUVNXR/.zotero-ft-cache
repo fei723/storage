@@ -1,0 +1,587 @@
+http://www.jsjkx.com
+DOI:10.11896/jsjkx.220900004
+:2022-09-01 :2023-04-14
+: (62001482); (2021JJ40676)
+Thiswork wassupportedbytheNationalNaturalScienceFoundationofChina(62001482)and NaturalScienceFoundationofHunanProvince,
+China(2021JJ40676).
+: (furuigang08@nudt.edu.cn)
+ByteTrack
+410000
+(sadgdsgjksad123@qq.com)
+,、 。
+,、、 ,
+ByteTrack 。 ,
+vanilla ; , ;
+,;
+。 , , Sort Deepsort
+, MOTA 8.3% 10.2%,IDF1 6.5% 5.6%。 ,
+,。
+: ; ;ByteTrack; ;
+TP391.41
+InfraredGround Multi-objectTrackingMethodBasedonImprovedByteTrackAlgorithm
+WANGLuo,LIBiaoandFU Ruigang
+CollegeofElectronicScienceandTechnology,NationalUniversityofDefenseTechnology,Changsha410000,China
+Abstract Theresearchofinfraredobjectintelligentdetectionandtrackingtechnologyisalwaysahottopicinthesamefield,es
+peciallyinprecisionguidance,seasurfacesurveillanceandskywarning.Aimingattheproblemsthattrackingaccuracyisreduced
+duetoground miscellaneousinterference,multi-objectblockinterference,platformshakingandothercomplexscenes,aninfrared
+ground multi-objecttracking methodbasedonimprovedByteTrackalgorithmisproposed.Firstofall,amodifiedKalmanfilter
+whichcouldadaptivelymodulatethenoisescaleisintroducedtoalleviatetheimpactoflow-qualitydetectiononvanillaKalmanfil
+ter.Secondly,theintroductionofenhancedcorrelationcoefficientmaximizationisusedtosettletheinter-frameimagestocompen
+satetheplatformshakingimpact.ThenByteTrackincreasesthemotionmodelbasedonlongshort-term memorynetworktosolve
+thepredictionerrorcausedby Kalmanfilterinthenon-linear motionstate.Finally,twolightweightofflinealgorithmsoflink
+modelandGaussian-smoothedinterpolationareintroducedtorefinethetrackingresults.Experimentisperformedontheinfrared
+groundmulti-objectdatasetandtheresultsshowthatcomparedwithSortandDeepSort,the MOTAoftheimprovedalgorithm
+increasesby8.3% and10.2%,IDF1increasesby6.5% and5.6%,respectively.Theimprovedalgorithmshowsbettereffective
+nessandwillbeusedintheinfraredobjectintelligentdetectionandtrackingscenes.
+Keywords Multi-objecttracking,Infraredobject,ByteTrack,Kalmanfilter,Longshort-term memorynetwork
+1
+,,
+,,
+。, 、
+、
+,
+、,
+。,
+,
+。
+,
+
+
+,。 、
+。,
+, ,,
+, [1]。
+。
+,, 。
+, 、、
+。
+,
+,,
+,。
+,
+,。
+,、
+,
+,
+。
+,
+,
+。
+[2]
+、、
+, ByteTrack [3]
+。 :,
+NSA(NoiseScaleAdaptively) [4],
+vanilla
+; , ECC[5](En
+hancedCorrelationCoefficient) ,
+; , LSTM(LongShort
+term Memory Network) ,
+LSTM ,
+;, 、
+,,
+ID
+AFLink(Appearance-freeLink),
+GSI[6](Gaussian-smoothedInterpola
+tion),
+。
+2
+,
+( )。
+,
+,
+ID , ,
+, ,、
+。
+,
+,。
+、、
+。 JPDA[7]
+, 。JP
+DA ,
+。JPDA
+,。
+MHT[8] ,
+,,
+。 MHT
+,,
+。,
+。RMOT[9]
+,,
+、。
+,
+, 。Bewley
+[10] SORT,
+MOT ,
+,
+,,
+;SORT
+ID 。 ,Wojke
+[11] DeepSort ,DeepSort SORT
+,
+,,
+, ;Chen [12]
+MOTDT , ,
+,
+,,
+,
+。 Wang [13] JDE ,
+,
+,,
+。Zhang [14] FairMOT ,
+CenterNet,
+ReID ,
+。Zhou [15]
+CenterTrack ,
+,
+,。
+,
+。Wang [16] YOLOv3
+, YOLOv3-tiny ,
+,
+, ID 。Song [17]
+, RepVGG
+,
+,
+177
+, : ByteTrack
+
+
+。Yang [18]
+, 、、3
+,,
+。Xie [19] YOLOv4 KCF
+,
+,,
+, 。Yang
+[20]
+, YOLO
+,
+,
+,。
+, ByteTrack
+NSA 、 ECC、
+LSTM、 AFLink
+GSI , ,
+,。
+3 ByteTrack
+,
+,
+。,
+,
+。 ,ByteTrack
+,
+。,
+,
+,。
+ByteTrack YOLOX[21]
+BYTE。ByteTrack “ ” ,
+ReID ,
+,,
+1。
+1 ByteTrack
+Fig.1 FlowdiagramofByteTrackalgorithm
+3.1 YOLOX
+YOLOX YOLO ,
+, 、 ( Mosaic
+Mixup) SimOTA,
+。 YOLOv3 , CSP
+Darknet PAN 。 3
+:(1) ;(2) ;(3)
+IOU 。
+3.2 BYTE
+BYTE V、 Det
+KF, 3 τhigh,τlow ,ε。
+, 。BYTE T,
+。
+, Det
+。 τhigh ,
+Dhigh ; τlow τhigh
+, Dlow 。
+,T
+KF , T 。
+Dhigh T(
+Tlost) ,
+IOU ,
+。 0.2 ,
+Dremain ;
+Tremain , 2 。
+2
+Fig.2 Firstassociation
+, Dlow
+Tremain , IOU ,
+,
+。 Tre-remain ,
+, 3。
+178 ComputerScience Vol.50,No.9,Sep.2023
+
+
+3
+Fig.3 Secondassociation
+Tre-remain,
+, Tlost 。 Tlost ,
+( 30 ) ,
+T ; , Tlost T 。
+,
+Dremain, ε ,
+。 T,
+Tlost 。 ,τhigh 0.4,
+τlow 0.1,ε 0.5,
+,,
+。
+4 ByteTrack
+4.1 NSA
+vanilla , ,
+,
+;
+,。
+, NSA ,
+, Rk :
+Rk=(1-ck)Rk (1)
+,Rk ,ck k
+。
+4.2 ECC
+,
+,
+, MOT Challenge ,
+, 。,
+“”
+IOU。 ,
+,
+,。
+,
+。
+ECC
+(GMC) ,
+,,
+。 RANSAC
+,
+k-1 k 。 ,ECC
+。 ECC ,
+。
+4.3 LSTM
+4.3.1 (LSTM)
+ByteTrack
+,,
+,。
+,
+,。
+(LSTM) ,
+,、
+, ByteTrack LSTM
+,。
+ID
+,,
+,LSTM 4 。
+4 LSTM
+Fig.4 StructurediagramofLSTM unit
+4.3.2 LSTM
+,
+LSTM ,
+。
+。
+, LSTM
+(cx,cy)、 w h; t-6 t
+, t+1
+,, 6
+, LSTM
+, , 4, 6,
+LSTM 1 ,
+,。
+1 LSTM
+Table1 LSTM networkparameters
+500
+32
+1
+0.005
+Batchsize 30
+Adam
+179
+, : ByteTrack
+
+
+4.4 AFLink
+,
+,
+。
+,,
+, , 。,
+ID AFLink 。
+AFLink Ti Tj
+, T* ={fk,xk,yk}N
+k=1 N=30 fk
+(xk,yk) , 30 。
+, 4 , 7×1
+{32,64,128,256} ; 7×1
+, BN RELU 。
+1×3 、BN RELU,
+; f,x y
+1×3 ,
+,,
+。
+RELU MLP 。
+,,
+。5
+AFLink 。
+5 AFLink
+Fig.5 FrameworkofAFLinkmodel
+,
+1∶3 AFLink 。
+, Adam ,
+, 20 ,
+30 , 75 ,
+。 0.95,
+。
+4.5 GSI
+,
+, , 。,
+GSI (GPR)
+,,
+GSI 。
+(GSI) (LI)
+6, ,
+; LI ,
+; GSI ,
+,
+。 GSI,
+20 。
+6 ()
+Fig.6 DifferencebetweenLIandGSI
+5
+5.1
+Linux Python ,
+Ubuntu20.04 , Pytorch1.7,
+CUDA11.0 cuDNN8.0 ;
+: IntelCorei9-11900K, NVIDIA RTX
+3090。
+,
+7 , 87 ,
+18 。
+7
+Fig.7 Someexamplesofinfraredgroundmulti-objecttracking
+dataset
+5.2
+MOT Challenge
+, 2 , (↑)
+,(↓) 。
+2
+Table2 Multi-objecttrackingevaluationindicators
+MOTA(↑ )
+IDF1(↑ )
+IDs(↑) ID
+FP(↓ )
+FN(↓ )
+FM(↓) ( )
+5.3
+5.3.1
+,
+,
+3。
+180 ComputerScience Vol.50,No.9,Sep.2023
+
+
+3
+Table3 Componentablationresults
+NSA ECC LSTM AFLink GSI MOTA/% IDF1/%
+- - - - - 76.9 85.7
+√ - - - - 77.1 85.8
+√ √ - - - 77.9 86.1
+√ √ √ - - 80.1 87.1
+√ √ √ √ - 80.4 87.5
+√ √ √ √ √ 80.8 87.7
+ECC ,MOTA
+0.8%,IDF1 0.3%, ,
+ECC
+; LSTM ,MOTA
+2.2%,IDF1 1.0%, ,
+; AFLink
+GSI ,MOTA 80.8%,IDF1 87.7%,
+,
+。 3,
+,
+。 8, ,
+ID ; , ID 。
+(a)
+(b)
+8
+Fig.8 Trackingeffectofcomponentablationexperiments
+5.3.2
+,
+, 4。
+4
+Table4 Resultscomparisonofdifferenttrackingalgorithms
+Method MOTA/% IDF1/% IDs FP FN FM
+SORT 72.5 81.2 18 438 4259 268
+DeepSort 70.6 82.1 15 1357 3660 608
+ours 80.8 87.7 11 753 2530 305
+,
+。
+、、
+, 。 Sort,
+DeepSort ,
+,,
+, DeepSort 1.9%,
+608 ,
+DeepSort IDF1 0.9%,IDs 3 ,
+,
+; Sort,
+,
+,MOTA 8.3%,IDF1 6.5%,
+,
+。, 。
+5.3.3
+1 ,3 1
+9。
+1 ,,
+。3 60
+4 。2 ,
+, 150 240 4
+, Sort DeepSort 2 ID
+, 4,
+。
+(a)Sort 1
+(b)DeepSort 1
+(c) 1
+93 1
+Fig.9 Trackingeffectofthreetrackingalgorithmsontestsequence1
+2 。3 135
+2 ; 190
+2 , Sort 4 ID ,
+DeepSort , ,
+ID , ,
+; 245 ,4
+, , Sort DeepSort
+,,
+, 4。
+2 ,3 2
+10 。
+181
+, : ByteTrack
+
+
+(a)Sort 2
+(b)DeepSort 2
+(c) 2
+10 3 2
+Fig.10 Trackingeffectofthreetrackingalgorithmsontest
+sequence2
+3 ,3 3
+11 。
+(a)Sort 3
+(b)DeepSort 3
+(c) 3
+11 3 3
+Fig.11 Trackingeffectofthreetrackingalgorithmsontest
+sequence3
+3 ,,
+, 。 20
+,6 , Sort DeepSort
+, ByteTrack
+,,
+6 。3 130 240
+7。
+4 ,3 4
+12 。
+4 , 。3
+2
+。
+(a)Sort 4
+(b)DeepSort 4
+(c) 4
+12 3
+Fig12 Trackingeffectofthreetrackingalgorithmsontest
+sequence4
+、、
+, ByteTrack
+。,
+,
+,
+。
+,,
+,,
+,。
+[1] LIU C.Multi-objectFault-tolerantTrackingandTrajectoryPre
+dictionfor Unmanned Vehicles [D].Hangzhou:Zhejiang Uni
+versity,2019.
+[2] FU RG,FAN H Q,ZHU YF,etal.Adatasetforinfraredtime
+sensitivetargetdetectionandtrackingforair-groundapplication
+[J].ChinaScientificData,2022,7(2):203-218.
+[3] ZHANG YF,SUNPZ,JIANG Y,etal.Byte-Track:Multi-ob
+jectTrackingby Associating Every Detection Box [EB/OL].
+https://arxiv.org/pdf/2110.06864.pdf,2022.
+[4] DU Y H,WAN J F,ZHAO Y Y,et al.A Com-prehensive
+FrameworkforMCMOT WithGlobalInformationandOptimi
+zingStrategiesinVisDrone2021[C]∥ProceedingsoftheIEEE/
+CVFInter-nationalConferenceonComputerVision.2021:2809
+2819.
+[5] ESSA,LEIBEB,SCHINDLER K,etal.A mobilevisionsystem
+182 ComputerScience Vol.50,No.9,Sep.2023
+
+
+forrobustmulti-persontracking[C]∥ProceedingsoftheIEEE
+ConferenceonComputerVisionandPatternRecognition.2008:
+1-8.
+[6] DU Y H,SONG Y,YANG B,etal.StrongSORT:MakeDeep
+SORT Great Again [EB/OL].https://arxiv.org/pdf/2202.
+13514.pdf,2022.
+[7] KIM C,LIF,CIPTADI A,etal.Multiplehypothesistracking
+revisited[C]∥IEEEInternationalConferenceonComputerVi
+sion.2015:4696-4704.
+[8] REID DB.Analgorithmfortrackingmultipletargets[J].IEEE
+TransactionsonAutomaticControl,1979,24(6):843-854.
+[9] YOON J H,YANG M H,LIM J,etal.Bayesian multi-object
+trackingusingmotioncontextfrom multipleobjects[C]∥2015
+IEEE WinterConferenceon ApplicationsofComputerVision.
+2015:33-40.
+[10]BEWLEY A,GEZY,OTTL,etal.SimpleOnlineandRealtime
+Tracking[C]∥2016IEEEInternationalConferenceonImage
+Processing(ICIP).2016:3464-3468.
+[11] WOJKE N,BEWLEY A,PAULUSD,etal.Sim-pleonlineand
+real-timetracking with adeepassociation metric[C]∥2017
+IEEE International Conference on Image Processing(ICIP).
+2017:3645-3449.
+[12]CHENL,AIHZ,ZHUANGZJ,etal.Real-TimeMultiplePeo
+pleTrackingwithDeeplyLearnedCandidateSelectionandPer
+son Re-Identification [EB/OL].https://arxiv.org/pdf/1809.
+04427.pdf,2018.
+[13] WANG Z D,ZHENG L,LIU Y X,et al.Towards real-time
+multi-objecttracking [EB/OL].https://arxiv.org/pdf/1909.
+12605.pdf,2018.
+[14]ZHANG YF,WANGCY,WANGXG,etal.FairMOT:Onthe
+fairness of detection and re-identification in multiple object
+tracking[EB/OL].https://arxiv.org/pdf/2004.01888.pdf.
+[15]ZHOU X Y,KOLTUN V,KRAHENBUHL P,etal.Tracking
+Objects as Points [EB/OL].https://arxiv.org/pdf/2004.
+01177.pdf,2020.
+[16] WANG L X,ZENG D,ZHU X Q.SpaceBasedInfraredSmall
+TargetDetectionand Tracking System [J].Industry Control
+Computer,2022,35(5):39-41.
+[17]SONGZZ,YANGJ W,ZHANG D F,etal.Real-timeinfrared
+multi-classmulti-targetanchor-freetrackingnetwork[J].Sys
+temsEngineeringandElectronics,2022,44(2):401-409.
+[18]YANGB,LINSZ,LU XF,etal.Multipleaerialinfraredtarget
+trackingmethodbasedon multi-featurefusionandhierarchical
+dataassociation [J].JournalofComputer Applications,2022,
+40(10):3075-3080.
+[19]XIE X F,LIU H J,ZHANG L J,etal.Infrared Ship Target
+RecognitionFused with LightweightYOLOv4and KCF Algo
+rithm[J].JournalofOrdnance EquipmentEngineering,2021,
+42(6):175-182.
+[20]YANG W,YAOT,GENGXT,etal.Researchonapplicationof
+infraredtargetrecognition technology ofair defense weapon
+basedondeeplearning[J].JournalofOrdnanceEquipmentEn
+gineering,2022,43(1):125-129.
+[21]ZHENG G,LIU ST,WANG F,etal.YOLOX:ExceedingYO
+LO Seriesin 2021 [EB/OL].https://arxiv.org/pdf/2107.
+08430.pdf,2021.
+WANG Luo,born in 1995,postgra
+duate.His mainresearchinterestsin
+cludeimageprocessing,computervision
+andautomationtargetrecognition.
+FU Ruigang,bornin 1991,Ph.D.His
+main research interestsincludeimage
+processing,computervision and auto
+mationtargetrecognition.
+( :)
+183
+, : ByteTrack
