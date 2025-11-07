@@ -1,0 +1,311 @@
+1
+Pedestrian Dead Reckoning using Invariant
+Extended Kalman Filter
+Jingran Zhang, Zhengzhang Yan, Yiming Chen, Zeqiang He and Jiahao Chen*
+Abstract—This paper presents a cost-effective inertial pedestrian dead reckoning method for the bipedal robot in the GPSdenied environment. Each time when the inertial measurement unit (IMU) is on the stance foot, a stationary pseudo-measurement can be executed to provide innovation to the IMU measurement based prediction. The matrix Lie group based theoretical development of the adopted invariant extended Kalman filter (InEKF) is set forth for tutorial purpose. Three experiments are conducted to compare between InEKF and standard EKF, including motion capture benchmark experiment, large-scale multi-floor walking experiment, and bipedal robot experiment, as an effort to show our method’s feasibility in real-world robot system. In addition, a sensitivity analysis is included to show that InEKF is much easier to tune than EKF.
+Index Terms—inertial pedestrian dead reckoning, stationary pseudo-measurement, invariant extended Kalman filter.
+I. INTRODUCTION
+Localization constitutes the fundamental capability for autonomous navigation in mobile robotics, serving as the cornerstone for path planning, obstacle avoidance, and environmental interaction [2]. According to the reliance on external information, robot localization methods can be categorized into two major types: infrastructure-dependent localization and proprioceptive localization. Infrastructure-dependent approaches rely on external references such as base stations, global maps, signal sources, or sensor networks for position estimation [15]. In contrast, proprioceptive localization methods estimate the robot’s states (e.g., position and orientation) solely based on onboard sensory data [27]. Typical sensors used in such systems include inertial measurement units (IMUs) [10], [25], wheel encoders [28], and pressure sensors [10]. There are significant differences between indoor and outdoor environments in terms of available external information [29]. In indoor scenarios, most external positioning sources, such as the global positioning system (GPS) and the global navigation satellite system (GNSS), are generally inaccessible [1]. In addition, information obtained from magnetometers is often inaccurate in indoor environments [30]. As a result, positioning in indoor scenarios typically relies solely on proprioceptive sensors, e.g., inertial sensor, for location estimation. However, the inherent challenge lies in the continuous accumulation of inertial sensor errors during numerical integration of the navigation equations, particularly the unbounded growth of
+The authors are with School of Information Science and Technology, ShanghaiTech University, Shanghai 201210, China. *Corresponding author: Jiahao Chen (email: chenjh2@shanghaitech.edu.cn). This work was supported in part by Shanghai Frontiers Science Center of Human-centered Artificial Intelligence, and the MoE Key Lab of Intelligent Perception and Human-Machine Collaboration (ShanghaiTech University).
+Fig. 1. The pedestrian walking consists of walk phase and stance phase, which correspond to the prediction step and innovation update step in InEKF.
+position uncertainty in strap-down inertial navigation systems [4]. During locomotion of humanoid robots and humans, the phase when the foot is in contact with the ground can be regarded as a zero-velocity condition [3]. The zero-velocity information from foot contact can be treated as a pseudomeasurement to constrain and correct velocity estimation errors in inertial navigation systems [31]. Therefore, by mounting IMUs on the feet of robots, the zero-velocity information can be effectively utilized to enhance the accuracy of inertial navigation. Hartley et al. achieved remarkable results using a fusion strategy based on IMU and contact sensing [10]. However, their method relies on dedicated contact sensors. Yang et al. mounted multiple IMUs on the foot and integrated their measurements within an extended Kalman filter (EKF) framework to realize low-cost proprioceptive odometry [25]. Nevertheless, the approach employs a relatively basic EKF and does not account for IMU bias. The integration of zero-velocity updates within EKF has proven effective in significantly reducing drift in foot-mounted inertial navigation systems [5], [6]. However, conventional EKF implementations rely on Jacobian-based linearization in Euclidean space, which can suffer from inconsistency and degraded performance when confronted with large estimation errors or strongly nonlinear system dynamics. To address the limitations, invariant extended Kalman filter (InEKF) [8] performs state estimation directly on matrix Lie groups, preserving the underlying geometric structure of the system. This formulation yields trajectory-independent error dynamics under the group-affine condition, leading to improved consistency, more straightforward tuning, and provable stability in deterministic settings [18]. Furthermore, the observability properties of InEKF with stationary pseudo-measurements have been analytically characterized [21]. InEKF has been successfully applied to robotic state estimation, encompassing bipedal locomotion [10], [19], [26] and a wide range of navigation and localization tasks [11], [20], [23]. The applications demonstrate the effectiveness of InEKF as an alternative to conventional
+arXiv:2508.11396v1 [cs.RO] 15 Aug 2025
+
+
+ 2
+EKF for accurate and robust proprioceptive odometry. In this paper, our objective is to achieve low-cost IMU-based proprioceptive odometry for bipedal robots without relying on contact sensors. We mount an IMU (that costs about $1) on the foot rather than on the body, and then we apply InEKF to reconstruct trajectory of a pedestrian. The detailed procedure is shown in Fig. 1. It is shown experimentally that the InEKF outperforms EKF and is easier to tune, and when the pedestrian is a “grumpy” bipedal robot controlled by a reinforcement learning policy [22], the EKF simply does not work, while InEKF still accurately and stably estimate the system state. This paper also serves as a self-contained tutorial for applying InEKF to the pedestrian dead reckoning.
+II. INVARIANT FILTERING BASICS
+FOR IMU BASED LOCALIZATION
+The objective is to reproduce the position and orientation of an IMU in the global inertial frame over time against noises. The key step in optimal filtering, e.g., Kalman filter, is to derive the Riccati equation that governs how the covariance matrix, denoted by Σ, propagates [24]. To derive the Riccati equation, it is required that the state of the filter is governed by linear dynamics. This is possible if we reformulate the estimation problem using error state (ES) with the aid of matrix Lie group.
+A. State Representation using Matrix Lie Group SE2(3)
+Our goal is to reconstruct the orientation R ∈ SO(3) from the local IMU frame (fixed to pedestrian foot) to the global inertial frame, as well as the velocity v ∈ R3 and the position p ∈ R3 of the on-board strap-down IMU with respect to the the global inertial frame. These state variables form the square matrix X ∈ SE2(3) in global inertial frame as
+X≜
+
+
+R vp 01×3 1 0 01×3 0 1
+
+ (1)
+of which the dynamics f (·) are nonlinear with respect to the yaw, roll, pitch angles because of the use of rotation matrix:
+d
+dt X =
+
+
+R(ω)× Ra + g v 01×3 0 0 01×3 0 0
+
+ ≜ f (X; ω, a) (2)
+where ω, a ∈ R3 denote the true angular velocity and linear acceleration measured by an ideal IMU. Since the IMU is mounted on the pedestrian’s foot, both quantities are expressed in the body frame. The notation (ω)× represents the 3×3 skewsymmetric matrix associated with ω, and g ∈ R3 denotes the gravity vector expressed in the global inertial frame.
+B. The Lie Group Error η and Error State ξ
+In fact, linear dynamics can be derived with only two steps from (2). First, we shift our perspective to the estimated state error η ∈ SE2(3), which is essentially a proper choice of change of state variable:
+η ≜ Xˆ X−1 ∈ SE2(3) (3)
+Note the operation between the actual state X and the estimated state Xˆ is a “matrix division” rather than subtraction, and in other words, when the estimate is exact, i.e., Xˆ = X, we have η = I5. One easy way to understand this operation is to regard the actual state X ∼ N Xˆ , Σˆ as a Gaussian
+variable on the Lie group, with Xˆ as the mean and some proper covariance matrix Σˆ . However, it is yet unclear how a covariance matrix Σˆ can be defined for an SE2(3)-matrix X, and from the definition of η, one also has
+(3) ⇒ X = Xˆ η−1 = Xˆ e−ξ∧ (4)
+which implies the stochastic behavior of the actual state X with respect to our estimate Xˆ stems from a multiplicative noise η−1 [12], [18];and furthermore, η can be substituted with a matrix exponential whose exponent ξ∧ belongs to the Lie algebra se2(3):
+ξ∧ =
+
+
+ξR ξv ξp
+
+
+∧
+≜
+
+
+(ξR)× ξv ξp 01×3 0 0 01×3 0 0
+
+ ∈ se2(3) ⊂ R5×5 (5)
+where the operator ∧ sends a R9 vector into the Lie algebra;1 and the three vector components of ξ are marked by the subscripts R, v and p corresponding to the error state (ES) variable of orientation, velocity and position, respectively. Using the error state ξ, the covariance matrix Σˆ is now properly defined as in ξ ∼ N (0, Σˆ ). In other words, the matrix Lie group theory allows us to properly define the covariance matrix Σˆ regardless of the “nonlinear state” R.
+C. Dynamics of Stochastic Error State ξ
+Consider the following naive prediction equation: [cf. (2)]
+d dt
+Xˆ = f Xˆ ; ω, a , Xˆ |t=0 = I5 (6)
+Thus, the dynamics of error η can be derived as follows
+d
+dt η = d
+dt
+Xˆ X−1 = Xˆ d
+dt X−1 + ( d
+dt
+Xˆ )X−1
+= −Xˆ X−1 d
+dt X X−1 + f Xˆ X−1
+= −Xˆ X−1f (X) X−1 + f (ηX) X−1
+= −Xˆ X−1f (X) X−1 + [f (η) X + ηf (X) − ηf (I5) X] X−1
+= f (η) − ηf (I5) ≜ fη (η)
+(7) where the fact that the function f (·) is group affine [12] has been facilitated to derive the dynamics fη(·) that do not dependent on the estimated states Xˆ nor the actual state X. This is deemed as the key advantage of InEKF over EKF in which the linearization is performed about the estimated states. Dynamics (7) are still nonlinear with respect to rotations, such that the dynamics of covariance Σˆ cannot be derived yet, but if we further plug in the first-order approximated relation
+1The exponential map sends a Lie algebra to Lie group: exp(·) : se2(3) →
+SE2(3). Vector space can be mapped to the Lie group using exp(·∧) : R9 → SE2(3).
+
+
+ 3
+η = eξ∧ ≈ I5 + ξ∧, the linearized dynamics of ξ can further be derived from (7) as follows2
+fη (η) ≈ d
+dt (I5 + ξ∧) = f (I5 + ξ∧) − (I5 + ξ∧) f (I5)
+≜ (Aξξ)∧
+(9)
+Note the above linearization process is not dependent on Xˆ . We are interested in R9-vector ξ because it contains all information about the error states ξR, ξv, ξp and it is governed by linear dynamics:
+(9) ⇒ d
+dt ξ = Aξξ with Aξ =
+
+
+03 03 03 (g)× 03 03 03 I3 03
+
+ (10)
+Since the error state ξ evolves along the linear system (10), the analytical solution of ξ(t) can be written in terms of transition matrix given its initial value ξ(0) following textbook of modern control theory [24]. The covariance Σˆ by definition can be calculated as Σˆ (t) = E (ξ(t) − 0)(ξ(t) − 0)T , and differentiating Σˆ (t) yields its dynamics (i.e., Riccati equation)
+d dt
+Σˆ = AξΣˆ + Σˆ AT
+ξ (11)
+which relates to an autonomous system, implying that the naive estimator (6) is not contaminated by any process noise. In practice, the IMU measurement noise (denoted by wω, wa) must be further accounted for, such that the predictor in (6) in stochastic settings should be rewritten as
+d dt
+Xˆ = f Xˆ ; ω + wω, a + wa , Xˆ |t=0 = I5
+d dt
+Σˆ = AξΣˆ + Σˆ AT
+ξ + AdXˆ QAdT
+Xˆ
+(12)
+where the covariance Σˆ is driven by the process noise covariance Q = block diag(σω, σa, 03), with σω and σa respectively the covariance of noises of angular velocity and acceleration measurements, which need to be tuned; and finally the adjoint matrix is defined as
+AdXˆ =
+
+
+Rˆ 03 03 (vˆ)×Rˆ Rˆ 03 (pˆ)×Rˆ 03 Rˆ
+
+ (13)
+Since update of covariance matrix Σˆ in (12) does not depend on estimate Xˆ , the inconsistency problem on calculation of covariance matrix Σˆ faced by EKF [20] does not exist.
+III. PEDESTRIAN DEAD RECKONING WITH INEKF
+The naive prediction equation in (6) needs innovation information on the actual states R, v or p for correction, these information is not provided by the IMU. By utilizing the fact that an IMU (MPU6050) is attached to the foot of a pedestrian (either human or bipedal robot), as shown in Fig. 3. When the
+2The error state dynamics substituted with the exact relation η = eξ∧ are
+d
+dt eξ∧ = fη eξ∧ = Aξξ ∧ + O ∥ξ∥2 (8)
+In fact, there is a theorem that states the first-order approximation does not cause any error in the estimation for η [12, Theorem 3].
+IMU is on the stance foot, a stationary pseudo-measurement v = 0 can be used as the innovation information needed in Kalman filter [21]. Furthermore, to account for the influence of time-varying measurement biases of IMU the angular velocity bias bω and acceleration bias ba are estimated along with the state X [10], [11]. It was confirmed in our experiment that bias estimation helps to reduce the drift (e.g., a constant value in the angular velocity measurement), especially in the yaw-axis in IMUbased navigation. However, it is worth pointing out that this is only an engineering treatment in which the Euclidean states ζ and Lie group state η are simultaneously estimated [12].
+A. IMU Measurement Model (for State Propagation)
+For low-cost IMUs, biases during the measurement process are often significant and cannot be neglected, and our adopted IMU measurement model is [10], [11]
+ω ̃ = ω + bω + wω, wω ∼ N (0, σω)
+a ̃ = a + ba + wa, wa ∼ N (0, σa)
+d
+dt bω = wbw, wbw ∼ N (0, σbw)
+d
+dt ba = wba, wba ∼ N (0, σba)
+(14)
+where a tilde  ̃ designates actual IMU measurement in practice, wω and wa designate the measurement noise for angular velocity and acceleration, modeled as zero-mean white Gaussian noise with covariances σω and σa, respectively; bω and ba denote the measurement biases of angular velocity and acceleration, respectively, and they are modeled as slowly varying signals driven by Brownian motion, with covariance matrices σbw and σba governing their stochastic dynamics, respectively. With measurement model (14), the naive prediction equation (6) is revised with the measured velocity ω ̃ and acceleration  ̃a:
+d dt
+Xˆ =
+
+
+Rˆ(ω ̃)× Rˆa ̃ vˆ 01×3 0 0 01×3 0 0
+
+ − Xˆ
+
+
+(ˆbω)∧ ˆba 0
+01×3 0 0 01×3 0 0
+
+ (15)
+where ˆbω and bˆa denote the estimated angular velocity and acceleration biases.
+B. Full Prediction Equation in Discrete-time
+For implementation purpose, the discrete-time version of the state propagation is derived using forward Euler method as
+Rˆt+1 = Rˆt exp (ω ̃t − ˆbω
+t )∆t (16a)
+vˆt+1 = vˆt + Rˆt( ̃at − bˆa
+t )∆t + g∆t (16b)
+pˆt+1 = pˆt + vˆt∆t + 1
+2
+Rˆt( ̃at − bˆa
+t )∆t2 + 1
+2 g∆t2 (16c)
+bˆω
+t+1 = ˆbω
+t (16d)
+bˆa
+t+1 = ˆba
+t (16e)
+where ∆t is the sampling period, and the subscript t+1 suggests the variable is evaluated at the next sampling instant t + ∆t. Note there is no way we can update the bias estimate during the prediction stage in (16), and its update would rely on
+
+
+ 4
+its covariance estimation. The estimated bias error is directly defined in Euclidean space:
+ζ = ˆb − b = bˆω − bω
+ˆba − ba ∈ R6 (17)
+where symbol b is short-notation: b = bωT, baT T. From this point, in order for the InEKF implementation to work with the extended error state [ξT, ζT]T ∈ R15, all vectors and matrices need to be extended. To this end, the covariance matrix update equation (11) is extended to further include the estimated bias covariance:
+Σˆ t+1 = ΦtΣˆ tΦ⊤
+t + Φt AdXˆt,ˆbt Q Ad⊤
+Xˆt,ˆbt Φ⊤
+t ∆t. (18)
+where the process noise covariance matrix Q is3
+Q = block diag σω, σa, 03×3, σbω, σba ∆t 2 (19)
+with σbω and σba respectively the covariance of angular velocity bias and acceleration bias to be tuned; and the adjoint matrix and transition matrix are accordingly extended as follows
+AdXˆt,ˆbt ≜ AdXˆt 09×6
+06×9 I6×6
+(20)
+Φt = exp (At∆t) (21)
+with At the homogeneous matrix (previously denoted as Aξ) of linear dynamics extended as [11]
+At ≜
+
+    
+03 03 03 −Rˆt 03 (g)× 03 03 −(vˆt)×Rˆt −Rˆt 03 I3 03 −(pˆt)×Rˆt −Rˆt 03 03 03 03 03 03 03 03 03 03
+
+    
+(22)
+C. Innovation using Stationary Pseudo-Measurement
+The invariant filtering cannot avoid the accumulation of velocity and position errors because there is no measurement with respect to the global inertial frame. While walking, pedestrian (human or bipedal robots) periodically experiences the stance phase if we assume there is no slipping. When IMU is in the stance foot, we can make a pseudo measurement of the stationary status of the IMU, that is, all velocities are measure to be zero: v = vx vy vz
+T= 0 0 0T which facilitates a zero-velocity update/innovation (ZUPT) [21], which is confirmed in our experiment, as shown in Fig. 2. A threshold-based zero-velocity detection method is employed to identify stationary states. A sliding window is introduced to improve robustness. The detection results activate zero-velocity updates to correct the system state and reduce drift. In pedestrian dead reckoning, the invariant measurement z must be in a proper form that facilitates the calculation of innovation V that is related to the unknown error state ξ. To
+3The components of Q are covariance of the extended noise vector w:
+w=
+h
+wωT waT 01×3 wbwT wbaT iT
+∈ R15
+Fig. 2. The estimated velocity in pedestrian walking experiment. The velocity is not measured, but apparently there are periodical windows when the velocities drop to zero, which corresponds to the stationary pseudo-measurement.
+this end, the following right-invariant measurement model is adopted for the stationary pseudo-measurement (i.e., v = 03×1)
+z = X−1B + wz
+02×1
+=
+RT −RTv −RTp 01×3 1 0 01×3 0 1
+B + wz
+02×1
+=
+−RT v −1 0
++ wz
+02×1
+(23)
+where wz models the slipping between the foot and ground as noise, i.e., wz ∼ N (0, M ) with M the covariance of wz; vector B = [0, 0, 0, −1, 0]T is introduced here to make sure z only provides the measured velocity, and it is worth pointing out that invariant measurement z is not zero when the pseudo-measurement v = 0. Consequently, the right-invariant innovation V is4
+V = Xˆ (z − zˆ) =
+RˆRTv − vˆ 0 0
++ Xˆ wz
+02×1
+(24)
+where zˆ = Xˆ −1B is the estimated value of the invariant measurement. That is, an innovation V exists when estimated velocities vˆ ̸= 0 when IMU is in stance such that v = 0, also known as ZUPT in literature for vehicle navigation [20]. To make the invariant innovation V to work with the extended error state vector, the auxiliary matrix Π = I3×3 03×2 is defined such that ΠV = H[ξT, ζT]T, with H = [0, I, 0, 0, 0] ∈ R3×15. The invariant innovation V , which is essentially an error, is also associated with a covariance S:
+S = HΣˆ HT + RˆM RˆT (25)
+Following the standard Kalman filter theory, the Kalman gain K is dependent on both state covariance Σˆ and innovation covariance S:
+K=
+h
+KξT Kζ TiT
+= Σˆ HTS−1 ∈ R15×3 (26)
+which is extended to account for measurement bias update, that is, Kξ ∈ R9×3 denotes the Kalman gain associated with the update of the state estimate Xˆ , while Kζ ∈ R6×3 is the Kalman gain used in update the bias estimate ˆbω, ˆba.
+4The invariant innovation V is a measurement of the error state ξ because:
+V = Xˆ (z − zˆ) = Xˆ X−1 − I B + Xˆ wz
+02×1
+= (η − I) B + Xˆ wz
+02×1 ≈ I + ξ∧ − I)B + Xˆ wz
+02×1
+= ξ∧B + Xˆ wz
+02×1
+
+
+ 5
+Fig. 3. Photos of the experimental setup.
+Algorithm 1 Discrete-time InEKF for pedestrian dead reckoning
+1: H = 0, I, 0, 0, 0 ; 2: Σˆ t = Σˆ 0;
+3: Q = block diag σω, σa, 03×3, σbω, σba ∆t 2 4: [ ̃ax, a ̃y,  ̃az] = a ̃; [0, 0, gz] = g; 5: roll = arctan(a ̃y/ ̃az); 6: pitch = − arcsin( ̃ax/gz); 7: yaw = 0;
+8: Xˆt =
+Rˆ0 vˆ0 pˆ0 01×3 I 0 01×3 0 I
+;
+with Rˆ0 =
+cos(pitch) sin(roll) sin(pitch) cos(roll) sin(pitch) 0 cos(roll) − sin(roll) − sin(pitch) sin(roll) cos(pitch) cos(roll) cos(pitch)
+,
+pˆ0 = [0, 0, 0]T and vˆ0 = [0, 0, 0]T. 9: while receiving data do 10: if ω ̃, a ̃ = IMU measurement then 11: Rˆt+1 = Rˆt exp (ω ̃t − ˆbtω)∆t ;
+12: vˆt+1 = vˆt + Rˆt( ̃at − ˆbta)∆t + g∆t;
+13: pˆt+1 = pˆt + vˆt∆t + 1
+2 Rˆt( ̃at − ˆbta)∆t2 + 1
+2 g∆t2;
+14: ˆbtω+1 = ˆbtω;
+15: ˆbta+1 = ˆbta;
+16: Σˆ t+1 = ΦtΣˆ tΦtT + ΦtAdXˆt,ˆbt QAdT
+Xˆt,ˆbt ΦtT∆t;
+with Φt = exp (At∆t) and At defined in (22). 17: else if z = stationary pseudo-measurement then 18: Vt = Xˆt (zt − zˆt); 19: S−1
+t = (HΣˆ tHT + RtMtRtT)−1
+20: [Kξ; Kζ ] = K = ˆΣtHTS−1
+t;
+21: Xˆ †
+t = exp((KξΠVt)∧)Xˆt; Xˆt = Xˆ †
+t;
+22: ˆb†
+t = bˆt + Kζ ΠVt; ˆbt = ˆb†
+t;
+23: Σˆ †
+t = (I − KHT)Σˆ t; Σˆ t = Σˆ †
+t; 24: end if 25: end while
+Finally, the innovation V is used to update estimate Xˆ and ˆb via Kalman gain K:
+Xˆ † = exp((KξΠV )∧)Xˆ (27a)
+ˆb† = ˆb + KζΠV (27b)
+ˆΣ† = (I − KH)Σˆ (27c)
+where a superscript † indicates the estimate after the stationary pseudo-measurement update, and auxiliary matrix Π is used to
+make sure ΠV ∈ R3:
+ΠV = ΠXˆ (z − zˆ) = ΠXˆ z − Xˆ −1B = ΠXˆ z − ΠB
+(28) with ΠB = 0. Note that (27a) is a correction in matrix Lie group, and (27b) is a correction in Euclidean space. The full procedure of the discrete-time InEKF based pedestrian dead reckoning is listed in Algorithm 1, in which the prediction is based on IMU measurement and the innovation is based on the stationary pseudo-measurement.
+IV. EXPERIMENTAL VALIDATION STUDIES
+Fig. 3 shows the experimental setups. A cheap IMU MPU6050 that provides raw measurement ω ̃ and  ̃a, at a sampling frequency of 100 Hz is adopted. In traditional pedestrian navigation, the gyroscope’s turn rates are commonly used to reliably determine whether the system is in the stance phase [6]. This paper proposes to determine the stationary status of IMU based on acceleration and angular velocity thresholds. Looking at the estimated velocities vˆ (because v is not measured) in Fig. 2, one realizes that a sliding window with a fixed width can be introduced to determine stationary status, in a sense that stationary pseudomeasurement v = 0 happens only when the velocities vˆ at both beginning and end of the sliding window are below the thresholds. When implemented in robotic experiments, the sliding window width and threshold need to be adjusted accordingly to accommodate the high frequency gait of the bipedal robot.
+A. Motion Capture Benchmark Experiment
+In the pedestrian dead reckoning problem, acquiring ground truth data for error evaluation is a challenging task [6]. Existing research commonly adopts a closed-loop walking route in a pre-investigated map with fixed start and end points to acquire the ground truth, or rely on the GPS data [20]. To obtain a high quality motion trajectory for validation purpose, this paper devises a motion capture experiment in a room to collect mocap data as ground truth. Fig. 3a illustrates the reflective marker setup for the experiment. To ensure that the reflective markers are mounted on a rigid body, a supporting platform was 3Dprinted, with MPU6050 mounted on it. Fig. 4 shows a comparison between the motion capture system’s recorded trajectories and those from EKF and InEKF. The InEKF-estimated trajectory shows much better alignment
+
+
+ 6
+Fig. 4. Comparison to motion capture ground truth: (a) EKF. (b) InEKF.
+Fig. 5. 2D view of indoor walking trajectory upon the map of second-floor of the school at ShanghaiTech University.
+with the reference trajectory from the motion capture system. The reason why the estimated trajectory is not completely aligned with ground-truth, could be due to the fact that the IMU measurement biases bω, ba are time-varying.
+B. Large-Scale Multi-Floor Walking Experiment
+To validate the estimation in large-scale settings, the pedestrian wore the device as shown in Fig. 3b and performed extensive walking trials. The pedestrian walked predominantly along a path adjacent to the wall, such that we can use the wall’s geometry as a reference trajectory since we don’t have motion capture. Fig. 5 compares the trajectories generated by the EKF and InEKF during an indoor walking experiment in our school. The results show that the InEKF trajectory aligns better with the reality, particularly in terms of yaw-axis estimation. It is also interesting to see the estimation in the vertical direction. Therefore, a multi-floor experiment is conducted. Fig. 6 presents a 3D trajectory comparison, including stairdescending motion. The EKF method exhibits significant yawaxis deviation compared to the InEKF. We can learn this provided the fact that the trajectories on different levels should align.
+C. Bipedal Robot Experiment
+The ultimate goal of this study is to apply the proposed method for navigating bipedal robots in GPS-denied environments. To assess its feasibility, we devise an experimental setup using Dora2, the bipedal robot, as shown in Fig. 3d. As shown in Fig. 3c, the setup consists of an MPU6050 and an ESP32
+Fig. 6. 3D rendering of a multi-floor indoor walking trajectory (from third-floor to first-floor) by stairs. The visualization depicts the vertical and horizontal navigation path across different building levels.
+Fig. 7. Walking trajectory of the bipedal robot Dora2 estimated by InEKF. Note the trajectory estimated by EKF is too unsatisfactory to show and is omitted.
+mounted on the robot’s right foot. The walking control of the Dora2 robot adopts the policy trained by reinforcement learning elaborated in [22]. During the experiments, the bipedal robot is controlled by a game-pad to walk along a closed-loop path within the lab. Fig. 7 illustrates the robot’s movement, with the foot trajectory estimated using the proposed InEKF method. The experimental results show that the InEKF effectively estimates the robot’s foot trajectory and captures the closed-loop characteristic of the path at a gait frequency of approximately 3 Hz, which matches human’s normal walking speeds. These findings reveal the potential of the proposed method for humanoid robot applications.
+V. SENSITIVITY ANALYSIS
+The traditional EKF strongly depends on carefully tuned process noise covariance σω, σa for process and measurement noise, which are typically determined through extensive experimental data or statistical analysis. Variations in these covariance values can significantly degrade EKF performance [17]. In contrast, InEKF exhibits much less sensitivity to process covariance σω, σa and is therefore much easier to tune [18]. This is confirmed with sensitivity analysis experiment shown in Fig. 8. In Fig. 8a, both methods produce nearly
+
+
+ 7
+identical trajectories when process noise covariance values are well-calibrated. Fig. 8b, 8c and 8d show the trajectory with detuned process noise covariance with a scaling of 10. It is observed that EKF trajectory begins to drift significantly, while the influence to the InEKF trajectory is mild. One can conclude that InEKF is less sensitive to parameters of process noise covariance σw and σa.
+Fig. 8. Comparison of pedestrian dead reckoning trajectory estimates. (a) Both InEKF and EKF give their benchmark performance. EKF is sensitive to value(s) of (b) angular velocity covariance σω, (c) acceleration covariance σa, (d) and both covariance.
+VI. CONCLUSION
+In this paper, InEKF is applied to the IMU based pedestrian dead reckoning for localization of a robot in GPS-denied scenarios. Application-specific derivation of the InEKF is set forth, in which the state prediction is based on IMU measurement, while the invariant measurement model is built upon the stationary pseudo-measurement when the IMU is on the stance foot without any mounted contact sensors. Experimental results demonstrate that the InEKF is able to help pedestrians (human and bipedal robot) navigate through indoor environment with
+acceptable deviations, and outperforms EKF in all aspects, including the sensitivity to process noise covariance. There exists a non-negligible deviation between the estimated trajectory and the ground-truth trajectory. This deviation is primarily caused by two factors. First, the bias of IMU measurements varies over time, and the conventional bias estimation method defined in Euclidean space is not compatible with the Lie group structure. As a result, this version is referred to as the imperfect InEKF [12], and the convergence of IMU bias estimation cannot be guaranteed. Second, the current approach relies solely on IMU measurements and zero-velocity pseudo-measurements. Future work may involve developing more accurate contact motion models for bipedal robots to replace the zero-velocity assumption.
+REFERENCES
+[1] I. Ullah, D. Adhikari, H. Khan, M. S. Anwar, S. Ahmad, and X. Bai, “Mobile robot localization: Current challenges and future prospective,” Computer Science Review, vol. 53, p. 100651, 2024.
+[2] P. K. Panigrahi and S. K. Bisoy, “Localization strategies for autonomous mobile robots: A review,” Journal of King Saud University-Computer and Information Sciences, vol. 34, no. 8, pp. 6019–6039, 2022. [3] W. Zhang, D. Wei, H. Yuan, and G. Yang, “Cooperative positioning method of dual foot-mounted inertial pedestrian dead reckoning systems,” IEEE Transactions on Instrumentation and Measurement, vol. 70, pp. 114, 2021. [4] Q. Wang, M. Cheng, A. Noureldin, and Z. Guo, “Research on the improved method for dual foot-mounted inertial/magnetometer pedestrian positioning based on adaptive inequality constraints kalman filter algorithm,” Measurement, vol. 135, pp. 189–198, 2019. [5] Y. Wang, D. Vatanparvar, A. Chernyshoff, and A. M. Shkel, “Analytical closed-form estimation of position error on zupt-augmented pedestrian inertial navigation,” IEEE Sensors Letters, vol. 2, no. 4, pp. 1–4, 2018. [6] C. Fischer, P. T. Sukumar, and M. Hazas, “Tutorial: Implementing a pedestrian tracker using inertial sensors,” IEEE pervasive computing, vol. 12, no. 2, pp. 17–27, 2012. [7] M. I. Ribeiro, “Kalman and extended kalman filters: Concept, derivation and properties,” Institute for Systems and Robotics, vol. 43, no. 46, pp. 3736–3741, 2004. [8] A. Barrau and S. Bonnabel, “The invariant extended kalman filter as a stable observer,” IEEE Transactions on Automatic Control, vol. 62, no. 4, pp. 1797–1812, 2016. [9] A. A. Abdallah, C.-S. Jao, Z. M. Kassas, and A. M. Shkel, “A pedestrian indoor navigation system using deep-learning-aided cellular signals and zupt-aided foot-mounted imus,” IEEE Sensors Journal, vol. 22, no. 6, pp. 5188–5198, 2021. [10] R. Hartley, M. Ghaffari, R. M. Eustice, and J. W. Grizzle, “Contactaided invariant extended kalman filtering for robot state estimation,” The International Journal of Robotics Research, vol. 39, no. 4, pp. 402–430, 2020. [11] E. R. Potokar, K. Norman, and J. G. Mangelson, “Invariant extended kalman filtering for underwater navigation,” IEEE Robotics and Automation Letters, vol. 6, no. 3, pp. 5792–5799, 2021. [12] E. R. Potokar, R. W. Beard, and J. G. Mangelson, “An introduction to the invariant extended kalman filter [lecture notes],” IEEE Control Systems, vol. 44, no. 6, pp. 50–71, 2024. [13] M. Kok, J. D. Hol, and T. B. Scho ̈n, “Indoor positioning using ultrawideband and inertial measurements,” IEEE Transactions on Vehicular Technology, vol. 64, no. 4, pp. 1293–1303, 2015. [14] T. Zhao and M. J. Ahamed, “Pseudo-zero velocity re-detection double threshold zero-velocity update (zupt) for inertial sensor-based pedestrian navigation,” IEEE Sensors Journal, vol. 21, no. 12, pp. 13 772–13 785, 2021. [15] H. Azpu ́rua, M. Saboia, G. M. Freitas, L. Clark, A.-a. Agha-mohammadi, G. Pessin, M. F. Campos, and D. G. Macharet, “A survey on the autonomous exploration of confined subterranean spaces: Perspectives from real-word and industrial robotic deployments,” Robotics and Autonomous Systems, vol. 160, p. 104304, 2023. [16] Y. Wu, H.-B. Zhu, Q.-X. Du, and S.-M. Tang, “A survey of the research status of pedestrian dead reckoning systems based on inertial sensors,” International Journal of Automation and Computing, vol. 16, pp. 65–83, 2019.
+
+
+ 8
+[17] H. Wang, Z. Deng, B. Feng, H. Ma, and Y. Xia, “An adaptive kalman filter estimating process noise covariance,” Neurocomputing, vol. 223, pp. 12–17, 2017. [18] A. Barrau and S. Bonnabel, “Invariant kalman filtering,” Annual Review of Control, Robotics, and Autonomous Systems, vol. 1, no. 1, pp. 237257, 2018. [19] Z. He, S. Teng, T.-Y. Lin, M. Ghaffari, and Y. Gu, “Legged robot state estimation within non-inertial environments,” arXiv preprint arXiv:2403.16252, 2024.
+[20] F. Guo, H. Yang, X. Wu, H. Dong, Q. Wu, and Z. Li, “Model-based deep learning for low-cost imu dead reckoning of wheeled mobile robot,” IEEE Transactions on Industrial Electronics, vol. 71, no. 7, pp. 75317541, 2023. [21] A. Ramanandan, A. Chen, and J. A. Farrell, “Inertial navigation aiding by stationary updates,” IEEE Transactions on Intelligent Transportation Systems, vol. 13, no. 1, pp. 235–248, 2011. [22] W. Cui, S. Li, H. Huang, B. Qin, T. Zhang, L. Zheng, Z. Tang, C. Hu, N. Yan, J. Chen et al., “Adapting humanoid locomotion over challenging terrain via two-phase training,” in 8th Annual Conference on Robot Learning.
+[23] Y. Xiaoyu, X. Yong, and Y. Hongtao, “Gnss/ins navigation system based on lie group right invariant kalman filter,” in 2023 IEEE International Conference on Unmanned Systems (ICUS), 2023, pp. 1329–1333.
+[24] G. C. Goodwin, S. F. Graebe, and M. E. Salgado, Control System Design. Pearson, 2000. [25] S. Yang, Z. Zhang, B. Bokser, and Z. Manchester, “Multi-imu proprioceptive odometry for legged robots,” in 2023 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS). IEEE, 2023, pp. 774–779. [26] F. E. Xavier, G. Burger, M. Pe ́triaux, J.-E. Deschaud, and F. Goulette, “Multi-imu proprioceptive state estimator for humanoid robots,” in 2023 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS). IEEE, 2023, pp. 10 880–10 887. [27] A. Roychoudhury, S. Khorshidi, S. Agrawal, and M. Bennewitz, “Perception for humanoid robots,” Current Robotics Reports, vol. 4, no. 4, pp. 127–140, 2023. [28] M. Zarei and R. Chhabra, “Advancements in autonomous mobility of planetary wheeled mobile robots: A review,” Frontiers in Space Technologies, vol. 3, p. 1080291, 2022. [29] F. Zafari, A. Gkelias, and K. K. Leung, “A survey of indoor localization systems and technologies,” IEEE Communications Surveys & Tutorials, vol. 21, no. 3, pp. 2568–2599, 2019. [30] L. Markovi ́c, M. Kovaˇc, R. Milijas, M. Car, and S. Bogdan, “Error state extended kalman filter multi-sensor fusion for unmanned aerial vehicle localization in gps and magnetometer denied indoor environments,” in 2022 International Conference on Unmanned Aircraft Systems (ICUAS). IEEE, 2022, pp. 184–190. [31] X. Hou and J. Bergmann, “Pedestrian dead reckoning with wearable sensors: A systematic review,” IEEE Sensors Journal, vol. 21, no. 1, pp. 143–152, 2020.

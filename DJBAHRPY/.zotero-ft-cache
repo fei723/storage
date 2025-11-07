@@ -1,0 +1,247 @@
+Pedestrian Detection Method Based on Fusion of LIDAR and Camera
+Yangyang Fan1,2, Yuansheng Liu1,2* 1Beijing Key Laboratory of Information Service Engineering, Beijing Union University, Beijing 100101, China 2College of Robotics, Beijing Union University, Beijing 100101, China 20231083510922@buu.edu.cn, yuansheng@buu.edu.cn *corresponding author
+Abstract—As two important sensors in the perception process of autonomous driving, LIDAR is weak in judging target details, and camera typically have more demanding requirements regarding light conditions. In order to overcome the limitations of single sensor in pedestrian detection, a pedestrian detection method based on the fusion of laser radar and camera is proposed.Firstly, the M1 solid-state LIDAR is temporally and spatially synchronised with the camera, and then the point cloud is processed to achieve point cloud downsampling and ground point cloud removal and the processed point cloud is clustered using the density-based DBSCAN clustering algorithm. Concurrently, the camera image is used to detect pedestrians using the YOLOv5 visual target detection algorithm. Finally, the detection results of the two sensors are fused by decision level fusion to obtain the final detection information. The experiments carried out in the campus scene confirm that the accuracy of the proposed method for pedestrian fusion detection is 85.7%, and it solves the problem of missed detection of visual detection caused by light factors of camera sensors.
+Keywords-Autonomous driving perception; M1 solid-state LIDAR; Camera; Pedestrian detection; Decision level fusion
+1. INTRODUCTION
+With the rapid development of automatic driving technology, target detection technology has become one of its core technologies[1]. In complex traffic environments, accurately and quickly identifying and locating various targets is the key to ensure the safe and stable operation of autonomous driving systems[2-4]. As two complementary sensors, LIDAR and camera play important roles in target detection tasks with their unique advantages, respectively[5]. LIDAR can generate high-precision point clouds at a longer range due to the high energy of laser pulses[6], and can maintain stable operation under various kinds of bad weather, while cameras can provide rich color and texture information. However, a single sensor often struggles to handle all scenarios. Therefore, effectively integrating the data from LIDAR and camera has become an effective approach to enhance the performance of target detection[7]. For example, Nobis[8] et al proposed a deep learning-based camera and LIDAR fusion framework, which achieves effective fusion of multimodal data by jointly training a convolutional
+neural network and a point cloud processing network. The PointPainting+ algorithm proposed by Shen Caiying[9] et al effectively improves the problem of poor detection of long-distance small targets such as pedestrians and cyclists due to the sparsity of point clouds. Tingting Liang[10] et al, proposed the BEVFusion framework, which uses two independent processes to process LIDAR and camera data, and then fuses them at the bird's-eye view level, addressing the limitations of existing methods that overly rely on LIDAR. However, although the existing research has achieved certain results, target detection by LIDAR and camera fusion still faces many challenges in terms of real-time and stability. In this context, We not only proposes a pedestrian detection method by fusion of LIDAR and camera, but also adopts a high-performance M1 solid-state LIDAR in the experimental part, which is capable of capturing more details than other LIDARS, and has a better perception of the target in order to identify the target more accurately. The algorithm firstly achieves coordinate conversion between the LIDAR and camera sensors through an accurate joint calibration process to ensure data consistency. Then, the deep learning YOLOv5 model is used as the visual detection algorithm, and the density-based DBSCAN algorithm is used to cluster the preprocessed point cloud targets. The detection results from both sensors are integrated through a decision-level fusion approach, ultimately obtaining information for pedestrian detection. Finally, experiments are carried out in the campus environment. The results show that the proposed method can accurately fuse pedestrian information, while significantly improving the visual detection leakage problem of camera sensors due to lighting factors.
+2. RELATED WORK
+2.1. Sensor Fusion Strategy Classification
+In the environmental perception process of autonomous vehicles, to overcome the limitations of a single sensor in terms of sensing capability, sensor fusion technology is often used at present, which can be classified into data-level fusion, feature-level fusion and decision-level fusion according to the different stages of data processing in which fusion occurs[11]. Data-level fusion, also known as pixel-level fusion, is a way of low-level data fusion. It directly correlates and calibrates the raw data collected by each sensor, and then performs the fusion process to extract features from the fused data, which ultimately results in
+1056
+2024 IEEE 24th International Conference on Software Quality, Reliability, and Security Companion (QRS-C)
+2693-9371/24/$31.00 ©2024 IEEE DOI 10.1109/QRS-C63300.2024.00139
+2024 IEEE 24th International Conference on Software Quality, Reliability, and Security Companion (QRS-C) | 979-8-3503-6565-8/24/$31.00 ©2024 IEEE | DOI: 10.1109/QRS-C63300.2024.00139
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 07,2025 at 09:20:33 UTC from IEEE Xplore. Restrictions apply.
+
+
+target recognition.Feature-level fusion is an intermediate level fusion between data-level and decision-level. Firstly, features are extracted from the data collected by each sensor, and then these feature information is fused after data association and calibration. Finally, the target recognition result is obtained based on the fused features.Decision-level fusion is performed after feature-level fusion. Firstly, features are extracted from the data collected by each sensor, and the extracted feature data are independently used for target recognition. Then, through data association and calibration, the recognition results from different sensors are fused. Ultimately, it outputs a unified recognition result that combines information from various sensors.
+2.2. Target Detection based on sensor fusion
+At present, most of the target detection methods based on LIDAR and camera fusion use feature-level fusion and decision-level fusion. Algorithms that use feature-level fusion are MV3D-Net[12], AVOD-Net[13], PointPainting[14], and others. Those that use decision-level fusion encompass methods such as the Dempster-Shafer theory[15] and weighted fusion[16]. The MV3D-Net algorithm fuses LIDAR point cloud information and visual images, and generates 3D candidate regions on the top view and front view of LIDAR to achieve accurate target detection. However, its detection time is too long and the network structure is complex to meet the real-time performance. To solve the above problems, Jason Ku et al. proposed the AVOD-Net algorithm. As an improvement of MV3D-Net, AVOD-Net not only reduces the number of parameters, but also improves the detection speed by removing the intensity information in the front view input and top view of the LIDAR and adding the FPN network to extract features. The PointPainting algorithm maps the semantic segmentation results of the image to the point cloud, and uses the rich color and texture information of the image to enhance the feature representation of the point cloud, which not only improves the semantic
+understanding ability of the point cloud, but also achieves higher accuracy in the 3D target detection task. Dempster-Shafer theory divides the accuracy of target detection into grades, and uses the cloud model to transform the detector information into decision matrix to construct the mass function. Then the conflict parameter is introduced and the fusion algorithm is improved to modify and fuse the evidence, achieving accurate decision-making for multi-sensor target detection. Weighted fusion preserves the target accurately detected in a single image, and performs weighted fusion on the same target appearing in both visible and infrared images. Finally, all detection results are merged to achieve fast target detection by decision-level fusion.
+3. METHOD
+In order to obtain accurate information of the detection target, We firstly selects the camera and the 125-line M1 solid-state LIDAR to collect the campus environment, and synchronize the two sensors in time and space to ensure that they can accurately reflect the environmental state at the same time. Then the two-dimensional image acquired by the camera is recognised using deep learning technology, the network model based on deep learning technology is divided into faster single-stage model and higher accuracy two-stage model, in order to achieve a balance between speed and accuracy, We adopts the single-stage YOLOv5 model. The point cloud obtained by M1 solid-state LIDAR is processed to realize point cloud downsampling and ground point cloud removal. After obtaining the 2D detection frame of the image by YOLOv5 algorithm, the radar point cloud is cut according to the 2D information in the detection frame and the density-based DBSCAN clustering algorithm is used for pedestrian clustering operation, so as to obtain 3D information. Finally, the 2D information acquired by the camera and the 3D information acquired by the LIDAR are fused by decision level fusion, and finally the fused pedestrian information is obtained. Figure 1 shows the technology roadmap.
+Figure 1 Technology roadmap
+3.1. Visual target Detection based on YOLOv5
+YOLOv5 is a single-stage target detection algorithm that relies on anchor frames for target prediction. Compared to
+YOLOv4, YOLOv5 provides significant improvements in the following four sections:  In the data input stage, YOLOv5 adds Mosaic data enhancement technique, adaptive anchor calculation,
+1057
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 07,2025 at 09:20:33 UTC from IEEE Xplore. Restrictions apply.
+
+
+and adaptive image resizing to optimise the processing of input images.  YOLOv5 uses CSPDarknet as Backbone to extract image features efficiently.  The feature fusion network of YOLOv5 combines FPN (Feature Pyramid Network) and PAN (Path Aggregation Network) structures to achieve effective aggregation of features.  In order to accurately predict the bounding box and category labels of the target, the GIOU loss function is used in the detection head. Through the above improvements, YOLOv5 significantly improves the inference speed and reduces the model size while maintaining high detection accuracy. YOLOv5 is divided into multiple versions according to the size of the backbone network, such as YOLOv5s, YOLOv5m, YOLOv5x, etc. Among them, YOLOv5s model can reach 140 FPS in inference speed, and the model size is only 27MB. In order to meet the real-time requirements, this paper selects the YOLOv5s, which is the faster and smaller model within the YOLOv5 series, as the visual detection algorithm.
+3.2. Target detection based on M1 LIDAR
+3.2.1. Preprocessing of LIDAR point cloud
+LIDAR is often disturbed and affected by the surrounding environment when collecting point cloud, and these unprocessed data are directly used for target detection may significantly reduce the speed and accuracy of detection. Therefore, it is necessary to select an effective point cloud detection range and streamline the point cloud. We utilizes point cloud downsampling and ground point removal techniques for preprocessing of the point cloud. Since LIDAR generates dense scanning data every second, resulting in a large number of highly similar point cloud in the overlapping area, which significantly increases the memory space, We uses the Voxel Grid filter for point cloud simplification, which can not only reduce the point cloud, but also maintain the shape characteristics of the point cloud. The core principle of the Voxel Grid filter is 3D voxelization grid, in which the input point cloud is divided into multiple voxels, and all points within the voxel are approximately represented by calculating the center of gravity of all points inside each voxel. This way of processing simplifies the point cloud, reduces redundant information, and helps to eliminate noise and outliers. The formula is as follows:
+
+
+
+k
+i
+pi
+k
+C
+1
+ijk
+1 (1)
+cijk represents the center of gravity of the 3D cube,
+pi represents the data points of the 3D cube, krepresents the
+number of points of the 3D cube. Ground point cloud filtering is an indispensable step in LIDAR point cloud preprocessing. The ground point cloud
+not only increases the amount of system calculation, but also easily affects the clustering of the target point cloud. Therefore, after down-sampling the point cloud, ground point cloud segmentation is required to ensure that irrelevant ground point clouds are filtered out. In this paper, the ray-based ground segmentation algorithm is used for the extraction of the non-ground point cloud, filtering out the ground points after segmentation processing, which helps to subsequently carry out more accurate clustering processing of non-ground points.
+3.2.2. Point cloud Clustering based on DBSCAN
+In order to identify and distinguish each independent target, it is necessary to cluster the non-ground point cloud to ensure that the points belonging to the same target can be clustered together. In this paper, the DBSCAN clustering algorithm is used to cluster the point cloud targets. DBSCAN is a density-based clustering algorithm. Compared with the traditional K-means algorithm, the DBSCAN clustering algorithm can find clusters of arbitrary shapes and does not need to input the number of categories K. The performance of the proposed algorithm mainly depends on two key parameters: the search radius eps and the density threshold Minpts. Eps is used to define the feature distance between points, and Minpts is used to specify the minimum number of data points required within a given search radius. The selection of these two parameters will directly determine the final effect of clustering. DBSCAN algorithm can effectively identify the clustering structure in the data, and can eliminate the shape limit of the data and the interference of noise points. It has good stability and reliability, and will not be affected by shape of obstacles. The process of DBSCAN algorithm is shown in Figure 2.
+Figure 2. Flowchart of DBSCAN algorithm
+1058
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 07,2025 at 09:20:33 UTC from IEEE Xplore. Restrictions apply.
+
+
+3.3. Information fusion of M1 LIDAR and camera
+3.3.1. Spatio-temporal synchronisation
+To achieve temporal synchronisation between LIDAR and camera, We uses the TimeSynchronizer mechanism in ROS. Firstly subscribe to different topics between LIDAR and camera respectively, and then receive these topics uniformly through the TimeSynchronizer mechanism. Once the data are successfully synchronised, a callback function is triggered, and finally the data after synchronising the time is processed in this callback function to complete the time synchronisation. Spatial synchronisation is accomplished by converting the coordinate systems of the two types of sensors to the same coordinate system through the joint calibration of the LIDAR and the camera. The coordinate systems involved in this process include the LIDAR coordinate system: OL  XL YL  ZL , camera coordinate
+system: OC  XC YC ZC , world coordinate
+system: OW XW YW ZW , image coordinate system: o  x  y ,
+Pixel coordinate system: o u v . In this paper, the LIDAR
+coordinate system is used as the world coordinate for conversion, and the conversion process is as follows: (1) The LIDAR and camera coordinate systems are transformed by the principle of rotational translation transformation. Among them, the optical centre position of the camera is the origin of its coordinate system, and the ZC of the coordinate system corresponds to the optical axis
+of the lens. The conversion formula is:
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+1
+01 1
+XC
+L
+L
+L
+C
+C Z
+Y
+X RT Z
+Y (2)
+R and T in the above formula are the rotation and translation matrices between the world coordinate system and the camera coordinate system, respectively.
+(2) The camera coordinate system and the image coordinate system are converted by the centre perspective projection method in the principle of small hole imaging. The conversion formula is:
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+1
+0 010
+0 00
+0 00
+1C
+C
+C
+CZ
+Y
+X
+f
+f Y
+X
+Z (3)
+f in the above formula is the distance from the optical center to the image plane, which is the focal length of the camera.
+(3) The image coordinate system is converted to the pixel coordinate system. The pixel coordinate system is a two-dimensional rectangular coordinate system, with the upper left corner of the image as the coordinate origin, the horizontal direction as the u axis, and the vertical direction
+as the v axis. The conversion formula is:
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+1
+0 01
+1
+0
+0
+1
+1
+u y
+x v
+dy
+u
+dx
+v (4)
+In the above equation, dx and dy are the lengths corresponding to each pixel and (u,v) are the pixel coordinates corresponding to the origin coordinates of the image. Based on the above coordinate system conversion process, the spatial conversion relationship between the LIDAR coordinate system and the pixel coordinate system can be obtained:
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+1
+01 0 0 10
+00
+00
+1
+u
+L
+L
+L
+CZ
+Y
+X RT
+v
+dy
+f
+u
+dx
+f
+Z v (5)
+Through the above conversion process, the joint calibration of LIDAR and camera can be performed, thus completing the spatial synchronisation process.
+3.3.2. Data fusion of LIDAR and camera
+Since LIDARS with fewer beams provide less information about data features, we chose the 125-wire M1 solid-state LIDAR, which has a number of beams comparable to the highest-beam (128-wire) mechanical LIDAR released globally, as a means of obtaining richer data features. By processing the data of M1 LIDAR and camera, the point cloud clustering results and image detection results of the target are obtained respectively. Then, the spatial transformation relationship obtained by the spatio-temporal synchronization of the two sensors is used to accurately project the point cloud of LIDAR clustering into the image detection results, so as to obtain the two-dimensional detection frame projected on the image by the three-dimensional point cloud frame. The fusion strategy is also designed considering the environmental factors, for example, in the case of poor lighting, if only a single sensor detects the target, the detection result of the single sensor is output, and only when both sensors detect the target, the detection result of the LIDAR is fused with the detection result of the camera at the decision level. We adopts the Intersection over Union (IoU) technique for fusing data from the two sensors. Firstly, we extract the LIDAR point cloud clustering results of the current frame and find the matching image detection results, and then a detection box is selected from the image and all point cloud clustering boxes are calculated for IOU. When the IoU value of the two sensor detection boxes exceeds the threshold set in this paper, it is regarded as the fusion detection result of the same object. Until all point cloud clustering boxes are
+1059
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 07,2025 at 09:20:33 UTC from IEEE Xplore. Restrictions apply.
+
+
+traversed, the next image detection box is selected to continue calculating IOU until all image two-dimensional detection boxes in the current frame are calculated. If the camera and LIDAR can detect the same object, the two-dimensional information detected by the camera and the three-dimensional information detected by the laser radar are fused to output accurate pedestrian information.
+4. EXPERIMENTS
+4.1. .Experimental environment
+In this paper, the proposed algorithm is experimented in a campus scenario using a domain controller as a computational unit, M1 solid-state LIDAR, Senyun smart camera as input devices, and a modified wheelchair trolley as a loading platform. During the experiment, the M1 LIDAR was located at a height of about one metre two above the ground to acquire point cloud, and the camera was fixed above the LIDAR to acquire depth data.Table 1 lists the main performance parameters of the two sensors. Table 1 Main parameters of the two sensors
+Sensor main performance parameters Numerical value
+M1 LIDAR
+Number of lines, ranging ability 125 harness, 200m
+Measurement accuracy,
+scanning frequency 5cm、10Hz Horizontal and vertical
+resolution 0.2°
+Camera
+Focal length, resolution 6mm、1920H*1080V
+Image acquisition frame rate 30 frames per second
+4.2. .Experimental results
+In this paper, experiments were conducted using the modified wheelchair trolley depicted in Figure 3 under various lighting conditions on campus. Firstly, the internal parameter of the camera is calibrated to obtain the parameter file of the internal parameter matrix of the camera, and the camera and M1 LIDAR are jointly calibrated by using the parameter file. Figure (c) in Figure 4 shows the
+visualization effect of point cloud projection when the pedestrian appears in the calibration screen, and it can be seen from the projection effect that the joint calibration projection is relatively close. Then, point cloud pre-processing is performed by downsampling and filtering out ground points, which reduces data volume, enhances processing efficiency, and minimizes ground point interference, leading to a more accurate and efficient clustering process. Figure 4(a) shows the original point cloud of M1 LIDAR, Figure 4(b) shows the preprocessed point cloud. It can be seen that the preprocessed point cloud is more streamlined than the original point cloud, and the influence of outliers and noise points has also been significantly reduced. In particular, the quality of point cloud has been significantly improved after filtering ground points. In this paper, experiments are conducted under both normal light conditions, as illustrated in Figure 5, and dark light conditions, as depicted in Figure 6. Figure (a) presents the detection results of the visual target detection algorithm on the camera image, with the visualization results indicating that detections can be achieved through the camera sensor under normal light, achieving a detection accuracy of 92%. Under dark light conditions, the camera sensor is unable to ensure the stability of detection, leading to missed detections in certain frames. Figure (b) displays the pedestrian point cloud clustered by the M1 LIDAR, Figure (c) shows the LIDAR clustering box, Figure (d) represents the sensor fusion box, and Figure (e) illustrates the pedestrian information detected through fusion. Figure 8 shows the experimental data of the detection accuracy of each sensor using a wheelchair cart in the campus environment, where the detection rate of the camera sensor is 87.7%, the detection rate of the LIDAR sensor is 80.5%, and the detection rate of the sensor fusion is 85.6%. Although the detection rate of camera sensor is 2.1% higher than that of sensor fusion, the camera sensor is easily affected by light, which leads to missed detection. The missed detection problem of single sensor can be avoided by sensor decision-level fusion.
+Figure 3. Experimental cart Figure 4. Figure 5. Normal light Figure 6. Dark light
+1060
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 07,2025 at 09:20:33 UTC from IEEE Xplore. Restrictions apply.
+
+
+Tabel 2. Target detection accuracy
+Camera detection M1 LIDAR cluster Fusion detection
+Accuracy 139 139 139
+Detecting number of obstacles 122 112 119
+Accuracy 87.70% 80.50% 85.60%
+5. CONCLUSION
+We introduces the pedestrian detection method of LIDAR and camera fusion from three aspects: visual target detection algorithm, LIDAR target detection algorithm, and LIDAR and camera information fusion. Experiments involving joint calibration, point cloud preprocessing, and sensor fusion were conducted in a campus setting using the M1 solid-state LIDAR, Sen Yun smart camera, and a modified wheelchair trolley. Experimental results show that the accuracy of vision detection is 87.7%, the accuracy of LIDAR detection is 80.5%, and the accuracy of sensor fusion detection is 85.6%. Although the camera sensor detection rate is slightly higher than the sensor fusion detection rate, the camera sensor only in normal light with real-time, in dark light conditions the camera sensor does not have real-time easy to target leakage problem. Aiming at the above problems, We will further improve the visual target detection algorithm, so that it can have detection real-time in dark light conditions, in order to more accurately data fusion with LIDAR.
+ACKNOWLEDGMENT
+This work was supported by the National Natural Science Foundation of China (No. 62371013), the Beijing Natural Science Foundation (No. 4222025), the Project of Support Program for High-level Research and Innovation Team Building in Beijing Higher Education Institutions (BPHR20220121) and Beijing Union University High-level Incubation Program and New PhD Incubation Program (Deep Reinforcement Learning-based Decision-making and Control Methods for Autonomous Driving ZK10202208).
+REFERENCES
+[1] GUO Xiaoli. Analysis of key technologies of perception system for self-driving vehicles[J]. Special Purpose Vehicle, 2023 , (10): 60-62. [2] Nan Ma*, Zhixuan Wu, Yiu-ming Cheung, Yuchen Guo, Yue Gao, Jiahong Li and Beiyan Jiang. A Survey of Human Action Recognition and Posture Prediction, Tsinghua Science and Technology, 2022, 27(6), 973-1001. [3] Nan Ma, Deyi Li, Wen He, et al. Future vehicles: interactive wheeled robots[J], SCIENCE CHINA Information Sciences, 2021, 64 (5): 56101:1–156101:3. [4] Xie Huyu, Du Zhibin, Sun Yaxuan. Overview of perception system for self-driving cars [J]. Times Automotive, 2019, (18): 29-30. [5] Yu Hang. Research review on 3D target detection based on LIDAR[J]. Automotive Digest, 2024 , (02):18-27.
+[6] Nan Ma, Mohan Wang, Yihan Han*, and Yongjin Liu. FF−LOGO: Cross−Modality Point Cloud Registration with Feature Filtering and Local to Global Optimization[C]//Proc. 2024 IEEE International Conference on Robotics and Automation (ICRA2024), 2024. [7] WANG H, XU Yansong, CAI Yingfeng et al. A review of multi-sensor fusion-based multi-target detection technology for intelligent vehicles[J]. Journal of Automotive Safety and Energy Conservation, 2021, 12(4):440-455. [8] F.Nobis, M. Geisslinger, M. Weber, J. Betz and M. Lienkamp, "A Deep Learning-based Radar and Camera Sensor Fusion Architecture for Object Detection." 2019 Sensor Data Fusion: Trends, Solutions, Applications (SDF), Bonn, Germany, 2019, pp. 1-7. [9] SHEN Caiying, ZHU Siyao, HUANG Xingchi. A target detection algorithm for fusion of camera and LIDAR data[J]. Journal of Chongqing University of Technology (Natural Science), 2023, 37 (10): 81-88. [10] Liang, Tingting et al. “BEVFusion: A Simple and Robust LIDAR-Camera Fusion Framework.” ArXiv abs/2205. 13790 (2022): n. pag. [11] Yaodong Cui, Ren Chen, Wenbo Chu, Long Chen, Daxin Tian, Ying Li, and Dongpu Cao. 2022. Deep Learning for Image and Point Cloud Fusion in Autonomous Driving: A Review. Trans. Intell. Transport. Sys. 23, 2 (Feb. 2022), 722–739. [12] Chen X, Ma H, Wan J, et al. Multi-View 3D Object Detection Network for Autonomous Driving[C]//2017 IEEE Conference on Computer Vision and Pattern Recognition (CVPR).IEEE, 2017. [13] Ku, Jason et al. “Joint 3D Proposal Generation and Object Detection from View Aggregation.” 2018 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS) (2017): 1-8. [14] S.Vora, A. H. Lang, B. Helou and O. Beijbom, "PointPainting: Sequential Fusion for 3D Object Detection." 2020 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), Seattle, WA, USA, 2020, pp. 4603-4611. [15] YIN Dongliang, HUANG Xiaoying, WU Yanjie, HE Youchen, XIE Jingwei. Target recognition decision method based on cloud model and improved D-S evidence theory[J]. ACTA AERONAUTICAET ASTRONAUTICA SINICA, 2021, 42(12): 324768-324768. [16] BAI Yu, HOU Zhiqiang, LIU Xiaoyi, et al. Target detection algorithm based on decision-level fusion of visible and infrared images[J]. Journal of Air Force Engineering University: Natural Science Edition, 2020.
+1061
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 07,2025 at 09:20:33 UTC from IEEE Xplore. Restrictions apply.

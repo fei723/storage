@@ -1,0 +1,370 @@
+Stable at Any Speed: Speed-Driven Multi-Object Tracking with Learnable Kalman Filtering
+Yan Gong1, 2, Mengjun Chen3, Hao Liu2, Gao Yongsheng1†, Lei Yang4, Naibang Wang1, Ziying Song5, and Haoqun Ma2
+1State Key Laboratory of Robotics and System, Harbin Institute of Technology, Harbin, China. 2Autonomous Driving Department of X Divsion, JD Logistics, Beijing, China. 3School of Integrated Circuits and Electronics, Beijing Institute of Technology, Beijing, China. 4School of Mechanical and Aerospace Engineering, Nanyang Technological University, Singapore. 5Beijing Key Laboratory of Traffic Data Mining and Embodied Intelligence, School of Computer Science and Technology, Beijing Jiaotong University. Emails: gongyan2020@foxmail.com, fatinn@bit.edu.cn, liuhao163@jd.com, gaoys@hit.edu.cn, lei.yang@ntu.edu.sg, 7788521wnb@gmail.com, songziying@bjtu.edu.cn, mahaoqun1@jd.com
+Abstract
+Multi-object tracking (MOT) enables autonomous vehicles to continuously perceive dynamic objects, supplying essential temporal cues for prediction, behavior understanding, and safe planning. However, conventional tracking-bydetection methods typically rely on static coordinate transformations based on ego-vehicle poses, disregarding egovehicle speed–induced variations in observation noise and reference frame changes, which degrades tracking stability and accuracy in dynamic, high-speed scenarios. In this paper, we investigate the critical role of ego-vehicle speed in MOT and propose a Speed-Guided Learnable Kalman Filter (SG-LKF) that dynamically adapts uncertainty modeling to ego-vehicle speed, significantly improving stability and accuracy in highly dynamic scenarios. Central to SG-LKF is MotionScaleNet (MSNet), a decoupled token-mixing and channel-mixing MLP that adaptively predicts key parameters of SG-LKF. To enhance inter-frame association and trajectory continuity, we introduce a self-supervised trajectory consistency loss jointly optimized with semantic and positional constraints. Extensive experiments show that SG-LKF ranks first among all vision-based methods on KITTI 2D MOT with 79.59% HOTA, delivers strong results on KITTI 3D MOT with 82.03% HOTA, and outperforms SimpleTrack by 2.2% AMOTA on nuScenes 3D MOT.
+1 Introduction
+Multi-object tracking (MOT) is a fundamental component of autonomous perception, enabling continuous and reliable tracking of dynamic objects to support downstream tasks such as risk prediction and decision making. Existing 2D and 3D MOT methods are generally categorized as Tracking-by-Detection (TBD) or Joint Detection and Tracking (JDT). While JDT (Wang et al. 2024a; Tokmakov et al. 2021; Wu et al. 2021b; Wang et al. 2023b) jointly optimizes detection and tracking for higher accuracy, its complexity limits real-time deployment and modularity. Currently, TBD has become the most widely adopted
+†Corresponding Author.
+paradigm, offering greater flexibility and efficiency by decoupling detection and tracking. Within this framework, the classic SORT (Bewley et al. 2016) algorithm exemplifies this approach by combining Kalman filtering (KF) (Kalman 1960) with data association, and recent extensions such as DeepSORT (Wojke, Bewley, and Paulus 2017) and JDE (Wang et al. 2020) enhance appearance modeling, BoTSORT (Aharon, Orfaig, and Bobrovsky 2022) fuses motion and appearance cues, and ByteTrack (Zhang et al. 2022) improves low-score detection association. However, these TBD methods employ simplified and fixed-parameter motion models without explicitly accounting for ego-motion or reference frame shifts, thereby compromising tracking stability and causing object loss and identity switches. By analyzing the performance of BoT-SORT on the KITTI 2D MOT dataset under different ego-vehicle speeds (see Fig. 1 (a)), we observe that as the ego-vehicle speed increases, the Intersection over Union (IoU) between predicted and ground-truth bounding boxes drops significantly, and the ID switch rate rises sharply. This demonstrates that existing tracking methods are highly sensitive to ego-vehicle speed, leading to inaccurate state estimation and association errors for surrounding objects in high-speed driving scenarios. The underlying causes are threefold: (1) insufficient reference frame modeling, where neglecting ego-vehicle motion leads to systematic errors; (2) greater inter-frame object displacement at high speeds, which reduces temporal consistency and increases the difficulty of data association; and (3) observation loss from motion blur and occlusion, forcing the motion model to extrapolate from historical states and thereby exacerbating error accumulation.
+To our knowledge, we are the first to systematically investigate ego-vehicle speed as a crucial prior for egomotion modeling, enabling effective compensation for reference frame shifts caused by ego-vehicle movement and significantly improving state prediction and trajectory continuity. This insight offers a promising direction for addressing the performance bottlenecks of existing multi-object tracking methods under high-speed and rapidly changing driving conditions. Furthermore, vehicle speed is a native,
+arXiv:2508.00358v1 [cs.CV] 1 Aug 2025
+
+
+Detection KF
+Learningbased KF
+Ego-Speed
+Detection
+Previous Methods
+SG-LKF (ours) Qualitative Results (a) Observed Problem (b) Method Comparison
+BoT-SORT SG-LKF (ours)
+(c) Performance Comparison
+0 km/h
+60 km/h
+Historical Trajectory
+Historical Trajectory
+Figure 1: Impact of ego-vehicle speed on multi-object tracking. The proposed SG-LKF achieves precise position prediction in the highlighted red regions of (b) and delivers significant improvements in tracking performance, as shown in (c).
+real-time signal that requires no additional cost or complexity and is not susceptible to the drift or signal degradation associated with GPS and IMU.
+In this paper, we propose a Speed-Guided Learnable Kalman Filter (SG-LKF) that leverages adaptive motion prediction to effectively address dynamic reference frame shifts and consistently deliver stable tracking performance. Specifically, we design a MotionScaleNet (MSNet) that leverages ego-vehicle speed and object scale as a prior for key parameter generation and hyperparameter adjustment, significantly improving state prediction accuracy. Additionally, we introduce trajectory, position, and semantic consistency loss to enhance object association and trajectory continuity. As shown in Fig. 1 (b), BoT-SORT exhibits more severe bounding box misalignment at 60 km/h, while incorporating ego-vehicle speed in Fig. 1 (c) markedly enhances performance. Experiments show that SG-LKF ranks first among all vision-based methods on the KITTI 2D MOT benchmark, and also achieves leading performance on the KITTI and nuScenes 3D MOT. Moreover, SG-LKF demonstrates strong generalizability and can be seamlessly incorporated into other KF-based tracking frameworks. The main contributions of this paper are summarized as follows:
+• To our knowledge, we are the first to systematically analyze the impact of ego-vehicle speed on multi-object tracking, providing a new perspective and solution.
+• We propose SG-LKF, a speed-guided MOT framework that employs MSNet to adaptively generate key parameters from ego-vehicle speed and object scale, thereby enabling stable tracking performance.
+• We propose a self-supervised trajectory consistency loss, optimized with semantic and positional constraints, to enhance object association and trajectory continuity.
+• Our method ranks first among vision-based methods on the KITTI 2D MOT benchmark, and further demonstrates superior performance on the KITTI and nuScenes 3D MOT datasets.
+2 Related Work Tracking-by-Detection (TBD)
+In recent years, the rapid advancement of object detection techniques (Carion et al. 2020; Fu et al. 2025; Long et al. 2025) has laid a solid foundation for motion-based multiobject tracking methods. Mainstream TBD approaches typically employ Kalman filters (KF) to model object motion and focus primarily on the data association problem, which can be broadly categorized into geometry-based and appearance-based methods. Geometry-based (Zhang et al. 2022; Aharon, Orfaig, and Bobrovsky 2022; Maggiolino et al. 2023) methods use Intersection over Union (IoU) for association, while appearance-based methods (Wojke, Bewley, and Paulus 2017; Zhang et al. 2021) leverage reidentification (ReID) features to improve robustness under occlusion, interaction, and missing detections.
+Motion Modeling in TBD
+In TBD systems, motion modeling is crucial for trajectory continuity. Mainstream approaches typically rely on KF to adopt linear motion assumptions. However, such models struggle to capture complex object dynamics under egomotion, leading to significant prediction errors and tracking drift. To mitigate this issue, some studies (Du et al. 2023; Mahdian et al. 2024; Lin, Lin, and Wang 2023) incorporate external auxiliary information (e.g., GPS, IMU, or visual odometry) to compensate for ego-motion and improve prediction accuracy. However, these methods often require additional hardware or precise calibration, and their effectiveness degrades in challenging environments, such as GPS signal loss in tunnels, IMU drift over time, or visual odometry failures under poor lighting and occlusion. Therefore, we present the first in-depth analysis of ego-vehicle speed for motion modeling and propose SG-LKF that adaptively generates KF parameters without external sensors, thereby overcoming hardware limitations and ensuring robustness to GPS failure and IMU drift.
+3 Kalman Limitations at High Speeds
+In conventional KF, the predicted covariance P, the process noise covariance Q, and the observation noise covariance R
+
+
+are typically preset and remain fixed throughout the tracking process. However, in real-world autonomous driving scenarios, vehicle motion can vary significantly over time. Therefore, standard KF faces significant limitations in high-speed scenarios due to its assumptions of linear dynamics and Gaussian noise, as detailed below.
+Nonlinear State Transition. The projection from 3D world to 2D image plane follows a nonlinear transformation:
+pimage ∝ Θc(pworld − τc)
+dc
+, (1)
+where pimage and pworld are target coordinates on the image plane and in the world, Θc and τc are camera rotation and translation matrix, and dc is the target depth. When the camera is stationary, this mapping is nearly linear, but at high ego-vehicle speeds, rapid changes in Θc and τc make it highly nonlinear. Nevertheless, the KF uses a fixed linear model:
+xˆt|t−1 = Ftxˆt−1|t−1, (2)
+where xˆt|t−1 and xˆt−1|t−1 are the predicted and estimated states at t and t−1, and Ft denotes the state transition matrix. This mismatch leads to increased prediction error as ego-vehicle speed rises:
+εpred = ∥xˆt − xt∥ ↑ as ego-vehicle speed v ↑, (3)
+where xt is the ground-truth state at time t.
+Process Noise Covariance Limitation. During high-speed ego-vehicle motion, system uncertainty increases substantially. However, Q is typically set as a fixed hyperparameter in practice. If Q is underestimated, the Pt|t−1 becomes too small, resulting in a reduced Kalman gain Kt:
+Kt = Pt|t−1H⊤
+t HtPt|t−1H⊤
+t + Rt
+−1 , (4)
+where Ht denotes the observation matrix. As a result, the KF becomes less responsive to new observations, causing errors to accumulate and leading to drift, particularly in highspeed scenarios.
+Observation Noise Covariance Limitation. In high-speed scenarios, measurement noise increases due to motion blur, rapid viewpoint changes, and occlusions, reducing detection reliability. However, Rt is typically fixed and cannot reflect this increased uncertainty. As shown in Eq. 4, underestimating Rt causes the filter to overfit noisy observations, leading to instability, while overestimating it results in underutilized measurements and degraded tracking accuracy.
+4 Methodology Overview
+To tackle the aforementioned challenges, we reveal the significance of ego-vehicle speed in state estimation and data association, and propose a SG-LKF, as illustrated in Fig. 2. Built upon the standard TBD paradigm, SG-LKF leverages historical trajectories and ego-vehicle speed for state prediction, followed by a two-stage association with high- and low-confidence observations from detectors to enable accurate multi-object tracking. For matched predictions, SGLKF adaptively updates states using ego-vehicle speed and
+observations, and unmatched detections are initialized as new tracks. Track lifetime is dynamically adjusted based on ego-vehicle speed via linear scaling to prevent unnecessary retention. Additionally, we introduce a joint loss function to enforce trajectory, spatial, and semantic consistency. The pseudo-code of our SG-LKF is provided in Appendix A.
+Speed-Guided Learnable Kalman Filter (SG-LKF)
+Learnable Parameterization of P, Q, and R. In contrast to existing methods such as KalmanNet (Revach et al. 2022) and HybridTrack (Di Bella et al. 2025), which directly incorporate the Kalman gain or the entire state prediction into the learning process, our method preserves the original structure of the KF to the greatest extent, and employs a lightweight learning strategy to adaptively model P, Q, and R. This method retains the theoretical strengths of the KF and introduces a ego-speed-guided adaptation, enabling robust tracking and seamless integration with existing KFbased tracking frameworks. Following BoT-SORT, we define the state as x = [xx, yx, wx, hx, x ̇ x, y ̇x, w ̇ x,  ̇hx]⊤, and the observation at frame t as zt = [xz, yz, wz, hz]⊤, where (x, y) denote the 2D coordinates of the object center in the image plane,  ̇ denotes the first-order time derivative, and w and h represent the width and height of the bounding box, respectively. For P, Q and R, we respectively learn their mappings fP , fQ, and fR with respect to the current ego-vehicle speed v. To enhance adaptability to object scale variations, the w and h are also incorporated as input features. To capture the relationship between ego-vehicle speed, object scale, and KF parameters, the mapping must be nonlinear, and lightweight for real-time deployment. Accordingly, we propose MotionScaleNet (MSNet), a decoupled token- and channel-mixing Multilayer Perceptron (MLP) architecture that explicitly models and captures the nonlinear interaction between ego-vehicle speed and object scale. Specifically, given input features N0=[v, w, h], we first project them into a C-dimensional feature space to form three token sequences. MSNet consists of L (L = 2M ) MLP layers that alternate between token-mixing and channelmixing operations after LayerNorm (LN) to facilitate crosssemantic information interaction, defined as follows:
+NL = NL−1 + MLPtoken LN(NL−1) , if L is odd
+NL−1 + MLPchannel LN(NL−1) , if L is even (5) Finally, NL is flattened and passed through a regression MLP with softplus activation to predict positive semidefinite KF parameters.
+Adaptive Kalman Filtering Process. At time step t, KF operates in two stages: prediction and update. In the prediction stage, process noise covariance Qt is first adaptively
+generated by MSNet using vt−1, wtx−1, and htx−1 to capture the inherent uncertainty in the motion model. The state xˆt|t−1 is estimated from ˆxt−1|t−1 in Eq. 2, and covariance Pt|t−1 is estimated from Qt and Pt−1|t−1, as defined by:
+
+
+Vehicle Speed
+2D/3D
+Detector Low-Score Detections
+t-th Multi-Frame Inputs
+(a) 2D/3D Detector (c) Trajectory Management
+(d) Joint Loss Function
+Self-supervised Trajectory Consistency Loss
+Xt−2 Xt−1 Xt
+DINO
+: Box Center cƸit : Predicted Tracking Box fit−2
+fit−1
+fit
+DINO
+Unmatched Trajectory
+Unmatched Detections
+Trajectory Init
+Delete
+Speed-Driven Max Age
+High-Score Detections
+Semantic Consistency Loss DINO
+LTCL = 1
+N෍
+i=1
+N ෍ t=2
+T ෍ k=1
+t−1 γt−k ∥ fመit − fመik ∥2
+2 + λ∥ cොit − cƸik ∥2
+2
+Predicted Box
+Ground Truth Box
+v
+w
+h
+v
+w
+h
+MSNet
+(b) 2D/3D SG-LKF
+Qt
+Pt
+Rt
+MLP
+(t-1)-th Historical Trajectory
+×M
+ll
+Channel MLP
+Token MLP
+3D Only
+t-th State Prediction
+Data Association
+Matched Pairs
+t-th State Update
+Position Consistency Loss
+Center Position
+Semantic Features
+Feature
+Embedding
+Figure 2: The overall architecture comprises: (a) a 2D/3D detector; (b) a 2D/3D SG-LKF for adaptive motion modeling and state estimation; (c) trajectory management for handling object tracks; and (d) a joint loss function for end-to-end optimization.
+Prediction:
+(Qt = MSNet(vt−1, wx
+t−1, hx
+t−1)
+Pt|t−1 = FtPt−1|t−1F⊤
+t + Qt, (6)
+In the update stage, the MSNet first generate Rt and Pt|t
+using vt, wtz, and htz. Subsequently, Kt is computed from Rt and the Pt|t−1 in Eq. 4, and the state xˆt|t is updated using Kt, the observation zt, and the previous state xˆt|t−1, as defined by:
+Update:
+
+ 
+ 
+Rt = MSNet(vt, wz
+t , hz
+t) Pt|t = MSNet(vt, wz
+t , hz
+t)
+ˆxt|t = xˆt|t−1 + Kt(zt − Hxˆt|t−1),
+(7)
+Extension to 3D Multi-Object Tracking. To extend the 2D SG-LKF framework to 3D MOT, we replace the 2D detector with a 3D detector for spatial poseaware detections and redefine the KF state as x =
+[xx, yx, zx, wx, hx, lx, x ̇ x, y ̇x, z ̇x, w ̇ x,  ̇hx, l ̇x]⊤, where zx and lx denote the vertical position of the object center and the length. Similarly, MSNet incorporates object length l into the KF parameter prediction to enhance scaleaware motion modeling. For data association, we adopt the geometry-aware similarity metric from SimpleTrack (Pang, Li, and Wang 2022) and leverage voxel-based dynamic point cloud aggregation (Wu et al. 2023) to enhance structural representation and tracking stability.
+Loss Function Design
+Trajectory Consistency Loss (TCL). To mitigate trajectory inconsistency from detection noise and motion blur in high-speed scenarios, we propose a TCL to enforce temporal smoothness and appearance coherence. We define a trajectory for object i over T frames as a sequence of predicted states: Ti = {(ˆct
+i, fˆt
+i )}tT=1, where ˆct
+i ∈ R2 denotes
+the predicted 2D center position, and fˆt
+i ∈ Rd represents the semantic embedding of the predicted bounding box at frame t. We assume that objects along the same trajectory
+should exhibit consistent semantics and smooth positional transitions across consecutive frames, defined as follows:
+fˆt
+i − fˆt−1
+i
+2
+2
++ λ · ˆct
+i − ˆct−1
+i
+2
+2, where ∥ · ∥2 and λ denote
+the L2 norm and the weighting factor balancing positional and semantic consistency, respectively. However, computing trajectory consistency using only adjacent frames may introduce errors due to potential semantic shifts or positional deviations. To mitigate this, we introduce a temporal accumulation mechanism that emphasizes long-term consistency and reduces the impact of local noise, defined as follows:
+LTCL = 1
+N
+N
+X
+i=1
+T
+X
+t=2
+t−1
+X
+k=1
+γt−k fˆt
+i − fˆk
+i
+2
+2
++ λ ˆct
+i − ˆck
+i
+2
+2,
+(8) where fˆk
+i and cˆk
+i are the Mamba-inspired (Gu and Dao 2023) temporal aggregates over the past k steps. N denotes the number of tracked trajectories. γt−k applies exponential decay to prioritize nearby-frame consistency while retaining sensitivity to long-range temporal variations.
+Semantic Consistency Loss. To enforce semantic alignment between predictions and ground truths, we extract semantic embeddings fˆi and fi from the predicted and corresponding ground-truth bounding boxes, and compute their cosine similarity, defined as LSCL.
+Position Consistency Loss. To ensure precise spatial alignment between predictions and ground truth, we employ the Complete IoU (CIoU) loss (Zheng et al. 2021), which accounts for overlap area and center distance, defined as LPCL.
+Overall Loss. The total loss combines trajectory, semantic, and position consistency terms as a weighted combination to jointly enforce appearance alignment, spatial accuracy, and temporal smoothness, defined as:
+L = LTCL + α · LSCL + β · LPCL, (9)
+where α and β denote weighting factors.
+
+
+SG-LKF LPCL LSCL LTCL HOTA ↑ DetA ↑ AssA ↑
+74.47 75.48 74.30 ✓ ✓ 76.84 77.08 77.24 ✓ ✓ ✓ 79.49 77.81 81.81 ✓ ✓ ✓ 79.22 77.77 81.29 ✓ ✓ ✓ ✓ 79.59 77.27 82.53
+Table 1: Comparison of different components in our method on KITTI 2D MOT. The best is marked in bold. ↑ indicates higher is better, while ↓ indicates lower is better.
+(a) KITTI 3D MOT (b) nuScenes 3D MOT
+Figure 3: Comparison of performance improvements achieved by integrating SG-LKF into VirConvTrack on KITTI 3D MOT and SimpleTrack on nuScenes 3D MOT.
+5 Experiment
+Datasets and Evaluation Metrics
+KITTI (Geiger, Lenz, and Urtasun 2012) is a widely used benchmark for 2D and 3D multi-object tracking (MOT), featuring 21 training and 29 test sequences across urban, residential, and highway scenes.
+nuScenes (Caesar et al. 2020) is a large-scale autonomous driving dataset comprising 1,000 urban and suburban scenes, featuring 6 cameras, 5 radars, a 32-line LiDAR, and 1.4 M annotated 3D bounding boxes across 23 categories, along with HD maps and vehicle sensor data.
+Evaluation Metrics. For KITTI, we adopt Higher Order Tracking Accuracy (HOTA) as the primary metric, and additionally report Detection Accuracy (DetA), Association Accuracy (AssA), Detection Recall (DetRe), Detection Precision (DetPr), Association Recall (AssRe), Association Precision (AssPr), and Localization Accuracy (LocA). For nuScenes 3D tracking, we use Average Multi-Object Tracking Accuracy (AMOTA) as the main metric, along with Average Multi-Object Tracking Precision (AMOTP), MultiObject Tracking Accuracy Recall (MOTAR), Multi-Object Tracking Accuracy (MOTA), Multi-Object Tracking Precision (MOTP), and Recall (REC). All metrics are reported as percentages throughout this paper.
+0 20 40 60 Ego-vehicle Speed (km/h)
+76.0
+78.0
+80.0
+82.0
+84.0
+86.0
+Score (%)
+85.32
+83.51 83.33 83.30 83.24
+79.18 78.41
+77.30
+81.72
+80.83
+81.62
+80.34
+81.14
+77.42 77.13 76.76
+86.26
+85.07 84.81 84.25
+85.38
+81.49
+81.03 80.48
+HOTA - SG-LKF-2D (ours) HOTA - BoT-SORT
+DetA - SG-LKF-2D (ours) DetA - BoT-SORT
+AssA - SG-LKF-2D (ours) AssA - BoT-SORT
+Figure 4: Comparison of BoT-SORT and SG-LKF-2D (ours) at different ego-vehicle speeds on KITTI 2D MOT.
+Implementation details
+Our model is implemented in PyTorch and trained end-toend on a single NVIDIA GeForce RTX 3090 GPU (24GB). The optimization is performed using AdamW with an initial learning rate of 5e-3 and weight decay of 1e-2. A learning rate schedule with linear warm-up over the first 5 epochs is followed by cosine annealing decay over 100 total epochs. The L of MSNet is set to 6. Notably, the loss weights are treated as learnable parameters and are jointly optimized with the network. We use DINOv2 (Oquab et al. 2023) to extract semantic features of bounding boxes only during loss computation, avoiding ReID features at inference. Moreover, MSNet is extremely lightweight, with only 78.2 K parameters and 79.5 K FLOPs.
+Ablation Study
+Component Ablation. Table 1 reports the contribution of four core components—SG-LKF, LPCL, LSCL, and LTCL—to the overall performance. Compared to the baseline (BoT-SORT) in the first row, introducing SG-LKF leads to notable gains of 2.37%, 1.60%, and 2.94% in HOTA, DetA, and AssA, respectively, indicating that SGLKF effectively compensates for ego-motion-induced reference shifts and improves both prediction accuracy and association robustness. Further, LSCL and LTCL individually improve HOTA by 2.65% and 2.38%, while their combination achieves the best overall performance, highlighting the complementary roles of semantic and temporal consistency in improving identity preservation and trajectory continuity. Further ablation studies on P, Q, and R are provided in Appendix B.
+2D-to-3D MOT with Ego-Vehicle Speed Modeling. Fig 3 validates the effectiveness of SG-LKF in 3D multi-object tracking. On KITTI, integrating SG-LKF into VirConvTrack (Wu et al. 2023) improves HOTA by 0.47%, DetA by 0.08%, and AssA by 0.82%. On nuScenes, incorporating SG-LKF into SimpleTrack (Pang, Li, and Wang 2022) boosts AMOTA by 2.2%, lowers AMOTP by 6.5%, and increases REC by 3.1%. These gains demonstrate that SGLKF enhances motion modeling and trajectory continuity, while generalizing well across diverse baselines.
+
+
+Method Speed Information HOTA ↑ DetA ↑ AssA ↑ DetRe ↑ DetPr ↑ AssRe ↑ AssPr ↑ LocA ↑
+BoT-SORT 74.47 75.48 74.30 79.91 84.15 78.44 86.52 86.14
+SG-LKF-2D (ours)
+v 79.59 77.27 82.53 80.55 86.58 85.23 89.79 87.09 v (1 ± 5% · N (0, 1)) 79.56 77.26 82.49 80.53 86.57 85.19 89.77 87.08 v (1 ± 10% · N (0, 1)) 79.53 77.68 82.13 81.43 85.89 85.05 89.81 86.95 v (1 ± 20% · N (0, 1)) 79.27 77.17 82.00 80.54 86.45 84.73 89.76 87.09 v · N (0, 1) 78.84 77.50 80.77 81.05 86.26 83.45 89.87 87.04
+Table 2: Robustness evaluation of SG-LKF-2D under varying levels of Gaussian White Noise N (0, 1) on KITTI 2D MOT.
+0 5 10 15 20 25 30 35 Ego-speed (km/h)
+45
+50
+55
+60
+65
+70
+75
+80
+85
+Average IoU (%)
+81.51 80.47
+78.86 79.34
+78.62
+72.22
+59.23
+52.84
+IoU - SG-LKF-3D (ours) IoU - SimpleTrack
+ID Switch - SG-LKF-3D (ours)
+ID Switch - SimpleTrack 0.1
+0.2
+0.3
+0.4
+0.5
+0.6
+Average ID Switch per Frame (%)
+0.178
+0.209
+0.246
+0.365
+0.225
+0.293
+0.408
+0.551
+Figure 5: Comparison of SimpleTrack and SG-LKF-3D (ours) at different ego-vehicle speeds on nuScenes 3D MOT.
+Quantitative Sensitivity to Ego-Vehicle Speed. To assess the impact of ego-vehicle speed on MOT performance, we evaluate both BoT-SORT and SG-LKF-2D across varying speeds (0, 20, 40, and 60 km/h) in terms of HOTA, DetA, and AssA, as illustrated in Fig. 4. Two key observations emerge: (1) SG-LKF-2D consistently outperforms the baseline across all speeds and metrics, with particularly notable gains at higher speed; (2) while both methods exhibit performance degradation as speed increases, SG-LKF-2D maintains significantly greater stability, whereas the baseline suffers a sharp decline. Fig. 5 compares SimpleTrack and SGLKF-3D on the nuScenes 3D MOT benchmark under specific speed cases (0, 15, 25, and 35 km/h), demonstrating that SG-LKF-3D consistently achieves higher IoU and fewer ID switches. These results clearly demonstrate the superior adaptability of SG-LKF to dynamic motion and highlight the critical role of ego-vehicle speed modeling in mitigating reference frame shifts and preserving identity consistency.
+Robustness to Speed Noise. In real-world autonomous driving, speed measurements are inevitably affected by environmental disturbances and system errors. To assess SG-LKF’s robustness to speed noise, we injected Gaussian white noise of varying intensities into the input. As shown in Table 2, SG-LKF-2D maintains stable performance across increasing noise levels and consistently outperforms the baseline. These results confirm its robustness to speed perturbations, ensuring reliable tracking under challenging conditions.
+Track HOTA ↑ DetA ↑ AssA ↑ DetRe ↑ DetPr ↑ AssRe ↑ AssPr ↑
+CenterTrack 73.02 75.62 71.20 80.10 84.56 73.84 89.00 LGM 73.14 74.61 72.31 80.53 82.16 76.38 84.74 FNC2 73.19 73.27 73.77 80.98 81.67 77.05 89.84 DEFT 74.23 75.33 73.79 79.96 83.97 78.30 85.19 APPTracker+ 75.19 75.55 75.36 78.77 86.04 78.34 88.24 OC-SORT 76.54 77.25 76.39 80.64 86.36 80.33 87.17 S3MOT 76.86 76.95 77.41 83.79 − 81.01 − C-TWiX 77.58 76.97 78.84 80.25 86.43 81.90 88.35 PermaTrack 78.03 78.29 78.41 81.71 86.54 81.14 89.49 JHIT 79.21 76.76 82.29 81.63 84.62 85.94 88.19 RBMOT 79.23 76.07 83.13 − − − − RAM 79.53 78.79 80.94 82.54 86.33 84.21 88.77 SG-LKF-2D (ours) 79.59 77.27 82.53 80.55 86.58 85.23 89.79
+Table 3: Comparison of SG-LKF-2D with existing methods on the KITTI 2D MOT test set. Underline marks the secondbest. “−” denotes results not reported in the original paper.
+Benchmarks Evaluation
+KITTI 2D Results. We compare SG-LKF-2D with a comprehensive set of state-of-the-art multi-object tracking methods, including CenterTrack (Zhou, Koltun, and Kra ̈henbu ̈hl 2020), LGM (Wang et al. 2021a), FNC2 (Jiang et al. 2023), DEFT (Chaabane et al. 2021), APPTracker+ (Zhou et al. 2024), OC-SORT (Cao et al. 2023), S3MOT (Yan et al. 2025), C-TWiX (Miah, Bilodeau, and Saunier 2025), PermaTrack (Tokmakov et al. 2021), JHIT (Claasen and de Villiers 2024), RBMOT (Liu et al. 2025), and RAM (Tokmakov et al. 2022). As shown in Table 3, SG-LKF-2D achieves the highest HOTA of 79.59%, outperforming all other methods. Notably, SG-LKF-2D achieves the best or second-best results across all metrics. Since we directly adopt the detection results from BoT-SORT, DetA is slightly lower than that of RAM. These results demonstrate that the effective modeling of speed information in SG-LKF markedly improves both data association and tracking stability.
+KITTI 3D Results. On the KITTI 3D MOT test set, we compare SG-LKF-3D with a range of existing methods, including Stereo3DMOT (Mao et al. 2023), PC3T (Wu et al. 2021a), MSA-MOT (Zhu et al. 2022), UG3DMOT (He et al. 2024), YONTD-MOTv2 (Wang et al. 2024a), ReTink MOT (Wang et al. 2023a), LEGO (Zhang et al. 2023), PC-TCNN (Wu et al. 2021b), PMM-MOT (Gohari, Ramezani, and Baraani 2025), PMTrack (Tan et al. 2025), MCTrack online (Wang et al. 2024b), RobMOT CasA (Nagy et al. 2024), and VirConvTrack (Wu et al. 2023). As shown in Table 4, SG-LKF-3D achieves a HOTA of 82.03%, outperforming all existing methods and demonstrating the best overall perfor
+
+
+Methods HOTA ↑ DetA ↑ AssA ↑ DetRe ↑ DetPr ↑ AssRe ↑ AssPr ↑
+Stereo3DMOT 77.32 73.43 81.86 77.34 85.38 84.66 89.61 PC3T 77.80 74.57 81.59 79.19 84.07 84.77 88.75 MSA-MOT 78.52 75.19 82.56 82.42 82.21 85.21 90.16 UG3DMOT 78.60 76.01 82.28 80.77 85.44 85.36 91.37 YONTD-MOTv2 79.52 75.83 84.01 82.31 83.69 87.16 90.70 ReThink MOT 80.39 77.88 83.64 84.23 83.57 87.63 88.90 LEGO 80.75 78.91 83.27 84.64 84.94 86.87 90.19 PC-TCNN 80.90 78.46 84.13 84.22 84.58 87.46 90.47 PMM-MOT 80.27 − 83.12 − − − − PMTrack 81.36 78.90 84.49 88.02 − − − MCTrack online 81.07 78.08 84.82 83.63 85.09 87.61 91.43 RobMOT CasA 81.22 78.34 84.80 81.95 87.21 87.40 91.44 VirConvTrack 81.56 78.63 85.19 82.39 87.13 88.70 90.49 SG-LKF-3D (ours) 82.03 78.71 86.01 82.47 87.16 88.79 90.55
+Table 4: Comparison of SG-LKF-3D with existing methods on the KITTI 3D MOT test set.
+Methods AMOTA ↑ AMOTP ↓ MOTAR ↑ MOTA ↑ MOTP ↑ REC ↑
+UG3DMOT 66.80 53.80 79.20 54.90 31.00 70.00 ImmortalTracker 67.70 59.90 80.00 57.20 28.50 71.40 3DMOTFormer++ 68.20 49.60 81.00 55.60 29.70 69.30 MLPMOT 68.30 49.00 77.50 55.40 31.10 72.80 Wang et al. 48.20 − − 40.70 − − TransFusion-L 68.60 52.90 78.40 57.10 31.00 73.10 SimpleTrack 66.80 55.00 80.80 56.60 29.40 70.30 SG-LKF-3D (ours) 69.00 48.50 79.50 57.60 29.40 73.40
+Table 5: Comparison of SG-LKF-3D with existing methods on the nuScenes 3D MOT test set.
+mance. SG-LKF-3D attains the highest scores in key association metrics, with AssA (86.01%) and AssRe (88.79%). Overall, these results demonstrate that SG-LKF-3D delivers superior 3D multi-object tracking accuracy, further validating the effectiveness of our speed modeling.
+nuScenes 3D Results. On the nuScenes 3D MOT test set, we compare SG-LKF-3D with several advanced methods, including UG3DMOT, ImmortalTracker (Wang et al. 2021b), 3DMOTFormer++ (Ding et al. 2023), MLPMOT (Benbarka, Schro ̈der, and Zell 2021), Wang et al. (Wang, Chen, and Zhang 2025), TransFusion-L (Bai et al. 2022), and SimpleTrack. As shown in Table 5, SG-LKF-3D outperforms all competing methods on two key metrics, achieves an AMOTA of 69.00% and an AMOTP of 48.50%. SGLKF-3D also excels in MOTAR and REC, achieving 79.50% and 73.40%, respectively, both ranking among the top results. These findings clearly validate the accuracy of SGLKF-3D in 3D MOT, further highlighting the effectiveness of speed modeling.
+Qualitative Analysis. To assess SG-LKF-2D’s tracking stability under static and high-speed conditions, we qualitatively compare it with the baseline at 0 km/h and 60 km/h (see Fig. 6). At 0 km/h, the BoT-SORT exhibits occlusioninduced misses and fragmented trajectories, while at 60 km/h, it suffers from association errors and poor localization. In contrast, SG-LKF-2D maintains stable and accurate tracking across different speeds. Additionally, we further evaluate 20-frame vehicle trajectories in BEV on the nuScenes dataset (see Fig. 7). In both case 1 and case 2, SG-LKF-3D consistently demonstrates improved trajectory
+SG-LKF (ours) BoT-SORT
+(a) 0 km/h
+(b) 60 km/h
+t-1 t t+1
+SG-LKF (ours)
+: misaligned box
+: missed tracking
+BoT-SORT
+Figure 6: Qualitative comparison of BoT-SORT and SGLKF-2D (ours) at 0 km/h and 60 km/h on the KITTI 2D MOT test set. At 0 km/h, tree occlusion causes missed tracking in the baseline; at 60 km/h, it produces misaligned boxes and misses occluded vehicles.
+SG-LKF-3D (ours) SimpleTrack
+(a) Case 1 (b) Case 2
+Figure 7: Qualitative comparison of SimpleTrack and SGLKF-3D (ours) at 15∼30 km/h on the nuScenes 3D MOT test set. As highlighted by the dashed boxes, SimpleTrack exhibits severe tracking failures in both case 1 and case 2. Different colors represent trajectories with unique IDs.
+stability and continuity, with markedly fewer interruptions, trajectory losses, and ID switches compared to SimpleTrack. Additional examples are provided in Appendices C and D.
+Discussions and Limitations.
+Although SG-LKF leverages ego-vehicle speed to enhance multi-object tracking, its evaluation is limited to moderate speed variations due to existing public dataset constraints, leaving its effectiveness under high-speed (100
+
+
+km/h) or irregular motion scenarios unverified. Furthermore, the lightweight MSNet, though efficient, limits performance under frequent occlusions and dense interactions. Future work will explore advanced architectures to further improve robustness and generalization.
+6 Conclusion
+In this paper, we are the first to introduce ego-vehicle speed as a key prior for ego-motion modeling, effectively compensating for reference frame shifts caused by ego-vehicle dynamics. Building on this insight, we propose a SG-LKF, which employs a speed-aware MSNet to predict key Kalman Filter parameters, effectively correcting the bias of static motion models. Additionally, trajectory, semantic, and positional consistency losses are introduced to improve tracking stability and continuity. Experimental results demonstrate that SG-LKF achieves the best performance and ranks first among vision-based methods on the KITTI 2D MOT benchmark. Benefiting from its high compatibility with the Kalman filter framework, SG-LKF can be seamlessly integrated into other Kalman-based tracking systems, achieving leading results on KITTI and nuScenes 3D MOT.
+References
+Aharon, N.; Orfaig, R.; and Bobrovsky, B.-Z. 2022. Botsort: Robust associations multi-pedestrian tracking. arXiv preprint arXiv:2206.14651.
+Bai, X.; Hu, Z.; Zhu, X.; Huang, Q.; Chen, Y.; Fu, H.; and Tai, C.-L. 2022. Transfusion: Robust lidar-camera fusion for 3d object detection with transformers. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, 1090–1099.
+Benbarka, N.; Schro ̈der, J.; and Zell, A. 2021. Score refinement for confidence-based 3D multi-object tracking. In 2021 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS), 8083–8090. IEEE.
+Bewley, A.; Ge, Z.; Ott, L.; Ramos, F.; and Upcroft, B. 2016. Simple online and realtime tracking. In 2016 IEEE international conference on image processing (ICIP), 3464–3468. Ieee.
+Caesar, H.; Bankiti, V.; Lang, A. H.; Vora, S.; Liong, V. E.; Xu, Q.; Krishnan, A.; Pan, Y.; Baldan, G.; and Beijbom, O. 2020. nuscenes: A multimodal dataset for autonomous driving. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, 11621–11631.
+Cao, J.; Pang, J.; Weng, X.; Khirodkar, R.; and Kitani, K. 2023. Observation-centric sort: Rethinking sort for robust multi-object tracking. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, 96869696.
+Carion, N.; Massa, F.; Synnaeve, G.; Usunier, N.; Kirillov, A.; and Zagoruyko, S. 2020. End-to-end object detection with transformers. In European conference on computer vision, 213–229. Springer.
+Chaabane, M.; Zhang, P.; Beveridge, J. R.; and O’Hara, S. 2021. Deft: Detection embeddings for tracking. arXiv preprint arXiv:2102.02267.
+Claasen, P. J.; and de Villiers, J. P. 2024. Interacting Multiple Model-based Joint Homography Matrix and Multiple Object State Estimation. arXiv e-prints, arXiv–2409.
+Di Bella, L.; Lyu, Y.; Cornelis, B.; and Munteanu, A. 2025. HybridTrack: A Hybrid Approach for Robust Multi-Object Tracking. arXiv preprint arXiv:2501.01275.
+Ding, S.; Rehder, E.; Schneider, L.; Cordts, M.; and Gall, J. 2023. 3dmotformer: Graph transformer for online 3d multiobject tracking. In Proceedings of the IEEE/CVF international conference on computer vision, 9784–9794.
+Du, Y.; Zhao, Z.; Song, Y.; Zhao, Y.; Su, F.; Gong, T.; and Meng, H. 2023. Strongsort: Make deepsort great again. IEEE Transactions on Multimedia, 25: 8725–8737.
+Fu, S.; Yang, Q.; Mo, Q.; Yan, J.; Wei, X.; Meng, J.; Xie, X.; and Zheng, W.-S. 2025. Llmdet: Learning strong openvocabulary object detectors under the supervision of large language models. In Proceedings of the Computer Vision and Pattern Recognition Conference, 14987–14997.
+Geiger, A.; Lenz, P.; and Urtasun, R. 2012. Are we ready for autonomous driving? the kitti vision benchmark suite. In 2012 IEEE conference on computer vision and pattern recognition, 3354–3361. IEEE.
+Gohari, E. E.; Ramezani, R.; and Baraani, A. 2025. Adaptive probabilistic multi-model framework for robust 3D multiobject tracking under uncertainty. Expert Systems with Applications, 272: 126719.
+Gu, A.; and Dao, T. 2023. Mamba: Linear-time sequence modeling with selective state spaces. arXiv preprint arXiv:2312.00752.
+He, J.; Fu, C.; Wang, X.; and Wang, J. 2024. 3D multiobject tracking based on informatic divergence-guided data association. Signal Processing, 222: 109544.
+Jiang, C.; Wang, Z.; Liang, H.; and Wang, Y. 2023. A novel adaptive noise covariance matrix estimation and filtering method: Application to multiobject tracking. IEEE Transactions on Intelligent Vehicles, 9(1): 626–641.
+Kalman, R. E. 1960. A new approach to linear filtering and prediction problems.
+Lin, Y.-K.; Lin, W.-C.; and Wang, C.-C. 2023. Asynchronous state estimation of simultaneous ego-motion estimation and multiple object tracking for LiDAR-inertial odometry. In 2023 IEEE International Conference on Robotics and Automation (ICRA), 10616–10622. IEEE.
+Liu, M.; Wu, M.; Wang, W.; Liu, P.; Chang, K.; Li, M.; and Piao, C. 2025. Adaptive Searching Range-Based Data Association for Multi-Object Tracking With Multi-Information Fusion. IEEE Transactions on Intelligent Transportation Systems.
+Long, Y.; Kumar, A.; Liu, X.; and Morris, D. 2025. RICCARDO: Radar Hit Prediction and Convolution for CameraRadar 3D Object Detection. In Proceedings of the Computer Vision and Pattern Recognition Conference, 22276–22285.
+Maggiolino, G.; Ahmad, A.; Cao, J.; and Kitani, K. 2023. Deep oc-sort: Multi-pedestrian tracking by adaptive reidentification. In 2023 IEEE International conference on image processing (ICIP), 3025–3029. IEEE.
+
+
+Mahdian, N.; Jani, M.; Enayati, A. M. S.; and Najjaran, H. 2024. Ego-motion aware target prediction module for robust multi-object tracking. arXiv preprint arXiv:2404.03110.
+Mao, C.; Tan, C.; Liu, H.; Hu, J.; and Zheng, M. 2023. Stereo3DMOT: Stereo Vision Based 3D Multi-object Tracking with Multimodal ReID. In Chinese Conference on Pattern Recognition and Computer Vision (PRCV), 495–507. Springer.
+Miah, M.; Bilodeau, G.-A.; and Saunier, N. 2025. Learning data association for multi-object tracking using only coordinates. Pattern Recognition, 160: 111169.
+Nagy, M.; Werghi, N.; Hassan, B.; Dias, J.; and Khonji, M. 2024. RobMOT: Robust 3D Multi-Object Tracking by Observational Noise and State Estimation Drift Mitigation on LiDAR PointCloud. arXiv preprint arXiv:2405.11536.
+Oquab, M.; Darcet, T.; Moutakanni, T.; Vo, H.; Szafraniec, M.; Khalidov, V.; Fernandez, P.; Haziza, D.; Massa, F.; ElNouby, A.; et al. 2023. Dinov2: Learning robust visual features without supervision. arXiv preprint arXiv:2304.07193.
+Pang, Z.; Li, Z.; and Wang, N. 2022. Simpletrack: Understanding and rethinking 3d multi-object tracking. In European conference on computer vision, 680–696. Springer.
+Revach, G.; Shlezinger, N.; Ni, X.; Escoriza, A. L.; Van Sloun, R. J.; and Eldar, Y. C. 2022. KalmanNet: Neural network aided Kalman filtering for partially known dynamics. IEEE Transactions on Signal Processing, 70: 15321547.
+Tan, S.; Li, X.; Xu, Q.; and Zhu, J. 2025. 3D multi-object tracking based on parallel multimodal data association. Machine Vision and Applications, 36(3): 1–15.
+Tokmakov, P.; Jabri, A.; Li, J.; and Gaidon, A. 2022. Object permanence emerges in a random walk along memory. arXiv preprint arXiv:2204.01784.
+Tokmakov, P.; Li, J.; Burgard, W.; and Gaidon, A. 2021. Learning to track with object permanence. In Proceedings of the IEEE/CVF International Conference on Computer Vision, 10860–10869.
+Wang, G.; Gu, R.; Liu, Z.; Hu, W.; Song, M.; and Hwang, J.N. 2021a. Track without appearance: Learn box and tracklet embedding with local and global motion patterns for vehicle tracking. In Proceedings of the IEEE/CVF international conference on computer vision, 9876–9886.
+Wang, L.; Zhang, J.; Cai, P.; and Li, X. 2023a. Towards robust reference system for autonomous driving: Rethinking 3d mot. In 2023 IEEE International Conference on Robotics and Automation (ICRA), 8319–8325. IEEE.
+Wang, L.; Zhang, X.; Qin, W.; Li, X.; Gao, J.; Yang, L.; Li, Z.; Li, J.; Zhu, L.; Wang, H.; et al. 2023b. Camo-mot: Combined appearance-motion optimization for 3d multi-object tracking with camera-lidar fusion. IEEE Transactions on Intelligent Transportation Systems, 24(11): 11981–11996.
+Wang, Q.; Chen, Y.; Pang, Z.; Wang, N.; and Zhang, Z. 2021b. Immortal tracker: Tracklet never dies. arXiv preprint arXiv:2111.13672.
+Wang, Q.; Chen, Y.; and Zhang, Z. 2025. Uncertain Object Representation for Image-Based 3D Object Perception.
+IEEE Transactions on Pattern Analysis and Machine Intelligence.
+Wang, X.; Fu, C.; He, J.; Huang, M.; Meng, T.; Zhang, S.; Zhou, H.; Xu, Z.; and Zhang, C. 2024a. A Multi-Modal Fusion-Based 3D Multi-Object Tracking Framework with Joint Detection. IEEE Robotics and Automation Letters.
+Wang, X.; Qi, S.; Zhao, J.; Zhou, H.; Zhang, S.; Wang, G.; Tu, K.; Guo, S.; Zhao, J.; Li, J.; et al. 2024b. MCTrack: A Unified 3D Multi-Object Tracking Framework for Autonomous Driving. arXiv preprint arXiv:2409.16149.
+Wang, Z.; Zheng, L.; Liu, Y.; Li, Y.; and Wang, S. 2020. Towards real-time multi-object tracking. In European conference on computer vision, 107–122. Springer.
+Wojke, N.; Bewley, A.; and Paulus, D. 2017. Simple online and realtime tracking with a deep association metric. In 2017 IEEE international conference on image processing (ICIP), 3645–3649. IEEE. Wu, H.; Han, W.; Wen, C.; Li, X.; and Wang, C. 2021a. 3D multi-object tracking in point clouds based on prediction confidence-guided data association. IEEE Transactions on Intelligent Transportation Systems, 23(6): 5668–5677. Wu, H.; Li, Q.; Wen, C.; Li, X.; Fan, X.; and Wang, C. 2021b. Tracklet Proposal Network for Multi-Object Tracking on Point Clouds. In IJCAI, 1165–1171. Wu, H.; Wen, C.; Shi, S.; Li, X.; and Wang, C. 2023. Virtual sparse convolution for multimodal 3d object detection. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, 21653–21662.
+Yan, Z.; Feng, S.; Li, X.; Zhou, Y.; Xia, C.; and Li, S. 2025. S3MOT: Monocular 3D Object Tracking with Selective State Space Model. arXiv preprint arXiv:2504.18068. Zhang, Y.; Sun, P.; Jiang, Y.; Yu, D.; Weng, F.; Yuan, Z.; Luo, P.; Liu, W.; and Wang, X. 2022. Bytetrack: Multiobject tracking by associating every detection box. In European conference on computer vision, 1–21. Springer.
+Zhang, Y.; Wang, C.; Wang, X.; Zeng, W.; and Liu, W. 2021. Fairmot: On the fairness of detection and re-identification in multiple object tracking. International journal of computer vision, 129: 3069–3087. Zhang, Z.; Liu, J.; Xia, Y.; Huang, T.; Han, Q.-L.; and Liu, H. 2023. LEGO: Learning and graph-optimized modular tracker for online multi-object tracking with point clouds. arXiv preprint arXiv:2308.09908.
+Zheng, Z.; Wang, P.; Ren, D.; Liu, W.; Ye, R.; Hu, Q.; and Zuo, W. 2021. Enhancing geometric factors in model learning and inference for object detection and instance segmentation. IEEE transactions on cybernetics, 52(8): 8574–8586. Zhou, T.; Ye, Q.; Luo, W.; Ran, H.; Shi, Z.; and Chen, J. 2024. APPTracker+: Displacement Uncertainty for Occlusion Handling in Low-Frame-Rate Multiple Object Tracking. International Journal of Computer Vision, 1–26.
+Zhou, X.; Koltun, V.; and Kra ̈henbu ̈hl, P. 2020. Tracking objects as points. In European conference on computer vision, 474–490. Springer. Zhu, Z.; Nie, J.; Wu, H.; He, Z.; and Gao, M. 2022. MSAMOT: Multi-stage association for 3D multimodality multiobject tracking. Sensors, 22(22): 8650.

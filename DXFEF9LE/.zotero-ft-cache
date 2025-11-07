@@ -1,0 +1,1043 @@
+Double Lower Limb Kinematics-based Invariant Extended Kalman Filtering for Pedestrian Inertial State Estimation *
+Fei Guo National Key Laboratory of Human Factors Engineering China Astronaut Research and Training Center Beijing, China guofei_bit@126.com
+Abstract—This paper combined the double lower limbs and waist as rigid bodies. Each angle of hip, knee, and ankle joint can be measured through several Inertial Measurement Unit (IMU), formulating the double lower kinematics. Focusing on the model uncertainty of stance and swing phase switching within gait cycle, a novel invariant extended Kalman filter (EKF) was contrived to produce state estimation. Towards the rotation path, the people executed walking locomotion in simulation. Compared to the classical EKF, the more rapid error convergence for pedestrian state estimation is accomplished using the invariant extended Kalman filter (InEKF). This methodology demonstrated the validity, feasibility and accuracy of pedestrian inertial state estimation with InEKF, which expanded the application scope of inertial measurement apparatus.
+Keywords—Invariant Kalman filter, lower limb kinematics, state estimation, Inertial Measurement Unit
+I. INTRODUCTION
+With the continuous increase in people’s demand for precise
+position and motion state, the widespread employ of portable
+device promotes the development of localization system. The
+technology of motion state acquirement has applied in several
+aspects of life, including the human-machine interaction[1],
+motion capture[2], and exoskeleton[3]. The IMU-based
+pedestrian state estimation is a kind of micro-electromechanical
+system, whose benefits are high autonomy, intellectuality,
+reliability and low cost.
+On account of the existence of stance phase that foot can
+maintain relative stillstand with the ground. The Zero Velocity
+Update (ZUPT) solved the error accumulation issues[4]. During
+the Zero-Velocity period, Kalman Filer is usually used to correct
+systematic errors. Specifically, importing the observed quantity
+is to construct constrain and correct error[5][6]. To restrain the
+error accumulation resulted from integral operator, the
+Pedestrian Dead Reckoning[7] computes the real-time position
+of pedestrian through monitoring the locomotion data containing
+the step length, step frequency, and orientation. The common
+approaches of step length works through fitting acceleration
+including the linear and nonlinear model. However, the step size
+estimation determines the parameters through collecting gait
+features. So the accuracy of step length model relies on the gait
+statistical information.
+The discrete and continuous states are scheduled in
+pedestrian locomotion. Apart from the stance phase, a typical
+gait involves the swing phase which forms variable-speed
+trajectory. The selection of sensor position can influence the
+measured acceleration variation when foot contacts with ground,
+leading to the low zero-speed detection accuracy[8]. Placing the
+IMU on feet, the instantaneous impact generated from touching
+the ground[9] causes extreme value in acceleration measurement.
+The faster the walking speed is, the shorter the relative stationary
+time of ground touching will be. It becomes apparent that the
+error of inertial system grows bigger. Whereas, while putting
+IMU on the lower leg and waist, the occurrence of sensor data
+abnormity originated from strenuous exercise decreases due to
+the lower impulse.
+Adding sensors[10] can increase the observed value to boost
+the positional accuracy of system. But utilizing the visual
+sensors to assistant localization enhances system cost[11]. Even
+though novel sensor arrangement can boost the localization
+accuracy, but also it may reduce the system portability and
+increase complexity.
+These days the disparate Kalman filters[12] have been used
+to estimate body pose and velocity through the nonlinear
+forward kinematics[13]. The EKF is also applied to additionally
+process the inaccuracy of the nonlinear kinematics chain and
+sensor placement imperfections. Nevertheless, the EKF has
+pretty high requirements[14] for the accuracy of initial values. If
+the difference between initial value setup of state and practical
+situation emerges pretty big, the filter is hard to converge.
+Furthermore, the EKF can leads to inconsistency issues[15]. The
+EKF calculate current covariance matrix through linearization of
+previous state, while the actual value of current state covariance
+matrix does not stay the same with it. The InEKF applies group
+transformation to state variables based on Lie algebra and
+changes the defined way of errors. The independence of the
+system matrix and the state estimated values are realized,
+expanding the state space that ensures the convergency of state
+and covariance[16].
+This work used the pedestrian waist and double lower limbs,
+which are considered as rigid bodies under the condition without
+bringing new type sensor. Different with step length estimation
+based on empirically fitted model such as pedestrian dead
+reckoning (PDR)[17] and zero velocity update(ZUPT)[18], this
+work placed IMU on waist, thighs and calves of two legs, as well
+as feet. Fashion the low-limbs kinematics to estimate the
+pedestrian motion state. Fusing IMU data with InEKF restrained
+estimation error, furtherly improving the accuracy.
+2025 5th International Conference on Electronics, Circuits and Information Engineering (ECIE)
+979-8-3315-1401-3/25/$31.00 ©2025 IEEE 351
+2025 5th International Conference on Electronics, Circuits and Information Engineering (ECIE) | 979-8-3315-1401-3/25/$31.00 ©2025 IEEE | DOI: 10.1109/ECIE65947.2025.11087111
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 07,2025 at 09:59:54 UTC from IEEE Xplore. Restrictions apply.
+
+
+II. INVARIANT EXTENDED KALMAN FILTERING
+This section involved some fundamental concepts related to
+the special orthogonal group SOሺ3ሻ and its associated Lie
+algebra soሺ3ሻ, which are essential to speculate the InEKF theory.
+The elements in special orthogonal group SOሺ3ሻ consist of
+3×3 real matrix R that satisfy:
+R் R ൌ I and det ሺRሻ ൌ 1
+where I is the 3×3 identity matrix. SOሺ3ሻ is a matrix Lie group,
+and the associated Lie algebra is written as soሺ3ሻ, which is a 3×3
+skew-symmetric matrix. For the convenience of calculation, the
+linear mapping from Rଷ to soሺ3ሻ is defined as:
+w^ ൌ ൥
+0 െwଷ wଶ
+wଷ 0 െwଵ
+െwଶ wଵ 0 ൩ 
+where w ൌ ሾwଵ, wଶ, wଷሿ் εRଷ.
+The connection between soሺ3ሻ and SOሺ3ሻ is constructed
+from exponential map exp:
+expሺw^ሻ ൌ ∑ ൫w^൯೙
+௡! ൌ I ൅ ௦௜௡‖w‖
+‖w‖
+௡ஶୀ଴ w^ ൅ ଵି௖௢௦ ‖w‖
+‖w‖మ ሺw^ሻଶ 
+in which ‖∙‖ denotes the standard vector norm. For simplicity,
+we denote expሺw^ሻ ൌ Expሺwሻ .
+For any R ∈ SOሺ3ሻ and w^ ∈ soሺ3ሻ, the adjoint mapping is
+defined as:
+Rw^R் ൌ ሺRwሻ^ 
+Additionally, the left Jacobian J(w^) of SOሺ3ሻ is defined as:
+Jሺw^ሻ ൌ ∑ ൫w^൯೙
+ሺ௡ାଵሻ!
+௡∞ୀ଴ 
+which can be expressed as:
+Jሺw^ሻ ൌ sin‖w‖
+‖w‖ I ൅ ቆ1 െ sin‖w‖
+‖w‖ ቇ aa் ൅ 1 െ cos‖w‖
+‖w‖ a^
+where ‖w‖ is the rotation angle and a ൌ w
+‖w‖ is the rotation axis
+with unit length.
+For a continuous trajectory Rሺtሻ in motion on SOሺ3ሻ, the
+dynamics are given by:
+ௗ
+ௗ௧ R ൌ f௪ሺRሻ ൌ Rw^ ൌ Rw^R் R ൌ ሺRwሻ^R 
+For the trajectory Rሺtሻ and its estimation ෡Rሺtሻ in SOሺ3ሻ,
+there are two methods to define the error between them :
+ Right-invariant error: η ൌ ෡RR்
+ Left-invariant error: η ൌ R் ෡R
+The above-mentioned error remains constant for any group
+element in X ∈ SOሺ3ሻ. But the common linear error R െ R෡ is
+not an element in SOሺ3ሻ. The right-invariant error is used in this
+paper due to its convenience in calculation. The dynamics f௪ሺRሻ
+satisfies the "group affine" property:
+f௪൫R1R2൯ ൌ R1R2w^
+ൌ f௪൫R1൯R2 ൅ R1f௪൫R2൯ െ R1f௪ሺIሻR2
+This property ensures that the error dynamics is trajectory
+independent. That is
+d
+dt η௥ ൌ d
+dt ቀ෡RRTቁ ൌ d
+dt ൫R෡൯RT ൅ R෡ d
+dt ቀRTቁ
+ൌ ෡Rw^RT ൅ R෡ሺRw^ሻT ൌ R෡w^RT െ R෡w^RT ൌ0 d
+dt η௟ ൌ d
+dt ቀRTR෡ቁ ൌ d
+dt ቀRTቁ R෡ ൅ RT d
+dt ൫෡R൯
+ൌ െw^RTR෡ ൅ RTR෡w^ ൌ η௟w^ െ w^η௟ ൌ 0
+For stochastic variables in SOሺ3ሻ, the state is represented as:
+R ൌ expሺε^ሻR෡ 
+where R෡ ∈ SOሺ3ሻ is the prescribed, and ε ∈ Rଷ is a zero-mean
+Gaussian process with covariance Pఌ, that is ε~Nሺ0, Pఌ, ሻ. The
+R is referred as right-translated exponential noise with right
+invariant covariance Pఌ, denoted as R~NR൫R෡, Pఌ൯.
+III. SYSTEM MODEL
+To estimate the orientation, velocity, and position of the
+body (IMU) in the world frame, an auxiliary inertial navigation
+is enacted. The motion states are described as Rௐ஻ሺtሻ, vௐ஻ሺtሻ,
+and pௐ஻ሺtሻ separately. Additionally, attach the foot contact
+points pௐ௖ሺtሻ in the world frame. The above-mentioned state
+variables formulates a matrix Lie Group G. During the period of
+N contact points, the state X௧ ∈ SEேାଶሺ3ሻ is defined by the
+following matrix.
+X௧ ≜
+⎣⎢⎢⎡R௧ v௧ p௧ d௧
+0ଵ,ଷ 1 0 0
+0ଵ,ଷ
+0ଵ,ଷ
+0 0
+1
+0 01 ⎦⎥⎥⎤
+,u௧ ൌ ൤ ෥ωௐ஻ሺtሻ
+a෤ௐ஻ሺtሻ ൨ ≜ ൤ωa෥෤௧௧൨
+in which the input u௧ is arranged from the angular velocity
+෥ωௐ஻ሺtሻ and linear acceleration a෤ௐ஻ሺtሻ measuring from the
+IMU in the body (or IMU ) frame. The Lie algebra of G is an
+N ൅ 5 dimensional square matrix, which is expressed by g. It is important to establish a map Lq:Rଷேାଽ [19] that maps a vector
+to the corresponding element of the Lie algebra. When people
+contacts single foot with ground, for instance this function is
+characterized as:
+Lqሺξሻ ൌ
+⎣⎢⎢⎡ሺξோሻൈ ξ௩ ξ௣ ξௗ
+0ଵ,ଷ 0 0 0
+0ଵ,ଷ
+0ଵ,ଷ
+00 00 00 ⎦⎥⎥⎤
+, 
+352
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 07,2025 at 09:59:54 UTC from IEEE Xplore. Restrictions apply.
+
+
+where ሺ⋅ሻൈ represents a 3 ൈ 3 skew-symmetric matrix. The
+adjoint operator is shown as follows.
+AdX೟ ൌ ൦
+R 0 00
+ሺv௧ሻൈR௧ R௧ 0 0
+ሺp௧ ሻൈ R ௧
+ሺd௧ ሻൈ R ௧
+00
+R0௧
+R0௧
+൪. 
+IV. RIGHT-INVARIANT EKF FOR DOUBLE LOWER KINEMATICS-BASED KALMAN MODEL
+In practical realization, the measurements from IMU sensors
+always contains the gyroscope and accelerometer biases,
+desiring additional modeling. There are two approaches to
+handle these appended states. The one is to set the biases as
+constant parameters. Assume that they usually change over a
+longer period of time than the experiment[20]. Then we can
+calibrate these biases in a separate experiment. Another one
+method regards the biases as a part of the estimated states. Then
+the deviation can be estimated simultaneously while estimating
+the attitude. The latter scheme is adopted in this paper, because
+the on-line real-time compensation of the influence of deviation
+can improve the accuracy of attitude estimation. Once the
+deviation is taken into account, no Lie group can satisfy the
+group affine properties of the dynamic equation[21]. Even
+though several theoretical characters are no longer valid, it is
+still possible to design an “augmented InEKF” that still
+outperforms the “standard EKF”[22]. Due to that the two
+fashions of processing deviation are similar, we only discuss
+gyroscope bias in this section for the purpose of saving text space.
+A. Containing IMU Biases
+The gyroscope bias is slow-varying signal which disturbs the
+measured results in an additive way.
+෥ω௧ ൌ ω௧ ൅ b௧௚ ൅ w௧௚,w௧௚ ∼ N൫0ଷ,ଵ, ∑௚൯ 
+The gyroscope bias builds a parameter vector requiring
+accurate estimation to be a part of the RI-EKF states.
+θ௧ ≜ b௚ሺtሻ ≜ b௧௚ ∈ R଺ 
+The state of model becomes the original matrix Lie group and bias vector ൫X௧,θ௧൯ ∈ G ൈ R଺ . Now define the right
+invariant error as follows:
+e௧௥ ≜ ൫X෡௧Xି௧ଵ , θ෡௧ െ θ௧൯ ≜ ሺη௧௥, ζ௧ሻ 
+in which the right-invariant error is
+η௧௥ ൌ
+⎣⎢⎢⎢⎢⎡෡R௧R்௧ vො௧ െ ෡R௧R௧Tv௧ pෝ௧ െ ෡R௧R௧Tp௧ dመ௧ െ ෡R௧R௧Td௧
+01,3 1 0 0
+01,3
+01,3
+0 0
+1 0
+0
+1 ⎦⎥⎥⎥⎥⎤
+and the bias vector can be written as
+ζ௧ ൌ መb௧௚ െ b௧௚ ≜ ζ௧௚ 
+Now the deterministic system dynamics depends on the
+system inputs u௧ and the bias parameters θ௧:
+fሺ θ௧, u௧ሻሺX௧ሻ
+ൌ
+⎣⎢⎢⎢⎢⎡R௧൫ω෥ ௧ െ b௧௚൯ൈ R௧ሺa෤௧ െ b௧௔ሻ ൅ g v௧ 03,1
+01,3 1 0 0
+01,3
+01,3
+0 0
+1 0
+0
+1 ⎥⎥⎥⎥⎤⎦
+The bias b௧௚ dynamically employs the typical “Brown
+Motion” model to model. Therefore, its derivative is white
+gaussian noise, capturing the slow-time-varying property of
+parameter:
+ሶb௧௚w௧௕௚ 
+For the purpose of calculating the linearizing error dynamic
+state, firstly differentiate the augmented right-invariant error.
+ௗ
+ௗ௧ e௧௥ ൌ ቀ ௗ
+ௗ௧ η௧௥, w௧௕௚ቁ 
+After executing the chain rule and performing a first order
+approximation, η௧௥ ൌ expሺξ௧ሻ ൎ I௔ ൅ L௚ሺξ௧ሻ , the augmented
+invariant error dynamics estimates the trajectory only depending
+on the noise and bias error ζ௧. When there is no noise and bias,
+the error dynamics has no dependence on estimating trajectory.
+Now construct a linear system:
+ௗ
+ௗ௧ ൬൤ξζ௧௧൨൰ ൌ A௧ ൤ζξ௧௧൨ ൅ ൤AdX෡೟ 0ଵଶ,଺
+0଺,ଵଶ I଺ ൨ w௧ 
+where the block structure A௧ ൌ ൤AX AX,θ
+0 Aθ ൨ . And the noise
+vector is outlined as w௧ ≜ vec൫w௧௚, 0ଵ,ଷ, hோሺα෥௧ሻw௧௩, w௧௕௚ ൯.
+B. Right-invariant Forward Kinematic Measurement Model
+The α෤௧ ∈ Rெindicates the joint position vector between the
+body and the contact points. It is assumed that the encoder
+measurement is additionally disrupted by the white Gaussian
+noise.
+α෥௧ ൌ α௧ ൅ w௧ఈ,w௧ఈ ∼ N൫0ெ,ଵ, ∑ఈ൯ 
+Combining the forward kinematics, define the contact point
+position in the body frame in the following equation.
+p஻஼ሺtሻ ≜ h௣ሺ෥α௧ െ w௧ఈሻ ൎ h௣ሺα෥௧ሻ െ J௩ሺα෥௧ሻw௧ఈ 
+in which the Jacobian matrix J௩ corresponds to linear
+velocity[15]. Therefore, the position measurement result of
+forward kinematics yields
+h௣ሺα෥௧ሻ ൌ R்௧ ሺd௧ െ p௧ሻ ൅ J௩ሺα෥௧ሻw௧ఈ 
+It does not rely on the biases of IMU. As for the augmented
+right-invariant error, the matrix H௧ can simply add zero to
+353
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 07,2025 at 09:59:54 UTC from IEEE Xplore. Restrictions apply.
+
+
+satisfy the dimensionality requirements. The linear update
+equation becomes
+
+൤
+ξ
+௧
+ା
+ζ
+௧
+ା
+൨
+ൌ
+൤
+ξ
+௧
+ζ
+௧
+൨
+െ
+ቈ
+K
+௧
+ξ
+K
+௧
+ζ
+቉ቆ
+H
+௧
+൤
+ξ
+௧
+ζ
+௧
+൨
+െR
+෡
+௧
+ሺ
+J
+௩
+ሺ
+α
+෥
+௧
+ሻ
+w
+௧
+ఈ
+ሻ
+ቇ
+ 
+And the matrix of measurement model is
+ H
+௧
+ൌ
+ሾ
+H
+X
+H
+θ
+ሿ
+ 
+C. Continuous RI-EKF System
+Finally, the augmented InEKF equation including gyroscope
+deviation can be integrated as follows. The estimated states
+utilizes the next differential equation to predict the propagation.
+ቀ
+ௗ ௗ௧
+X
+෡
+௧
+,
+ௗ ௗ௧
+θ
+෡
+௧
+ቁ
+ൌ
+ቀ
+f
+൫
+θ
+෡
+೟
+,u
+೟
+൯
+൫
+X
+෡
+௧
+൯
+,0
+଺,ଵ
+ቁ
+
+The dynamic covariance of right-invariance error is
+calculated through solving the Riccati equation.
+ௗ ௗ௧
+P
+௧
+ൌA
+௧
+P
+௧
+൅P
+௧
+A
+௧
+்
+൅Q
+෡
+௧
+
+where the matrices A
+௧
+and Q
+෡
+௧
+are explicit as follows:
+A
+௧
+ൌ
+⎣
+⎢
+⎢
+⎢
+⎢
+⎢
+⎡
+00
+ሺ
+g
+ሻ
+ൈ
+0 0I
+00
+00
+00
+െR
+෡
+௧
+0 െ
+ሺ
+v
+ො
+௧
+ሻ
+ൈ
+R
+෡
+௧
+െR
+෡
+௧
+െ
+ሺ
+p
+ෝ
+௧
+ሻ
+ൈ
+R
+෡
+௧
+0
+00
+00 00
+00
+00 00
+െ
+൫
+d
+መ
+௧
+൯
+ൈ
+R
+෡
+௧
+0
+00
+00
+⎦
+⎥
+⎥
+⎥
+⎥
+⎥
+⎤
+Q
+෡
+௧
+ൌ
+ቈ
+Ad
+X
+෡
+೟
+0
+12,6
+0
+6,12
+I
+6
+቉
+Cov
+ሺ
+w
+௧
+ሻ
+ቈ
+Ad
+X
+෡
+೟
+0
+12,6
+0
+6,12
+I
+6
+቉
+்
+The update equation of state estimation is
+൫
+X
+෡
+௧
+ା
+,θ
+௧
+ା
+൯
+ൌ
+൬
+exp
+ቀ
+K
+௧
+ξ
+Π
+൫
+X
+෡
+௧
+Y
+௧
+൯ቁ
+X
+෡
+௧
+,θ
+෡
+௧
+൅K
+௧
+ξ
+Π
+൫
+X
+෡
+௧
+Y
+௧
+൯൰
+
+in which the computing approaches of gains K
+௧
+ξ
+and K
+௧
+ξ
+are computing are
+S
+௧
+ൌH
+௧
+P
+௧
+H
+௧
+୘
+൅N
+෡
+௧
+
+K
+௧
+ൌP
+௧
+H
+௧
+୘
+S
+௧
+ିଵ
+ 
+with the following measurement, output, and noise matrices,
+H
+௧
+்
+ൌ
+ቂ
+h
+௣
+T
+ሺ
+α
+෥
+௧
+ሻ
+0
+1 െ1
+ቃ
+H
+௧
+ൌ
+ሾ
+0 0 െI I 0 0
+ሿ
+N
+෡
+௧
+ൌR
+෡
+௧
+J
+௩
+ሺ
+α
+෥
+௧
+ሻ
+Cov
+ሺ
+w
+௧
+ఈ
+ሻ
+J
+௩
+்
+ሺ
+α
+෥
+௧
+ሻ
+R
+෡
+௧
+T
+D. Discretization
+In the previous derivation course, the filter state propagation
+is continuous-time. However, these equations need to be discrete
+to achieve the filter process. For this purpose, we make the zero
+order hold and operate Euler integration on IMU measurement
+inputs from t
+௞
+to t
+௞ାଵ
+. The error dynamic is simple Gaussian
+noise, the discrete-form deterministic dynamic equation is
+d
+መ
+௞ାଵ
+ൌd
+መ
+௞
+,b
+መ
+௞ାଵ
+௚
+ൌb
+መ
+௞
+௚
+,b
+መ
+௞ାଵ
+௔
+ൌb
+መ
+௞
+௔
+ 
+It is assumed that we can update the R
+෠
+௞ାଵ
+through
+exponential map in SO
+ሺ
+3
+ሻ
+while performing zero-order hold on
+measured angular velocity.
+R
+෡
+௞ାଵ
+ൌR
+෡
+௞
+exp
+ቀ൫
+ω
+ෝ
+௞
+െb
+መ
+௞
+௚
+൯
+∆t
+ቁ
+
+v
+ො
+௞ାଵ
+ൌv
+ො
+௞
+൅R
+෡
+௞
+൫
+a
+෤
+௞
+െb
+መ
+௞
+௔
+൯
+∆t ൅ g∆t 
+p
+ෝ
+௞ାଵ
+ൌp
+ෝ
+௞
+൅v
+ො
+௞
+∆t ൅
+ଵ ଶ
+R
+෡
+௞
+൫
+a
+෤
+௞
+െb
+መ
+௞
+௔
+൯
+∆t
+ଶ
+൅
+ଵ ଶ
+g∆t
+ଶ
+ 
+where ∆t ൌ t
+௞ାଵ
+െt
+௞
+. In order to update the covariance, we
+need to resolve the Riccati equation of continuous time, whose
+analytic solution is
+P
+௞ାଵ
+ൌφ
+ሺ
+t
+௞ାଵ
+,t
+௞
+ሻ
+P
+௞
+φ
+ሺ
+t
+௞ାଵ
+,t
+௞
+ሻ
+୘
+൅Q
+෡
+௞
+
+in which the discrete noise covariance matrix becomes
+Q
+෡
+௞
+ൌ
+׬
+φ
+ሺ
+t
+௞ାଵ
+,t
+௞
+ሻ
+Q
+෡
+௧
+φ
+ሺ
+t
+௞ାଵ
+,t
+௞
+ሻ
+dt
+௧
+ೖశభ ௧
+ೖ
+
+the state-transition matrix φ
+ሺ
+t
+௞ାଵ
+,t
+௞
+ሻ
+satisfies
+ୢ ୢ୲
+φ
+ሺ
+t, t
+௞
+ሻ
+ൌA
+t
+φ
+ሺ
+t, t
+௞
+ሻ
+,φ
+ሺ
+t
+௞
+,t
+௞
+ሻ
+ൌ I 
+Solve the formula, the discrete-time linear model is
+organized by φ
+ሺ
+t
+௞ାଵ
+,t
+௞
+ሻ
+≜
+ሺ
+A
+t
+∆t
+ሻ
+. Similar to the state
+transition matrix, the discrete noise covariance matrix also has
+an analytical solution. Nevertheless, this matrix is usually approximated as Q
+෡
+௞
+ൎφ
+ሺ
+t
+௞ାଵ
+,t
+௞
+ሻ
+Q
+෡
+௧
+φ
+ሺ
+t
+௞ାଵ
+,t
+௞
+ሻ
+∆t in practical
+application.
+V. TRANSITING CONTACT AND SWING STATE
+Part III and IV narrated the calculation flow of the RI-EKF
+for pedestrian locomotion. It is effective when touching point is
+constant with time-varying. Even though contacts with ground
+on pedestrian feet are discrete actions and determined as
+established and damaged. When pedestrian navigates through
+the surroundings, we found that it is critical to conveniently
+apply or remove the contact state in and from the observer.
+A. Eliminating contact points
+To removing the a previous contact point from the state, we
+simply eliminates the corresponding column or row from matrix
+Lie group to marginalize the variable. Meantime, the
+corresponding elements of the covariance matrix are also erased.
+This procedure can be accomplished through a simple linear
+transformation. For instance, when single contact becomes zeros
+contact in pedestrian walking, the newly reduced covariance can
+be speculated by the following formula.
+354
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 07,2025 at 09:59:54 UTC from IEEE Xplore. Restrictions apply.
+
+
+቎
+ξ௧ோ
+ξ௧௩
+ξ௧௣቏ ൌ ൥ I 0 0 0
+0 I 00
+00 I0
+൩
+⎢⎢⎢⎡⎣ξ௧ோ
+ξ௧௩
+ξ௧௣
+ξ௧ௗ ⎦⎥⎥⎥⎤
+≜ F௥ξ௧ 
+That is ξ௧௡௘௪ ൌ F௥P௧F்௥ .
+B. Applying Contact Points
+While pedestrian is locomoting on the ground, the new
+contacts with environment are generating. The states and
+covariance matrix need to be augmented. Especially, we
+demands to pay attention to the mean and covariance with
+initializing the lately estimated contact points. If pedestrian turns
+into one contact from no contact as an example, the initial
+estimation can be attained from the following forward
+kinematics:
+dመ௧ ൌ pෝ௧ ൅ ෡R௧h௣ሺα෥௧ሻ 
+For the purpose of calculating the covariance, we focus on
+the right-invariant error.
+dመ௧ െ ෡R௧R௧୘d௧ ൌ pෝ௧ െ ෡R௧R௧୘d௧ ൅ ෡R௧h௣ሺα෥௧ሻ 
+η௧ௗ ൌ pෝ௧ െ ෡R௧R௧୘ ቀp௧ ൅ R௧h௣ሺα෥௧ െ w௧ఈሻቁ ൅ ෡R௧h௣ሺα෥௧ሻ
+ η௧ௗ ൎ η௧௣ ൅ ෡R௧J௩ሺα෥௧ሻw௧ఈ 
+Thus, we have η௧ௗ ൌ η௧௣ ൅ ෡R௧J௩ሺα෥௧ሻw௧ఈ.
+Accordingly, the covariance can be augmented using the
+below linear map.
+⎢⎢⎢⎡⎣ξ௧ோ
+ξ௧௩
+ξ௧௣
+ξ௧ௗ ⎦⎥⎥⎥⎤
+ൌ቎
+I 00 0I0
+0 0
+0 0
+I I
+቏቎
+ξ௧ோ
+ξ௧௩
+ξ௧௣቏ ൅ ൦
+000
+෡R௧J௩ሺ෥α௧ሻ
+൪ w௧ఈ 
+ ξ௧௡௘௪ ≜ F௔ξ௧ ൅ G௧w௧ఈ 
+ ⟹ P௧௡௘௪ ൌ F௔P௧F்௔ ൅ G௧Covሺw௧ఈሻG௧୘ 
+VI. SIMULATION
+The IMU utilized to measure the 10 freedoms of lower joints,
+is equipped on thighs, calves, and feet of double lower limbs.
+Combining the IMU fixed on waist to provide angular velocity
+and linear acceleration measurements, the kinematics of
+pedestrian locomotion is computed.
+The EKF trial proceeded the same specification with InEKF
+run. The proposed algorithm and EKF flow were operated in
+MATLAB. The computation time of single filter loop for both
+algorithms was approximately 1ms, possessing low calculation
+consumption. The associated parameter initialization and
+specification are listed in Table I.
+TABLE I. SIMULATION NOISE STATISTICS AND INITIAL COVARIANCE
+Measurement Type
+Noise st.
+dev. State Element Initial st.
+dev. Linear
+Acceleration 0.04 m/s2 Orientation of IMU ±5.0 deg
+Angular Velocity 0.01 rad/s Velocity of IMU ±0.05 m/s Accelerometer
+Bias 0.01 m/s2 Position of IMU ±5 m
+Gyroscope Bias 0.001 rad/s Position of Foot ±1m Contact Linear
+Velocity 0.01 m/s Gyroscope Bias 0.01 rad/s
+Accelerometer Bias 0.01 m/s
+The body position, velocity, and posture along x, y direction
+and yaw estimates for both filters are shown in Fig. 1, 2, and 3.
+The nominated InEKF converges faster than EKF in all 60 runs,
+where the dashed black thick lines represented the practical
+motion states. Other colorful line indicated the estimation under
+different initial sample values. The EKF funs almost did not get
+also the stability and convergence with true values.
+Fig.1 Position estimation comparison
+Fig.2 Velocity estimation comparison
+355
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 07,2025 at 09:59:54 UTC from IEEE Xplore. Restrictions apply.
+
+
+Fig.3 Posture estimation comparison
+Compared to the typical EKF, the improved filter
+convergency rate attributed to the higher accuracy of the
+proposed estimation flow with large deviation between initial
+and actual values. Additionally, the more efficient error
+correction for the duration of update procedure in the proposed
+filter. When the estimated error had emerged relatively stable,
+the estimation of proposed algorithm closer to the truth value.
+Among the position, velocity and posture various state
+estimation aspects, the convergence velocity and accuracy had
+evident superiority than the existing EKF.
+VII. CONCLUSIONS
+Exercising simulation results on a right-invariant form of
+the extended Kalman filter, this article derived an motion state
+observer for double lower-limbs kinematics of pedestrian. With
+available IMU sensors on pedestrian’s waist and lower limbs,
+the developed scheme has the capability to improve the
+accuracy and reliability of state estimation of pedestrian. We
+also included IMU biases in the state estimator and showed that,
+the proposed system has better performance than that of a
+commonly used EKF. Future work includes integration of the
+state estimation developed in this work to operate and even
+more complicated action in experiment, constructing a outdoor
+system.
+REFERENCE
+[1] H. Zhou, G. Yang, H. Lv, X. Huang, H. Yang, and Z. Pang, “IoT-enabled dual-arm motion capture and mapping for telerobotics in home care,” IEEE J. Biomed. Health Inform. vol. 24, no. 6, pp. 1541–1549, Jun. 2020.
+[2] L. Jie, L. Xiaofeng, and W. Zhelong, et al, “Real-Time Human Motion Capture Based on Wearable Inertial Sensor Networks,” IEEE Internet of Things J. vol. 9, no. 11, pp. 8953-8966, Jun. 2022.
+[3] P. Pace, G. Aloi, R. Gravina, G. Caliciuri, G. Fortino, and A. Liotta, “An edge-based architecture to support efficient applications for healthcare industry 4.0,” IEEE Trans. Ind. Informat. vol. 15, no. 1, pp. 481–489, Jan. 2019.
+[4] J. Wahlström and I. Skog, “Fifteen years of progress at zero velocity: A review,” IEEE Sensors J. vol. 21, no. 2, pp.1139-1151, Jan.2021.
+[5] Y. Cui, Z. Xiong, L. Xing, et al, "Inertial-based passable map construction and pedestrian localization method grounded in vision-assisted optimization," J. of Chinese Inertial Tech. vol. 31, no. 04, pp. 335-342, 2023.
+[6] D. Xie, J. Jiang, J. Wu, et al. “A robust GNSS/PDR integration scheme with GRU-based zero-velocity detection for mass-pedestrians,” Remote sensing, vol. 14, no. 2, pp. 300, 2022.
+[7] A. Alcázar-Fernández, Á. De-La-Llana-Calvo, and J.L. Lázaro-Galilea, et al, “Seamless mobile indoor navigation with VLP-PDR,” IEEE Sensors J. vol. 24, no. 7, pp. 11504-11514, 2024.
+[8] Z. Li, X. Xu, and M. Ji, et al., “Pedestrian positioning based on dual inertial sensors and foot geometric constraints,” IEEE Trans. on Industrial Electronics, vol. 69, no. 6, pp. 6401-6409, 2021.
+[9] W. Li, Z. Xiong, and Y. Ding Y, et al, “Lower limb model based inertial indoor pedestrian navigation system for walking and running,” IEEE Access, vol. 9, pp. 42059-42070, 2021.
+[10] Y. Zou, Li J, and Wang W, “Design of pedestrian indoor navigation system based on MEMS inertial sensor and barometer,” Transducer and Microsystem Technologies, vol. 42, no. 02, pp.91-94, 2017.
+[11] X. Xu, N. Li, and Y. Yao, “Lidar SLAM algorithm in outdoor environment based on fast loop detection,” Journal of Chinese Inertial Technology, vol. 30, no. 06, pp. 716-722, 2022.
+[12] Q. Yuan and I.M. Chen, “Localization and velocity tracking of human via 3 IMU sensors,” Sensors and Actuators A: Physical, vol. 212, pp. 25–33, 2014.
+[13] Q. Yuan and I.-M. Chen, “3-D localization of human based on an inertial capture system,” IEEE Transactions on Robotics, vol. 29, no. 3, pp. 806812, 2013.
+[14] Y. Zhang, K. Chen, and J. Yi, “Rider trunk and bicycle pose estimation with fusion of force/inertial sensors,” IEEE Transactions on Biomedical Engineering, vol. 60, no. 9, pp. 2541–2551, 2013.
+[15] Y. Zhang, K. Chen, J. Yi, T. Liu, and Q. Pan, “Whole-body pose estimation in human bicycle riding using a small set of wearable sensors,” IEEE/ASME Transactions on Mechatronics, vol. 21, no. 1, pp. 163–174, 2015.
+[16] A. Barrau and S. Bonnabel, “The invariant extended Kalman filter as a stable observer,” IEEE Trans. Autom. Control, vol. 62, no. 4, pp.17971812, 2017.
+[17] S. Vandermeeren and H. Steendam, “Deep-learning-based step detection and step length estimation with a handheld IMU," IEEE Sensors Journal, vol. 22, no. 24, 2022.
+[18] X. Niu, Y. Li, J. Kuang and P. Zhang, “Data fusion of dual foot-mounted IMU for pedestrian navigation,” IEEE Sensors J. vol. 19, no. 12, pp. 45774584, Jun. 2019.
+[19] S. Zhang, “State estimation of quadruped robot based on in variant extended Kalman filter,” Harbin: Harbin Institute of Technology, 2021.
+[20] A. Barrau, “Non-linear state error based extended Kalman filters with applications to navigation,” PhD thesis, Mines Paristech, 2015.
+[21] E. Potokar, K. Norman, and J. Mangelson, “Invariant extended Kalman filtering for underwater navigation,” IEEE Robotics and Automation Letters, vol. 6, no. 3, pp. 5792–5799, 2021.
+[22] Y. Gao, C. Yuan, and Y. Gu, “Invariant extended Kalman filtering for hybrid models of bipedal robot walking,” in Proc. of IFAC Modeling,Estimation and Control Conference, pp. 290–297, 2021.
+356
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 07,2025 at 09:59:54 UTC from IEEE Xplore. Restrictions apply.
