@@ -1,0 +1,512 @@
+Aerospace Science and Technology 162 (2025) 110244
+Available online 25 April 2025 1270-9638/© 2025 Elsevier Masson SAS. All rights are reserved, including those for text and data mining, AI training, and similar technologies.
+Contents lists available at ScienceDirect
+Aerospace Science and Technology
+journal homepage: www.elsevier.com/locate/aescte
+Maneuvering target tracking based on a random motion model and integrated random interacting multiple model filtering
+Fengqi Yang 1, Jinshan Zhong 1, Yingting Luo ∗, Ying Zhang, Xiaojing Shen, Yunmin Zhu
+College of Mathematics, Sichuan University, Chengdu, Sichuan 610064, PR China
+ARTICLE INFO ABSTRACT
+Communicated by Jérôme Morio
+Keywords:
+Random motion model Maneuvering target tracking Interacting multiple model algorithm Integrated random interacting multiple model algorithm
+Traditional maneuvering target tracking algorithms assume that the target motion model is either fixed or limited in number. For high-speed and highly maneuvering targets, the tracker’s performance degrades rapidly when the model set fails to adequately encompass the maneuvering mode or when there is a substantial deviation. Therefore, we propose a novel maneuvering target tracking method based on a random motion model. This algorithm employs a random model to describe the target maneuver, which is more widely applicable than traditional algorithms and remains more stable when the target maneuver is not covered by the model set. Additionally, in cases where the model set of the Interacting Multiple Model algorithm (IMM) does not align with the actual maneuvering state, the new method exhibits a smaller tracking error compared to IMM and shows no divergence trend. Finally, we combine IMM and the random motion model to propose an Integrated Random Interacting Multiple Model algorithm (IRIMM). The performance of the IRIMM algorithm closely matches that of IMM when provided with a perfectly accurate model set and significantly improves tracking effectiveness and stability when the model is incorrect.
+1. Introduction
+Over the last forty years, a lot of research on maneuvering target tracking has been conducted [1–3]. For maneuvering targets, maneuverability is often affected by changes in acceleration. Consequently, a fundamental challenge in maneuvering target tracking algorithms revolves around accurately modeling maneuvering acceleration. The commonly used statistical models can be roughly divided into two categories: time-series independent models and Markov models [4]. In time-series independent models, the main assumption is that the target’s acceleration or jerk is zero or constant, using time series independent disturbances to define the target maneuver. Examples of these models include the constant velocity model (CV), constant acceleration model (CA), and constant jerk model (CJ) [5,6]. On the other hand, the Markov model is different because it assumes the target acceleration and jerk are time-varying. Markov processes can describe the changing relationship between acceleration and jerk, as seen in models such as the Singer model, the current statistical model, and the Jerk model. Due to the uncertainty of the target motion state and system model, the above single model is often insufficient in describing the complex maneuvering target motion. Therefore, the current mainstream algo
+* Corresponding author. E-mail address: lyt83@163.com (Y. Luo). 1 Fengqi Yang and Jinshan Zhong contributed equally to this manuscript.
+rithm used for maneuvering model tracking is the multi-model method. Representative algorithms include the Interactive Multiple Model algorithm (IMM) [7,8], Variable Structure Multiple Model algorithm (VSMM) [9–11] and improved multiple-model algorithms based on IMM [12–16]. This type of algorithm usually consists of four steps: 1) multiple possible motion models for a given target; 2) combining, cutting, and probabilistic calculation of the models through appropriate methods; 3) estimating the target state separately based on a single model; 4) coalescing the estimation results of a single model to give the final overall estimation result. Whether it is a single-model method or a multi-model method, we assume that the target motion model is fixed or limited in number. When the model set cannot cover the maneuvering mode or when there is a large deviation, tracking performance deteriorates rapidly. However, increasing the model set in a multi-model algorithm not only increases computational complexity but also causes competition between the models, leading to a decrease in filter performance. In short, a limited number of models cannot accurately describe all the maneuvering states of the target. This is the main reason behind proposing this new
+https://doi.org/10.1016/j.ast.2025.110244 Received 10 August 2024; Received in revised form 1 April 2025; Accepted 22 April 2025
+
+
+Aerospace Science and Technology 162 (2025) 110244
+2
+F. Yang, J. Zhong, Y. Luo et al.
+algorithm: to find a new way to describe most maneuvering motion models. Consequently, we brought random variables into the target state transition matrix to build a random motion model. Because of the unfixed value of random variables, the random motion model can match as many other different motion models as possible. Then Random coefficient matrix Kalman Filter (RKF) [17] was used to estimate the target state. Compared with traditional algorithms, the new algorithm proposed in this paper is much less dependent on the target motion model. When the target is maneuvering, its performance is stable and the error is always at a lower level. When the model is correct, the traditional accurate model algorithm has the best tracking performance, and the new algorithm has basically the same performance as the traditional accurate model algorithm. But when the model set of the traditional method cannot cover the maneuvering model, the traditional algorithm performs poorly and the error diverges. In order to balance the accuracy and stability of target tracking, we propose a random interacting multiple model algorithm, which integrates the random model into the classic IMM algorithm. When the target motion state is included in the model set of the IRIMM algorithm, the algorithm assigns a high probability to the accurate model to ensure tracking accuracy. When the target motion state is not in the basic model set, the algorithm assigns a high probability to the random model to ensure stability. This method improves the error tolerance of the IMM algorithm to the model and further enhances the tracking accuracy of the random single model algorithm. Numerical examples show that regardless of how the target maneuvers, the performance of IRIMM is stable and the error converges. The rest of this paper is organized as follows. Section 2 introduces random motion model and the rationale. In Section 3, we derive the linear minimum variance recursive state estimator based on random motion model, it performs well compared with the traditional single or multiple model. The combination of IMM and the random motion model, which is called IRIMM, is shown in Section 4, it combines the IMM precision and the robustness of the random motion model. Finally, Section 5 provides conclusion and prospect.
+2. Random motion model
+Consider a discrete time dynamic system
+xk+1 = Fkxk + νk, (1)
+yk = Hkxk + ωk, (2)
+where xk ∈ r is the system state, yk ∈ N is the measurement, νk ∈ r
+is the process noise, and ωk ∈ N is the measurement noise. Fk ∈ r×r
+and Hk ∈ N×r are state transition matrix and measurement matrix respectively. The subscript k is the time index. For the convenience of notation and without loss of generality, we considered a two-dimensional motion, it can be directly expanded for higher dimensions. There are six components in the target state variable: position, velocity and acceleration on the x-axis and y-axis, which is x = [x, ̇x, ̈x, y, ẏ , ̈y]′. State transition matrix is a random coefficient matrix given by
+Fk =
+⎡⎢⎢⎢⎢⎢⎢⎢⎣
+1 T T2
+2 ζ1 0 0 0
+0 1 T ξ1 0 0 0 00 1 00 0
+0 0 0 1 T T2
+2 ζ2
+0 0 0 0 1 T ξ2 00 0 00 1
+⎤⎥⎥⎥⎥⎥⎥⎥⎦
+, (3)
+where ζ1, ξ1, ζ2 and ξ2 are Gaussian random variables with fixed means
+of a1, a2, a3, a4 and variances of σ2
+1, σ2
+2, σ2
+3 and σ2
+4 , respectively. T is
+the time interval. We assume the system (1) (2) has the following statistical properties: {Fk, νk, ωk, k = 0, 1, 2, ⋯} are all sequences of independent random variables temporally and across sequences as well as
+independent of x0. Moreover, we assume xk and {Fk, k = 0, 1, 2, ⋯} are independent mutually.
+Remark 1. For maneuvering targets, their maneuverability is typically induced by changes in acceleration. Traditional motion models describe maneuvering by modeling acceleration. Thus, the random state transition matrix Eq. (3) models acceleration-related terms as random variables, characterizing various maneuver modes:
+• When a1 = a2 = a3 = a4 = 1, the mean value of the random motion model is consistent with the Constant Acceleration (CA) model. • When a1 = a2 = a3 = a4 = 0, the mean value of the random motion model is consistent with the Constant Velocity (CV) model. • When ζ1, ξ1, ζ2, ξ2 take the different values, the random motion model characterizes a curved motion with time-varying acceleration from kT to (k + 1)T , resembling the Coordinated Turn (CT) model.
+We will derive the linear minimum variance recursive state estimator of the random motion model and apply it to the maneuvering target tracking algorithm.
+3. Single random motion model filtering
+3.1. State estimate based on random motion model
+The initial state x0, the noises νk, ωk, and the coefficient matrices Fk, have the following means and covariances
+E(x0) = μ0, E(x0 − μ0)(x0 − μ0)T = P0, (4)
+E(νk) = 0, E(νkνT
+k ) = Rνk , (5)
+E(ωk) = 0, E(ωkωT
+k ) = Rωk , (6)
+E(Fk) = F̄ k, Cov(Fikj , Fmkn) = CFikj Fmkn , (7)
+where Fikj is the (i, j)th entries of matrices Fk.
+Rewrite Fk as
+Fk = F̄ k + F̃ k. (8)
+Substituting Eq. (8) into Eq. (1), converts the original system to a new system
+xk+1 = F̄ kxk + ̃νk, (9)
+yk = Hkxk + ωk, (10)
+where
+̃νk = νk + F̃ kxk. (11)
+System (9), (10) has deterministic coefficient matrices, but the process noise contains the state. From the Appendix of [17], it is proved that the new system meets all the criteria for standard Kalman filtering, allowing us to derive the linear minimum variance recursive state estimate for the system based on RKF as follows. Step 1: Predict
+xk+1∣k = F̄ kxk∣k, (12)
+Pk+1∣k = F̄ kPkF̄ T
+k + R ̃νk , (13)
+Step 2: Update
+Kk+1 = Pk+1∣kH T
+k+1
+(
+Hk+1Pk+1∣kH T
+k+1 + Rωk
+)† , (14)
+xk+1∣k+1 = xk+1∣k + Kk+1
+(yk+1 − Hk+1xk+1∣k
+) , (15)
+Pk+1∣k+1 = (I − Kk+1Hk+1
+) Pk+1∣k, (16)
+
+
+Aerospace Science and Technology 162 (2025) 110244
+3
+F. Yang, J. Zhong, Y. Luo et al.
+where
+R ̃νk = Rνk + E (F̃ kE (xkxT
+k
+) F̃ T
+k
+) , (17)
+E (xk+1xT
+k+1
+) = F̄ kE (xkxT
+k
+) F̄ T
+k + E (F̃ kE (xkxT
+k
+) F̃ T
+k
+) + Rνk , (18)
+E(F̃ kE(xkxT
+k )F̃ T
+k )(m,n) =
+∑r
+i=1
+r ∑
+j=1
+CFmkiFnkj Xikj (19)
+x0∣0 = Ex0, P0∣0 = Var (x0
+) , E (x0xT
+0
+) = Ex0Ex0T + P0∣0. (20)
+The superscript “†” denotes Moore−Penrose pseudo inverse and Xikj
+denotes the (i, j)th entry of Xk = E(xkxT
+k ).
+3.2. Stability analysis
+In this subsection, we analyze the stability of state estimator of random motion model. For classical Kalman filter, if the system is uniformly controllable and uniformly observable, then the covariance is uniformly bounded. Similarly, the error covariance matrix Pk|k is bounded and the state estimator of random motion model is exponentially stable if the dynamic system (1) (2) satisfies the following assumptions.
+Assumption 1. The system (1) (2) is uniformly controllable if there exists a positive integer N and scalars α1 > 0, α2 < ∞ such that
+α1I ≤
+k ∑
+i=k−N +1
+̄Φk,iR ̃νi ̄ΦT
+k,i ≤ α2I, (21)
+where I is an identity matrix with appropriate dimension. The state transition matrix is defined by
+̄Φk,l =
+{ F̄ k−1F̄ k−2 ⋯ F̄ l, k > l
+I, k = l . (22)
+Assumption 2. The system (1) (2) is uniformly observable if there exists a positive integer N and scalars β1 > 0, β2 < ∞ such that
+β1I ≤
+∑k
+i=k−N
+̄Φi,kHiRωi H T
+i ̄ΦT
+i,k ≤ β2I, (23)
+where ̄Φi,k = ̄Φ−1
+k,i .
+Considering the converted dynamic system (9) (10), we can prove this conclusion with the exact method in [18,19]; Appendix C in [20]. Moreover, we have the upper bound and the lower bound as follows
+Pk|k ≤
+( α1 + Nα2
+2 β2
+α2
+1
+)
+I, (24)
+Pk|k ≥
+( β2
+1
+β1 + Nα2β2
+2
+)
+I. (25)
+3.3. Simulations
+In this section, we established common target maneuver motion simulation experiments to evaluate the tracking performance of the stochastic motion model compared to traditional maneuver models. The first numerical example is to compare the traditional single model with the random motion model, and the second is to compare multiple model with the random motion model. In both examples, consider a discrete time dynamic system
+xk+1 = Fkxk + νk, (26)
+yk = Hkxk + ωk. (27)
+The initial state x0 = [100, 10, 4
+√
+2, 100, 10, 4
+√
+2]T , P0|0 = diag{25, 9, 1, 25, 9, 1}, the time interval T = 1 s. The measurement matrix is given by
+Hk =
+[1 0 0 0 0 0 000100
+]
+. (28)
+The real motion of the target is produced by the following three models
+F1 =
+⎡⎢⎢⎢⎢⎢⎢⎣
+1T 00 0 0 0 1 00 0 0 0 0 10 0 0 0 0 01T 0 0 0 00 1 0 0 0 00 0 1
+⎤⎥⎥⎥⎥⎥⎥⎦
+,
+R(1)
+νk = q1.
+⎡⎢⎢⎢⎢⎢⎢⎣
+T 4∕3 T 3∕2 0 0 0 0 T 3∕2 T 0 0 0 0 0 000 00 0 0 0 T 4∕3 T 3∕2 0 0 0 0 T 3∕2 T 0 0 000 00
+⎤⎥⎥⎥⎥⎥⎥⎦
+, (29)
+F2 =
+⎡⎢⎢⎢⎢⎢⎢⎢⎣
+1 T T2
+2 00 0
+01 T 00 0 00 1 00 0
+0 0 0 1 T T2
+2
+00 0 01 T 00 0 00 1
+⎤⎥⎥⎥⎥⎥⎥⎥⎦
+,
+R(2)
+vk = q2.
+⎡⎢⎢⎢⎢⎢⎢⎣
+T 5∕20 T 4∕8 T 3∕6 0 0 0 T 4∕8 T 3∕3 T 2∕2 0 0 0 T 3∕6 T 2∕2 T 0 0 0 0 0 0 T 5∕20 T 4∕8 T 3∕6 0 0 0 T 4∕8 T 3∕3 T 2∕2 0 0 0 T 3∕6 T 2∕2 T
+⎤⎥⎥⎥⎥⎥⎥⎦
+, (30)
+F3 =
+⎡⎢⎢⎢⎢⎢⎢⎢⎢⎣
+1 sin ωT
+ω 0 0 cos ωT − 1
+ω0
+0 cos ωT 0 0 − sin ωT 0 0 0 10 0 0 0 1 − cos ωT
+ω 0 1 sin ωT
+ω0
+0 sin ωT 0 0 cos ωT 0 0 0 00 0 1
+⎤⎥⎥⎥⎥⎥⎥⎥⎥⎦
+, (31)
+R(3)
+vk = q3.
+⎡⎢⎢⎢⎢⎢⎢⎢⎣
+2(ωT −sin ωT ) ω3
+1−cos ωT
+ω2 0 0 ωT −sin ωT
+ω2 0
+1−cos ωT
+ω2 T 0 − ωT −sin ωT
+ω2 0 0 0 0 0 0 00 0 − ωT −sin ωT
+ω2 0 2(ωT −sin ωT )
+ω3
+1−cos ωT
+ω2 0
+ωT −sin ωT
+ω2 0 0 1−cos ωT
+ω2 T 0 0 0 0 0 00
+⎤⎥⎥⎥⎥⎥⎥⎥⎦
+,
+(32)
+where q1 = q2 = q3 = 1m2∕s3, which mean the power spectral density. The whole target trajectory is shown in Fig. 1. For 1 ≤ t ≤ 30, the target accelerates with 8 m∕s2; for 31 ≤ t ≤ 50, the target moves with CV;
+for 51 ≤ t ≤ 85, the target is doing a coordinate turn with ω = π
+20 rad∕s;
+for 86 ≤ t ≤ 105, the target moves with CV; for 106 ≤ t ≤ 140, the target
+is doing a coordinate turn with ω = π
+20 rad∕s, for 141 ≤ t ≤ 180, the
+target accelerates with 8 m∕s2. In order to assess accuracy, a Monte Carlo simulation of 200 runs was performed in both cases. We can evaluate the tracking performance of an algorithm by calculating the root-mean-square error (RMSE).
+3.3.1. Single model comparison
+Now we compare the performance of the traditional single model F2 (30) with the performance of the random motion model Eq. (3), where a1 = a2 = a3 = a4 = 1 and σ2
+1 = σ2
+2 = σ2
+3 = σ2
+4 = 6. The filter used for the
+traditional model is KF and the filter used for the random motion model
+
+
+Aerospace Science and Technology 162 (2025) 110244
+4
+F. Yang, J. Zhong, Y. Luo et al.
+Fig. 1. Target trajectory (ω = π
+20 rad∕s). (For interpretation of the colors in the
+figure(s), the reader is referred to the web version of this article.)
+Fig. 2. Comparison of traditional single model and random motion model.
+is RKF. The process noise variances of the two filters are R(2)
+vk , which are the same as the noise variance of the motion model corresponding to the target trajectory. Fig. 2 compares the tracking errors of the two methods. Fig. 2 shows that the tracking result of traditional single model is better than that of random motion model in the CA phase. Since the traditional single model matches the CA phase of the target, the KF is optimal in the RMSE sense. The differences between these two models are not very significant. However, the average tracking error of state estimator of traditional single model is 3 times than that of the state estimator of random motion model during the constant turn phase. The state estimator of random motion model is stable in the turn, between 51 to 86 s and 106 to 140 s.
+3.3.2. Variance analysis of random variables in the state transition matrix The variances of the random variables ζ1, ξ1, ζ2 and ξ2 are determined empirically in Section 3.3.1. Next, we compare the performance of the RKF under different variance settings. We assume σ2
+1 = σ2
+2 = σ2
+3=
+σ2
+4 and set their values to 0.01, 0.1, 1, 10, and 100, respectively.
+Fig. 3 shows that when the variances of the random variables are small, the performance of the RKF is not ideal. This is primarily because, under such conditions, the RKF closely approximates the KF, limiting its ability to adapt to dynamic variations. However, with a moderate
+Fig. 3. Comparison of the different variance of the random state transition matrix.
+Fig. 4. Comparison of traditional multiple model and random motion model.
+increase in variance, the RKF demonstrates significant performance improvement, effectively handling target maneuverability while exhibiting enhanced adaptability and robustness. Nevertheless, if the variance continues to increase infinitely, the growing uncertainty introduced by the excessively large variance leads to a rise in estimation error, ultimately degrading the filtering accuracy.
+3.3.3. Comparison with multiple model
+In the second example, the random motion model remains unchanged, and the IMM model set that fully matches the target trajectory is F1, F2, and F3. However, in reality, the IMM model set will not fit
+exactly, so we keep F1 and F2 and change the coefficient ω in F3 from
+π
+20 rad∕s to − π
+20 rad∕s, which means the model set of IMM cannot cover
+the target motion. The process noise variances of KF and RKF are same as the noise variances of the motion models corresponding to the target trajectory. In this result (Fig. 4), when the model set is correct, both the IMM and the random motion model perform stably, with errors being close. The random motion model produces slightly worse estimates than the IMM in some instances. However, when the model set does not match the target motion, the IMM error diverges, whereas the random motion model does not. It is evident that the random motion model sacrifices
+
+
+Aerospace Science and Technology 162 (2025) 110244
+5
+F. Yang, J. Zhong, Y. Luo et al.
+Fig. 5. The program flowchart of IRIMM.
+a bit of accuracy to enhance generality and makes the estimation more stable. On the other hand, the IMM is more accurate but is highly dependent on model accuracy.
+4. Integrated random interacting multiple model filtering
+When the model set is completely correct, IMM performs well. However, when the model set can not cover the target state, the IMM errors diverge and become large. Back to our random motion model, it performs stably but the accuracy is a little worse than IMM with right models. In this section, we will propose a novel algorithm combine the advantages of random motion model and IMM, called integrated random interacting multiple models (IRIMM). The main idea of the new algorithm is to use the IMM algorithm to calculate the model probabilities at first, and then use RKF to estimate the target state. Compared with IMM, IRIMM has two differences: 1) The random model is introduced into the algorithm model set, and the model set includes both deterministic models and random motion model; 2) In state estimation, the estimation of IMM is acquired by a weighted average method. The basic idea of IRIMM is to integrate all models and measurements to a new whole system. Then the random coefficient matrices Kalman filtering is applied to this integrated dynamic system to derive the estimate of the target state.
+4.1. Integrated random interacting multiple model
+In this section, we consider the dynamic system above as a hybrid system including M models
+xk+1 = F (i)
+k xk + ν(i)
+k , i = 1, ⋯ , M, (33)
+yk = Hkxk + ωk. (34)
+The number of models in IRIMM can be set arbitrarily. Without loss of generality, the simplified flow chart (M = 3) for IRIMM is shown in Fig. 5. The steps of IRIMM are given as follows. It is generally assumed that the initial and transition probabilities of the models are known. Step 1: model-conditional reinitialization Predicted mode probability:
+μ(i)
+k∣k−1 =
+M ∑
+j=1
+πj i μ(j )
+k−1, (35)
+Mixing weight:
+μj∣i
+k−1 = 1
+μ(i)
+k∣k−1
+πj i μ (j )
+k−1, (36)
+where πji denotes transition probability and μ(j)
+k−1 denotes mode proba
+bility.
+Mixing estimation:
+̄x(i)
+k−1∣k−1 =
+M ∑
+j=1
+̂x(j)
+k−1∣k−1 μ j ∣i
+k−1. (37)
+Mixing covariance:
+P̄ (i)
+k−1∣k−1 =
+M ∑
+j=1
+[
+P (j)
+k−1∣k−1
++
+(
+̄x(i)
+k−1∣k−1 − ̂x(j)
+k−1∣k−1
+)(
+̄x(i)
+k−1∣k−1 − ̂x(j)
+k−1∣k−1
+)T ]
+μj∣i
+k−1 .
+(38)
+Step 2: model-conditional filtering For traditional motion model, we use Kalman filter to estimate
+̂x(i)
+k∣k−1 = F (i)
+k−1 ̄xk−1∣k−1,
+P (i)
+k∣k−1 = F (i)
+k−1P̄ k−1∣k−1(F (i)
+k−1)T + R(i)
+vk−1 , ̃y(i)
+k = yk − H (i)
+k ̂x(i)
+k∣k−1 , S (i)
+k = H (i)
+k P (i)
+k∣k−1(H (i)
+k )T + R(i)
+ωk , K (i)
+k = P (i)
+k∣k−1H (i)
+k (S(i)
+k )−1,
+̂x(i)
+k∣k = ̂x(i)
+k∣k−1 + K (i)
+k ̃y(i)
+k, P (i)
+k∣k = (I − KkHk)P (i)
+k∣k−1 .
+(39)
+For random motion model, the corresponding filter is same as Section 3. Step 3: model probability update
+L(i)
+k =
+(
+̃y(i)
+k ; 0, S(i)
+k
+)
+= |2πS(i)
+k |− 1
+2 exp(− 1
+2 ( ̃y(i)
+k )T (S(i)
+k )−1 ̃y(i)
+k ), (40)
+μ(i)
+k=
+μ(i)
+k∣k−1 L(i)
+k M ∑
+j=1
+μ(j)
+k∣k−1 L(j )
+k
+, (41)
+where L(i)
+k is mode likelihood.
+Step 4: integrated state estimation Unlike the IMM algorithm, which uses probability-weighted averaging for state estimation, the IRIMM primarily integrates motion models based on probability weights and then performs state estimation on the entire integrated system to obtain a recursive form of the target’s motion state. More specifically, in the view of random matrices, the original system at time k can be expressed as a same dynamic system in section 3.
+xk+1 = Fkxk + νk, (42)
+yk = Hkxk + ωk, (43)
+
+
+Aerospace Science and Technology 162 (2025) 110244
+6
+F. Yang, J. Zhong, Y. Luo et al.
+where Fk = F (1)
+k with probability μ(1)
+k =⋯
+= F (M)
+k with probability μ(M)
+k.
+(44)
+The distribution of νk is formed by a mixture distribution of ν(i)
+k with
+probability μ(i)
+k . The expectation and variance of νk can be calculated as
+follows
+E(νk) =
+M ∑
+i=1
+μ(i)
+k E(ν(i)
+k ) = 0, (45)
+Rνk = E(νkνT
+k ) − E(νk)ET (νk) =
+M ∑
+i=1
+μ(i)
+k E(ν(i)
+k (ν(i)
+k )T ) =
+M ∑
+i=1
+μ(i)
+k R(i)
+νk . (46)
+For random motion model, the corresponding state transition matrix
+F (i)
+k is stochastic, we substitute F̄ (i)
+k for F (i)
+k and ̃ν(i)
+k for ν(i)
+k in Eqs. (44),
+(45), (46). Denote
+F̄ k =
+M ∑
+j=1
+μ(j)
+k F (j)
+k , F̃ k = Fk − F̄ k, ̃νk = F̃ kxk + νk. (47)
+Then we can estimate the state as follows:
+xk+1|k = F̄ kxk|k, (48)
+Pk+1|k = F̄ kPkF̄ T
+k + R ̃νk , (49)
+Kk+1 = Pk+1|k ̄H T
+k+1( ̄Hk+1Pk+1|k ̄H T
+k+1 + R ̃ωk )†, (50)
+xk+1|k+1 = xk+1|k + Kk+1(yk+1 − ̄Hk+1xk+1|k), (51)
+Pk+1|k+1 = (I − Kk+1 ̄Hk+1)Pk+1|k, (52)
+R ̃νk = Rνk + E(F̃ kE(xkxT
+k )F̃ T
+k ), (53)
+R ̃ωk = Rωk + E( ̃HkE(xkxT
+k ) ̃H T
+k ), (54)
+E(xk+1xT
+k+1) = F̄ kE(xkxT
+k )F̄ T
+k + E(F̃ kE(xkxT
+k )F̃ T
+k ) + Rνk , (55)
+x0|0 = Ex0, P0|0 = V ar(x0), (56)
+E(x0xT
+0 ) = Ex0Ex0
+T + P0|0. (57)
+Remark 2. We must notice that Eqs. (48)-(57) are just random coefficient matrices Kalman type filtering, but not optimal in the MSE sense.
+Since {Fk, k = 0, 1, 2, ⋯} in Eq. (44) is sequence of dependent random matrices temporally, which violates some conditions mentioned in RKF. IRIMM is a suboptimal algorithm in the MSE sense. However, compared to the IMM with a fixed model set weighted average, the IRIMM introduces a random motion model into the model set and performs an integrated estimation of the target state, thereby offering certain advantages. Numerical examples will show that the estimation performance of the new algorithm is good.
+Remark 3. We present the computational complexity of the proposed methods and existing methods as given in Table 1. The main difference in computational complexity between RKF and KF lies in the update step, where RKF has a larger coefficient of r3.
+4.2. Simulations
+The dynamic system is the same as Eqs. (26), (27), and the model set of IRIMM includes a CV model (Eq. (29)) and a random motion model (Eq. (3)). The right IMM model set that fully matches the target trajectory is F1, F2 and F3 (Eqs. (29), (30), (31)). For wrong IMM model set, we keep F1 and F2 (Eqs. (29), (30)) and change the coefficient ω in F3
+from π
+20 rad∕s to − π
+20 rad∕s.
+Additionally, in state estimation, IMM adopts a weighted averaging method, while IRIMM adopts a integrated optimization approach.
+Table 1
+The Computational Complexity of KF, RKF, IMM and IRIMM.
+Algorithm Computation Steps Computational Complexity
+KF Predict (r3)
+Update (r3 + r2N + N2r + N3)
+RKF Predict (r3)
+Update (r3 + r2N + N2r + N3)
+IMM Model-conditional reinitialization (Mr2) Model-conditional filtering (M(r3 + r2N + N2r + N3)) Model probability update (MN2) Overall state estimation (Mr2)
+IRIMM Model-conditional reinitialization (Mr2) Model-conditional filtering (M(r3 + r2N + N2r + N3)) Model probability update (MN2) Integrated state estimation (r3 + r2N + N2r + N3)
+Fig. 6. Comparison of IRIMM and IMM.
+To compare the differences between these two estimation methods, we consider an IMM with a random motion model (Eq. (3)) and a CV model (Eq. (29)). Unlike IRIMM, this method only introduces the random model into the model set but still applies the weighted averaging approach during the overall state estimation step. From Fig. 6, as in Section 3, when the model set is right, IMM performs well and stably, when the model set can not cover the maneuver mode, the tracking errors of IMM become unacceptable. However, IRIMM always perform well whether the target is during the CT phase or the last CA phase. It shows that the new algorithm IRIMM with random motion model is less reliant on the accuracy of the model set than IMM, but still maintains a good accuracy. Fig. 6 also shows that the IMM with the random motion model performs better than the IMM with the wrong model, which demonstrates the benefits brought by introducing the random motion model. But it still performs worse than IRIMM. This indicates that the integrated optimization approach of state estimation in IRIMM is superior to the weighted estimation method used in IMM. From Fig. 7, the overall performance of IRIMM is better than that of random motion model. When the real target motion model is added in the model set, the integrated random multiple model algorithm has higher accuracy than the single random motion model, particularly in the CV phase and CT phase. The performance of IRIMM and single random motion model are close during the CA phase, since the random motion model dominates in IRIMM when the target accelerates. Moreover, we show the model probabilities for each multiple model algorithm in Fig. 8. It should be noted that IMM with a random mo
+
+
+Aerospace Science and Technology 162 (2025) 110244
+7
+F. Yang, J. Zhong, Y. Luo et al.
+Fig. 7. Comparison of IRIMM and Random motion model.
+tion model has the same model probabilities as IRIMM. Therefore, it is not presented separately in Fig. 8. When the model set of the IMM
+is right, the probability of the model corresponding to the true motion dominates. As the maneuvering pattern of the target changes, the IMM algorithm based on right model set switches to the corresponding model and exhibits good performance. When the model set is wrong, the probability becomes unclear, and the wrong motion model has a disturbing effect. The performance of IMM algorithm based on wrong model is poor due to the inability to identify the correct maneuvering mode. The model set of IRIMM does not contain CA and CT motion in this example. Lower weight is assigned to the random motion model during the CV phase. When the target is in the CA phase and CT phase, the probability of random motion model increases sharply. This also shows that we can use the probability of the random motion model to judge whether the target has an unknown maneuver.
+5. Conclusion
+In this paper, we proposed a novel maneuvering target tracking algorithm with random motion model based on random coefficient matrices Kalman filtering. Numerical examples show that this new algorithm performed better and more stable than the tradition single model algorithm and the IMM with wrong model sets. Combining IMM and the random motion model, we proposed a new multi-model algorithm for maneuvering target tracking. The performance of IRIMM is almost the same as that of IMM with right model set. It can significantly improve the
+Fig. 8. Model probabilities of each algorithm.
+
+
+Aerospace Science and Technology 162 (2025) 110244
+8
+F. Yang, J. Zhong, Y. Luo et al.
+tracking effect and stability when the model set is wrong. In the future, we will propose random motion models in different situations. Moreover, we will consider using the random model probability to identify the target maneuverability adaptively.
+CRediT authorship contribution statement
+Fengqi Yang: Writing – original draft, Software, Investigation, Formal analysis. Jinshan Zhong: Writing – original draft, Formal analysis, Data curation. Yingting Luo: Writing – review & editing, Project administration, Data curation, Conceptualization. Ying Zhang: Data curation. Xiaojing Shen: Writing – review & editing. Yunmin Zhu: Methodology.
+Declaration of competing interest
+The authors declare that they have no known competing financial interests or personal relationships that could have appeared to influence the work reported in this paper.
+Data availability
+No data was used for the research described in the article.
+References
+[1] W. Aftab, L. Mihaylova, A learning Gaussian process approach for maneuvering target tracking and smoothing, IEEE Trans. Aerosp. Electron. Syst. 57 (1) (2021) 278–292, https://doi.org/10.1109/TAES.2020.3021220. [2] M. Brunot, A Gaussian uniform mixture model for robust Kalman filtering, IEEE Trans. Aerosp. Electron. Syst. 56 (4) (2020) 2656–2665, https://doi.org/10.1109/ TAES.2019.2953414. [3] Z. Zhang, X. Dong, J. Yv, Q. Li, Z. Ren, Distributed cooperative tracking and cooperative guidance against maneuvering aerial target, Aerosp. Sci. Technol. 144 (2024) 108827. [4] X. Rong Li, V. Jilkov, Survey of maneuvering target tracking. Part I. Dynamic models, IEEE Trans. Aerosp. Electron. Syst. 39 (4) (2003) 1333–1364, https://doi.org/10. 1109/TAES.2003.1261132.
+[5] X. Li, Y. Bar-Shalom, Design of an interacting multiple model algorithm for air traffic control tracking, IEEE Trans. Control Syst. Technol. 1 (3) (1993) 186–194, https:// doi.org/10.1109/87.251886. [6] E. Semerdjiev, L. Mihaylova, X.R. Li, An adaptive imm estimator for aircraft tracking, in: Proceedings of the International Conference on Information Fusion, Citeseer, 1999, pp. 770–776. [7] D. Lerro, Y. Bar-Shalom, Interacting multiple model tracking with target amplitude feature, IEEE Trans. Aerosp. Electron. Syst. 29 (2) (1993) 494–509, https://doi.org/ 10.1109/7.210086. [8] E. Hill, S.A. Gadsden, M. Biglarbegian, Explicit nonlinear mpc for fault tolerance using interacting multiple models, IEEE Trans. Aerosp. Electron. Syst. 57 (5) (2021) 2784–2794, https://doi.org/10.1109/TAES.2021.3065089. [9] K. Xiong, C. Wei, L. Liu, Robust multiple model adaptive estimation for spacecraft autonomous navigation, Aerosp. Sci. Technol. 42 (2015) 249–258. [10] M. Isard, et al., Visual motion analysis by probabilistic propagation of conditional density, Ph.D. thesis, University of Oxford, 1998. [11] M. Yu, H. Oh, W.-H. Chen, An improved multiple model particle filtering approach for manoeuvring target tracking using airborne gmti with geographic information, Aerosp. Sci. Technol. 52 (2016) 62–69. [12] S. Zhang, Y. Guo, Z. Lu, S. Wang, Z. Liu, Cooperative detection based on the adaptive interacting multiple model-information filtering algorithm, Aerosp. Sci. Technol. 93 (2019) 105310. [13] Y. Xu, Y.S. Shmaliy, X. Chen, Y. Li, W. Ma, Robust inertial navigation system/ultra wide band integrated indoor quadrotor localization employing adaptive interacting multiple model-unbiased finite impulse response/Kalman filter estimator, Aerosp. Sci. Technol. 98 (2020) 105683. [14] J. Huang, Z. Li, D. Liu, Q. Yang, J. Zhu, An adaptive state estimation for tracking hypersonic glide targets with model uncertainties, Aerosp. Sci. Technol. 136 (2023) 108235. [15] D. Jeon, Y. Eun, Distributed asynchronous multiple sensor fusion with nonlinear multiple models, Aerosp. Sci. Technol. 39 (2014) 692–704. [16] K. Lu, R. Zhou, J. Zhang, Approximate Chernoff fusion of Gaussian mixtures for ballistic target tracking in the re-entry phase, Aerosp. Sci. Technol. 61 (2017) 21–28. [17] Y. Luo, Y. Zhu, D. Luo, J. Zhou, E. Song, D. Wang, Globally optimal multisensor distributed random parameter matrices Kalman filtering fusion with applications, Sensors 8 (12) (2008) 8086–8103. [18] J. Deyst, C. Price, Conditions for asymptotic stability of the discrete minimumvariance linear estimator, IEEE Trans. Autom. Control 13 (6) (1968) 702–705. [19] J. Deyst, Correction to “conditions for asymptotic stability of the discrete minimumvariance linear estimator”, IEEE Trans. Autom. Control 18 (5) (1973) 562–563. [20] E.W. Kamen, J.K. Su, Introduction to Optimal Estimation, Springer Science & Business Media, 2012.

@@ -13,7 +13,7 @@ On the contrary, the camera sensors can provide detailed texture and color infor
 arXiv:2106.12449v2 [cs.CV] 10 Aug 2021
 
 
-the 2D image semantic segmentation results from an offthe-shelf neural network first and then adds them into a point-cloud-based 3D object detection based on the 2D-3D projection. The superiority of PointPainting suggests that 2D image segmentation approach can be used for providing the semantic results and it can be incorporated into any 3D object detectors even point-based or voxel-based approaches.
+ the 2D image semantic segmentation results from an offthe-shelf neural network first and then adds them into a point-cloud-based 3D object detection based on the 2D-3D projection. The superiority of PointPainting suggests that 2D image segmentation approach can be used for providing the semantic results and it can be incorporated into any 3D object detectors even point-based or voxel-based approaches.
 However, the boundary-blurring effect often happens in image-based semantic segmentation methods due to the relatively low resolution of the deep feature map. This effect becomes much more severe after re-projecting them into the 3D point cloud. An example of the reprojected 2D result into 3D is shown in sub-fig. 1-(a). Taking the big truck at the bottom of the image as an example, we can find that there is a large frustum area of the background (e.g, points in orange color) that has been miss-classified as foreground due to the inaccurate segmentation results in the 2D image. In addition, the correspondence of 3D points to 2D image pixels is not exactly a one-to-one projection due to the digital quantization problem, and many-to-one projection issues. An interesting phenomenon is that the segmentation from the 3D point cloud (e.g., sub-fig. 1-(b)) performs much better on the boundary of obstacles. However, compared to the 2D image, the category classification from the 3D point cloud often gives worse results(e.g.,point in blue color) due to the detailed texture information from the RGB images.
 The painted points [5], with semantic information has been proved to be very effective for the object detection task even with some semantic errors. An intuition idea is that the detection performance can be further improved if 2D and 3D segmentation results can be fused together. Based on this idea, we propose a general multi-modal fusion framework “FusionPainting” to fuse different types of sensors at the semantic level to further boost the 3D object detection performance. First, any off-the-shelf semantic segmentors are employed directly for obtaining the semantic information. To further improve the performance, an attention module is proposed to fuse different kinds of semantic information in voxel-level adaptively based on the learned context features in a self-attention style. Finally, the points painted by the fused semantic labels are sent to 3D detectors for obtaining the final detection results. The main contributions of this work can be summarized as following:
 1) A general multi-modal fusion framework “FusionPainting” has been firstly proposed to fuse the different types of information in the semantic level to improve the 3D object detection performance. 2) To further improve the performance, an attention module is proposed to fuse different kinds of semantic information in voxel-level by learning the context features. 3) The experimental results on the large-scale autonomous driving benchmark nuScenes show the superiority of the proposed fusion framework and achieve SOTA results compared to other methods.
@@ -26,7 +26,7 @@ III. PROPOSED APPROACH
 We describe the architecture of our “FusionPainting” framework in Fig. 2. We propose to leverage both the 2D images and 3D point clouds information for obtaining accurate 3D locations of obstacles in the autonomous driving scenarios. Here, the fusion process is achieved by adaptively integrating 2D and 3D information at the semantic level. As shown in Fig. 2, the proposed framework consists of three models as a multi-modal semantic segmentation module, an adaptive attention module, and a 3D detector module. First,
 
 
-3D Detector
+ 3D Detector
 3D Segmentor
 Adaptive Attention Module
 Painted Point Cloud
@@ -49,7 +49,7 @@ B. Adaptive Attention Module
 Though the 2D segmentation achieves impressive performance, the boundary-blurring effect is also inevitable due to the limited resolution of the feature map. Therefore, the painted point cloud from the 2D segmentation mask usually has misclassified regions around the boundary of the objects. For example, the frustum region is illustrated in the sub-fig. 1 (a) behind the big truck. On the contrary, the point cloudbased semantic segmentation methods often can produce a clear and accurate object boundary e.g., sub-fig. 1(b). In order to combine the merits of both modules and suppress their disadvantages, we propose an adaptive attention module that adaptively fuses the semantic labels with an attention mechanism. By doing this, the refined semantic labels can further improve the following 3D detection results. The detailed architecture of the proposed adaptive atten
 
 
-N ×3
+ N ×3
 N ×m
 N ×m
 2D Semantic Vector
@@ -103,7 +103,7 @@ C. 3D Object Detection Module
 After obtaining the painted point cloud, any off-the-shelf 3D object detectors can be directly employed for predicting
 
 
-Methods NDS(%) mAP(%) AP (%)
+ Methods NDS(%) mAP(%) AP (%)
 Car Pedestrian Bus Barrier T.C. Truck Trailer Moto. Cons. Bicycle SECOND [15] 61.96 50.85 81.61 77.37 68.53 57.75 56.86 51.93 38.19 40.14 17.95 18.16 SECOND∗ 67.41 62.15 83.98 82.86 71.13 63.29 74.66 59.97 41.53 66.85 22.90 54.35 Improvement ↑ +5.45 +11.30 +2.37 +5.49 +2.60 +5.54 +17.80 +8.04 +3.34 +26.71 +5.05 +36.19 PointPillars [3] 57.50 43.46 80.67 70.80 62.01 49.23 44.00 49.35 34.86 26.74 11.64 5.27 PointPillars∗ 66.04 60.77 83.51 82.90 69.96 58.46 74.50 56.90 39.25 66.40 21.68 54.10 Improvement ↑ +8.54 +17.31 +2.84 +12.10 +7.95 +9.23 +30.50 +7.55 +4.39 +39.66 +10.04 +48.83 CenterPoint [21] 64.82 56.53 84.73 83.42 66.95 64.56 64.76 54.52 36.13 56.81 15.81 37.57 CenterPoint∗ 70.68 66.53 87.04 88.44 70.66 67.26 79.57 62.98 45.09 74.65 25.36 64.41 Improvement ↑ +5.86 +10.00 +2.31 +5.02 +3.71 +2.70 +14.81 +8.46 +8.96 +17.84 +9.55 +26.84
 TABLE I: Evaluation results on nuScenes validation dataset. “NDS” and “mAP” mean nuScenes detection score and mean Average Precision. “T.C.”, “Moto.” and “Cons.” are short for “traffic cone”, “motorcycle”, and “construction vehicle” respectively. “ * ” denotes the improved baseline by adding the proposed “FusionPainting”. To hight the effectiveness of our methods, the improvements of each method are demonstrated in red.
 3D object detections. The 3D detector receives the painted voxels produced by the adaptive attention module, and achieve better results for all the categories. The detailed analysis of the performance can be found in the following experimental results part.
@@ -119,7 +119,7 @@ Evaluation on Baseline Methods: First of all, we have integrated the proposed fu
 1https://www.nuscenes.org/nuimages
 
 
-Methods Modality NDS(%) mAP(%) AP (%)
+ Methods Modality NDS(%) mAP(%) AP (%)
 Car Truck Bus Trailer Cons Ped Moto Bicycle T.C Barrier PointPillars [5] L 55.0 40.1 76.0 31.0 32.1 36.6 11.3 64.0 34.2 14.0 45.6 56.4 3DSSD [40] L 56.4 46.2 81.2 47.2 61.4 30.5 12.6 70.2 36.0 8.6 31.1 47.9 CBGS [41] L 63.3 52.8 81.1 48.5 54.9 42.9 10.5 80.1 51.5 22.3 70.9 65.7 HotSpotNet [42] L 66.0 59.3 83.1 50.9 56.4 53.3 23.0 81.3 63.5 36.6 73.0 71.6 CVCNET [43] L 66.6 58.2 82.6 49.5 59.4 51.1 16.2 83.0 61.8 38.8 69.7 69.7 CenterPoint [21] L 67.3 60.3 85.2 53.5 63.6 56.0 20.0 54.6 59.5 30.7 ne78.4 71.1 PointPainting [5] L & C 58.1 46.4 77.9 35.8 36.2 37.3 15.8 73.3 41.5 24.1 62.4 60.2 3DCVF [44] L & C 62.3 52.7 83.0 45.0 48.8 49.6 15.9 74.2 51.2 30.4 62.9 65.9 FusionPainting(Ours) L & C 70.4 66.3 86.3 58.5 66.8 59.4 27.7 87.5 71.2 51.7 84.2 70.2
 TABLE II: Comparison with other SOTA methods on the nuScenes 3D object detection benchmark. “L” and “C” in the modality column represent lidar and camera respectively. For each column, we use “bold” to illustrate the best results of other methods. Here, we only list all the methods results with publications.
 improved about 36.19%, 48.83% and 26.84% based on Second, PointPillar and Centerpoint respectively. Interestingly, all these categories are small objects which are hard to be detected because of a few LiDAR points on them. By adding the prior semantic information, the category classification becomes relatively easier. Especially, the experiments here we share the same setting, so the baseline figures may be subtle differences with official.
@@ -142,7 +142,7 @@ V. CONCLUSION AND FUTURE WORKS
 We present a novel multi-modal fusion framework, “FusionPainting” which can aggregate rich semantic information from 2D/3D semantic segmentation networks. More important, we are the first to use 3D semantic segmentation results as additional information for improving the 3D object detection performance. To fuse both the 2D/3D segmentation results, an adaptive attention module has been proposed to learn an attention mask for each of them. Experimental results on nuScenes dataset illustrate the effectiveness of the proposed strategy. Furthermore, the proposed “FusionPainting” is detector independent, which can be freely used for other 3D object detectors. In the future, we plan to deeply integrate the 2D/3D semantic segmentation branches into
 
 
-(a)
+ (a)
 (b)
 (c)
 (d)
@@ -155,7 +155,7 @@ REFERENCES
 [10] J. Ku, M. Mozifian, J. Lee, A. Harakeh, and S. L. Waslander, “Joint 3d proposal generation and object detection from view aggregation,” in 2018 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS). IEEE, 2018, pp. 1–8. 2 [11] W. Luo, B. Yang, and R. Urtasun, “Fast and furious: Real time end-to-end 3d detection, tracking and motion forecasting with a single convolutional net,” in Proceedings of the IEEE conference on Computer Vision and Pattern Recognition, 2018, pp. 3569–3577. 2
 
 
-[12] B. Yang, W. Luo, and R. Urtasun, “Pixor: Real-time 3d object detection from point clouds,” in Proceedings of the IEEE conference on Computer Vision and Pattern Recognition, 2018, pp. 7652–7660. 2
+ [12] B. Yang, W. Luo, and R. Urtasun, “Pixor: Real-time 3d object detection from point clouds,” in Proceedings of the IEEE conference on Computer Vision and Pattern Recognition, 2018, pp. 7652–7660. 2
 [13] Z. Liang, M. Zhang, Z. Zhang, X. Zhao, and S. Pu, “Rangercnn: Towards fast and accurate 3d object detection with range image representation,” arXiv preprint arXiv:2009.00206, 2020. 2
 [14] P. Hu, J. Ziglar, D. Held, and D. Ramanan, “What you see is what you get: Exploiting visibility for 3d object detection,” in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, 2020, pp. 11 001–11 009. 2 [15] Y. Yan, Y. Mao, and B. Li, “Second: Sparsely embedded convolutional detection,” Sensors, vol. 18, no. 10, p. 3337, 2018. 2, 5 [16] H. Kuang, B. Wang, J. An, M. Zhang, and Z. Zhang, “Voxel-fpn: Multi-scale voxel feature aggregation for 3d object detection from lidar point clouds,” Sensors, vol. 20, no. 3, p. 704, 2020. 2 [17] J. Yin, J. Shen, C. Guan, D. Zhou, and R. Yang, “Lidar-based online 3d video object detection with graph-based message passing and spatiotemporal transformer attention,” in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, 2020, pp. 11 495–11 504. 2 [18] D. Zhou, J. Fang, X. Song, C. Guan, J. Yin, Y. Dai, and R. Yang, “Iou loss for 2d/3d object detection,” in 2019 International Conference on 3D Vision (3DV). IEEE, 2019, pp. 85–94. 2 [19] D. Zhou, J. Fang, X. Song, L. Liu, J. Yin, Y. Dai, H. Li, and R. Yang, “Joint 3d instance segmentation and object detection for autonomous driving,” in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, 2020, pp. 1839–1849. 2
 [20] C. R. Qi, W. Liu, C. Wu, H. Su, and L. J. Guibas, “Frustum pointnets for 3d object detection from rgb-d data,” in Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition, 2018, pp. 918–927. 2 [21] T. Yin, X. Zhou, and P. Kr ̈ahenbu ̈hl, “Center-based 3d object detection and tracking,” Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition, 2021. 2, 5, 6

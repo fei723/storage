@@ -1,0 +1,656 @@
+Ionospheric Scintillation
+Mitigation With Kalman PLLs
+Employing Radial Basis
+Function Networks
+RAFAEL ANDERSON MARTINS LOPES
+National Institute for Space Research (INPE), São José dos Campos, Brazil
+FELIX ANTREICH , Senior Member, IEEE Aeronautics Institute of Technology (ITA), São José dos Campos, Brazil
+FRIEDERIKE FOHLMEISTER
+German Aerospace Center (DLR), Wessling, Germany
+MARTIN KRIEGEL
+German Aerospace Center (DLR), Neustrelitz, Germany
+HELIO KOITI KUGA
+National Institute for Space Research (INPE), São José dos Campos, Brazil
+We investigate two adaptive Kalman phase-locked loop (PLL) structures for ionospheric scintillation mitigation for global navigation satellite systems receivers, employing radial basis function (RBF)
+Manuscript received 8 September 2022; revised 19 December 2022 and 29 March 2023; accepted 21 May 2023. Date of publication 30 May 2023; date of current version 11 October 2023.
+DOI. No. 10.1109/TAES.2023.3281431
+Refereeing of this contribution was handled by R. Yang.
+This work was supported in part by the Brazilian National Council for Scientific and Technological Development (CNPq) under Grant 309248/2018-3 PQ-2, Grant 312394/2021-7 PQ-2, Grant 409865/2018-4, Grant 307255/2018-2, Grant 465648/2014-2, and Grant 205906/2018-4, in part by the Coordination for the Improvement of Higher Education Personnel (CAPES) under the Programa de Apoio ao Ensino e a Pesquisa Científica e Tecnológica - Pró-Defesa IV under Grant 88887.137186/201700, and in part by FAPESP (Fundação de Amparo à Pesquisa do Estado de São Paulo) under Grant 2017/50115-0.
+Authors’ addresses: Rafael Anderson Martins Lopes and Helio Koiti Kuga are with the Departamento de Mecânica e Controle, National Institute for Space Research (INPE), São José dos Campos 12227-010, Brazil, E-mail: (rafael.lopes@inpe.br; helio.kuga@inpe.br); Felix Antreich is with the Aeronautics Institute of Technology (ITA), São José dos Campos 12228-900, Brazil, E-mail: (antreich@ieee.org); Friederike Fohlmeister is with the Institute for Communications and Navigation, German Aerospace Center (DLR), 82234 Wessling, Germany, E-mail: (friederike.fohlmeister@dlr.de); Martin Kriegel is with the Institute for Solar-Terrestrial Physics, German Aerospace Center (DLR), 17235 Neustrelitz, Germany, E-mail: (martin.kriegel@dlr.de). (Corresponding author: Rafael Anderson Martins Lopes.)
+0018-9251 © 2023 IEEE
+networks to model the scintillation phase and amplitude, instead of the typically employed autoregressive (AR) models. In the first structure, the Kalman filter innovations are computed by the arctangent phase discriminator, and the state estimates are directly employed in the carrier replica generation. In the second structure, the Kalman filter measurements are the prompt correlator outputs, and the error states are computed and used by a state feedback controller to provide a control signal to drive the carrier replica generation. The nonlinear RBFs provide more flexibility to capture nonlinear dynamics evolving with time, possibly present in the scintillation phase and amplitude. The weights of the RBF networks and the covariance matrices of the process and measurement noise of the Kalman filters are estimated online in the adaptive Kalman PLL structures. Simulations with synthetic severe scintillation data show the capability of the proposed Kalman PLLs to improve robustness to scintillation effects in carrier synchronization, with performance similar to the corresponding structures employing AR scintillation models. Simulations using recorded scintillation data collected by a commercial receiver highlight the learning and generalization capability of the RBF networks to cope with evolving scintillation characteristics over time with possibly nonlinear effects. The Kalman PLL structures employing the RBF networks present reduced errors compared with the structures using AR models.
+I. INTRODUCTION
+Transient fluctuations of electron content inside regions of the ionosphere interact with propagating radio waves, resulting in scintillation. For global navigation satellite systems (GNSSs) in particular, ionospheric scintillation significantly impact the availability, accuracy, continuity, and integrity of the positioning. The signal processing channels in a GNSS receiver perform carrier and code delay tracking of GNSS satellite signals. Regarding the received signal carrier, ionospheric irregularities are one source of amplitude and phase scintillations adding up to the line-of-sight (LOS) dynamics, introducing disturbances to GNSS tracking algorithms in the receiver that, in many cases, cause a reduction of precision in the positioning and eventually the loss of lock of GNSS signals. Scintillation is more frequently observed at equatorial and high-latitude regions. The most critical effects are induced by severe scintillation activity at equatorial regions, resulting in rapid amplitude and phase scintillation with deep amplitude fades for short periods, depending on the factors, such as solar activity, geomagnetic activity, latitude, carrier frequency, and daytime [1], while at high latitudes, the effects are in general milder and more frequently observed in the phase [2]. The mitigation of the scintillation effects, in addition to their detection and monitoring, is challenging from a signal processing perspective [3]. High accuracy carrier tracking is vital for positioning accuracy improvement in modern receivers applying carrierbased positioning such as real-time kinematics and precise point positioning [4], [5]. Once the scintillation effects are more pronounced in the carrier tracking, robust carrier synchronization structures contemplating the induced phase and amplitude scintillation can significantly improve carrier tracking. Originally, the traditional tracking loop structures implemented as a phase-locked loop (PLL) and/or frequency-locked loop (FLL) are not directly taking into account amplitude or phase scintillation. Their parameters
+6878 IEEE TRANSACTIONS ON AEROSPACE AND ELECTRONIC SYSTEMS VOL. 59, NO. 5 OCTOBER 2023
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 09,2025 at 11:20:10 UTC from IEEE Xplore. Restrictions apply.
+
+
+are fixed and adjusted for LOS-only tracking. Robustness can be improved via the tuning of parameters, such as noise bandwidth [6], in PLLs or employing an FLL-assisted PLL structure [7], for example. Other approaches based on the traditional tracking loops use heuristic adjustments [8], [9], extension of the coherent integration time [10], and coupling with inertial sensors or Doppler-aided solutions [11], [12], [13]. The Kalman filter has been successfully employed in GNSS carrier tracking loops to further improve robustness. Early applications involved suboptimal computation of the Kalman gains by solving only the steady-state Riccati equation, as in [14]. Typically, a constant gain Kalman filter structure is chosen in case that simplicity of the suboptimal solution is more suitable for the application than introducing the computational load to perform the real-time update of the gains. Techniques based on the Kalman filtering with update of the gains and considering adaptive update of parameters, typically only the measurement noise and not directly modeling scintillation, were studied in [15], [16], [17], [18], [19], [20], and [21]. A Kalman filter PLL was employed in [22] with LOS and clock error state variables, and measurement noise adjusted as a function of the carrier-to-noise density ratio C/N0, allowing better phase tracking during the power fades and phase dynamics induced by scintillation when compared with a constant bandwidth loop. The introduction of models representing the scintillation dynamics in the received signal into the Kalman filter formulation enabled the decoupling of both scintillation and LOS contributions to overcome the limitations of techniques that only adjust the level of uncertainty in models accounting for states related to the LOS dynamics, e.g., based on an estimate of C/N0 [3]. Scintillation phase and amplitude are typically modeled by autoregressive (AR) processes in Kalman PLLs for scintillation mitigation [23], [24], [25], [26]. In [23], the parameters of the AR model are identified a priori in an offline procedure, the measurement noise covariance is adapted online based on an C/N0 estimator, and a discriminator-based Kalman filter PLL structure estimating the scintillation phase is employed. In [24], an extended Kalman filter PLL structure using the prompt correlator in-phase/quadrature (I/Q) outputs as measurements is used for scintillation mitigation, providing estimates of both scintillation amplitude and phase, with the parameters of their AR models identified offline and adaptive measurement noise covariance update. An extensive evaluation shows that the structure significantly improves the cycle slips and loss of lock robustness while minimizing the carrier phase estimation error, compared with structures not including scintillation modeling. This concept is generalized in [25] with an extended Kalman filter with increased complexity, including an online batch identification of the AR models parameters and online updating of the process noise covariance matrix based on the identification statistics. Other techniques also consider adaptive Kalman filtering with online adaptive estimation
+of the AR scintillation model parameters, as in [27], where a dual Kalman filter was applied. In this approach, the scintillation phase and amplitude are estimated by a first Kalman filter. They are then used as measurements in the second Kalman filter to estimate the parameters of the respective AR process. Afterward, the LOS and scintillation phase error estimates are fed back into the carrier signal replica generator by a linear quadratic Gaussian control approach. In this work, we investigate two Kalman PLL structures for ionospheric scintillation mitigation employing radial basis function (RBF) networks instead of the AR models representing scintillation phase and amplitude dynamics, further extending the algorithm presented in [28]. Henceforth, we call the Kalman PLL structures employing the RBF networks as the proposed structures to distinguish them from the analogous structures employing the AR models. In the first structure, the innovations of the Kalman filter are taken from the phase discriminator output and the carrier replica is generated in a numerically controlled oscillator (NCO) with the Kalman filter estimates, such as the discriminator-based Kalman PLL structure of the article presented in [23]. In the second structure, the Kalman filter takes the prompt correlator I/Q outputs as measurements, such as in [25]. In this case, a state feedback controller operating on the error states estimated by the Kalman filter is designed to provide a control signal to the NCO for the carrier replica generation, following a pole placement procedure to compute the gain matrix to drive the closed-loop error dynamics to zero. Both structures have nonlinear process equations due to the RBF networks, and thus, both implement the extended Kalman filter. We propose to employ the RBF networks to model scintillation due to the capability of their nonlinear RBFs to capture eventual nonlinear dynamics, possibly evolving with time, induced by the ionospheric scintillation in the receiver, unlike the AR models. The RBF networks allow greater flexibility in scintillation-induced effects modeling since we can include pure AR terms in their structure in addition to the nonlinear RBFs. Also, we can use recursive least squares to estimate the weights of the networks since they have a linear structure with respect to their weights. The results of the least squares identification are used to update the process equations and process noise covariance matrices of the Kalman filters, as in [25]. The measurement noise covariance matrices are also adaptively computed, as in [25], based on a C/N0 estimator. We assess the performances of the proposed structures employing the RBF networks by computer simulations with synthetic severe scintillation data generated by the Cornell scintillation model (CSM) [29] added to simulated baseband (BB) GPS L1 C/A code signals and with real scintillation data collected by a commercial receiver. We compare the performances to correspondent structures employing AR models.
+II. SIGNAL MODEL
+Disregarding the navigation message, a GNSS BB signal received from one satellite with single-sided bandwidth
+LOPES ET AL.: IONOSPHERIC SCINTILLATION MITIGATION 6879
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 09,2025 at 11:20:10 UTC from IEEE Xplore. Restrictions apply.
+
+
+B can be given by its I/Q components
+{I (t ) = A(t )c(t − τ (t )) cos(φT (t )) + nI (t )
+Q(t ) = A(t )c(t − τ (t )) sin(φT (t )) + nQ(t ) (1)
+where A(t ) is the signal amplitude, c(t − τ (t )) is a binary pseudorandom sequence delayed by τ (t ), and φT (t ) is the total carrier phase, including the phase related to the Doppler frequency shift, reference oscillator offset, and other sources of phase variations, such as ionospheric scintillation. Therefore, the complex BB signal is
+s(t ) = I (t ) + jQ(t ) (2)
+and nI (t ) ∈ R and nQ(t ) ∈ R are the independent noise processes of the complex Gaussian white noise
+n(t ) = nI (t ) + jnQ(t ) (3)
+each with power spectral density N0/2. Considering only a scintillation-induced term as a source of disturbance, multiplicative in amplitude, and additive in phase ρ(t )e jφ(t), the signal amplitude can be written as
+A(t ) = A0(t )ρ(t ) (4)
+where A0(t ) is the undisturbed amplitude, and the signal total phase can be written as
+φT (t ) = φD(t ) + φ(t ) (5)
+disregarding other sources of phase variations in φ(t ). The phase φD(t ) is the integral of the angular Doppler frequency fD(t )
+φD(t ) =
+∫t
+t0
+fD(t ̃) dt ̃ (6)
+which can be approximated by a Taylor series in a sufficiently short period of time in relation to the LOS dynamics. Truncation of the series after the second-order term can represent constant Doppler frequency drift in the LOS signal and yields
+φD(t ) = φD(t0) + fD(t0)(t − t0 ) + (1/2)aD(t0)(t − t0 )2 (7) where aD(t ) is the Doppler frequency drift. The complex BB signal (2) sampled with sampling frequency fs = 1
+Ts = 2B,
+n = 0, . . . , N − 1, and k = 0, 1, 2, . . . , ∈ Z+ can be given as
+s((kN + n)Ts) = A((kN + n)Ts)
+c((kN + n)Ts − τ ((kN + n)Ts))
+e jφT ((kN+n)Ts) + n((kN + n)Ts ) (8)
+where N = fsTI samples are collected for the kth coherent integration period of duration TI . Assuming that A(t ), φ(t ), fD(t ), and τ (t ) are approximately constant over one coherent integration period, the discrete input sequence can be written in vector form as
+s[k] = A[k]e jφ[k](c[k; τ [k]] d[k; fD[k]]) + n[k] (9)
+where
+s[k] = [s(kNTs), . . . , s((kN + N − 1)Ts)]T (10)
+n[k] = [n(kNTs), . . . , n((kN + N − 1)Ts)]T (11)
+c[k; τ [k]] = [c(kNTs − τ [k]),
+. . . , c((kN + N − 1)Ts − τ [k])]T (12)
+d[k; fD[k]] = [e jφD[k], . . . , e j( fD[k](N−1)Ts+φD[k])]T (13)
+and denotes element-by-element multiplication of two vectors (Hadamard–Schur product). The result of the prompt correlation with the code c[k; τˆ [k]] generated by an estimate of the time delay τˆ [k] after mixing with e jφˆ [k]d[k; fˆD[k]], which is the carrier replica generated by Doppler phase φˆ D[k] and frequency
+fˆD[k] estimates multiplied by the scintillation component defined by the scintillation phase estimate φˆ [k], can be given by
+y[k] = 1
+N (c[k; τˆ [k]] e jφˆ [k]d[k; fˆD[k]])Hs[k] (14)
+where H denotes the Hermitian of a matrix or vector. Considering that τ [k] ≈ τˆ [k], we get
+y[k] = A[k]
+N e j(φ[k]+φD[k]−φˆ [k]−φˆ D[k])
+N −1
+∑
+n=0
+e j( fD[k]− fˆD[k])nTs + ηD[k]. (15)
+The zero-mean complex white Gaussian noise ηD[k] has variance ση2D = σ 2
+n /N, where σ 2
+n = 2BN0 is the variance
+of n((kN + n)Ts). With δφ[k] = φ[k] − φˆ [k], δφD[k] =
+φD[k] − φˆ D[k], and δ fD[k] = fD[k] − fˆD[k], we get1
+y[k] = A[k]
+N
+sin(Nδ fD[k]Ts/2)
+sin(δ fD[k]Ts/2) e j(δφ[k]+δφD[k])
+e j[(N−1)Ts/2]δ fD[k] + ηD[k].
+(16)
+Substituting Ts = TI /N ≈ TI /(N − 1) yields
+y[k] = A[k]
+N
+sin(δ fD[k]TI /2)
+sin(δ fD[k]TI /2 N ) e j(δφ[k]+δφD[k])
+e j(TI /2)δ fD[k] + ηD[k]. (17)
+Assuming that δ fD[k]TI /2 N is sufficiently close to zero, sin(δ fD[k]TI /2 N ) ≈ δ fD[k]TI /2 N, and we can derive an approximate expression for the prompt correlator output after mixing with the carrier generated by the receiver as2
+y[k] = A[k]sinc
+( δ fD[k]TI
+2π
+)
+e j(δφ[k]+δφD[k])
+e j(TI /2)δ fD[k] + ηD[k]. (18)
+If |δ fD[k]TI | 1, sinc( δ fD[k]TI
+2π ) ≈ 1. Considering uni
+tary amplitude of the carrier undisturbed by scintillation, without the loss of generality, we get A[k] = ρ[k]. Thus, we can write the I/Q components of y[k] = yI [k] + jyQ[k]
+1 ∑N −1
+n=0 e jnz = sin(Nz/2)
+sin(z/2) e j(N−1)z/2, with z = δ fD[k]Ts.
+2sinc(t ) = sin(πt )/(πt ).
+6880 IEEE TRANSACTIONS ON AEROSPACE AND ELECTRONIC SYSTEMS VOL. 59, NO. 5 OCTOBER 2023
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 09,2025 at 11:20:10 UTC from IEEE Xplore. Restrictions apply.
+
+
+a{syI [k] = ρ[k] cos (δφ[k] + δφD[k] + TI
+2 δ fD[k]) + ηDI [k]
+yQ[k] = ρ[k] sin (δφ[k] + δφD[k] + TI
+2 δ fD[k]) + ηDQ [k]
+(19) with ση2DI = ση2DQ = ση2D /2. Further simplifying, by dis
+regarding the term in δ fD[k], we get
+{yI [k] = ρ[k] cos (δφ[k] + δφD[k]) + ηDI [k]
+yQ[k] = ρ[k] sin (δφ[k] + δφD[k]) + ηDQ [k]. (20)
+Application of the four quadrant arctangent εP[k] = atan2[yQ[k], yI [k]] yields
+εP[k] = δφ[k] + δφD[k] + ηA[k] (21)
+where ηA[k] is the noise at the output of the four quadrant arctangent. Its variance ση2A can be computed by the approximate expression [30]
+σ2
+ηA = 1
+2c/n0TI
+(
+1+ 1
+2c/n0TI
+)
+(22)
+where c/n0 is the carrier to noise ratio in Hz, obtained
+from C/N0 in dB–Hz as c/n0 = 10C/N0/10.
+III. SCINTILLATION MODELING WITH RBF NETWORKS
+RBFs have been first employed in multidimensional interpolation problems [31], [32]. They are typically associated with neural networks due to their interpolation structure, which can be considered as a special case of neural network with one hidden layer formed by the nonlinear RBFs taking the role of the activation functions and one output layer formed by the weighted sum of the output of the functions, with a guaranteed learning rule [33]. The RBF ψ (·) is a nonlinear mapping ψ (·) : R+ → R on a d-dimensional space. The RBF network takes the form [34]
+g(x) = ω0 +
+n ∑r
+i=1
+ωiψ (‖x − ci‖2) (23)
+where x ∈ Rd×1 is the input, ‖ · ‖2 is the Euclidean norm,
+ci ∈ Rd×1 are fixed points called centers, nr is the number of centers, and ωi, i = 0, . . . , nr are the weights. The function arguments are the distances in the d-dimensional space from x to the centers, which can be chosen in several ways. They can be chosen randomly from the dataset or can be uniformly distributed in the region of the space covered by the data, for example [35]. Once the centers are defined, the weights can be estimated by standard least squares, as the network structure is linear with respect to the weights [36]. Considering the RBF network in the modeling of autonomous dynamic systems, the inputs to the RBFs are composed of AR terms or regressors, and the linear AR terms can also be added to the network in the more general case [34], taking the form
+α[k] = ω0 +
+n ∑r
+i=1
+ωiψ (‖α[k − 1] − cαi ‖2)
++
+n ∑α
+i=1
+ωnr+iα[k − i] + ηα[k − 1] (24)
+where α[k − 1] ∈ Rnα×1 is composed of the nα AR terms of the variable of interest α[k] so that α[k − 1] =
+[
+α[k − 1] . . . α[k − nα]
+]T
+, and ηα[k] is the RBF net
+work error with variance ση2α . We have additional nα weights
+relative to the linear terms and nr + nα + 1 weights in total. The centers cαi can be similarly formed by AR terms taken from the modeling dataset or can be distributed in a region of the phase space covered by the modeling dataset, for example, as discussed in [35]. Whether to include the linear AR terms and the bias ω0 depends on the dynamics to be modeled and should be evaluated case-by-case. The choice of the centers can be critical in the modeling of dynamical systems with RBF networks. Structure determination criteria can be used to help in the choice of the centers and the purely linear AR terms. The error reduction ratio criterion can be used for this purpose, for example [39]. Our approach in this work is to carefully evaluate each time series considered in the system identification problem, whether synthetic or real scintillation data to choose the centers, the number of centers, and to decide for the inclusion or not of the pure AR terms. If the inclusion of the pure AR terms does not imply a significant improvement in the fitting error, we prefer to keep the nonlinear RBF terms only to highlight the potential of such a structure to model eventual nonlinear scintillation dynamics and improve carrier synchronization under scintillation. Depending on their influence, the RBFs can be divided into local [37] and global functions [38], the latter assuming values on a global scale. In general, the choice of the nonlinear function is not crucial for the network performance [39]. Once it does not require an extra shaping parameter to be tuned, in this work, we consider the thin plate spline, which is a global function of the form
+ψ (ri ) = r2
+i ln(ri ) (25)
+where ri = ‖α[k − 1] − ci‖2. For the scintillation phase, α[k] is substituted by φ[k], and for the scintillation amplitude, α[k] is substituted by ρ[k] in the RBF model (24). Also, α[k − 1] is substituted by xφ[k − 1] ∈ Rnφ×1 for
+the scintillation phase, and by xρ[k − 1] ∈ Rnρ×1 for the scintillation amplitude so that we have xφ[k − 1] = [φ[k − 1], . . . , φ[k − nφ]]T and xρ[k − 1] = [ρ[k − 1], . . . , ρ[k − nρ]]T. Using the RBF network as a process model for both scintillation phase and amplitude in the Kalman PLLs requires the computation of the gradient of α[k] with respect to α[k − 1] to form the first line of the Jacobian matrix of the process equations employed in the extended Kalman filter. The gradient can be written as
+∇α[k] =
+[ ∂α[k]
+∂α[k − 1] , . . . , ∂α[k]
+∂α[k − nα]
+]T
+=
+n ∑r
+i=1
+ωi
+∂ψ
+∂ ri
+∇ri + [ωnr+1, . . . , ωnr+nα
+]T (26)
+LOPES ET AL.: IONOSPHERIC SCINTILLATION MITIGATION 6881
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 09,2025 at 11:20:10 UTC from IEEE Xplore. Restrictions apply.
+
+
+with
+∂ψ
+∂ ri
+= ri(1 + 2 ln(ri )) (27)
+and
+∇ri = 1
+ri
+(α[k − 1] − cαi ). (28)
+Substituting (27) and (28) into (26), we get the expression for the gradient of α[k]
+∇α[k] =
+n ∑r
+i=1
+ωi
+ri
+∂ψ
+∂ ri
+(α[k − 1] − cαi ) + [ωnr+1 . . . ωnr+nα
+]T.
+(29) Therefore, we can write the Jacobian matrix Fα[k − 1] for the process equations of the RBF network α[k] = fα (α[k − 1]) as
+Fα[k − 1] = ∂fα
+∂α
+∣∣∣α= ˆα[k−1]
+=
+[ ∇Tα[k]
+[
+Inα−1 0nα−1
+]
+]
+(30)
+where Iz and 0z are the identity matrix of size z and a vector, including only zeroes of size z, respectively. Substituting α by φ and ρ, we get the Jacobians of the process equations for the scintillation phase and amplitude dynamics, respectively. The scintillation phase varies around 0, while the scintillation amplitude varies around 1, according to the signal model normalized by the undisturbed amplitude, as presented in Section II. Therefore, we drop the bias term from the scintillation phase RBF network, and we keep the linear AR terms in both phase and amplitude RBF networks for now, for the sake of generality. The scintillation phase RBF network, already discarding the bias term, can be compactly written as
+φ[k] = ωT
+φRBF ψ(xφ[k − 1]) + ωT
+φLIN xφ[k − 1] + ηφ[k − 1] (31) and the scintillation amplitude RBF network as
+ρ[k] = ω0ρ +ωT
+ρRBF ψ(xρ [k −1])+ωT
+ρLIN xρ [k −1]+ηρ [k − 1] (32) where ωφRBF = [ωφ1 , . . . , ωφnrφ ]T, ψ(xφ[k − 1]) = [ψ (‖xφ
+[k − 1] − cφ1 ‖2 ), . . . , ψ (‖xφ[k − 1] − cφnrφ ‖2 )]T, ωφLIN =
+[ωφnrφ +1 , . . . , ωφnrφ +nφ ]T, ωρRBF = [ωρ1 , . . . , ωρnrρ ]T, ψ(xρ [k − 1]) = [ψ (‖xρ[k − 1] − cρ1 ‖2), . . . , ψ (‖xρ[k − 1] −
+cρnrρ ‖2 )]T, and ωρLIN = [ωρnrρ +1 , . . . , ωρnrρ +nρ ]T.
+Unlike the scintillation phase and amplitude process models using the pure AR models, the process models using the RBF networks are nonlinear with respect to scintillation phase and amplitude state vectors. For the scintillation phase RBF network, the process equations can be written as
+xφ[k] =
+⎡
+⎣ωφTRBF ψ(xφ[k − 1]) + ωφTLIN xφ [k − 1]
+[
+Inφ −1 0nφ −1
+]
+xφ[k − 1]
+⎤
+⎦
+} {{ }
+=fφRBF (xφ [k−1])
++νφ[k −1]
+(33)
+and for the scintillation amplitude, as
+xρ[k] =
+⎡
+⎣ωρTRBF ψ(xρ [k − 1]) + ωρTLIN xρ [k − 1]
+[
+Inρ −1 0nρ −1
+]
+xρ[k − 1]
+⎤
+⎦
+} {{ }
+=fρRBF (xρ [k−1])
++
+[
+ωρ0
+0nρ −1
+]
+} {{ }
+=bρRBF
++νρ[k − 1] (34)
+with the RBF process noise vectors
+νφ[k] =
+[
+ηφ[k] 0T
+nφ −1
+]T
+(35)
+and
+νρ[k] =
+[
+ηρ[k] 0T
+nρ −1
+]T
+(36)
+whose covariance matrices are QφRBF = diag([ση2φ , 0T
+nφ −1]T )
+and QρRBF = diag([ση2ρ , 0T
+nρ−1]T ), respectively, with QφRBF ∈
+Rnφ×nφ and QρRBF ∈ Rnρ×nρ , where diag(v) denotes a diagonal matrix formed by the elements of the vector v. The Jacobian matrix of the scintillation phase process equations is
+FφRBF [k − 1] = ∂ fφRBF
+∂ xφ
+∣∣∣
+xφ =ˆxφ [k−1]
+=
+⎡
+⎣
+∑nrφ i=1
+ωφi ∂ψ /∂rφi rφi
+( ˆxφ [k − 1] − cφi )T + ωφTLIN
+[
+Inφ −1 0nφ −1
+]
+⎤
+⎦ (37)
+and the Jacobian matrix of the scintillation amplitude process equations is
+FρRBF [k − 1] = ∂ fρRBF
+∂ xρ
+∣∣∣
+xρ =ˆxρ [k−1]
+=
+⎡
+⎣
+∑nrρ i=1
+ωρi ∂ψ /∂rρi rρi
+( ˆxρ [k − 1] − cρi )T + ωρTLIN
+[
+Inρ −1 0nρ −1
+]
+⎤
+⎦ (38)
+with FφRBF [k − 1] ∈ Rnφ×nφ and FρRBF [k − 1] ∈ Rnρ×nρ .
+IV. KALMAN PLL STRUCTURES FOR SCINTILLATION MITIGATION WITH RBF NETWORKS MODELING SCINTILLATION
+Let the LOS dynamics and scintillation phase and amplitude be considered independent processes. Then, the scintillation process model can be added to the LOS process model so that LOS robust tracking and scintillation phase and amplitude estimation are accomplished by a Kalman PLL. The LOS dynamics is represented by the kinematic process model [40]
+⎡
+⎣φD[k]
+fD[k] aD[k]
+⎤
+⎦
+} {{ }
+=xD [k ]
+=
+⎡
+⎢⎣
+1 TI T 2
+I /2
+0 1 TI
+00 1
+⎤
+⎥⎦
+} {{ }
+=FD
+⎡
+⎣φD[k − 1]
+fD[k − 1] aD[k − 1]
+⎤
+⎦
+} {{ }
+=xD [k −1]
++νD[k − 1]
+(39)
+6882 IEEE TRANSACTIONS ON AEROSPACE AND ELECTRONIC SYSTEMS VOL. 59, NO. 5 OCTOBER 2023
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 09,2025 at 11:20:10 UTC from IEEE Xplore. Restrictions apply.
+
+
+after truncation of (6) at the second-order term. The LOS state vector xD[k] is formed by Doppler phase φD[k], frequency shift fD[k], and frequency drift aD[k]. The kinematic model truncated at the second-order term represents the LOS dynamics with zero-mean Gaussian jerk with power σ2
+a ̇D , so the process noise νD[k] is defined by the covariance
+matrix QD = σ 2
+a ̇D QI , where
+QI =
+⎡
+⎢⎣
+T5
+I /20 T 4
+I /8 T 3
+I /6 T4
+I /8 T 3
+I /3 T 2
+I /2 T3
+I /6 T 2
+I /2 TI
+⎤
+⎥⎦. (40)
+Different Kalman PLL structures can be implemented for carrier synchronization considering either direct states or error states [41], [42]. In this work, we propose a Kalman PLL structure for scintillation mitigation that includes the scintillation phase dynamics in the Kalman filter model with discriminator outputs taken as filter innovations, henceforth called discriminator-based Kalman PLL. We also propose a Kalman PLL structure considering both scintillation phase and amplitude estimation with prompt correlator I/Q outputs as observations, henceforth called correlator-based Kalman PLL. In both structures, the Kalman filters provide direct state estimates since we apply nonlinear models for scintillation. Therefore, as the process models are nonlinear due to the RBF networks, the choice between the two proposed architectures should include considerations regarding the observation equations, where, in the discriminator-based, there is a linearity assumption on the filter innovations, while in the correlator-based, the observation equations must be linearized at each Kalman filter iteration. Other differences regarding both Kalman PLLs are highlighted later in the discussion of the performance evaluation using synthetic scintillation data. Next, we describe the Kalman PLL formulation for both structures using the RBF networks to model scintillation.
+A. Discriminator-Based Kalman PLL
+In the direct state discriminator-based Kalman PLL, the scintillation amplitude is not included in the state vector comprised of the LOS states and the scintillation phase states. The state vector x1[k] of the discriminator-based Kalman PLL is
+x1[k] =
+[
+xT
+D[k] xφT[k]
+]T . (41)
+The process equations used for the state propagation in the Kalman filter can be written as
+x1[k] =
+[
+FDxD[k − 1]
+fφRBF (xφ[k − 1])
+]
++ ν1[k − 1] (42)
+with fφRBF (xφ[k − 1]) defined in (33) and with ν1[k] =
+[
+νT
+D[k] νφT[k]
+]T
+, where νφ[k] is formed by the RBF net
+work error, as defined in (35). The Jacobian matrix of the process equations used in the state covariance propagation of the Kalman filter is
+F1 = blkdiag(FD, FφRBF [k − 1]) (43)
+where blkdiag(M1, . . . , Mo) denotes a block-diagonal matrix formed by the matrices M1, . . . , Mo on its main diagonal. The process noise covariance matrix is
+Q1 = blkdiag(QD, QφRBF ) (44)
+for the process noise vector ν1[k] =
+[
+νT
+D[k] νφT[k]
+]T .
+Due to the nature of the scintillation phase dynamics in severe scintillation, which may present rapid variations and discontinuities with half-cycle jumps, the Jacobian computation near such discontinuities may lead to filter divergence. Thus, we apply a suboptimal but numerically more robust computation of the Jacobian of the scintillation phase
+FφRBF = ∂ fφRBF
+∂ xφ
+∣∣∣∣xφ =xφ
+(45)
+with xφ = 0T
+nφ ; hence, we set FφRBF [k − 1] = FφRBF . The carrier replica is generated from the estimated states, and the Kalman filter innovations sequence is formed by the outputs of the phase discriminator (21). The innovation is the sum of the Doppler and the scintillation phase errors. Hence, the matrix of observations is
+H1 =
+[
+1 0 0 1 0T
+nφ −1
+]
+(46)
+with measurement noise covariance defined by the arctangent discriminator noise approximation (22)
+R1 = 1
+2c/n0TI
+(
+1+ 1
+2c/n0TI
+)
+. (47)
+The weights of the scintillation phase RBF network can be estimated by recursive least squares [43]. We implement the recursive least squares algorithm with a rectangular sliding window as proposed in [44] to estimate the weights of the RBF networks and the model error variance in real time. Then, we adaptively update fφRBF (xφ[k − 1]) and FφRBF
+with ˆωφRBF , ωˆ φLIN , and Qφ with σˆφ2[k − 1]. In addition,
+we also adaptively update R1 using ̂c/n0[k − 1] at each iteration. There are many algorithms available for c/n0 estimation [45].
+B. Correlator-Based Kalman PLL
+In the correlator-based structure, the Kalman filter estimates the scintillation amplitude state vector in addition to the LOS and scintillation phase state vectors. The state vector of the Kalman filter is now
+x2[k] =
+[
+xT
+1 [k] xρT[k]
+]T
+(48)
+with x1[k] =
+[
+xT
+D[k] xφT[k]
+]T
+. The process equations used
+for the state propagation in the Kalman filter can be written as
+x2[k] =
+⎡
+⎢⎣
+FDxD[k − 1]
+fφRBF (xφ[k − 1])
+fρRBF (xρ [k − 1])
+⎤
+⎥⎦ +
+[
+03+nφ
+bρRBF
+]
++ ν2[k − 1] (49)
+LOPES ET AL.: IONOSPHERIC SCINTILLATION MITIGATION 6883
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 09,2025 at 11:20:10 UTC from IEEE Xplore. Restrictions apply.
+
+
+with fφRBF (xφ[k − 1]) defined in (33), fρRBF (xρ [k − 1]) de
+fined in (34), and with ν2[k] =
+[
+νT
+D[k] νφT[k] νρT[k]
+]T .
+The Jacobian matrix of the process equations used in the state covariance propagation in the Kalman filter is
+F2 = blkdiag(FD, FφRBF , FρRBF [k − 1]) (50)
+and the process noise covariance matrix is
+Q2 = blkdiag(QD, QφRBF , QρRBF ). (51)
+The NCO process equations are
+xNCO[k] = FNCOxNCO[k − 1] + GNCOuNCO[k − 1] (52)
+with FNCO = F1 and GNCO = I3+nφ . The NCO state vector
+is xNCO =
+[
+xT
+DNCO [k] xφTNCO [k]
+]T
+, with
+xDNCO [k] =
+[
+φDNCO [k] fDNCO [k] aDNCO [k]
+]T
+(53)
+and
+xφNCO [k] =
+[
+φNCO[k] . . . φNCO[k − nφ + 1]
+]T . (54)
+The NCO uses its scintillation phase estimate along with its LOS estimates to generate the replica e jφNCO d[k; fDNCO ]. Calling φT [k] = φD[k] + φ[k] and φTNCO [k] = φTNCO [k] + φNCO[k] so that δφT [k] = φT [k] − φTNCO [k], we can modify (20) to obtain the observation equations of the correlatorbased Kalman filter from the I/Q prompt correlators outputs, and we get
+y2[k] =
+[
+ρ[k] cos (δφT [k])
+ρ[k] sin (δφT [k])
+]
++
+[
+ηDI [k]
+ηDQ [k]
+]
+. (55)
+The matrix of observations is obtained by linearization of (55) and we get
+H2 =
+⎡
+⎣ ρ sin δφT 0T
+2 ρ sin δφT 0T
+nφ−1 cos δφT 0T
+nρ −1
+-ρ cos δφT 0T
+2 -ρ cos δφT 0T
+nφ−1 sin δφT 0T
+nρ −1
+⎤
+⎦
+(56) where, as the Kalman filter is estimating the direct states instead of the error states, we have δφT = φˆ D[k|k − 1] +
+φˆ [k|k − 1] − φDNCO [k − 1] − φNCO[k − 1]. For the amplitude, we have ρ = ρˆ [k|k − 1]. The noise covariance matrix is
+R2 = (σ 2
+ηD /2)I2 (57)
+with ση2DI = ση2DQ = ση2D /2. We use a state feedback control law to provide the control signal uNCO[k] to the NCO, such that
+uNCO[k] = Lδ ˆx1[k] (58)
+where L ∈ R(3+nφ )×(3+nφ ) is a fixed feedback gain matrix, which is computed to drive the phase error dynamics to zero fast, and δ ˆx1[k] = ˆx1[k] − xNCO[k − 1]. Assuming that the Kalman filter provides the accurate estimation of δx1[k], relying on the separation principle [46], the error dynamics are
+δx1[k] ≈ (F1 − L) δx1[k − 1] + ν1[k − 1]. (59)
+We can compute the gain matrix L to place the eigenvalues of (F1 − L) at the chosen target poles p1. The RBF network weights and the network error variance are also estimated by the recursive sliding window least squares algorithm from teh article presented in [44]. Similarly, we adaptively update fφRBF (xφ[k − 1]), fρRBF (xρ[k − 1]), FφRBF , FρRBF [k − 1], QφRBF , and QρRBF in the Kalman filter with ˆωφRBF [k − 1], ˆωφLIN [k − 1], ωˆ ρRBF [k − 1], ωˆ ρLIN [k − 1],
+ωρ0 [k − 1], σˆφ2[k − 1], and σˆρ2[k − 1] from the recursive least squares estimation. We also adaptively update R2 with σˆη2D [k − 1] = 1/(TI ̂c/n0[k − 1]). The discriminator-based and correlator-based structures employing the AR models are similar to the structures employing the RBF models. The only difference is in the scintillation process models of the Kalman filters, which are linear and formed by the parameters of the AR models. The process models and the process noise covariance matrices are defined according to the article presented in [25].
+C. Recursive Least Squares With Rectangular Sliding Window
+The recursive least squares with rectangular sliding window from the article presented in [44] is a two-step algorithm. In the first step, when new data yω[k] are available, the set of equations is the same of the standard recursive least squares implementation and can be written as
+Kω[k] = Pω[k − 1]φω[k]/(φT
+ω[k]Pω[k − 1]φω[k] + 1)
+ˆω′[k] = ωˆ [k − 1] + Kω[k]eω[k]
+P′ω[k] = Pω[k − 1] − Kω[k]φT
+ω[k]Pω[k − 1] (60)
+where intermediate parameter vector ωˆ ′[k] and covariance matrix P′ω[k] are estimated, after the update of the gain
+Kω[k]. The residual eω[k] is obtained by eω[k] = yω[k] − φTω[k] ˆω[k − 1], and φω[k] is the vector formed by the re
+gressors up to instant k − 1. In the second step, the parameter vector ωˆ [k] and covariance Pω[k] are corrected after removal of the data received at instant k − l, with a new update of the gain Kω[k], where l is the number of data points in the sliding window. The set of equations for the correction step can be written as
+Kω[k] = −P′ω[k]φω[k − l]/(φT
+ω[k − l]P′ω[k]φω[k − l] + 1)
+ωˆ [k] = ωˆ ′[k] + Kω[k](yω[k − l] − φT
+ω[k − l] ˆω′[k − 1])
+Pω[k] = P′ω[k] − Kω[k]φT
+ω[k − l]P′ω[k]. (61)
+In the case of the RBF networks, the vector of parameters is formed by the network weights. In the discriminatorbased structure, the scintillation phase taken from the Kalman filter estimate of the state vector x1[k] is employed as the data yω[k], and, in the correlator-based structure, the scintillation phase and the scintillation amplitude taken from the Kalman filter estimate of the state vector x2[k] are employed, separately, as the data yω[k]. Then, the weights and the variances of the residuals of the respective networks in both structures are recursively estimated to update the process models and the process covariance matrices, respectively. For scintillation phase,
+6884 IEEE TRANSACTIONS ON AEROSPACE AND ELECTRONIC SYSTEMS VOL. 59, NO. 5 OCTOBER 2023
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 09,2025 at 11:20:10 UTC from IEEE Xplore. Restrictions apply.
+
+
+we define ω[k] =
+[
+ωφTRBF [k] ωφTLIN [k]
+]T
+and φω[k] =
+[
+ψT(xφ[k − 1]) xφT[k − 1]
+]T
+in (60) and (61). For scintil
+lation amplitude, we define ω[k] = [ω0ρ ωρTRBF [k] ωρTLIN [k]]T
+and φω[k] = [1 ψT(xρ[k − 1]) xρT[k − 1]]T in (60) and (61).
+V. EVALUATION OF THE PROPOSED KALMAN PLLS WITH RBF NETWORKS MODELING SCINTILLATION
+The proposed Kalman PLL structures employing RBF networks modeling scintillation for scintillation mitigation are first evaluated by Monte Carlo simulations considering synthetic scintillation input data generated by the CSM [29] in severe scintillation scenarios also considering receiver thermal noise. The CSM is a statistical model adjusted with empirical data used to generate complex samples of equatorial scintillation time series. It is a popular model, largely employed in the literature [3], and very convenient for simulation purposes [24]. The parameters of the model are the S4 index (0 < S4 ≤ 1), which describes the strength of amplitude scintillation, thus characterizing the amplitude distribution of the time series, and the decorrelation time τ0 (0.1 ≤ τ0 < 2, in seconds), which defines the decay rate of the autocorrelation function of the time series. The rapidity of scintillation increases with the decrease of τ0. The samples are provided at 100 Hz rate. The scintillation is considered weak if S4 ≤ 0.3, moderate if 0.3 < S4 ≤ 0.6, and severe if S4 > 0.6. As a rule, higher S4 and lower τ0 lead to more severe scintillation [23]. Additionally, the Kalman PLLs are evaluated using real scintillation data collected by a commercial off-the-shelf GNSS receiver.
+A. Synthetic Scintillation Data
+The proposed adaptive Kalman PLL algorithms for scintillation mitigation employing the RBF networks to model scintillation phase and amplitude dynamics are evaluated by numerical simulations considering synthetic scintillation realizations generated by the CSM [29] in a severe scintillation scenario defined by amplitude strength index S4 = 0.8 and decorrelation time τ0 = 0.1 s. We consider receiving an L1 GPS C/A code signal with a Doppler frequency shift of 1 kHz and a Doppler frequency drift of 0.94 Hz/s, which is the maximum value that an on-ground static receiver would experience based on the orbital dynamics of the GPS satellites [47]. Simulated scintillation amplitude and phase with the CSM are introduced to the simulated signal. Perfect code delay and navigation bit synchronization is assumed with the received BB GNSS signals in the receiver and the carrier amplitude is unitary. Gaussian receiver thermal noise is added to the sampled I/Q signal components in all simulations, generated with variance such that the nominal C/N0 is 45 dB-Hz. The samples of the scintillation data are generated by the CSM each 10 ms, and the coherent integration period TI is 10 ms. The performance of the proposed Kalman PLLs employing the RBF networks is evaluated based on 300 Monte
+Carlo simulations with severe scintillation and receiver noise realizations, each with a 150 s time window and compared with the performance of the Kalman PLLs employing the pure AR models. The performance measure is the root-mean-square error
+RMSEx[k] =
+√√√√ 1
+M
+∑M
+m=1
+1
+k
+k ∑
+i=1
+(xm[i] − xˆm[i])2 (62)
+with x being substituted by the variable of interest, for the time index k, the Monte Carlo iteration index m, and the number of Monte Carlo simulations M. We also compute the root mean of the trace of the state covariance matrix P[k] computed by the Kalman filter as an indicator of the reliability of the Kalman filters. Since the diagonal elements represent variances of the components of the state vector, if their sum converges, no single element is diverging, then it is an indicator of convergence of the filter [48]. Thus, we define
+RMSSTr(P)[k] =
+√√√√ 1
+M
+∑M
+m=1
+1
+k
+k ∑
+i=1
+Tr(P[i]) (63)
+where Tr(·) represents the trace of a matrix, and we consider the root mean of the sum of squares (RMSS) since the variances are squares of standard deviations. So, the RMSS is defined in terms of standard deviations as the RMSE. In the following, we label the adaptive discriminator-based and correlator-based Kalman PLLs employing the RBF networks as DKPLL-RBF and CKPLL-RBF, respectively, and the adaptive discriminator-based and correlator-based Kalman PLLs employing pure AR models as DKPLL-AR and CKPLL-AR, respectively. In all cases, the covariance matrix related to the kinematic LOS model is defined with σ 2
+a ̇D = 2π × 1.35 × 10−4
+rad2/s5 based on the value of the maximum Doppler drift rate observed by a static receiver positioned on ground. There are many methods available for C/N0 estimation in GNSS receivers [45], [49] that can be employed to adaptively update the measurement noise covariance matrices R1 and R2 in the discriminator-based and correlator-based Kalman PLLs, respectively. Here, we estimate the C/N0 according to
+̂c/n0[k] = (̂ρ[k])2c/n0 (64)
+for ̂c/n0[k] in Hz, and c/n0 = 1045/10 Hz, which is the nominal c/n0 equivalent to 45 dB-Hz. In the case of the correlator-based Kalman PLLs, ρˆ [k] is the scintillation amplitude estimated by the Kalman filters, and, in the case of the discriminator-based Kalman PLLs, we use
+ρˆ [k] = √I2
+P[k] + Q2
+P[k], where IP[k] and QP[k] are the I/Q prompt correlator outputs, respectively. We used one severe scintillation realization to perform the system identification of the AR models and the RBF networks representing the scintillation phase and amplitude dynamics. Thus, we obtain the AR model parameters, the AR model error variances, the weights of the RBF networks,
+LOPES ET AL.: IONOSPHERIC SCINTILLATION MITIGATION 6885
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 09,2025 at 11:20:10 UTC from IEEE Xplore. Restrictions apply.
+
+
+Fig. 1. Scintillation phase model order.
+Fig. 2. Scintillation amplitude model order.
+and the network error variances from this realization in an offline system identification procedure to define a nominal set of parameters/weights employed as initial conditions for the recursive least squares and to define the initial covariance matrices related to the scintillation processes. We can determine the order of the models by using an information criterion, such as the Akaike information criterion or the Bayesian information criterion [36]. In this work, we use the partial autocorrelation function (PAF) to define the order of the models, as typically found in the literature [23], [24], [25], [27]. From this procedure, performed offline, the model order of the AR and RBF models for the scintillation phase is nφ = 2 and, for the scintillation amplitude, is nρ = 5, according to the PAFs of the phase and amplitude samples, as presented in Figs. 1 and 2, respectively. In the system identification of the RBF networks, we chose at random one from the 300 synthetic scintillation realizations as the training data. The centers are taken from the training data equally spaced in time. The number of centers is nrφ = 38 for the scintillation phase network and nrρ = 20 for the scintillation amplitude network. In the amplitude network, we included the linear AR terms. If we sort the 26 weights of the amplitude network in descending order of their magnitudes, the weights of the linear terms are in positions 1, 2, 4, 8, and 19. The bias term is in position 9.
+Fig. 3. Doppler phase estimation RMSEφD .
+Fig. 4. Scintillation phase estimation RMSEφ.
+For the online parameter estimation, we employed the recursive least squares algorithm of the article presented in [44] with a 1500 points rectangular sliding window. This approach significantly reduces the parameter estimation complexity compared with the approach employing batch least squares for the sliding window. The controller gains for CKPLL-AR and CKPLL-RBF were computed to obtain the respective phase error closed-loop dynamics at the same target eigenvalues. The results of the Monte Carlo simulations comparing DKPLL-AR, DKPLL-RBF, CKPLL-AR, and CKPLL-RBF, discarding the cases presenting cycle slips from the RMSE computation, are presented in Figs. 3–6, for, respectively, Doppler phase φD[k], scintillation phase φ[k], scintillation amplitude ρ[k], and the trace of the state covariance matrix Tr(P[k]). The scintillation amplitude is not estimated in the discriminator-based Kalman PLLs. All the Kalman PLLs show good convergence characteristics, as indicated by the RMSS of the state covariance matrices. In general, the results of the proposed adaptive Kalman PLL structures modeling the scintillation dynamics with RBF networks are comparable to those of the corresponding structures with the AR scintillation models in terms of estimation error and robustness to cycle slips and loss of lock. We did not include the traditional or Kalman PLL structures
+6886 IEEE TRANSACTIONS ON AEROSPACE AND ELECTRONIC SYSTEMS VOL. 59, NO. 5 OCTOBER 2023
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 09,2025 at 11:20:10 UTC from IEEE Xplore. Restrictions apply.
+
+
+Fig. 5. Scintillation amplitude estimation RMSEρ .
+Fig. 6. State covariance RMSSTr(P).
+not modeling scintillation in our analysis, which are significantly less robust [24]. The RBF networks show a slight advantage when comparing the correlator-based structures. A more pronounced performance difference can be observed among the correlator-based structures regarding the carrier synchronization error, with an advantage for the RBF networks, as shown in Fig. 3. The RMSE values are similar for both DKPLLs and CKPLLs, as presented in the other figures. The higher errors observed for the scintillation phase estimation of the correlator-based compared with the discriminator-based structures in Fig. 4 are related to the dynamics introduced to the loop by the NCO controller. Especially in the case of half-cycle phase discontinuities induced by severe scintillation, the correlator-based structures are less responsive to follow such discontinuities increasing the RMSE. Despite this, they can improve the robustness of the carrier synchronization in case of scintillation. In the absence of half-cycle phase discontinuities, the scintillation phase estimation performance of the carrier-based is equivalent to the discriminator-based structures, as shown later by the results using real scintillation data. However, according to the article presented in [24], the discriminator-based approach is considered to be a less robust architecture with the nonlinearities of the discriminator and possible saturation at low C/N0. The RBF networks allow more flexibility in
+Fig. 7. Doppler phase estimation RMSEφD , weak and moderate scintillation.
+modeling scintillation-induced effects due to the nonlinear RBFs. The degree of nonlinearity in the scintillation data generated by the CSM could not clearly show the advantages of using the RBF networks. However, for real scintillation data, these advantages can be clearly observed. In general, the AR models obtained from the offline system identification procedure using scintillation data with higher intensity are more robust to model mismatch when the current scintillation intensity is lower, which is a less critical scenario from the perspective of robust carrier tracking [24]. Therefore, a good approach to improve convergence of the online parameter estimation and, thus, improve the robustness of the Kalman PLL structures in real-life application, not requiring prior information on the current scintillation intensity, is to initialize the recursive least squares with the set of parameters from the system identification using data from severe scintillation scenarios [25]. To assess the robustness of the structures with the RBF networks to the initial conditions and to the network structure and also to test the structures in different scintillation scenarios, we performed 300 Monte Carlo simulations with both weak and moderate scintillation realizations defined by S4 = 0.25 and τ0 = 0.8 s, and by S4 = 0.5 and τ0 = 0.4 s, respectively. We kept the same network structure and initial conditions, including the weights, from the simulations in the severe scintillation scenario. The results of the Monte Carlo simulations comparing DKPLL-AR, DKPLL-RBF, CKPLL-AR, and CKPLL-RBF are presented in Figs. 7–10, for, respectively, Doppler phase φD[k], scintillation phase φ[k], scintillation amplitude ρ[k], and the trace of the state covariance matrix Tr(P[k]). Despite the networks are not optimized for the respective scintillation condition, they show good convergence characteristics. No metrics were computed to compare the computational complexity of the Kalman PLL structures. However, the recursive sliding window least squares implementation offers great advantage with respect to the batch implementation in terms of computational effort, even computing the nonlinear RBFs and considering the extra network weights in relation to the parameters of the pure AR models, since
+LOPES ET AL.: IONOSPHERIC SCINTILLATION MITIGATION 6887
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 09,2025 at 11:20:10 UTC from IEEE Xplore. Restrictions apply.
+
+
+Fig. 8. Scintillation phase estimation RMSEφ, weak and moderate scintillation.
+Fig. 9. Scintillation amplitude estimation RMSEρ , weak and moderate scintillation.
+Fig. 10. State covariance RMSSTr(P), weak and moderate scintillation.
+we are avoiding complex matrix operations of the standard least squares solution, such as matrix inversions. On the other hand, if the recursive least squares is implemented in both Kalman PLL structures, employing the RBF networks and the pure AR models, or considering that the online parameter estimation is disabled in both cases, the algorithms employing the RBF networks will be more complex due to the computation of the nonlinear RBFs. Our proposed
+Fig. 11. S4 index for PRN 24, recorded on October 27, 2017, and PRN 21, recorded on November 16, 2017.
+algorithms are completely recursive. Thus, by design, they can be implemented in a real software-defined receiver once the available computational capacity meets the real-time requirements.
+B. Real Scintillation Data
+The performance of the Kalman PLLs is also assessed with real scintillation data collected by a JAVAD Delta 3 receiver [50] connected to a Leica AR25 choke-ring antenna installed on the rooftop of the building of the Department of Teleinformatics Engineering of the Federal University of Ceara (UFC) in Fortaleza, Brazil. The receiver is a part of a scintillation monitoring station operated by the German Aerospace Center (DLR) and UFC. The L1 GPS C/A code signal presenting scintillation from satellite PRN 24, recorded on October 27, 2017, from 22:00 UTC to 23:00 UTC, and from satellite PRN 21, recorded on November 16, 2017, from 22:00 UTC to 23:00 UTC, is used to evaluate the proposed Kalman PLLs. According to the S4 index computed for both datasets, as presented in Fig. 11, PRN 24 oscillates between weak to moderate scintillation, while PRN 21 oscillates between moderate to severe scintillation. The receiver in its default settings implements a third-order PLL with a noise bandwidth of 25 Hz, running at 50 Hz and with TI = 20 ms. Scintillation phase, scintillation amplitude, and carrier time series are obtained from the receiver data using a standard postprocessing procedure, as described in [51] and [52]. In such procedure, the time series are obtained from the postcorrelation internal observables of the receiver tracking loop, such as the I/Q prompt correlator output and the carrier phase estimate, available at 50 Hz. The time series obtained from this procedure are suitable for the evaluation of the algorithms since we work with a postcorrelation signal model considering perfect code delay synchronization. We adjusted the AR and RBF network models to the scintillation phase and amplitude samples obtained from the real scintillation data. The model order, or the number of lags, was chosen to achieve the best fit to the data for both the AR and RBF network models.
+6888 IEEE TRANSACTIONS ON AEROSPACE AND ELECTRONIC SYSTEMS VOL. 59, NO. 5 OCTOBER 2023
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 09,2025 at 11:20:10 UTC from IEEE Xplore. Restrictions apply.
+
+
+Fig. 12. RMSEφD , with online parameter estimation disabled, for PRN 24.
+Despite the detrending employed in the data postprocessing procedure, residual effects are expected to still be present in the samples. Also, the scintillation characteristics can evolve during the relatively large selected time windows, changing its pattern or even presenting nonlinear behavior. We can especially observe that, in the scintillation phase samples of the recorded receiver data, the derived model order of the AR model is 10 for both time series, while the model order of the RBF network is 1 for PRN 24 and 4 for PRN 21. The model order of both the AR and RBF models for the scintillation amplitude is 1 in both cases. The centers are taken from the real scintillation data, equally spaced in time. The number of centers of the RBF networks is 40 for the scintillation phase and 20 for the scintillation amplitude, fixed for both time series. No linear AR terms were considered in both networks. The parameters of the kinematic process model of the LOS dynamics employed in the Kalman PLLs are defined employing the values used in the Monte Carlo simulations with the synthetic scintillation data. In a first evaluation with the real scintillation data, we compare the proposed to the Kalman PLLs using AR scintillation models with the online parameter estimation disabled in both cases. For PRN 24, the comparison of the RMSE of φD[k] and φ[k] is depicted in Figs. 12 and 13, respectively, for DKPLL-AR, DKPLL-RBF, CKPLLAR, and CKPLL-RBF. The RMSE of ρ[k] is presented in Fig. 14 for only CKPLL-AR and CKPLL-RBF. For PRN 21, the comparison of the RMSE of φD[k] and φ[k] is depicted in Figs. 15 and 16, respectively, for DKPLL-AR, DKPLLRBF, CKPLL-AR, and CKPLL-RBF. The RMSE of ρ[k] is presented in Fig. 17 for only CKPLL-AR and CKPLL-RBF. In the second evaluation, we compare the results of the proposed to the Kalman PLLs with AR scintillation models with the online parameter estimation enabled in both structures. We used a 1500 points sliding window for the online parameter estimation. For PRN 24, the comparison of the RMSE of φD[k] and φ[k] is depicted in Figs. 18 and 19, respectively, for DKPLL-AR, DKPLL-RBF, CKPLLAR, and CKPLL-RBF. The RMSE of ρ[k] is presented in Fig. 20, for CKPLL-AR and CKPLL-RBF. For PRN 21,
+Fig. 13. RMSEφ, with online parameter estimation disabled, for PRN 24.
+Fig. 14. RMSEρ , with online parameter estimation disabled, for PRN 24.
+Fig. 15. RMSEφD , with online parameter estimation disabled, for PRN 21.
+the comparison of the RMSE of φD[k] and φ[k] is depicted in Figs. 21 and 22, respectively, for DKPLL-AR, DKPLLRBF, CKPLL-AR, and CKPLL-RBF. The RMSE of ρ[k] is presented in Fig. 23, for CKPLL-AR and CKPLL-RBF. The results of the two evaluations highlight the RBFs’ approximation capability in the learning process, which is performed by least squares estimation of the weights of the RBF network since the network has a linear structure with
+LOPES ET AL.: IONOSPHERIC SCINTILLATION MITIGATION 6889
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 09,2025 at 11:20:10 UTC from IEEE Xplore. Restrictions apply.
+
+
+Fig. 16. RMSEφ, with online parameter estimation disabled, for PRN 21.
+Fig. 17. RMSEρ , with online parameter estimation disabled, for PRN 21.
+Fig. 18. RMSEφD , with online parameter estimation enabled, for PRN 24.
+respect to its weights. They also highlight the network’s generalization capability to different scintillation patterns. Regarding scintillation phase and carrier phase estimation, the RMSEs of the Kalman PLLs employing the RBF networks are approximately the same in both evaluations, with and without online parameter estimation. The RBF network was able to capture the scintillation phase dynamics in the learning process, and thus, the online parameter estimation
+Fig. 19. RMSEφ, with online parameter estimation enabled, for PRN 24.
+Fig. 20. RMSEρ , with online parameter estimation enabled, for PRN 24.
+Fig. 21. RMSEφD , with online parameter estimation enabled, for PRN 21.
+did not significantly improve the results. Otherwise, the performance of the Kalman PLLs employing an AR model of order 10 significantly improved in the case the online parameter estimation is enabled, with both scintillation and carrier phases presenting an RMSE close to the RMSE of the Kalman PLLs employing the RBF network. An overparameterized linear AR model is required to fit the data, and online parameter estimation is crucial to adjust
+6890 IEEE TRANSACTIONS ON AEROSPACE AND ELECTRONIC SYSTEMS VOL. 59, NO. 5 OCTOBER 2023
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 09,2025 at 11:20:10 UTC from IEEE Xplore. Restrictions apply.
+
+
+Fig. 22. RMSEφ, with online parameter estimation enabled, for PRN 21.
+Fig. 23. RMSEρ , with online parameter estimation enabled, for PRN 21.
+this model to the evolving scintillation effects. Regarding the scintillation amplitude, both the AR and RBF models of order 1 could provide a reduced RMSE with or without the online parameter estimation. The window size of the recursive least squares was defined experimentally. We started with 500 points, as used in [25], increasing this number to refine the estimation error. With 500 points, all assessed algorithms would work, but we decided to be conservative and fixed the number of points to 1500 points to cover all the cases tested in different scintillation scenarios. For a coherent integration period of 10 ms, this conservative choice of 1500 points is equivalent to 15 s of data. This is a reasonable time window to capture the scintillation variations in a current scintillation scenario and not an excessively long time window to contain various scintillation scenarios, with time-varying dynamics, in just one window. In addition, due to the flexibility provided by the nonlinear RBFs, theoretically, the RBF networks are more robust than the AR models to adjust to the dynamics in the case that various scintillation scenarios occur in one window. The observation that the RBF networks are better capable to adjust to different scenarios is consistent with the results of the evaluation of the Kalman PLL structures with real scintillation data. The choice of the number of points should also consider the memory available in a specific
+receiver hardware since we have to store this amount of data for the recursive least squares. The RBF networks represent a feasible alternative to include online recursive parameter estimation with least squares differently from other neural networks being highly nonlinear with respect to their weights. Our intention is to show the potential applicability of the RBF networks to model scintillation in the context of the Kalman PLL structures, with the improved flexibility compared with the AR models provided by the nonlinear RBF structure to capture the possibly nonlinear and time-varying dynamics. A more comprehensive analysis including further testing and further exploration of the modeling aspects with the RBF networks is required to obtain a global model of the scintillation dynamics.
+VI. CONCLUSION
+In this work, we investigated discriminator-based and correlator-based Kalman PLL structures for ionospheric scintillation mitigation on GNSS receivers, with scintillation phase and amplitude modeled by RBF networks, whose weights can be estimated by recursive sliding window least squares. The performance of the proposed algorithms was assessed by Monte Carlo simulations using synthetic scintillation data and by real scintillation data collected by a commercial receiver. The Monte Carlo simulation results show the capability of the structures employing the RBF networks to perform robust carrier synchronization, with performance similar to the state-of-the-art adaptive approaches using AR scintillation phase and amplitude models, with a slight advantage of the structures employing the RBF networks. The nonlinear RBFs allow to capture eventual nonlinear dynamics induced by scintillation, possibly evolving with time, providing more flexibility than the linear AR models at the expense of a more complex structure. Possibly, the synthetic data considered did not present significant nonlinearities to show this advantage of the RBF networks. On the other hand, the evaluations with real scintillation data highlight the learning and generalization capabilities of the RBF networks to cope with such effects, with the Kalman PLL structures employing the RBF networks presenting reduced error when compared with the structures employing the AR models, when the online parameter estimation was disabled. It was necessary to enable the online parameter estimation so that the AR model could be adjusted to the evolving receiver and scintillation characteristics over time to present errors close to the structures employing the RBF networks.
+REFERENCES
+[1] A. Moraes, F. da Silveira Rodrigues, W. J. Perrella, and E. R. de Oliveira Paula, “Analysis of the characteristics of low-latitude GPS amplitude scintillation measured during solar maximum conditions and implications for receiver performance,” Surv. Geophys., vol. 33, no. 5, pp. 1107–1131, 2012. [2] Y. Jiao, Y. T. Morton, S. Taylor, and W. Pelgrum, “Characterization of high-latitude ionospheric scintillation of GPS signals,” Radio Sci., vol. 48, no. 6, pp. 698–708, 2013.
+LOPES ET AL.: IONOSPHERIC SCINTILLATION MITIGATION 6891
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 09,2025 at 11:20:10 UTC from IEEE Xplore. Restrictions apply.
+
+
+[3] J. Vilá-Valls, N. Linty, P. Closas, F. Dovis, and J. T. Curran, “Survey on signal processing for GNSS under ionospheric scintillation: Detection, monitoring, and mitigation,” Navigation, vol. 67, no. 3, pp. 511–536, 2020. [4] K. S. Jacobsen and Y. L. Andalsvik, “Overview of the 2015 St. Patrick’s day storm and its consequences for RTK and PPP positioning in Norway,” J. Space Weather Space Climate, vol. 6, 2016, Art. no. A9. [5] S. Banville and R. B. Langley, “Mitigating the impact of ionospheric cycle slips in GNSS observations,” J. Geodesy, vol. 87, no. 2, pp. 179–193, 2013. [6] F. Legrand, C. Macabiau, J.-L. Issler, L. Lestarquit, and C. Mehlen, “Improvement of pseudorange measurements accuracy by using fast adaptive bandwidth lock loops,” in Proc. 13th Int. Tech. Meeting Satell. Div. Inst. Navigation, 2000, pp. 2346–2356.
+[7] R. Xu, Z. Liu, and W. Chen, “Improved FLL-assisted PLL with inphase pre-filtering to mitigate amplitude scintillation effects,” GPS Solutions, vol. 19, pp. 263–276, 2015. [8] J. López-Salcedo, J. A. Del Peral-Rosado, and G. Seco-Granados, “Survey on robust carrier tracking techniques,” IEEE Commun. Surv. Tut., vol. 16, no. 2, pp. 670–688, Apr./Jun. 2014. [9] W. Yu, G. Lachapelle, and S. Skone, “PLL performance for signals in the presence of thermal noise, phase noise, and ionospheric scintillation,” in Proc. 19th Int. Tech. Meeting Satell. Div. Inst. Navig., 2006, pp. 1341–1357. [10] N. Kassabian and Y. Morton, “Extending integration time for Galileo tracking robustness under ionosphere scintillation,” in Proc. IEEE/ION Position, Location Navig. Symp., 2014, pp. 59–72. [11] T.-Y. Chiou, “Design of a Doppler-aided GPS navigation system for weak signals caused by strong ionospheric scintillation,” Ph.D. dissertation, Dept. Aeronaut. Astronaut., Stanford Univ., Stanford, CA, USA, 2010. [12] T.-Y. Chiou, D. Gebre-Egziaber, T. Walter, and P. Enge, “Model analysis on the performance for an intertial aided FLL-assistedPLL carrier-tracking loop in the presence of ionospheric scintillation,” in Proc. Int. Tech. Meeting Satell. Div. Inst. Navig., 2007, pp. 1276–1295. [13] T.-Y. Chiou, J. Seo, T. Walter, and P. Enge, “Performance of a Doppler-aided GPS navigation system for aviation applications under ionospheric scintillation,” in Proc. 21st Int. Tech. Meeting Satell. Div. Inst. Navig., 2008, pp. 1139–1147. [14] J. I. Statman and W. J. Hurd, “An estimator-predictor approach to PLL loop filter design,” IEEE Trans. Commun., vol. 38, no. 10, pp. 1667–1669, Oct. 1990. [15] N. I. Ziedan and J. L. Garrison, “Extended Kalman filter-based tracking of weak GPS signals under high dynamic conditions,” in Proc. 17th Int. Tech. Meeting Satell. Div. Inst. Navig., 2004, pp. 20–31. [16] L. Zhang, Y. T. Morton, and M. M. Miller, “A variable gain adaptive Kalman filter-based GPS carrier tracking algorithms for ionosphere scintillation signals,” in Proc. 23rd Int. Tech. Meeting Satell. Div. Inst. Navig., 2010, pp. 3107–3114. [17] J.-H. Won, B. Eissfeller, T. Pany, and J. Winkel, “Advanced signal processing scheme for GNSS receivers under ionospheric scintillation,” in Proc. IEEE/ION Position, Location Navig. Symp., 2012, pp. 44–49. [18] J.-H. Won, “A novel adaptive digital phase-lock-loop for modern digital GNSS receivers,” IEEE Commun. Lett., vol. 18, no. 1, pp. 46–49, Jan. 2014. [19] M. Susi, M. Aquino, R. Romero, F. Dovis, and M. Andreotti, “Design of a robust receiver architecture for scintillation monitoring,” in Proc. IEEE/ION Position, Location Navig. Symp., 2014, pp. 73–81. [20] M. Susi, M. Andreotti, and M. Aquino, “Kalman filter based PLL robust against ionospheric scintillation,” in Mitigation of Ionospheric Threats to GNSS: An Appraisal of the Scientific and Technological Outputs of the TRANSMIT Project, R. Notarpietro, F. Dovis, G. D. Franceschi, and M. Aquino Eds. Rijeka, Croatia: IntechOpen, 2014, pp. 23–36.
+[21] D. Xu, Y. T. Morton, Y. Jiao, and C. Rino, “Robust GPS carrier tracking algorithms during strong equatorial scintillation for dynamic platforms,” in Proc. 30th Int. Tech. Meeting Satell. Div. Inst. Navig., 2017, pp. 4112–4121. [22] T. E. Humphreys, M. L. Psiaki, P. M. Kintner, and B. M. Ledvina, “GPS carrier tracking loop performance in the presence of ionospheric scintillations,” in Proc. Int. Tech. Meeting Satell. Div. Inst. Navig., 2005, pp. 156–167. [23] J. Vilá-Valls, P. Closas, C. Fernandez-Prades, J. A. López-Salcedo, and G. Seco-Granados, “Adaptive GNSS carrier tracking under ionospheric scintillation: Estimation vs. mitigation,” IEEE Commun. Lett., vol. 19, no. 6, pp. 961–964, Jun. 2015. [24] J. Vilá-Valls, P. Closas, C. Fernandez-Prades, and J. T. Curran, “On the mitigation of ionospheric scintillation in advanced GNSS receivers,” IEEE Trans. Aerosp. Electron. Syst., vol. 54, no. 4, pp. 1692–1708, Aug. 2018. [25] J. Vilá-Valls, C. Fernandez-Prades, J. Arribas, J. T. Curran, and P. Closas, “On-line model learning for adaptive GNSS ionospheric scintillation estimation and mitigation,” in Proc. IEEE/ION Position, Location Navig. Symp., 2018, pp. 1167–1172.
+[26] S. Locubiche-Serra, G. Seco-Granados, and J. A. López-Salcedo, “Doubly-adaptive autoregressive Kalman filter for GNSS carrier tracking under scintillation conditions,” in Proc. Int. Conf. Localization GNSS, 2016, pp. 1–6. [27] F. Fohlmeister, F. Antreich, and J. A. Nossek, “Dual Kalman filtering based GNSS phase tracking for scintillation mitigation,” in Proc. IEEE/ION Position, Location Navig. Symp., 2018, pp. 1151–1158. [28] R. A. M. Lopes, F. Antreich, F. Fohlmeister, M. Kriegel, and H. K. Kuga, “Kalman filter-based GNSS receiver structure for ionospheric scintillation mitigation employing radial basis functions networks,” in Proc. 35th Int. Tech. Meeting Satell. Div. Inst. Navig., 2022, pp. 2190–2201. [29] T. E. Humphreys, M. L. Psiaki, and P. M. Kintner, “Modeling the effects of ionospheric scintillation on GPS carrier phase tracking,” IEEE Trans. Aerosp. Electron. Syst., vol. 46, no. 4, pp. 1624–1637, Oct. 2010. [30] A. J. V. Dierendonck, “GPS receivers,” in Global Positioning System: Theory and Applications, B. W. Parkinson, J. J. Spilker Jr., P. Axerlrad, and P. Enge, Eds., vol. I. Reston, VA, USA: AIAA, 1996. [31] M. J. D. Powell, “Radial basis functions for multivariate interpolation: A review,” in Algorithms for Approximation, J. C. Mason and M. G. Cox, Eds., Oxford, U.K.: Carendon Press, 1987, pp. 143–167. [32] R. L. Hardy, “Multiquadric equations of topography and other irregular surfaces,” J. Geophysical Res., vol. 76, pp. 1905–1915, 1971. [33] D. S. Broomhead and D. Lowe, “Multivariable functional interpolation and adaptive networks,” Complex Syst., vol. 2, pp. 321–355, 1988. [34] L. A. Aguirre, R. A. M. Lopes, G. F. V. Amaral, and C. Letellier, “Constraining the topology of neural networks to ensure dynamics with symmetry properties,” Phys. Rev. E, vol. 69, 2004, Art. no. 026701. [35] L. A. Smith, “Identification and prediction of low dimensional dynamics,” Physica D, Nonlinear Phenomena, vol. 58, pp. 50–76, 1992.
+[36] L. A. Aguirre, Introdução à Identificação de Sistemas: Técnicas Lineares e Não-Lineares Aplicadas a Sistemas Reais, 1st ed. Belo Horizonte, Brazil: Editora UFMG, 2000. [37] H. Wendland, “Computational aspects of radial basis function approximation,” Stud. Comput. Math., vol. 12, pp. 231–256, 2006. [38] I. P. Schagen, “Interpolation in two dimensions—A new technique,” IMA J. Appl. Math., vol. 23, no. 1, pp. 53–59, 1979. [39] S. Chen, C. F. N. Cowan, and P. M. Grant, “Orthogonal least squares learning algorithm for radial basis function networks,” IEEE Trans. Neural Netw., vol. 2, no. 2, pp. 301–309, Mar. 1991. [40] Y. Bar-Shalom, X. R. Li, and T. Kirubarajan, Estimation With Applications to Tracking and Navigation: Theory Algorithms and Software. Hoboken, NJ, USA: Wiley, 2001.
+6892 IEEE TRANSACTIONS ON AEROSPACE AND ELECTRONIC SYSTEMS VOL. 59, NO. 5 OCTOBER 2023
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 09,2025 at 11:20:10 UTC from IEEE Xplore. Restrictions apply.
+
+
+[41] J.-H. Won, D. Dötterböck, and B. Eissefeller, “Performance comparison of different forms of Kalman filter approaches for a vector-based GNSS signal tracking loop,” Navigation, vol. 57, no. 3, pp. 185–199, 2010. [42] R. Yang, K.-V. Ling, E.-K. Poh, and Y. Morton, “Generalized GNSS signal carrier tracking: Part I—modeling and analysis,” IEEE Trans. Aerosp. Electron. Syst., vol. 53, no. 4, pp. 1781–1797, Aug. 2017. [43] T. Soderstrom and P. Stoica, System Identification. Hemel Hempstead, U.K.: Prentice-Hall, 1989.
+[44] P. C. Young, Recursive Estimation and Time-Series Analysis: An Introduction for the Student and Practitioner, 2nd ed. Berlin, Germany: Springer, 2011. [45] E. Falletti, M. Pini, and L. L. Presti, “Low complexity carrier-to-noise ratio estimators for GNSS digital receivers,” IEEE Trans. Aerosp. Electron. Syst., vol. 47, no. 1, pp. 420–437, Jan. 2011. [46] R. Curry, “Separation theorem for nonlinear measurements,” IEEE Trans. Autom. Control, vol. 14, no. 5, pp. 561–564, Oct. 1969. [47] R. A. M. Lopes, “Linear time-invariant and Bayesian filters for monitoring and mitigation of ionospheric scintillation in GNSS receivers,” Ph.D. dissertation, Space Mechanics Controls, Brazilian Inst. Space Res. (INPE), São José dos Campos, São Paulo, Brazil, 2022. [48] S. Gamse, T. A. Wunderlich, P. Wasmeier, and D. Kogoj, “The use of Kalman filtering in combination with an electronic tacheometer,” in Proc. Int. Conf. Indoor Positioning Navig., 2010, pp. 1–9.
+[49] K. Muthuraman and D. Borio, “C/N0 estimation for modernized GNSS signals: Theoretical bounds and a novel iterative estimator,” Navigation, vol. 57, no. 4, pp. 309–323, 2010. [50] J. GNSS, “JAVAD delta 3,” 2018, Accessed on: Nov. 29, 2021. [Online]. Available: http://www.javad.com/ [51] A. J. van Dierendonck, J. Klobuchar, and Q. Hua, “Ionospheric scintillation monitoring using commercial single frequency C/A code receivers,” in Proc. 6th Int. Tech. Meeting Satell. Div. Inst. Navig., 1993, vol. 93, pp. 1333–1342. [52] L. Zhang, Y. Morton, F. van Graas, and T. Beach, “Characterization of GNSS signal parameters under ionosphere scintillation conditions using software-based tracking algorithms,” in Proc. IEEE/ION Position, Location Navig. Symp., 2010, pp. 264–275.
+Rafael Anderson Martins Lopes is currently working toward the Ph.D. degree in space engineering and technology with the Brazilian Institute for Space Research (INPE), São José dos Campos, Brazil. He worked with the aircraft industry in the development of flight control systems, including fly-by-wire, autopilot, and autoland systems. He is currently an Engineer with the Brazilian Institute for Space Research (INPE), São José dos Campos. His research interests include attitude and orbit control, and GNSS.
+Felix Antreich (Senior Member, IEEE) received the diploma and Ph.D. degrees in electrical engineering from the Munich University of Technology (TUM), Munich, Germany, in 2003 and 2011, respectively. He is currently a Professor with Aeronautics Institute of Technology (ITA), São José dos Campos, Brazil. His research interests include signal processing for GNSS and wireless communications, estimation theory, and positioning.
+Friederike Fohlmeister received the M.Sc. and Doctoral degrees in electrical engineering from Technische Universität München (TUM), Munich, Germany, in 2014 and 2021, respectively. She joined the Institute of Communications and Navigation, German Aerospace Center (DLR), in 2014. Her research interests include GNSS signal processing under multipath, ionospheric scintillations, and other disturbances.
+Martin Kriegel received the M.Eng. degree in geoinformatics and geodesy from the Neubrandenburg University of Applied Sciences, Neubrandenburg, Germany, in 2012. Afterward, he joined German Aerospace Center (DLR), Neustrelitz, Germany. He is leading the developments of preoperational services to detect and mitigate space weather impact on modern technology by focusing on GNSS-based remote sensing of the ionosphere with DLR Institute for Solar-Terrestrial Physics, Neustrelitz, Germany.
+Helio Koiti Kuga received the Doctor degree in space engineering and technology from Brazilian Institute for Space Research (INPE), São José dos Campos, Brazil, in 1989. He was a Retired Senior Engineer and is currently a Professor with INPE on orbit and attitude dynamics and control, and space navigation. His research interests include astrodynamics, stability, and control of artificial satellites, mission analysis, orbit and attitude determination, global navigation satellite system, and Kalman filter applications.
+LOPES ET AL.: IONOSPHERIC SCINTILLATION MITIGATION 6893
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 09,2025 at 11:20:10 UTC from IEEE Xplore. Restrictions apply.

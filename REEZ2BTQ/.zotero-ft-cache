@@ -45,7 +45,7 @@ the popular KITTI leaderboard [6] are lidar only. Does this mean lidar makes vis
 arXiv:1911.10150v2 [cs.CV] 6 May 2020
 
 
-Sem. Seg
+ Sem. Seg
 Point Painting
 Point Painting
 2
@@ -59,7 +59,7 @@ view has several advantages including lack of scale ambiguity and minimal occlus
 do the fusion there [25, 28, 33]. Some of the most promising image-only methods use this idea of first creating an artificial point cloud from the image and then proceeding in the bird’s-eye view [25, 28]. Subsequent work attempts fusion based on this idea, but the performance falls short of state of the art [33], and requires several expensive steps of processing to build the pseudo-point cloud. A fourth family of methods uses detection seeding. There, semantics are extracted from an image a priori and used to seed detection in the point cloud. Frustrum PointNet [18] and ConvNet [26] use the 2D detections to limit the search space inside the frustum while IPOD [31] uses semantic segmentation outputs to seed the 3D proposal. This improves precision, but imposes an upper bound on recall. The recent work of Liang et. al [13] tried combining several of these concepts. Results are not disclosed for all classes, but the method is outperformed on the car class by the top lidar-only method STD [32] (Table 2). In this work we propose PointPainting: a simple yet effective sequential fusion method. Each lidar point is projected into the output of an image semantic segmentation network and the channel-wise activations are concatenated to the intensity measurement of each lidar point. The concatenated (painted) lidar points can then be used in any lidar detection method, whether bird’s-eye view [11, 29, 21, 34, 30, 32] or front-view [12, 17]. PointPainting addresses the shortcomings of the previous fusion concepts: it does not add any restrictions on the 3D detection architecture; it does not suffer from feature or depth blurring; it does not require a pseudo-point cloud to be computed, and it does not limit the maximum recall. Note that for lidar detection methods that operate directly on the raw point cloud [11, 34, 17, 21], PointPainting requires minimal network adaptations such as changing the
 
 
-Method mAP Car Pedestrian Cyclist
+ Method mAP Car Pedestrian Cyclist
 Mod. Easy Mod. Hard Easy Mod. Hard Easy Mod. Hard
 PointPillars [11] 73.78 90.09 87.57 86.03 71.97 67.84 62.41 85.74 65.92 62.40 Painted PointPillars 76.27 90.01 87.65 85.56 77.25 72.41 67.53 81.72 68.76 63.99 Delta +2.50 -0.08 0.08 -0.47 +5.28 +4.57 +5.12 -4.02 +2.84 +1.59
 VoxelNet [34, 29] 71.83 89.87 87.29 86.30 70.08 62.44 55.02 85.48 65.77 58.97 Painted VoxelNet 73.55 90.05 87.51 86.66 73.16 65.05 57.33 87.46 68.08 65.59 Delta +1.71 +0.18 +0.22 +0.36 +3.08 +2.61 +2.31 +1.98 +2.31 +6.62
@@ -76,7 +76,7 @@ The PointPainting architecture accepts point clouds and images as input and esti
 The image sem. seg. network takes in an input image and outputs per pixel class scores. These scores serve as compact summarized features of the image. There are several key advantages of using sem. seg. in a fusion pipeline. First, sem. seg. is an easier task than 3D object detection since segmentation only requires local, per pixel classification, while object detection requires 3D localization and classification. Networks that perform sem. seg. are easier to train and are also amenable to perform fast inference. Second, rapid advances are being made in sem. seg. [4, 36], which allows PointPainting to benefit from advances in both segmentation and 3D object detection. Finally, in a robotics
 
 
-AB
+ AB
 D
 C
 Figure 4. Qualitative analysis of KITTI results. We created four different comparison figures. For each comparison, the upper left is the original point cloud, while the upper right is the painted point cloud with the segmentation outputs used to color car (orange), cyclist (red) and pedestrian (blue) points. PointPillars / Painted PointPillars predicted 3D bounding boxes are displayed on the both the input point cloud (upper left / right) and projected into the image (lower left / right). The orientation of boxes is shown by a line connecting the bottom center to the front of the box.
@@ -96,7 +96,7 @@ with transforms: lidar frame to the ego-vehicle frame; ego frame at time of lida
 The decorated point clouds can be consumed by any lidar network that learns an encoder, since PointPainting just changes the input dimension of the lidar points. PointPainting can also be utilized by lidar networks with hand
 
 
-Method Modality mAP Car Pedestrian Cyclist
+ Method Modality mAP Car Pedestrian Cyclist
 Mod. Easy Mod. Hard Easy Mod. Hard Easy Mod. Hard
 MV3D[3] L & I N/A 86.62 78.93 69.80 N/A N/A N/A N/A N/A N/A AVOD-FPN[10] L & I 64.07 90.99 84.82 79.62 58.49 50.32 46.98 69.39 57.12 51.09 IPOD[31] L & I 64.60 89.64 84.62 79.96 60.88 49.79 45.43 78.19 59.40 51.38 F-PointNet[18] L & I 65.20 91.17 84.67 74.77 57.13 49.57 45.48 77.26 61.37 53.78 F-ConvNet[26] L & I 67.89 91.51 85.84 76.11 57.04 48.96 44.33 84.16 68.88 60.05 MMF[13] L, I & M N/A 93.67 88.21 81.99 N/A N/A N/A N/A N/A N/A LaserNet[17] L N/A 79.19. 74.52 68.45 N/A N/A N/A N/A N/A N/A SECOND[29] L 61.61 89.39 83.77 78.59 55.99 45.02 40.93 76.5 56.05 49.45 PointPillars[11] L 65.98 90.07 86.56 82.81 57.60 48.64 45.78 79.90 62.73 55.58 STD[32] L 68.38 94.74 89.19 86.42 60.02 48.72 44.55 81.36 67.23 59.35 PointRCNN[21] L 66.92 92.13 87.39 82.72 54.77 46.13 42.84 82.56 67.24 60.28 Painted PointRCNN L & I 69.86 92.45 88.11 83.36 58.70 49.93 46.29 83.91 71.54 62.97 Delta ∆ I +2.94 +0.32 +0.72 +0.64 +3.93 +3.80 +3.45 +1.35 +4.30 +2.69
 Table 2. Results on the KITTI test BEV detection benchmark. We see that Painted PointRCNN sets a new state of the art (69.86 mAP) in BEV detection performance. The modalities are lidar (L), images (I), and maps (M). The delta is the difference due to Painting, ie Painted PointRCNN minus PointRCNN. The corresponding 3D results are included in Table 8 in the Supplementary Material.
@@ -115,7 +115,7 @@ nuScenes. There was no public semantic segmentation method available on nuScenes
 1https://github.com/NVIDIA/semantic-segmentation 2We used an early access version; https://www.nuscenes.org/images.
 
 
-Methods mAP Car Truck Bus Trailer Ctr. Vhl. Ped. Motorcycle Bicycle Tr. Cone Barrier
+ Methods mAP Car Truck Bus Trailer Ctr. Vhl. Ped. Motorcycle Bicycle Tr. Cone Barrier
 PointPillars [11, 1] 30.5 68.4 23.0 28.2 23.4 4.1 59.7 27.4 1.1 30.8 38.9 PointPillars+ 40.1 76.0 31.0 32.1 36.6 11.3 64.0 34.2 14.0 45.6 56.4 Painted PointPillars+ 46.4 77.9 35.8 36.1 37.3 15.8 73.3 41.5 24.1 62.4 60.2 Delta +6.3 +1.9 +4.8 +3.9 +0.7 +4.5 +9.3 +7.3 +10.1 +16.8 +3.8
 Table 3. Per class nuScenes performance. Evaluation of detections as measured by average precision (AP) or mean AP (mAP) on nuScenes test set. Abbreviations: construction vehicle (Ctr. Vhl.), pedestrian (Ped.), and traffic cone (Tr. Cone).
 100k images annotated with 2D bounding boxes and segmentation labels for all nuScenes classes. The segmentation network uses a ResNet [9] backbone to generate features at strides 8 to 64 for a FCN [15] segmentation head that predicts the nuScenes segmentation scores.
@@ -134,7 +134,7 @@ Validation Set First, we investigate the effect of PointPainting on three leadin
 Test Set Here we compare PointPainting with state of the art KITTI test results. The KITTI leaderboard only allows one submission per paper, so we could not submit all Painted methods from Table 1. While Painted PointPillars performed better than Painted PointRCNN on the val set, of the two only PointPillars has public code for nuScenes. Therefore, to establish the generality of PointPainting, we chose to submit Painted PointPillars results to nuScenes test, and use our KITTI submission on Painted PointRCNN.
 
 
-Method Modality NDS mAP
+ Method Modality NDS mAP
 MonoDis [23] Images 38.4 30.4 PointPillars [11, 1] Lidar 45.3 30.5 PointPillars+ Lidar 55.0 40.1 Painted PointPillars+ Lidar & Images 58.1 46.4 MEGVII [35] Lidar 63.3 52.8
 Table 4. nuScenes test results. Detection performance is measured by nuScenes detection score (NDS) [1] and mean average precision (mAP).
 As shown in Table 2, PointPainting leads to a robust improvement on the test set for PointRCNN: the average precision increases for every single class across all strata. Painted PointRCNN establishes new state of the art performance on mAP and cyclist AP. Based on the consistency of Painted PointRCNN improvements between val and test (+2.73 and +2.94 respectively), and the generality of PointPainting (Table 1), it is reasonable to believe that other methods in Table 2 would decidedly improve with PointPainting. The strength, generality, robustness, and flexibility of PointPainting suggests that it is the leading method for image-lidar fusion.
@@ -155,7 +155,7 @@ Here we give context to the evaluation metrics with some qualitative comparisons
 Here we perform ablation studies on the nuScenes dataset. All studies used the Painted PointPillars architecture and were trained for a quarter of the training time as compared to the test submissions. Using the one-cycle optimizer [24], we achieved 33.9 mAP and 46.3 NDS on the
 
 
-Concurrent Matching
+ Concurrent Matching
 Point Clouds
 Images Time
 Consecutive Matching
@@ -178,14 +178,14 @@ In this paper, we present PointPainting, a novel sequential fusion method that p
 We thank Donghyeon Won, Varun Bankiti and Venice Liong for help with the semantic segmentation model for nuScenes, and Holger Caesar for access to nuImages.
 
 
-References
+ References
 [1] H. Caesar, V. Bankiti, A. H. Lang, S. Vora, V. E. Liong, Q. Xu, A. Krishnan, Y. Pan, G. Baldan, and O. Beijbom. nuscenes: A multimodal dataset for autonomous driving. In CVPR, 2020. 1, 3, 4, 5, 6, 7 [2] L.-C. Chen, Y. Zhu, G. Papandreou, F. Schroff, and H. Adam. Encoder-decoder with atrous separable convolution for semantic image segmentation. In Proceedings of the European conference on computer vision (ECCV), pages 801818, 2018. 4 [3] X. Chen, H. Ma, J. Wan, B. Li, and T. Xia. Multi-view 3d object detection network for autonomous driving. In CVPR, 2017. 1, 2, 5, 11 [4] B. Cheng, M. D. Collins, Y. Zhu, T. Liu, T. S. Huang, H. Adam, and L.-C. Chen. Panoptic-deeplab. ICCV Workshop, 2019. 3 [5] M. Cordts, M. Omran, S. Ramos, T. Rehfeld, M. Enzweiler, R. Benenson, U. Franke, S. Roth, and B. Schiele. The Cityscapes dataset for semantic urban scene understanding. In CVPR, 2016. 5 [6] A. Geiger, P. Lenz, and R. Urtasun. Are we ready for autonomous driving? the KITTI vision benchmark suite. In CVPR, 2012. 1, 5 [7] N. Gerhard, T. Ollmann, S. R. Bulo, and P. Kontschieder. The Mapillary Vistas dataset for semantic understanding of street scenes. In ICCV, 2017. 5 [8] C. Guo, G. Pleiss, Y. Sun, and K. Q. Weinberger. On calibration of modern neural networks. In ICML, 2017. 8 [9] K. He, X. Zhang, S. Ren, and J. Sun. Deep residual learning for image recognition. In CVPR, 2016. 6 [10] J. Ku, M. Mozifian, J. Lee, A. Harakeh, and S. Waslander. Joint 3d proposal generation and object detection from view aggregation. In IROS, 2018. 1, 2, 5, 11 [11] A. H. Lang, S. Vora, H. Caesar, L. Zhou, J. Yang, and O. Beijbom. Pointpillars: Fast encoders for object detection from point clouds. In CVPR, 2019. 1, 2, 3, 5, 6, 7, 11 [12] B. Li, T. Zhang, and T. Xia. Vehicle detection from 3d lidar using fully convolutional network. In RSS, 2016. 2 [13] M. Liang, B. Yang, Y. Chen, R. Hu, and R. Urtasun. Multitask multi-sensor fusion for 3d object detection. In CVPR, 2019. 1, 2, 5, 11 [14] M. Liang, B. Yang, S. Wang, and R. Urtasun. Deep continuous fusion for multi-sensor 3d object detection. In ECCV, 2018. 2 [15] J. Long, E. Shelhamer, and T. Darrell. Fully convolutional networks for semantic segmentation. In CVPR, 2015. 6 [16] G. P. Meyer, J. Charland, D. Hegde, A. Laddha, and C. Vallespi-Gonzalez. Sensor fusion for joint 3d object detection and semantic segmentation. In CVPR Workshop, 2019. 2 [17] G. P. Meyer, A. Laddha, E. Kee, C. Vallespi-Gonzalez, and C. K. Wellington. Lasernet: An efficient probabilistic 3d object detector for autonomous driving. In CVPR, 2019. 2, 5, 11 [18] C. R. Qi, W. Liu, C. Wu, H. Su, and L. J. Guibas. Frustum pointnets for 3d object detection from RGB-D data. In CVPR, 2018. 1, 2, 5, 11
 [19] F. A. Reda, G. Liu, K. J. Shih, R. Kirby, J. Barker, D. Tarjan, A. Tao, and B. Catanzaro. Sdc-net: Video prediction using spatially-displaced convolution. In Proceedings of the European Conference on Computer Vision (ECCV), pages 718733, 2018. 4 [20] T. Roddick, A. Kendall, and R. Cipolla. Orthographic feature transform for monocular 3d object detection. In BMVC, 2019. 2 [21] S. Shi, X. Wang, and H. Li. Pointrcnn: 3d object proposal generation and detection from point cloud. In CVPR, 2019. 1, 2, 3, 5, 6, 11 [22] M. Simon, S. Milz, K. Amende, and H.-M. Gross. Complexyolo: Real-time 3d object detection on point clouds. CoRR, abs/1803.06199, 2018. 3, 5 [23] A. Simonelli, S. Rota Bulo, L. Porzi, M. Lopez-Antequera, and P. Kontschieder. Disentangling monocular 3d object detection. ICCV, 2019. 7 [24] L. N. Smith. A disciplined approach to neural network hyper-parameters: Part 1 – learning rate, batch size, momentum, and weight decay. arXiv preprint arXiv:1803.09820, 2018. 7 [25] Y. Wang, W.-L. Chao, D. Garg, B. Hariharan, M. Campbell, and K. Q. Weinberger. Pseudo-lidar from visual depth estimation: Bridging the gap in 3d object detection for autonomous driving. In CVPR, 2019. 2 [26] Z. Wang and K. Jia. Frustum convnet: Sliding frustums to aggregate local point-wise features for amodal 3d object detection. IROS, 2019. 2, 5, 11 [27] Z. Wang, W. Zhan, and M. Tomizuka. Fusing bird’s eye view lidar point cloud and front view camera image for 3d object detection. In IVS, 2018. 1, 2 [28] X. Weng and K. Kitani. Monocular 3d object detection with pseudo-lidar point cloud. ICCV Workshop, 2019. 2 [29] Y. Yan, Y. Mao, and B. Li. SECOND: Sparsely embedded convolutional detection. Sensors, 18(10), 2018. 1, 2, 3, 5, 6, 11 [30] B. Yang, W. Luo, and R. Urtasun. PIXOR: Real-time 3d object detection from point clouds. In CVPR, 2018. 2, 3, 5 [31] Z. Yang, Y. Sun, S. Liu, X. Shen, and J. Jia. Ipod: Intensive point-based object detector for point cloud. arXiv preprint arXiv:1812.05276, 2018. 2, 5, 11
 [32] Z. Yang, Y. Sun, S. Liu, X. Shen, and J. Jia. Std: Sparseto-dense 3d object detector for point cloud. In CVPR, pages 1951–1960, 2019. 1, 2, 5, 11 [33] Y. You, Y. Wang, W.-L. Chao, D. Garg, G. Pleiss, B. Hariharan, M. Campbell, and K. Q. Weinberger. Pseudo-lidar++: Accurate depth for 3d object detection in autonomous driving. ICLR, 2020. 1, 2 [34] Y. Zhou and O. Tuzel. Voxelnet: End-to-end learning for point cloud based 3d object detection. In CVPR, 2018. 1, 2, 3, 5, 6, 11 [35] B. Zhu, Z. Jiang, X. Zhou, Z. Li, and G. Yu. Class-balanced grouping and sampling for point cloud 3d object detection. arXiv preprint arXiv:1908.09492, 2019. 6, 7
 [36] Y. Zhu, K. Sapra, F. A. Reda, K. J. Shih, S. Newsam, A. Tao, and B. Catanzaro. Improving semantic segmentation via video propagation and label relaxation. In CVPR, 2019. 3, 4
 
 
-PointPainting: Sequential Fusion for 3D Object Detection
+ PointPainting: Sequential Fusion for 3D Object Detection
 Supplementary Material
 A. PointPainting: 3D results
 In this section, we present 3D results of PointPainting on the KITTI validation and test sets.
@@ -202,7 +202,7 @@ C. nuImages Semantic Segmentation
 Here we present some stats on the semantic segmentation network that we trained on the nuImages dataset. The mean intersection over union (mIoU) on the validation set was 0.65. The class-wise precision and recall on the validation set is shown in Table 6. Our model performs the best on the car class and worst on the construction vehicle and trailer classes.
 
 
-Method mAP Car Pedestrian Cyclist
+ Method mAP Car Pedestrian Cyclist
 Mod. Easy Mod. Hard Easy Mod. Hard Easy Mod. Hard
 PointPillars [11] 66.96 87.22 76.95 73.52 65.37 60.66 56.51 82.29 63.26 59.82 Painted PointPillars 69.03 86.26 76.77 70.25 71.50 66.15 61.03 79.12 64.18 60.79 Delta +2.07 -0.96 -0.18 -3.27 +6.13 +5.49 +4.52 -3.17 +0.92 +0.97
 VoxelNet [34, 29] 67.12 86.85 76.64 74.41 67.79 59.84 52.38 84.92 64.89 58.59 Painted VoxelNet 68.01 87.15 76.66 74.75 68.57 60.93 54.01 85.61 66.44 64.15 Delta +0.89 +0.3 +0.02 +0.34 +0.78 +1.09 +1.63 +0.69 +1.55 +5.56

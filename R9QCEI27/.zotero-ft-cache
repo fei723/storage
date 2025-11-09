@@ -15,7 +15,7 @@ In this paper, we instead propose VoxelNeXt. It is a simple, efficient, and post
 arXiv:2303.11301v1 [cs.CV] 20 Mar 2023
 
 
-Output
+ Output
 Input
 RoI Pooing
 Anchors/Centers
@@ -71,7 +71,7 @@ Sparse Detectors Methods of [16, 46, 47] avoid dense detection heads and instead
 2
 
 
-!"#$%
+ !"#$%
 M
 &!
 &"
@@ -112,7 +112,7 @@ We visualize the effective receptive fields (ERFs) in Fig. 5. With additional do
 3
 
 
-Voxel feature
+ Voxel feature
 Max-pool kernel
 Selective Dilation
 Pooling
@@ -155,7 +155,7 @@ Voxel Selection Figure 4 shows the detailed framework of the VoxelNeXt model. In
 4
 
 
-Table 2. Results of a pilot study on nuScenes validation split, for the strides of fully sparse voxel-based prediction. Latency is evaluated on a single GPU. For D3, the arrows indicate the change based on CenterPoint. For others, the arrows indicate the change based on D3.
+ Table 2. Results of a pilot study on nuScenes validation split, for the strides of fully sparse voxel-based prediction. Latency is evaluated on a single GPU. For D3, the arrows indicate the change based on CenterPoint. For others, the arrows indicate the change based on D3.
 Method Strides Latency mAP NDS Car Truck Bus Trailer C.V. Ped Mot Byc T.C. Bar CenterPoint {2, 4, 8} 96 ms 55.6 63.2 83.5 54.9 67.5 30.6 16.3 83.3 52.7 34.5 65.6 66.5
 D3 {2, 4, 8} 56 ms 46.7↓8.9 56.2 75.3 41.3 38.3 10.5 14.9 82.0 47.7 28.3 63.6 64.2
 D5×5×5
@@ -179,7 +179,7 @@ Additional Down-sampling Layers We ablate the effect of the down-sampling layers
 5
 
 
-Table 7. Ratios of relative positions of query voxels to the boxes predicted from them. We only take high-quality predicted boxes (IoU with ground-truth boxes > 0.7 and with matched predicted labels) into consideration. According to the relative positions to their predicted boxes, we split voxels into 3 types of near center, near boundary, and outside box. Overall, most voxels are inside but not near center.
+ Table 7. Ratios of relative positions of query voxels to the boxes predicted from them. We only take high-quality predicted boxes (IoU with ground-truth boxes > 0.7 and with matched predicted labels) into consideration. According to the relative positions to their predicted boxes, we split voxels into 3 types of near center, near boundary, and outside box. Overall, most voxels are inside but not near center.
 Class Mean Car Truck Bus Trailer C.V. Ped Mot Byc T.C. Bar Near center 9.9% 10.3% 5.6% 15.2% 1.2% 16.3% 12.5% 19.6% 13.1% 10.8% 17.8% Near boundary 72.8% 84.3% 39.2% 58.8% 84.6% 51.8% 42.3% 66.5% 54.7% 39.7% 58.7% Outside box 17.3% 5.4% 55.3% 26.0% 14.2% 31.9% 45.2% 13.9% 32.2% 49.6% 23.5%
 Table 8. Comparison to the representative dense-head method Centerpoint [57]. ATE, ASE, AOE, AVE, and AAE denote the errors of location, size, orientation, velocity, and attribute.
 Method mAP NDS ATE ASE AOE AVE AAE CenterPoint 55.6 63.5 29.7 25.7 44.5 24.5 18.8 VoxelNeXt 56.5 64.5 29.9 25.4 39.6 23.2 19.0
@@ -202,7 +202,7 @@ Relative Positions between Voxels and Predicted Boxes In VoxelNeXt, voxels for b
 6
 
 
-Table 12. Performance of 3D object detection methods on nuScenes test set. † means the method that uses double-flip testing. All models listed take LIDAR data as input without image fusion or any model ensemble.
+ Table 12. Performance of 3D object detection methods on nuScenes test set. † means the method that uses double-flip testing. All models listed take LIDAR data as input without image fusion or any model ensemble.
 Method mAP NDS Latency Car Truck Bus Trailer C.V. Ped Mot Byc T.C. Bar
 PointPillars [27] 30.5 45.3 31 ms 68.4 23.0 28.2 23.4 4.1 59.7 27.4 1.1 30.8 38.9 3DSSD [55] 42.6 56.4 - 81.2 47.2 61.4 30.5 12.6 70.2 36.0 8.6 31.1 47.9 CBGS [62] 52.8 63.3 80 ms 81.1 48.5 54.9 42.9 10.5 80.1 51.5 22.3 70.9 65.7 CenterPoint [57] 58.0 65.5 96 ms 84.6 51.0 60.2 53.2 17.5 83.4 53.7 28.7 76.7 70.9 CVCNET [4] 58.2 66.6 122 ms 82.6 49.5 59.4 51.1 16.2 83.0 61.8 38.8 69.7 69.7 HotSpotNet [5] 59.3 66.0 - 83.1 50.9 56.4 53.3 23.0 81.3 63.5 36.6 73.0 71.6 AFDetV2 [22] 62.4 68.5 - 86.3 54.2 62.5 58.9 26.7 85.8 63.8 34.3 80.1 71.0 Focals Conv [7] 63.8 70.0 138 ms 86.7 56.3 67.7 59.5 23.8 87.5 64.5 36.3 81.4 74.1 VISTA [13]† 63.0 69.8 94 ms 84.4 55.1 63.7 54.2 25.1 82.8 70.0 45.4 78.5 71.4 UVTR-L [28]† 63.9 69.7 132 ms 86.3 52.2 62.8 59.7 33.7 84.5 68.8 41.1 74.7 74.9 PillarNet-18 [40]† 65.0 70.8 78 ms 87.4 56.7 60.9 61.8 30.4 87.2 67.4 40.3 82.1 76.0
 VoxelNeXt-2D 64.1 69.8 61 ms 84.8 52.7 62.3 56.2 29.5 84.5 72.5 45.7 78.8 73.7 VoxelNeXt 64.5 70.0 66 ms 84.6 53.0 64.7 55.8 28.7 85.8 73.2 45.7 79.0 74.6 VoxelNeXt† 66.2 71.4 - 85.3 55.7 66.2 57.2 29.8 86.5 75.2 48.8 80.7 76.1
@@ -221,7 +221,7 @@ Voxel Association for 3D Tracking Tab. 11 shows the ablation of 3D tracking on n
 7
 
 
-Table 15. Performance of 3D object detection results on the Waymo validation split. Results with the instance-decreasing trick in the ground-truth sampling [16] is in the appendix. All models take single-frame data as input without test-time augmentations or ensemble.
+ Table 15. Performance of 3D object detection results on the Waymo validation split. Results with the instance-decreasing trick in the ground-truth sampling [16] is in the appendix. All models take single-frame data as input without test-time augmentations or ensemble.
 Method mAP/mAPH Vehicle Pedestrian Cyclist
 L2 L1 AP/APH L2 AP/APH L1 AP/APH L2 AP/APH L1 AP/APH L2 AP/APH
 Pillar-OD [50] - 69.8 / - - / - 72.5 / - - - VoxSeT [21] - 76.0 / - 68.2 / - - - - VoTr-TSD [35] - 74.9 / 74.3 65.9 / 65.3 - - - SECOND [53] 61.0 / 57.2 72.3 / 71.7 63.9 / 63.3 68.7 / 58.2 60.7 / 51.3 60.6 / 59.3 58.3 / 57.0 M3METR [20] 61.8 / 58.7 75.7 / 75.1 66.0 / 66.0 65.0 / 56.4 56.0 / 48.4 65.4 / 64.2 62.7 / 61.5 IA-SSD [59] 62.3 / 58.1 70.5 / 69.7 61.6 / 61.0 69.4 / 58.5 60.3 / 50.7 67.7 / 65.3 65.0 / 62.7 PointPillars [27] 62.8 / 57.8 72.1 / 71.5 63.6 / 63.1 70.6 / 56.7 62.8 / 50.3 64.4 / 62.3 61.9 / 59.9 RangeDet [17] 65.0 / 63.2 72.9 / 72.3 64.0 / 63.6 75.9 / 71.9 67.6 / 63.9 65.7 / 64.4 63.3 / 62.1 3D-MAN [56] - 74.5 / 74.0 67.6 / 67.1 71.7 / 67.7 62.6 / 59.0 - LIDAR-RCNN [29] 65.8 / 61.3 76.0 / 75.5 68.3 / 67.9 71.2 / 58.7 63.1 / 51.7 68.6 / 66.9 66.1 / 64.4 PV-RCNN [41] 66.8 / 63.3 77.5 / 76.9 69.0 / 68.4 75.0 / 65.6 66.0 / 57.6 67.8 / 66.4 65.4 / 64.0 Part-A2-Net [44] 66.9 / 63.8 77.1 / 76.5 68.5 / 68.0 75.2 / 66.9 66.2 / 58.6 68.6 / 67.4 66.1 / 64.9 SST [15] 67.8 / 64.6 74.2 / 73.8 65.5 / 65.1 78.7 / 69.6 70.0 / 61.7 70.7 / 69.6 68.0 / 66.9 PV-RCNN++ [42] 68.4 / 64.9 78.8 / 78.2 70.3 / 69.7 76.7 / 67.2 68.5 / 59.7 69.0 / 67.6 66.5 / 65.2 CenterPoint [57] 69.8 / 67.6 76.6 / 76.0 68.9 / 68.4 79.0 / 73.4 71.0 / 65.8 72.1 / 71.0 69.5 / 68.5 AFDetV2 [22] 71.0 / 68.8 77.6 / 77.1 69.7 / 69.2 80.2 / 74.6 72.2 / 67.0 73.7 / 72.7 71.0 / 70.1 PillarNet-34 [40] 71.0 / 68.5 79.1 / 78.6 70.9 / 70.5 80.6 / 74.0 72.3 / 66.2 72.3 / 71.2 69.7 / 68.7 SWFormer [46] - 77.8 / 77.3 69.2 / 68.8 80.9 / 72.7 72.5 / 64.9 - FSDspconv [16] 71.9 / 69.7 77.8 / 77.3 68.9 / 68.5 81.9 / 76.4 73.2 / 68.0 76.5 / 75.2 73.8 / 72.5 VoxelNeXt-2D 70.9 / 68.2 77.9 / 77.5 69.7 / 69.2 80.2 / 73.5 72.2 / 65.9 73.3 / 72.2 70.7 / 69.6 VoxelNeXtK3 72.2 / 70.1 78.2 / 77.7 69.9 / 69.4 81.5 / 76.3 73.5 / 68.6 76.1 / 74.9 73.3 / 72.2
@@ -236,7 +236,7 @@ Limitations A gap exists between theoretical FLOPs and actual inference speed. V
 8
 
 
-References
+ References
 [1] Xuyang Bai, Zeyu Hu, Xinge Zhu, Qingqiu Huang, Yilun Chen, Hongbo Fu, and Chiew-Lan Tai. Transfusion: Robust lidar-camera fusion for 3d object detection with transformers. In CVPR, pages 1080–1089, 2022. 7 [2] Nuri Benbarka, Jona Schr ̈oder, and Andreas Zell. Score refinement for confidence-based 3d multi-object tracking. In IROS, pages 8083–8090, 2021. 3, 7 [3] Holger Caesar, Varun Bankiti, Alex H. Lang, Sourabh Vora, Venice Erin Liong, Qiang Xu, Anush Krishnan, Yu Pan, Giancarlo Baldan, and Oscar Beijbom. nuscenes: A multimodal dataset for autonomous driving. In CVPR, pages 11618–11628, 2020. 2, 8, 11, 12 [4] Qi Chen, Lin Sun, Ernest Cheung, and Alan L. Yuille. Every view counts: Cross-view consistency in 3d object detection with hybrid-cylindrical-spherical voxelization. In NeurIPS, 2020. 7 [5] Qi Chen, Lin Sun, Zhixin Wang, Kui Jia, and Alan L. Yuille. Object as hotspots: An anchor-free 3d object detection approach via firing of hotspots. In ECCV, volume 12366, pages 68–84, 2020. 7 [6] Yukang Chen, Yanwei Li, Xiangyu Zhang, Jian Sun, and Jiaya Jia. Focal sparse convolutional networks for 3d object detection. In CVPR, pages 5418–5427, 2022. 3 [7] Yukang Chen, Yanwei Li, Xiangyu Zhang, Jian Sun, and Jiaya Jia. Focal sparse convolutional networks for 3d object detection. In CVPR, pages 5418–5427, 2022. 3, 7 [8] Yukang Chen, Jianhui Liu, Xiaojuan Qi, Xiangyu Zhang, Jian Sun, and Jiaya Jia. Scaling up kernels in 3d cnns. CoRR, abs/2206.10555, 2022. 3 [9] Hsu-Kuang Chiu, Jie Li, Rares Ambrus, and Jeannette Bohg. Probabilistic 3d multi-modal, multi-object tracking for autonomous driving. In ICRA, pages 14227–14233, 2021. 3 [10] Ruihang Chu, Yukang Chen, Tao Kong, Lu Qi, and Lei Li. Icm-3d: Instantiated category modeling for 3d instance segmentation. IEEE Robotics and Automation Letters, 7(1):5764, 2021. 3 [11] Ruihang Chu, Xiaoqing Ye, Zhengzhe Liu, Xiao Tan, Xiaojuan Qi, Chi-Wing Fu, and Jiaya Jia. Twist: Two-way inter-label self-training for semi-supervised 3d instance segmentation. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 1100–1109, 2022. 3 [12] Jiajun Deng, Shaoshuai Shi, Peiwei Li, Wengang Zhou, Yanyong Zhang, and Houqiang Li. Voxel R-CNN: towards high performance voxel-based 3d object detection. In AAAI, pages 1201–1209, 2021. 1, 2, 3, 4, 11 [13] Shengheng Deng, Zhihao Liang, Lin Sun, and Kui Jia. VISTA: boosting 3d object detection via dual cross-view spatial attention. In CVPR, pages 8438–8447, 2022. 7, 8 [14] Kaiwen Duan, Song Bai, Lingxi Xie, Honggang Qi, Qingming Huang, and Qi Tian. Centernet: Keypoint triplets for object detection. In ICCV, pages 6568–6577, 2019. 1, 2 [15] Lue Fan, Ziqi Pang, Tianyuan Zhang, Yu-Xiong Wang, Hang Zhao, Feng Wang, Naiyan Wang, and Zhaoxiang Zhang. Embracing single stride 3d object detector with sparse transformer. In CVPR, pages 8448–8458, 2022. 8
 [16] Lue Fan, Feng Wang, Naiyan Wang, and Zhaoxiang Zhang. Fully sparse 3d object detection. CoRR, abs/2207.10035, 2022. 2, 8, 11, 12
 [17] Lue Fan, Xuan Xiong, Feng Wang, Naiyan Wang, and Zhaoxiang Zhang. Rangedet: In defense of range view for lidar-based 3d object detection. In ICCV, pages 2898–2907, 2021. 8
@@ -256,7 +256,7 @@ Limitations A gap exists between theoretical FLOPs and actual inference speed. V
 9
 
 
-[31] Tsung-Yi Lin, Priya Goyal, Ross B. Girshick, Kaiming He, and Piotr Doll ́ar. Focal loss for dense object detection. TPAMI, 42(2):318–327, 2020. 4 [32] Jianhui Liu, Yukang Chen, Xiaoqing Ye, Zhuotao Tian, Xiao Tan, and Xiaojuan Qi. Spatial pruned sparse convolution for efficient 3d object detection. In NeurIPS, 2022. 3, 4 [33] Zhijian Liu, Haotian Tang, Alexander Amini, Xinyu Yang, Huizi Mao, Daniela Rus, and Song Han. Bevfusion: Multitask multi-sensor fusion with unified bird’s-eye view representation. CoRR, abs/2205.13542, 2022. 2 [34] Jiageng Mao, Minzhe Niu, Haoyue Bai, Xiaodan Liang, Hang Xu, and Chunjing Xu. Pyramid R-CNN: towards better performance and adaptability for 3d object detection. In ICCV, 2021. 2 [35] Jiageng Mao, Yujing Xue, Minzhe Niu, Haoyue Bai, Jiashi Feng, Xiaodan Liang, Hang Xu, and Chunjing Xu. Voxel transformer for 3d object detection. In ICCV, 2021. 2, 3, 8 [36] Ziqi Pang, Zhichao Li, and Naiyan Wang. Simpletrack: Understanding and rethinking 3d multi-object tracking. CoRR, abs/2111.09621, 2021. 7 [37] Charles R. Qi, Or Litany, Kaiming He, and Leonidas J. Guibas. Deep hough voting for 3d object detection in point clouds. In ICCV, pages 9276–9285, 2019. 2, 12 [38] Charles Ruizhongtai Qi, Li Yi, Hao Su, and Leonidas J. Guibas. Pointnet++: Deep hierarchical feature learning on point sets in a metric space. In NeurIPS, pages 5099–5108, 2017. 2 [39] Shaoqing Ren, Kaiming He, Ross B. Girshick, and Jian Sun. Faster R-CNN: towards real-time object detection with region proposal networks. In NeurIPS, pages 91–99, 2015. 1 [40] Guangsheng Shi, Ruifeng Li, and Chao Ma. Pillarnet: Realtime and high-performance pillar-based 3d object detection. CoRR, abs/2205.07403, 2022. 7, 8 [41] Shaoshuai Shi, Chaoxu Guo, Li Jiang, Zhe Wang, Jianping Shi, Xiaogang Wang, and Hongsheng Li. PV-RCNN: pointvoxel feature set abstraction for 3d object detection. In CVPR, pages 10526–10535, 2020. 1, 2, 3, 4, 8, 11, 12 [42] Shaoshuai Shi, Li Jiang, Jiajun Deng, Zhe Wang, Chaoxu Guo, Jianping Shi, Xiaogang Wang, and Hongsheng Li. PV-RCNN++: point-voxel feature set abstraction with local vector representation for 3d object detection. CoRR, abs/2102.00463, 2021. 8 [43] Shaoshuai Shi, Xiaogang Wang, and Hongsheng Li. Pointrcnn: 3d object proposal generation and detection from point cloud. In CVPR, pages 770–779, 2019. 12 [44] Shaoshuai Shi, Zhe Wang, Jianping Shi, Xiaogang Wang, and Hongsheng Li. From points to parts: 3d object detection from point cloud with part-aware and part-aggregation network. T-PAMI, 43(8):2647–2664, 2021. 8 [45] Pei Sun and et. al. Scalability in perception for autonomous driving: Waymo open dataset. In CVPR, pages 2443–2451, 2020. 2, 8, 11, 12 [46] Pei Sun, Mingxing Tan, Weiyue Wang, Chenxi Liu, Fei Xia, Zhaoqi Leng, and Dragomir Anguelov. Swformer: Sparse window transformer for 3d object detection in point clouds. CoRR, abs/2210.07372, 2022. 2, 8
+ [31] Tsung-Yi Lin, Priya Goyal, Ross B. Girshick, Kaiming He, and Piotr Doll ́ar. Focal loss for dense object detection. TPAMI, 42(2):318–327, 2020. 4 [32] Jianhui Liu, Yukang Chen, Xiaoqing Ye, Zhuotao Tian, Xiao Tan, and Xiaojuan Qi. Spatial pruned sparse convolution for efficient 3d object detection. In NeurIPS, 2022. 3, 4 [33] Zhijian Liu, Haotian Tang, Alexander Amini, Xinyu Yang, Huizi Mao, Daniela Rus, and Song Han. Bevfusion: Multitask multi-sensor fusion with unified bird’s-eye view representation. CoRR, abs/2205.13542, 2022. 2 [34] Jiageng Mao, Minzhe Niu, Haoyue Bai, Xiaodan Liang, Hang Xu, and Chunjing Xu. Pyramid R-CNN: towards better performance and adaptability for 3d object detection. In ICCV, 2021. 2 [35] Jiageng Mao, Yujing Xue, Minzhe Niu, Haoyue Bai, Jiashi Feng, Xiaodan Liang, Hang Xu, and Chunjing Xu. Voxel transformer for 3d object detection. In ICCV, 2021. 2, 3, 8 [36] Ziqi Pang, Zhichao Li, and Naiyan Wang. Simpletrack: Understanding and rethinking 3d multi-object tracking. CoRR, abs/2111.09621, 2021. 7 [37] Charles R. Qi, Or Litany, Kaiming He, and Leonidas J. Guibas. Deep hough voting for 3d object detection in point clouds. In ICCV, pages 9276–9285, 2019. 2, 12 [38] Charles Ruizhongtai Qi, Li Yi, Hao Su, and Leonidas J. Guibas. Pointnet++: Deep hierarchical feature learning on point sets in a metric space. In NeurIPS, pages 5099–5108, 2017. 2 [39] Shaoqing Ren, Kaiming He, Ross B. Girshick, and Jian Sun. Faster R-CNN: towards real-time object detection with region proposal networks. In NeurIPS, pages 91–99, 2015. 1 [40] Guangsheng Shi, Ruifeng Li, and Chao Ma. Pillarnet: Realtime and high-performance pillar-based 3d object detection. CoRR, abs/2205.07403, 2022. 7, 8 [41] Shaoshuai Shi, Chaoxu Guo, Li Jiang, Zhe Wang, Jianping Shi, Xiaogang Wang, and Hongsheng Li. PV-RCNN: pointvoxel feature set abstraction for 3d object detection. In CVPR, pages 10526–10535, 2020. 1, 2, 3, 4, 8, 11, 12 [42] Shaoshuai Shi, Li Jiang, Jiajun Deng, Zhe Wang, Chaoxu Guo, Jianping Shi, Xiaogang Wang, and Hongsheng Li. PV-RCNN++: point-voxel feature set abstraction with local vector representation for 3d object detection. CoRR, abs/2102.00463, 2021. 8 [43] Shaoshuai Shi, Xiaogang Wang, and Hongsheng Li. Pointrcnn: 3d object proposal generation and detection from point cloud. In CVPR, pages 770–779, 2019. 12 [44] Shaoshuai Shi, Zhe Wang, Jianping Shi, Xiaogang Wang, and Hongsheng Li. From points to parts: 3d object detection from point cloud with part-aware and part-aggregation network. T-PAMI, 43(8):2647–2664, 2021. 8 [45] Pei Sun and et. al. Scalability in perception for autonomous driving: Waymo open dataset. In CVPR, pages 2443–2451, 2020. 2, 8, 11, 12 [46] Pei Sun, Mingxing Tan, Weiyue Wang, Chenxi Liu, Fei Xia, Zhaoqi Leng, and Dragomir Anguelov. Swformer: Sparse window transformer for 3d object detection in point clouds. CoRR, abs/2210.07372, 2022. 2, 8
 [47] Pei Sun, Weiyue Wang, Yuning Chai, Gamaleldin Elsayed, Alex Bewley, Xiao Zhang, Cristian Sminchisescu, and Dragomir Anguelov. RSN: range sparse net for efficient, accurate lidar 3d object detection. In CVPR, pages 5725–5734, 2021. 2
 [48] Dominic Zeng Wang and Ingmar Posner. Voting for voting in online point cloud object detection. In Robotics: Science and Systems, 2015. 7
 [49] Jun Wang, Shiyi Lan, Mingfei Gao, and Larry S. Davis. Infofocus: 3d object detection for autonomous driving with dynamic information modeling. In ECCV, volume 12355, pages 405–420, 2020. 3
@@ -276,7 +276,7 @@ Limitations A gap exists between theoretical FLOPs and actual inference speed. V
 10
 
 
-Appendix
+ Appendix
 In this appendix, we first introduce implementation details in Sec. A. We then include additional experimental results in Sec. B. We also provide more visualizations and discussions in Sec. C and Sec. D.
 A. Implementation Details
 nuScenes [3] has 1,000 drive sequences, split into 700, 150, and 150 sequences for training, validation, and testing. nuScenes is collected by a 32-beam synced LIDAR and 6 cameras. The annotations include 10 classes. In the ablation study, detection models are trained on 1/4 training data and evaluated on the full validation set.
@@ -298,7 +298,7 @@ Gaps between VoxelNeXt and VoxelNeXt-2D We analyze the gaps between VoxelNeXt an
 11
 
 
-Table A - 17. Comparison on the nuScenes validation split. This table presents detailed performance for Tab. 1 in the paper.
+ Table A - 17. Comparison on the nuScenes validation split. This table presents detailed performance for Tab. 1 in the paper.
 Method mAP NDS Car Truck Bus Trailer C.V. Ped Mot Byc T.C. Bar SECOND [53] 50.6 62.3 81.8 51.7 66.9 37.3 15.0 77.7 42.5 17.5 57.4 59.2 CenterPoint [57] 58.6 66.2 85.0 58.2 69.5 35.7 15.5 85.3 58.8 40.9 70.0 67.1 VoxelNeXt 60.0 67.1 85.6 58.4 71.6 38.6 17.9 85.4 59.7 43.4 70.8 68.1
 Figure A - 11. Detections of adjacent frames. We visualize predicted boxes and the corresponding query voxels, which are enlarged as red squares. This figure is best viewed by zoom-in.
 Table A - 18. Effects of the feature levels for prediction.

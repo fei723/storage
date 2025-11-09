@@ -1,0 +1,965 @@
+Decorrelated Debiased
+Converted Measurement
+Kalman Filter for Phased Array
+Radar Tracking System
+MIN-HYUN CHO
+Agency for Defense Development, Daejeon, South Korea
+MIN-JEA TAHK, Member, IEEE
+Korea Advanced Institute of Science and Technology, Daejeon, South Korea
+In this article, the target tracking of phased array radars with measurements specified in the direction cosine coordinate system is considered. The converted measurement Kalman filter is a widely adopted technique since it allows tracking in the coordinate system in which the dynamics of targets are described. The converted measurement Kalman filter has two types of inherent bias: conversion and estimation biases. The compensation of conversion bias has been examined by earlier studies using the debiasing technique in the presence of estimation bias. This article, therefore, introduces decorrelated debiased converted measurement Kalman filter (DDCMKF) in the direction cosine coordinate system to relieve the estimation bias. The decorrelation between the Kalman gain and measurement residual by applying conditioning on predicted position estimates is first introduced. The range-rate measurement is subsequently incorporated as a pseudo-measurement form after the derivation of decorrelated converted position. Finally, a sequential DDCMKF in direction cosine coordinates is developed using the derived converted position and range-rate measurement models. Adopting sequential filtering for incorporating the range-rate measurement reduces computation complexity and alleviates its strong nonlinearity. Numerical simulations are conducted to evaluate the performance of DDCMKF against other types of tracking filters in the direction cosine coordinate
+Manuscript received December 21, 2020; revised April 29, 2021 and July 24, 2021; released for publication July 25, 2021. Date of publication September 10, 2021; date of current version February 10, 2022.
+DOI. No. 10.1109/TAES.2021.3111721
+Refereeing of this contribution was handled by M. Mallick.
+This work was supported by the Agency for Defense Development and LIG Nex1 (UC170010FD).
+Authors’ addresses: Min-Hyun Cho is with the Agency for Defense Development, Daejeon 34186, South Korea, E-mail: (mhcho01994@gmail.com); Min-Jea Tahk is with the Department of Aerospace Engineering, Korea Advanced Institute of Science and Technology, Daejeon 34141, South Korea, E-mail: (mjtahk317@gmail.com). (Corresponding author: Min-Hyun Cho.)
+0018-9251 © 2021 IEEE
+system. Simulation results show that the proposed DDCMKF achieves preferable error performance while maintaining consistency, especially in short-range tracking with relatively large direction cosine errors.
+I. INTRODUCTION
+A Phased array radar is developed to track faster, more accurately with wide scan coverage. The phased array supports a track-while-scan mode and shows improved situational awareness compared with conventional mechanically steered arrays. The phased array radar yields its measurements in a direction cosine coordinate system rather than a spherical coordinate system because directing a beam can be easily controlled by using two-direction cosines to radar plane axes [1], [2]. Since a measurement specified in direction cosine coordinates is a nonlinear function of target states in a radar Cartesian coordinate system (RCCS), tracking the target in radar coordinates turns into a nonlinear state estimation problem. The converted measurement Kalman filter (CMKF) is a broadly adopted method for a nonlinear target tracking problem. Measurements in sensor coordinates are nonlinearly transformed to the state in the tracking coordinate system, and then a linear Kalman filter is applied in the CMKF. The linear CMKF gives good accuracy with reduced computational burden if a consistent transformation of measurements is accompanied. Tracking with the CMKF in the spherical coordinate system has been extensively studied [3]–[10]. The CMKF possesses two potential bias issues caused by the nonlinear transformation in it. One is a conversion bias that originates from the nonlinear transformation of measurements. The other is an estimation bias that arises out of a correlation between the measurement error covariance and the measurement noise. The conversion bias can be compensated through a debiased conversion [3], [4] or an unbiased conversion [5]–[7]. The estimation bias is alleviated through the measurement error covariance conditioning on the predicted estimate [8], [9] or the previous measurement [10]. Contrary to many study cases about the CMKF in the spherical coordinate system, fewer studies about the CMKF in the direction cosine coordinate system exist [2], [11]–[13]. As noted in [13], a closedform unbiased measurement conversion using direction cosine measurements does not exist. Previous studies, therefore, have focused on deriving the consistent mean and the covariance of conversion error, which is used in the debiased CMKF in the direction cosine coordinate system [2], [11], [12]. Though the conversion bias originating from direction cosine measurements can be alleviated using debiasing, the estimation bias still stems from the correlation between the measurement-dependent covariance and the measurement noise. Further techniques for reducing the estimation bias need to be developed to improve the performance of CMKF in direction cosine coordinates, which leads to a rudimentary idea, an application of an approximated decorrelation in our previous study [20].
+IEEE TRANSACTIONS ON AEROSPACE AND ELECTRONIC SYSTEMS VOL. 58, NO. 1 FEBRUARY 2022 581
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 09,2025 at 11:14:04 UTC from IEEE Xplore. Restrictions apply.
+
+
+Most recent electronically scanned array radar systems provide range-rate measurements as well as threedimensional (3-D) position measurements. The range-rate measurement increases the observability of target states. However, range-rate measurements exhibit significant nonlinearity with the correlation between range measurements and those under some waveforms [14]. Commonly used nonlinear filtering techniques such as the extended Kalman filter (EKF) [15], the linearized Kalman filter [19], and the unscented Kalman filter (UKF) are applicable. Nonetheless, those techniques may yield degraded performance due to the strong nonlinearity of range-rate measurements. The sequentialization of the measurement update as the EKF in [16] and [17], and the linearized Kalman filter in [18] were also proposed to improve the accuracy of the range-rate measurement update using estimated states from the position update. The augmentation of a second-order EKF to the conventional position CMKF (DCMSEKF) introduced in [16] and [17] easily incorporates range-rate measurements in the form of pseudo-measurements. However, the DCMKSEKF may be susceptible to measurement noise level since the inaccuracy of the position estimation affects the recursive EKF unfavorably. The DCMSEKF, moreover, requires complex computation for the second-order filtering. The UKF can consider range-rate measurements [21], [22] as well. Still, it requires more calculation for the unscented transformation and may encounter a consistency problem, especially in tracking distant targets. An algorithm using noninformative cross-range-rates components [23], [24] was proposed to avoid estimation accuracy degradation due to nonlinearity, which adopts an information-form Kalman filter. However, methods become sensitive to the initial standard deviation of target velocity. The static fusion of the position CMKF (PCMKF) and the range-rate CMKF (DCMKF) suggested in [13] showed preferable performance under highly nonlinear tracking conditions. Still, the application to general dynamic models might be limited since it requires the derivation of appropriate pseudo-state equations for the specific dynamic model used in the filter. Inspired by previous considerations, this article develops a decorrelated debiased converted measurement Kalman filter (DDCMKF) in direction cosine coordinates with range-rate measurement incorporated. A thorough derivation and a demonstration of its performance are mainly discussed. First, the position conversion in direction cosine coordinates considering a bias compensation and a decorrelation is developed. The decorrelation using predicted estimates in direction cosine coordinates is introduced. Second, the pseudo-linearization of range-rate measurement using estimates from the prior update is explained and incorporated in the measurement update. The corresponding decorrelated bias and error covariance of pseudolinearized range-rate measurement are also acquired. The sequential filtering of the pseudo-linearized range rate, in addition, is suggested to reduce computation complexity while fully utilizing position estimation results. Finally, two illustrative scenarios of Monte-Carlo simulations demonstrate the performance of the proposed DDCMKF, which
+simultaneously compare the error and the consistency with other nonlinear filters. The rest of this article is organized as follows. In Section II, the target tracking problem with position and range-rate measurements in direction cosine coordinates is defined. Section III shows a derivation of the bias and error covariance of converted position measurements and pseudolinearized range-rate measurements. The algorithm of the DDCMKF and how different it is from other nonlinear filter algorithms are explained subsequently. Section IV presents the results of consistency tests and Monte-Carlo simulation results to assesses the proposed DDCMKF compared with existing filters with direction cosine measurements. Finally, Section V concludes this article.
+II. PROBLEM FORMULATION
+A. Target Dynamic Model
+The target dynamics is usually modeled as a linear discrete difference equation in the RCCS as follows:
+xk+1 = Fkxk + wk. (1)
+where xk represents the state of a target, Fk is a state transition matrix, and wk is a zero-mean Gaussian process noise with covariance Qk at the filtering step k. The target state vector xk in (1) consists of a 3-D position and velocity components in Cartesian coordinates as follows:
+xk = [xk, yk, zk, x ̇k, y ̇k, z ̇k]T . (2)
+Note that the process noise is given in a linear additive form. Among many discrete-time target models introduced in [25], the constant velocity model with small white noise acceleration is considered. The small white noise acceleration illustrates small perturbations from the environment like turbulence or gust. The constant velocity model is specified as follows:
+Fk =
+[ I3×3 T I3×3
+03×3 I3×3
+]
+Qk = E [wkwT
+k
+]=
+[ T3
+3 q T2
+2q
+T2
+2 q Tq
+]
+, q=
+⎡
+⎣
+qx 0 0 0 qy 0 0 0 qz
+⎤
+⎦ (3)
+where the components of process noise vector wk for each axis are assumed to be uncorrelated with other axes components, and their power spectral densities are denoted as qx, qy, and qz. The sampling interval for the discrete model is denoted as T .
+B. Measurement Model
+The measurements for the phased array radar tracking system are given in the sensor coordinate system, direction cosine coordinates as shown in Fig. 1. The phased array radar provides target information in a range, a range rate and direction cosines of a line-of-sight vector with respect to array axes, x and y. The measurement equation is given as follows:
+zk = h(xk ) + vk = [ rm,k αm,k βm,k r ̇m,k
+]T
+582 IEEE TRANSACTIONS ON AEROSPACE AND ELECTRONIC SYSTEMS VOL. 58, NO. 1 FEBRUARY 2022
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 09,2025 at 11:14:04 UTC from IEEE Xplore. Restrictions apply.
+
+
+Fig. 1. Measurements in the direction cosine coordinate system.
+=
+⎡
+⎢⎢⎢⎢⎢⎢⎣
+√
+x2
+k + y2
+k + z2
+k
+xk /
+√
+x2
+k + y2
+k + z2
+k
+yk /
+√
+x2
+k + y2
+k + z2
+k
+(xkx ̇k + yky ̇k + zkz ̇k )/
+√
+x2
+k + y2
+k + z2
+k
+⎤
+⎥⎥⎥⎥⎥⎥⎦
++
+⎡
+⎢⎢⎣
+vr,k
+vα,k vβ,k
+vr ̇,k
+⎤
+⎥⎥⎦
+(4)
+where a measurement vector zk at the filtering step k consists of rm,k, αm,k, βm,k, and r ̇m,k. Each component denotes a range, x- and y-axis direction cosines and a range rate. A noise vector vk contains vr,k, vα,k, vβ,k, and vr ̇,k that are measurement noises of each element. Noise components are assumed to be zero-mean Gaussian with known variances σ2
+r , σα2, σβ2, and σ 2
+r ̇ , respectively. They are supposed to be mutually independent except that range and range-rate noise, vr,k and vr ̇,k, are correlated with coefficient ρ. The covariance matrix of the measurements in the direction cosine coordinates are given as follows:
+Rk =
+⎡
+⎢⎢⎣
+σ2
+r 0 0 ρσr σr ̇
+0 σα2 0 0
+0 0 σβ2 0
+ρσrσr ̇ 0 0 σ 2
+r ̇
+⎤
+⎥⎥⎦ . (5)
+Fig. 1 illustrates the off-boresight angle θ as an angle between the plane normal z-axis and line-of-sight. The off-boresight angle is more broadly adopted in describing antenna geometry in radar systems than a polar angle in spherical coordinates. The azimuth angle φ is a horizontal angle between the x-axis and the projected line-of-sight on the radar plane. The nonlinear conversion of measurement enables applying a linear recursive estimator in spite of measurements expressed in nonlinear equations of radar Cartesian coordinates.
+III. DECORRELATED DEBIASED CMKF WITH RANGERATE MEASUREMENT
+The derivation of the DDCMKF incorporating the range-rate measurement is provided in this section. The derivation of the corresponding moments of converted
+measurement error statistics, the inclusion of the pseudolinearized range rate using the sequential filtering, and details of the DDCMKF algorithm are explained.
+A. Decorrelated Debiased Position Conversion
+The measurement conversion aims to express nonlinear measurements in terms of linear functions of the states in radar Cartesian coordinates [5], [6], [8]. In the direction cosine coordinate system, the position conversion from the raw measurement (4) to the position in radar Cartesian coordinates is achieved as follows:
+zpos =
+⎡
+⎣
+xc yc zc
+⎤
+⎦=
+⎡
+⎣
+rmαm rmβm rmγm
+⎤
+⎦=
+⎡
+⎣
+rmαm rmβm
+rm
+√1 − α2m − β2m
+⎤
+⎦ . (6)
+Note that the subscript k denoting a filtering step might be omitted in the following equations where they are unnecessary. Since the z-axis direction cosine γ is not directly measured, the z-axis coordinate zm is expressed in terms of the nonlinear function of the other direction cosine measurements. No closed-form unbiased conversion can be found for the z-axis direction cosine γm. The third direction cosine error vγ can be only expressed using Taylor expansion of fourth-order as follows:
+vγ = γαvα + γβ vβ
++
+(1
+2 γαav2
+α + γαβ vαvβ + 1
+2 γββ v2
+β
+)
++
+(1
+6 γαaαv3
+α+1
+2 γααβ v2
+αvβ + 1
+2 γαββ vαv2
+β
++1
+6 γβββ v3
+β
+)
++
+(1
+24 γααaαv4
+α+1
+6 γαααβ v3
+αvβ + 1
+4 γaαββ v2
+αv2
+β
++1
+6 γaβββ vαv3
+β+ 1
+24 γββββ v4
+β
+)
++ R5(vα, vβ ) (7)
+where higher-order terms represented as R5 are neglected in the following formulations. Equations of partial derivatives of the third direction cosine γ from the first derivative γα to the fourth derivative γββββ are given in (35) of Appendix A. Although the second-order Taylor expansion to approximate the direction cosine error vγ used in [2] and [13] yields a precise error estimate to a practical extent, the fourth-order approximation of vγ as in [12] is applied to estimate the first two moments of converted position errors accurately. Employing a higher-order approximation further extends a geometric tracking range. From (4), the converted position error is given as follows:
+ ̃zpos =
+⎡
+⎣
+x ̃  ̃y  ̃z
+⎤
+⎦=
+⎡
+⎣
+xc − x yc − y zc − z
+⎤
+⎦=
+⎡
+⎣
+rt vα + αt vr + vrvα rt vβ + βt vr + vr vβ rt vγ + γt vr + vr vγ
+⎤
+⎦ (8)
+where x ̃,  ̃y, and  ̃z are the converted position errors, and rt , αt , and βt denote true range and direction cosines. Since true states rt , αt , and βt are unavailable in practical tracking, the
+CHO AND TAHK: DDCMKF FOR PHASED ARRAY RADAR TRACKING SYSTEM 583
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 09,2025 at 11:14:04 UTC from IEEE Xplore. Restrictions apply.
+
+
+converted measurement error in (8) should be conditioned on known values to compute the error bias and covariance of the converted measurement. Conditioning on measurements proposed in [2], [12], [13], and [17] would be a possible resolution to substitute unavailable true states. However, the acquired error covariance and bias expressed in terms of measurements would create the correlation between Kalman gain and measurement residual, which leads to significant bias in the estimation. Besides, the measurement usually contains more significant errors than the filter’s estimation. Using predicted estimates on conditioning the bias and covariance [8], [9] or on approximating covariance [26], [27] has been proposed to solve these limitations. The decorrelation scheme using the predicted estimate that was proved to be efficient in spherical coordinates [8], [9] is adopted. To calculate the decorrelated error covariance and bias, rewrite (8) as follows:
+ ̃zpos =
+⎡
+⎣
+x ̃  ̃y  ̃z
+⎤
+⎦=
+⎡
+⎣
+(rp − λr )vα + (αp − λα )vr + vrvα (rp − λr )vβ + (βp − λβ )vr + vrvβ (rp − λr )vγ + (γp − λγ )vr + vrvγ
+⎤
+⎦.
+(9) In (9), estimated states in direction cosine coordinates rp, αp, βp, and γp replace unknown true states. The estimation errors of range, three-direction cosines are denoted as λr, λα, λβ , and λγ each. They are assumed to be zero-mean, Gaussian with covariance pos. Defining the predicted estimate vector as ˆzpos = [rp, αp, βp, γp]T , the estimated states and their covariance in direction cosine coordinates are computed as (10) from the a priori estimate ˆxp = [xp, yp, zp, x ̇ p, y ̇ p, z ̇p]T and its error covariance estimate Pp
+ˆzp = h1(ˆxp) = [ rp αp βp γp
+]T
+=
+[√
+x2p + y2p + z2p xpr−1
+p ypr−1
+p zpr−1
+p
+]T
+pos = J1PpJT
+1=
+⎡
+⎢⎢⎣
+τrr τrα τrβ τrγ
+τrα ταα ταβ ταγ τrβ ταβ τββ τβγ τrγ ταγ τβγ τγ γ
+⎤
+⎥⎥⎦ (10)
+where the covariance in direction cosine coordinates is approximated by linearly transforming the error covariance in Cartesian coordinates. The Jacobian matrix J1 is
+J1 = ∂h1
+∂x
+∣∣∣∣ˆxp
+=
+[
+∂r ∂x
+∣∣ˆxp
+∂α ∂x
+∣∣ˆxp
+∂β ∂x
+∣∣∣ˆxp
+∂γ ∂x
+∣∣∣ˆxp
+]T
+∂r
+∂x = r−1[ x y z 01×3
+]T
+∂α
+∂x = r−3[ y2 + z2 −xy −xz 01×3
+]T
+∂β
+∂x = r−3[ −xy x2 + z2 −yz 01×3
+]T
+∂γ
+∂x = r−3[ −xz −yz x2 + y2 01×3
+]T . (11)
+Then, the bias and error covariance are obtained from (9) as follows:
+μpos = E [  ̃zpos
+∣∣ ˆzpos
+] = [ 0 0 rpE [ vγ
+∣∣ αp, βp
+] ]T (12)
+Rpos = E
+[ ( ̃zpos − μpos
+) ( ̃zpos − μpos
+)T ∣∣∣ ˆzpos
+]
+=
+⎡
+⎣
+Rxx Rxy Rxz
+Rxy Ryy Ryz
+Rxz Ryz Rzz
+⎤
+⎦ (13)
+Rxx = (r2
+p + τrr )σ 2
+α + (α2
+p + ταα )σ 2
+r + σ2
+r σ2
+α
+Ryy = (r2
+p + τrr )σ 2
+β + (β2
+p + τββ )σ 2
+r + σ2
+r σ2
+β
+Rzz = (r2
+p + τrr + σ 2
+r )E [ v2
+γ
+∣∣ αp, βp
+] + (γ 2
+p + τγ γ )σ 2
+r
++ 2γpσ 2
+r E [ vγ
+∣∣ αp, βp
+] − r2
+pE 2 [ vγ
+∣∣ αp, βp
+]
+Rxy = (αpβp + ταβ )σ 2
+r
+Rxz = (r2
+p + τrr + σ 2
+r )E [ vαvγ
+∣∣ αp, βp
+]
++ (αpγp + ταγ )σ 2
+r + αpσ 2
+r E [ vγ
+∣∣ αp, βp
+]
+Ryz = (r2
+p + τrr + σ 2
+r )E [ vβ vγ
+∣∣ αp, βp
+]
++ (βpγp + τβγ )σ 2
+r + βpσ 2
+r E [ vγ
+∣∣ αp, βp
+] (14)
+where expectations E [vγ |αp, βp], E [vαvγ |αp, βp], E [vβ vγ |αp, βp], and E [vγ2 |αp, βp] in (12) and (14) are calculated from conditioning the third-direction cosine error with the predicted estimate. Appendix A introduces how to approximate and calculate these expectations. Remark that the decorrelation by substituting predicted estimates instead of measurements prevent the algorithm from showing the estimation bias caused by the correlated measurement residual and the error covariance during the update step. The error covariance and the bias expressed in terms of the filter&apos;s prediction possess different forms to those using measurements as in [2], [12], and [17]. Equations (10) and (11) are obtained based on the assumption that the estimated error statistics are Gaussian in the direction cosine coordinate system. The Gaussianity assumption of the error statistics can be employed in both direction cosine and Cartesian coordinates. The innovation covariance of the recursive linear minimum mean-squared error (LMMSE) filter in [26] and [27] is an example derived by supposing Gaussianity in Cartesian coordinates. The proposed decorrelated conversion could provide superior initial convergence performance. It is because the true statistics of estimated errors remain unknown, and a Gaussianity assumption in direction cosine coordinates would be more valid at the early steps of the tracking. The proposed conversion is also computationally light in that it does not require the unscented transformation for the covariance estimation as in [27].
+B. Pseudo-Linearization of Range-Rate Measurement
+Using the range-rate measurement draws out more information about the target state. It is a highly nonlinear function and cannot be directly converted to velocity components in Cartesian coordinates without angular rate measurements. The pseudo-linearization of it is suggested to cope with the
+584 IEEE TRANSACTIONS ON AEROSPACE AND ELECTRONIC SYSTEMS VOL. 58, NO. 1 FEBRUARY 2022
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 09,2025 at 11:14:04 UTC from IEEE Xplore. Restrictions apply.
+
+
+nonlinearity and to keep the linear Kalman filter structure. From (4), the range rate can be rewritten in linearized form using true direction cosines (αt , βt , γt ) and true velocity in radar Cartesian coordinates as follows:
+r ̇m = αt x ̇t + βt y ̇t + γt z ̇t + vr ̇ (15)
+Then, the linearized radial velocity in (15) can be embodied directly in the converted measurement model. Still, two problems exist: the correlation between the range rate and the range remains, and the true direction cosines used for linearization in (15) are unavailable in an actual implementation. The Cholesky decomposition removes the correlation with the range measurement error from the range-rate measurement noise vr ̇. Adopting it also facilitates the application of the sequential filtering method in the DDCMKF algorithm. Apply the decomposition to the part of the measurement error covariance, then
+R′ =
+[ σ2
+r ρσr σr ̇
+ρσr σr ̇ σ 2
+r ̇
+]
+=L
+[σ2
+r0
+0 (1 − ρ2)σ 2
+r ̇
+]
+LT
+L=
+[1 0 ρσr ̇ σ −1
+r1
+]
+. (16)
+Repeat the decomposition to the range and range-rate equation, then
+[ rm
+r ̇m − ρσr ̇ σ −1
+r rm
+]
+=
+[
+t 01×3
+−ρσr ̇ σ −1
+rtt
+]
+x+
+[ vr
+vr ̇ − ρσr ̇ σ −1
+r vr
+]
+(17)
+where t = [αt , βt , γt ] represents the true direction cosine and x is the true state vector as in (2). The linearized range rate in (15) now turns into a new pseudo-measurement that is mutually independent of the range measurement. Note that the range equation is unaffected by the decomposition, whereas the pseudo-radial velocity component is formulated to the linear combination of two measurements. Then, the true direction cosine in (17), which is unavailable in an actual implementation, is substituted with the estimated direction cosine
+zrr = r ̇m − ρσr ̇ σ −1
+r rm
+= − ρσr ̇ σ −1
+r (αpxt + βpyt + γpzt )
++ (αpx ̇t + βpy ̇t + γpz ̇t ) + ηr ̇, (18)
+where the noise of the pseudo-linearized range-rate measurement ηr ̇ is given as follows:
+ηr ̇ = (vr ̇ − ρσr ̇ σ −1
+r vr )
++ ρσr ̇ σ −1
+r (λαxt + λβ yt + λγ zt )
+− (λαx ̇t + λβ y ̇t + λγ z ̇t ). (19)
+In analogy to the decorrelation of converted position, true states xt , yt , zt , x ̇t , y ̇t , and z ̇t in the noise ηr ̇are now expressed via estimated states and estimation errors in direction cosine coordinates to get
+ηr ̇ = (vr ̇ − ρσr ̇ σ −1
+r vr )
++ ρσr ̇ σ −1
+r λα (rp − λr )(αp − λα )
+− λα{(r ̇p − λr ̇ )(αp − λα ) + (rp − λr )(α ̇ p − λα ̇ )}
++ ρσr ̇ σ −1
+r λβ (rp − λr )(βp − λβ )
+− λβ {(r ̇p − λr ̇ )(βp − λβ ) + (rp − λr )(β ̇ p − λβ ̇ )}
++ ρσr ̇ σ −1
+r λγ (rp − λr )(γp − λγ )
+− λγ {(r ̇p − λr ̇ )(γp − λγ ) + (rp − λr )(γ ̇p − λγ ̇ )}. (20)
+where estimated states rp, αp, βp, γp and their corresponding error components λr, λα, λβ, λγ are identical to states given
+in (10). The other estimated velocity states r ̇p, α ̇ p, β ̇ p, γ ̇p and their corresponding errors λr ̇, λα ̇ , λβ ̇ , λγ ̇ are further assumed to be zero-mean Gaussian as same as position estimation errors. Then, the predicted estimate vector ˆzrr = [rp, αp, βp, γp, r ̇p, α ̇ p, β ̇ p, γ ̇p]T and their covariance rr in direction cosine coordinates are computed from the a priori estimate ˆxp and its error covariance Pp as in (21) similar to position conversion
+ˆzrr = [h1(ˆxp) h2(ˆxp)]T
+= [ rp αp βp γp r ̇p α ̇ p β ̇ p γ ̇p
+]T
+=
+⎡
+⎢⎢⎢⎢⎣
+h1 ( ˆx p )
+(xpx ̇ p + ypy ̇ p + zpz ̇p)r−1
+p
+(x ̇ prp − xpr ̇p)r−2
+p
+(y ̇ prp − ypr ̇p)r−2
+p
+(z ̇prp − zpr ̇p)r−2
+p
+⎤
+⎥⎥⎥⎥⎦
+rr =
+[ J1
+J2
+]
+Pp
+[ JT
+1 JT
+2
+]=
+⎡
+⎢⎢⎢⎢⎢⎢⎢⎣
+τrr · · · τr ̇r τrα ̇ τrβ ̇ τrγ ̇
+... . . .
+τr ̇r τr ̇r ̇ τr ̇α ̇ τr ̇β ̇ τr ̇γ ̇
+τrα ̇ τr ̇α ̇ τα ̇ α ̇ τα ̇ β ̇ τα ̇ γ ̇
+τrβ ̇ τr ̇β ̇ τα ̇ β ̇ τβ ̇ β ̇ τβ ̇ γ τrγ ̇ τr ̇γ ̇ τα ̇ γ ̇ τβ ̇ γ τγ ̇ γ ̇
+⎤
+⎥⎥⎥⎥⎥⎥⎥⎦
+T
+.
+(21)
+The estimate error covariance is computed by the coordinate transformation of the error covariance to direction cosine coordinates. The Jacobian matrix J1 is given in (11) and J2 is
+J2 = ∂h2
+∂x
+∣∣∣∣ˆxp
+=
+[
+∂ r ̇ ∂x
+∣∣ˆxp
+∂ α ̇ ∂x
+∣∣ˆxp
+∂ β ̇ ∂x
+∣∣∣ˆxp
+∂ γ ̇ ∂x
+∣∣∣ˆxp
+]T
+∂ r ̇
+∂x = r−2
+⎡
+⎢⎢⎢⎢⎢⎣
+x ̇r − xr ̇ y ̇r − yr ̇ z ̇r − zr ̇ xr yr zr
+⎤
+⎥⎥⎥⎥⎥⎦
+∂ α ̇
+∂x = r−4
+⎡
+⎢⎢⎢⎢⎢⎣
+−2xx ̇r + (3x2 − r2)r ̇ (−xy ̇ − yx ̇ )r + 3xyr ̇ (−xz ̇ − zx ̇ )r + 3xzr ̇ (y2 + z2)r −xyr −xzr
+⎤
+⎥⎥⎥⎥⎥⎦
+CHO AND TAHK: DDCMKF FOR PHASED ARRAY RADAR TRACKING SYSTEM 585
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 09,2025 at 11:14:04 UTC from IEEE Xplore. Restrictions apply.
+
+
+∂ β ̇
+∂x = r−4
+⎡
+⎢⎢⎢⎢⎢⎣
+(−xy ̇ − yx ̇ )r + 3xyr ̇ −2yy ̇r + (3y2 − r2)r ̇ (−zy ̇ − zy ̇ )r + 3xyr ̇ −xyr (x2 + z2)r −yzr
+⎤
+⎥⎥⎥⎥⎥⎦
+∂ γ ̇
+∂x = r−4
+⎡
+⎢⎢⎢⎢⎢⎣
+(−xz ̇ − zx ̇ )r + 3xzr ̇ (−yz ̇ − zy ̇ )r + 3yzr ̇ −2zz ̇r + (3z2 − r2)r ̇ −xzr −yzr
+(x2 + y2)r
+⎤
+⎥⎥⎥⎥⎥⎦
+. (22)
+Then, the derivation of the bias and error covariance of pseudo-linearized range rate ηr ̇ can be subsequently accomplished as follows:
+μrr = E [ ηr ̇ | ˆzrr
+]
+= (−ξ rp + r ̇p)(ταα + τββ + τγ γ ) + ψ
+ψ = rp(τα ̇ α + τβ ̇ β + τγ ̇ γ ) + (α ̇ pτrα + β ̇ pτrβ + γ ̇ τrγ )
++ {αp(τr ̇α − ξ τrα ) + βp(τr ̇β − ξ τrβ )
++ γp(τr ̇γ − ξ τrγ )}
+ξ = ρσr ̇ σ −1
+r (23)
+Rrr = E [ (ηr ̇ − μrr ) (ηr ̇ − μrr )T ∣∣ ˆzrr
+]
+= (1 − ρ2)σ 2
+r ̇
++ (r2
+p + τrr )(α ̇ 2
+pταα + β ̇ 2
+pτββ + γ ̇ 2
+p τγ γ )
++ (r2
+p + τrr )(τα ̇ α ̇ ταα + τβ ̇ β ̇ τββ + τγ ̇ γ ̇ τγ γ )
++ {(r ̇2
+p + τr ̇r ̇ ) − 2ξ r ̇prp + ξ 2(r2
+p + τrr )}
+× (α2
+pταα + β2
+pτββ + γ 2
+p τγ γ )
++ {(2r ̇2
+p + 3τr ̇r ̇ ) − 4ξ r ̇prp + ξ 2(2r2
+p + 3τrr )}
+× (τ 2
+αα + τ 2
+ββ + τ2
+γγ )
++ 2{r ̇prp − ξ (r2
+p + τrr )}
+× (α ̇ pαpταα + β ̇ pβpτββ + γ ̇pγpτγ γ )
++ 2(τr ̇r ̇ + ξ 2τrr )(ταατββ + ταατγ γ + τββ τγ γ )
++ ξ 2υ1 − 2ξ υ2 + υ3
+ξ = ρσr ̇ σ −1
+r (24)
+where ψ in (23) and υ1, υ2, and υ3 in (24) corresponds to the bias and covariance created from cross covariances among estimation errors. Appendix B briefly presents how to derive the terms υ1, υ2, and υ3. However, only the equation of υ1 is given in the Appendix since these terms encompassing cross covariances is pretty tedious while having a limited influence on the tracking performance. Note that the proposed filter would be able to maintain satisfactory performance even ignoring these cross-covariance terms υ1, υ2, υ3, and ψ. When the initial velocity covariance or the position-velocity cross covariance is estimated greater than actual range-rate measurement accuracy, omitting those cross-correlated terms would lead the DDCMKF to achieve faster convergence with comparable accuracy.
+Fig. 2. Proposed DDCMKF algorithm flowchart.
+Remark that the proposed method is similar to the sequential pseudo-measurement filter [18] in that it incorporates the range-rate measurement by employing pseudolinearization. They share two key ideas: the linearization of the range-rate equation using direction cosine estimates and the uncorrelation based on Cholesky factorization. The difference between these two methods originates from the substitution of true direction cosines to estimated direction cosines. In [18], the direction cosine error is linearly approximated in Cartesian coordinates, i.e., the error statistics are assumed to be Gaussian in Cartesian coordinates. The bias and covariance are approximated using the covariance in Cartesian coordinates directly. However, the proposed pseudo-linearization presumes Gaussian estimation errors in the direction cosine coordinate system. It linearly approximates the error covariance. No clear evidence of which approach is better exists because the true error statistics might differ from both assumptions. The proposed pseudolinearization may provide faster initial convergence at the early steps of the track, as mentioned in the previous section.
+C. Filtering Algorithm Formulation
+The proposed sequential DDCMKF is formulated in this section. It consists of four substeps as shown in Fig. 2. The filter processes position measurements first, and then the pseudo-linearized range-rate update is accomplished with the latest position estimate. The filter executes the propagation and the two update steps recursively. 1) Initialization:
+x0|0 = [ pc,0 vc,0
+]T
+pc,0 = [ xc,0 yc,0 zc,0
+]
+vc,0 = 1
+T
+[ (xc,0 − xc,−1 ) (yc,0 − yc,−1 ) (zc,0 − zc,−1 ) ]
+P0|0 =
+[ Rc,0 Rc,0/T Rc,0/T (Rc,0 + Rc,−1 )/T
+]
+(25)
+586 IEEE TRANSACTIONS ON AEROSPACE AND ELECTRONIC SYSTEMS VOL. 58, NO. 1 FEBRUARY 2022
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 09,2025 at 11:14:04 UTC from IEEE Xplore. Restrictions apply.
+
+
+where xc,0, yc,0, zc,0, and xc,−1, yc,−1, zc,−1 are converted positions calculated as in (6) from two initial raw position measurements. Since the estimated state information is unavailable for the initialization, the measurement-conditioned error covariances Rc,0 and Rc,−1 in [2] and [12] are utilized instead.
+2) Time Propagation:
+ˆxk|k−1 = Fk−1 ˆxk−1|k−1
+Pk|k−1 = Fk−1Pk−1|k−1FT
+k−1 + Qk−1. (26)
+where the state transition matrix of the constant velocity model Fk−1 and the process noise covariance Qk are given in (3).
+3) Converted Position Measurement Update:
+ˆxpos,k|k = ˆxk|k−1 + Kpos,k (zpos,k − Hpos,k ˆxk|k−1 − μpos,k )
+Ppos,k|k = (I − Kpos,k Hpos,k )Pk|k−1(I − Kpos,k Hpos,k )T
++ Kpos,k Rpos,k KT
+pos,k
+Kpos,k = Pk|k−1HT
+pos,k
+[Hpos,k Pk|k−1HT
+pos,k + Rpos,k
+]−1
+Hpos,k = [ I3×3 03×3
+] , (27)
+where the converted position measurement zpos,k, its bias μpos,k, and its error covariance Rpos,k are specified in (6), (12), and (13).
+4) Psuedo-Linearized Range-Rate Measurement Update:
+ˆxk|k = ˆxpos,k|k + Krr,k (zrr,k − Hrr,k ˆxpos,k|k − μrr,k )
+Pk|k = (I − Krr,k Hrr,k )Ppos,k|k (I − Krr,k Hrr,k )T
++ Krr,k Rrr,k KT
+rr,k
+Krr,k = Ppos,k|k HT
+rr,k
+[Hrr,k Ppos,k|k HT
+rr,k + Rrr,k
+]−1
+Hrr,k = [−ρσr σ −1
+r ̇ pos,k|k pos,k|k
+]
+pos,k|k = [αpos,k|k βpos,k|k γpos,k|k
+]
+= r−1
+pos,k|k
+[xpos,k|k ypos,k|k zpos,k|k
+] , (28)
+where the pseudo-linearized range-rate measurement zrr,k, its bias μrr,k, and its error covariance Rrr,k are presented in (18), (23), and (24), respectively. The covariance update in (27) and (28) adopts the Joseph form to guarantee positive semidefiniteness since lower arithmetic precision under numerical instability might bring about a deadly indefinite covariance matrix. Nevertheless, the simplified form update equation would also be applicable when trying to decrease computation. Since the range-rate measurement update is handled in sequence using the latest state estimate with little estimation bias, the potential problems of sequential filtering such as estimation accuracy degradation or divergence due to biased estimation are prevented. Note that the two-point difference method [28] is adopted for the initialization. The other tracking initiation algorithms such as the single-point track initiation [29], [30] are also applicable for some cases.
+IV. NUMERICAL SIMULATIONS
+A. Consistency Evaluation of Converted Measurement Model
+The statistical consistency test is required to verify that the measurement conversion used in the filter virtually represents the statistical distribution of the actual converted measurement. The normalized error squared (NES) test [3], [4] is utilized to evaluate the consistency of the model. The statistical consistency of the proposed decorrelated debiased converted measurement (DDCM) model is examined and compared with the conventional debiased converted measurement (CDCM) model used in [2], [12], and [17]. The proposed DDCM includes the pseudo-linearized range-rate measurement, whereas CDCM introduces the pseudo-measurement, the product of the range, and rangerate measurement. The consistency of position-only models is first evaluated to check the effect of the decorrelation used in DDCM. The range-rate measurement model is then augmented to the converted position model for consistency evaluation. Note that the calculation of the DDCM or the range-rate augmented DDCM requires the predicted estimates of the target state. The predicted estimate state vector is assumed to be the true target state vector corrupted by correlated Gaussian noise. The measurement conversion is regarded to be consistent if the sample mean of NES is located within 1% and 99% probability bounds of the chi-square distribution with n × N degree of freedom as follows:
+1
+nN χ 2
+n×N (0.01) ≤ φ ̄ ≤ 1
+nN χ 2
+n×N (0.99)
+φ ̄ = 1
+n
+N ∑
+i=1
+ ̃zT
+i R−1
+i  ̃zi ∼ 1
+nN χ 2
+n×N (29)
+where n denotes the number of components in the measurement error vector  ̃z, and N is the number of measurement samples used for the NES test. The measurement error  ̃zi and measurement covariance Ri of the DDCM are defined in (30) if the test statistics include both position and range-rate measurements
+ ̃zi =
+[ zpos,i
+zrr,i
+] −
+[ I3×3 01×3
+−ρσr ̇ σ −1
+r pp
+]
+x−
+[ μpos,i
+μrr,i
+]
+Ri =
+[ Rpos,i 03×1
+01×3 Rrr,i
+]
+, (30)
+where the direction cosine estimate p, the converted position and pseudo-linearized range-rate measurements zpos, zrr, and their biases μpos, μrr and covariances Rpos, Rrr can be found in (12), (13), (23), and (24). For the CDCM, the measurement error and covariance are defined as follows:
+ ̃zi =
+[ zpos,i
+rmr ̇m
+] −
+[ xpos
+xpos · xvel
+] −
+[ uxyz uξ
+]
+Ri = RCar. (31)
+Note that the pseudo-measurement of the CDCM is constructed as the product of the range and range-rate measurement, which is unable to be linearly formulated as
+CHO AND TAHK: DDCMKF FOR PHASED ARRAY RADAR TRACKING SYSTEM 587
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 09,2025 at 11:14:04 UTC from IEEE Xplore. Restrictions apply.
+
+
+TABLE I Test Conditions for Consistency Evaluation
+(∗) SD: Standard deviation.
+in (30). Thus, the pseudo-measurement is defined as the dot product of the position and velocity where xpos = [ x y z]T and xvel = [ x ̇ y ̇ z ̇]T . The equation for bias components uxyz, uξ and the corresponding covariance RCar can be found in [17]. Two cases of NES tests are performed. In the first case, long-range targets with relatively small direction cosine measurement errors are assumed. The other case considers short-range targets. It is notable that the second case, unlike the first case, assumes a relatively large direction cosine measurement error. The negative correlation between range error and range-rate error, expected during practical tracking as noted in [14], is also considered. The details of the parameters used in NES tests are stated in Table I. As indicated in Fig. 1, the z-axis corresponds to the boresight of a radar, which means xy-plane is a radar face plane with an off-boresight angle θ = 90°. The NES tests are performed for every azimuth and the off-boresight angle at 1° interval, respectively. Each test considers 104 samples of constant velocity targets. The flight path and course of targets are random in all directions. A consistent measurement model is expected to yield an NES value equal to unity. Fig. 3 shows the average NES plots of the DDCM and the CDCM for the first case, scanning long-range targets. Both the DDCM and the CDCM yield consistent NES for all directions over the radar face plane, except when the offboresight angle is high. The DDCM provides consistency within the off-boresight angle 76° for both cases considering only position measurements and incorporating range-rate measurements. The covariance for the points whose offboresight angle is higher than 76° is overestimated in the DDCM; therefore, the sample mean of NES is below the lower bound of consistency as shown in Fig. 3(a) and (c). The CDCM underestimates the covariance when the
+off-boresight angle is higher than 55° as shown in Fig. 3(b) and (d). Fig. 4 shows the average NES of the DDCM and the CDCM for the second case. The noisy angular measurement leads to dramatic performance degradation of the CDCM. The significant bias originating from measurementconditioned covariance makes the CDCM provide consistency only for the area within off-boresight angle smaller than 15° even for the case considering only position measurements. However, the DDCM model suggested in this study grants consistency within the off-boresight angle 67° for the case considering position measurements and 62° for the case embodying range-rate measurements. The adoption of the DDCM in the DDCMKF algorithm can improve the filter accuracy while extending the field of tracking. The DDCM model shows an expanded consistent boundary compared with the CDCM model.
+B. Targets Tracking Simulation Results
+The performance of the proposed tracking filter is validated through numerical simulations and performance comparisons with other filtering algorithms in this section. The DDCMKF is compared against the following seven types of filtering that consider measurements in the direction cosine coordinate system:
+1) the DCMSEKF incorporating converted position and range-rate measurements [17]; 2) the EKF with raw measurements in direction cosine coordinates [15]; 3) the UKF with raw measurements [31]; 4) the quadrature Kalman filter (QKF) considering raw measurements [32]; 5) the cubature Kalman filter (CKF) processing raw measurements [33]; 6) the PCMKF considering only converted position measurements [2], [12]; 7) the recursive LMMSE filter in direction cosine coordinates [27].
+Note that all algorithms except two algorithms (6) and (7) consider range-rate measurements. The UKF employs αUT = 10−3, βUT = 2, and κUT = 1 in the unscented transformation. The QKF sets three-quadrature points for each state variable, which is 729 points in total. Two cases of Monte-Carlo simulations are implemented to verify the performance of the DDCMKF. In every simulation, the radar geometry is identical to that used in the consistency test. The radar measures the range, twodirection cosines to face plane, and range rate of targets with 1-Hz frequency. Totally 104 constant velocity targets are generated with random initial position and velocity on the virtual hemisphere over the radar face plane. The detailed simulation conditions and the parameters for noise or uncertainty are given in Table II. Two Monte-Carlo simulation scenarios are identical to scenarios used in the consistency evaluation except that the initial off-boresight angle of targets is limited within 60° referring to consistency
+588 IEEE TRANSACTIONS ON AEROSPACE AND ELECTRONIC SYSTEMS VOL. 58, NO. 1 FEBRUARY 2022
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 09,2025 at 11:14:04 UTC from IEEE Xplore. Restrictions apply.
+
+
+Fig. 3. Average NES plots for the first scenario of the DDCM model and the CDCM model (plotting on unit hemispheres above radar face plane, marking chi-square probability bounds (0.99, 0.01) on color bars with cursors). (a) DDCM NES (Position only). (b) CDCM NES (Position only). (c) DDCM NES (Incl. range-rate). (d) CDCM NES (Incl. range-rate).
+Fig. 4. Average NES plots for the second scenario of the DDCM model and the CDCM model (plotting on unit hemispheres above radar face plane, marking chi-square probability bounds (0.99, 0.01) on color bars with cursors). (a) DDCM NES (Position only). (b) CDCM NES (Position only). (c) DDCM NES (Incl. range-rate). (d) CDCM NES (Incl. range-rate).
+CHO AND TAHK: DDCMKF FOR PHASED ARRAY RADAR TRACKING SYSTEM 589
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 09,2025 at 11:14:04 UTC from IEEE Xplore. Restrictions apply.
+
+
+Fig. 5. Illustration of targets used in Monte-Carlo simulations (showing targets’ trajectories). (a) Long-range targets (Scenario 1). (b) Short-range targets (Scenario 2).
+TABLE II Scenario Parameters for Monte-Carlo Simulations
+(∗) SD: Standard deviation, PSD: Power spectral density.
+test results. This limitation is also widely applied to prevent radar from performance degradation in practical tracking [38]. Simulations are performed for 100 s. Targets generated according to two scenarios are depicted in Fig. 5(a) and (b). Two metrics, the root mean squared errors (RMSE) and the average normalized estimation error squared (ANEES) [34] are utilized to verify the performance of the proposed filtering algorithm. Equations for calculating the position and velocity RMSE and the ANEES are given as follows:
+RMSE pos
+k=
+√1
+N
+∑N
+i=1
+[
+(xˆ i
+k|k − xi
+k )2 + (ˆyi
+k|k − yi
+k )2 + (zˆi
+k|k − zi
+k )2]
+RMSEvel
+k=
+√1
+N
+∑N
+i=1
+[
+(xˆ ̇ i
+k|k − x ̇i
+k )2 + (ˆy ̇i
+k|k − y ̇i
+k )2 + (zˆ ̇i
+k|k − z ̇i
+k )2]
+ANEES = 1
+nN
+N ∑
+i=1
+( ˆxi
+k|k − xi
+k|k )T Pi
+k|k ( ˆxi
+k|k − xi
+k|k ), (32)
+where ˆxi
+k = [xˆi
+k, ˆyi
+k, zˆi
+k, xˆ ̇i
+k, ˆy ̇i
+k, zˆ ̇i
+k]T and xi
+k = [xi
+k, yi
+k, zi
+k, x ̇i
+k,
+y ̇ i
+k, z ̇i
+k]T represent the estimated and actual target state vector at the time step k of simulation number i. The number of simulation and state variables are denoted as N and n each. The position and velocity RMSE show the convergence speed and tracking performance of filters, whereas the ANEES examines the consistency of filters’ estimation. The posterior Cramer–Rao lower bound (PCRLB) [35]–[37] that demonstrates the lower limit of the estimator variance is also computed to measure the performance of filters. The position and velocity PCRLB can be obtained from taking the inverse of the information matrix Jk, which is updated as follows:
+Jk = (Qk−1 + Fk−1J−1
+k−1FT
+k−1 )−1 + E [HT
+k R−1
+k Hk
+]
+Hk =
+[ ∂r ∂x
+∣∣x
+∂α ∂x
+∣∣x
+∂β ∂x
+∣∣∣x
+∂ r ̇ ∂x
+∣∣x
+]T
+J0 = P−1
+0|0 (33)
+where derivatives in Jacobian matrix Hk can be found in (11) and (21). Since the second term on the information matrix update equation nonlinearly depends on the actual random state, it cannot be estimated analytically. Accordingly, it is closely approximated in a Monte-Carlo manner by taking an average of a large number of samples. The expectation notation can be consequently omitted, and then the information matrix is recursively estimated. The position and velocity PCRLB, the inverse the information matrix, are demonstrated on the RMSE plots as a reference for the lower estimation bound as follows:
+CRLB{[ ˆxi
+k] j } = [J−1
+k ]i
+j j (i = 1, · · · , 6)
+CRLBpos =
+√1
+N
+∑N
+i=1
+∑3
+j=1 [J−1
+k ]i
+jj
+CRLBvel =
+√∑N
+i=1
+∑6
+j=4 [J−1
+k ]i
+j j. (34)
+Furthermore, the computation complexity of filters is examined by mean execution CPU time spent during the Monte-Carlo simulations. It is not a significant concern for the filters’ performance, yet the filter with the less computational requirement has a comparative advantage in
+590 IEEE TRANSACTIONS ON AEROSPACE AND ELECTRONIC SYSTEMS VOL. 58, NO. 1 FEBRUARY 2022
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 09,2025 at 11:14:04 UTC from IEEE Xplore. Restrictions apply.
+
+
+Fig. 6. Position and velocity error performance comparison for 104 runs of Monte-Carlo simulations (the position RMSE of the EKF in scenario 1 increases up to 12 000 m and is neglected from the plot for comparison of other algorithms). (a) Long-range tracking position RMSE (Scenario 1). (b) Short-range tracking position RMSE (Scenario 2). (c) Long-range tracking velocity RMSE (Scenario 1). (d) Short-range tracking velocity RMSE (Scenario 2).
+that it can reduce the computational burden of an on-board flight radar computer. The error comparison of tracking algorithms in the longrange tracking scenario shows that the proposed DDCMKF slightly outperforms other tracking filters by showing more minor errors. From the position and velocity RMSE in Fig. 6(a) and (c), the proposed DDCMKF exhibits more than 30 m smaller position error after 25 s and 1 m/s smaller velocity error after 50 s compared to other algorithms. On account of linearization on noisy position measurements, the performance of EKF is the poorest among all other algorithms. The DDCMKF surpasses other algorithms in tracking short-range targets under highly noisy angular measurement as shown in Fig. 6(b) and (d). Since scenario 2 assumes significant angular measurement error and the correlation between the range and range-rate error, it clearly delineates the effectiveness of the decorrelation used in the DDCMKF. The proposed DDCMKF is robust to noisy position measurements while the large estimation bias originated from position estimation leads the DCMSEKF to diverge. The proposed DDCMKF demonstrates relatively faster convergence than any other methods after 10 s as in
+Fig. 6(b), whereas its convergence during the initial 10 s is marginally slow. The proposed DDCMKF demonstrates about 100 m smaller position RMSE than the UKF, the CKF, and the QKF after 40 s of tracking. It also achieves about 1 m/s smaller velocity RMSE than other algorithms after 35 s as well. It seems that the DDCMKF shows a slightly slower or comparable convergence speed during the early steps of tracking compared to others. The initial position measurements with substantial error as in scenario 2 lead the two-point initialization to overrate the initial velocity cross-covariance terms in (13) and (24), which prevents the DDCMKF from converging fast. Neglecting cross-covariance terms, as described below (24), would help achieve faster convergence. In any simulation case, the proposed DDCMKF shows excellent position tracking performance undoubtedly. The ANEES analysis results of Fig. 7(a) and (b) reveal the consistency of the proposed DDCMKF. Although all six filtering algorithms employing the range-rate measurement initially deviate from the credibility bounds, the ANEES of the DDCMKF rapidly converges and remains close to the consistent boundary during simulations. Although the ANEES of the DDCMKF slightly strays from the credibility
+CHO AND TAHK: DDCMKF FOR PHASED ARRAY RADAR TRACKING SYSTEM 591
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 09,2025 at 11:14:04 UTC from IEEE Xplore. Restrictions apply.
+
+
+Fig. 7. Consistency test results of filtering algorithms for 104 runs of Monte-Carlo simulations (the ANEES of the EKF and the QKF in both scenarios drastically diverges from the initiation of tracking and is removed from the plot). (a) ANEES for long-range tracking (Scenario 1). (b) ANEES for short-range tracking (Scenario 2).
+TABLE III Mean CPU Time Per Run in Monte-Carlo Simulations
+boundary in scenario 2, it would be the most credible filter among these algorithms. The ANEES of the DCMSEKF, the EKF, the UKF, the QKF, the CKF, and the LMMSE show that their estimation results remain optimistic during the whole simulation. A highly nonlinear condition of scenario 2 brings about slower convergence of the ANEES of the DDCMKF. The PCMKF that does not utilize nonlinear range-rate measurements remains close to the ANEES credibility region for both scenarios; however, it slowly diverges due to an estimation bias. The mean CPU times spent per a single run of filters in Monte-Carlo simulations are given in Table III. The proposed DDCMKF requires 0.169 ms CPU time for a single run on average. The mean CPU time of the DDCMKF is of a similar magnitude to the DCMSEKF. Though covariance equations of the DDCMKF are rather complicated than the DCMSEKF, it is comparable with the DCMSEKF since the algorithm is computationally simple with fewer matrix inversions. The EKF requires the lowest computational load; however, its tracking performance is the poorest among all. The UKF, the CKF, and the LMMSE require a longer computation time than the DDCMKF for a single run due to transformations included in algorithms. The massive computation load of the QKF is not desirable at all albeit their robust performance. In conclusion, the proposed DDCMKF improves the tracking performances
+while demanding a similar level of computation load to others.
+V. CONCLUSION
+In this article, the target tracking problem with position and range-rate measurements specified in direction cosine coordinates is considered. A new tracking filter called the DDCMKF is proposed to alleviate the estimation bias commonly exhibited in the conventional CMKF by the measurement-dependent bias and error covariance. The decorrelated position measurement conversion and the pseudo-linearization of the range-rate measurement are simply introduced by replacing true states with estimated states and corresponding estimation errors. The decorrelation of converted measurement error can enlarge the consistent boundary as well as enhance the tracking performance. The adoption of decorrelation further complements the stability of sequential filtering in the range-rate measurement update. Comparative Monte-Carlo simulations verify the tracking performance of the proposed DDCMKF with other nonlinear filtering algorithms. The proposed DDCMKF shows superior performance and more consistent estimation than the other algorithms while requiring relatively low computation loads.
+APPENDIX
+A. Derivation of Expectations E [vγ |αp, βp], E [vαvγ |αp, βp], E [vβ vγ |αp, βp] and E [vγ2 |αp, βp]
+The Taylor expansion of the third direction cosine error vγ is given in (7). The partial derivatives in (7) are specified as follows:
+γα = − α
+γ , γβ = − β
+γ
+γαa = − 1 − β2
+γ 3 , γαβ = − αβ
+γ 3 , γββ = − 1 − α2
+γ3
+592 IEEE TRANSACTIONS ON AEROSPACE AND ELECTRONIC SYSTEMS VOL. 58, NO. 1 FEBRUARY 2022
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 09,2025 at 11:14:04 UTC from IEEE Xplore. Restrictions apply.
+
+
+γαaα = − 3α(1 − β2 )
+γ 5 , γααβ = − β (3α2 + γ 2 )
+γ5
+γαββ = − α(3β2 + γ 2 )
+γ 5 , γβββ = − 3β (1 − α2 )
+γ5
+γααaα = − 3(1 − β2 )(5α2 + γ 2 )
+γ7 ,
+γααaβ = − 3αβ (5α2 + 3γ 2 )
+γ7
+γaαββ = 15α2β2 + γ 2(3 − 2γ 2 )
+γ7
+γaβββ = − 3αβ (5β2 + 3γ 2 )
+γ7
+γββββ = − 3(1 − α2 )(5β2 + γ 2 )
+γ 7 . (35)
+The expectation of third-direction cosine error E [vγ |αp, βp] conditioned on two estimated direction cosines (αp, βp) is derived using (35). The nested conditioning method [2]–[4], [12], [13], [17] is utilized in the derivation. The direct conditioning suggested in [5], [6], and [8] is also applicable, yet the expression becomes extremely complicated while the difference in resultant equations is negligible. The nested conditioning begins with taking the expectation of direction cosine error with respect to true states as follows:
+E [ vγ
+∣∣ α, β] = 1
+2 γαασ 2
+α+1
+2 γββ σ 2
+β
++1
+8 γααaασ 4
+α+1
+4 γααββ σ 2
+ασ2
+β+1
+8 γββββ σ 4
+β.
+(36)
+Then, conditioning (36) with the predicted estimate yields the expectation of the third direction cosine error as follows:
+E [ vγ
+∣∣ αp, βp
+]=1
+2 E [ γαα| αp, βp
+]σ2
+α
++1
+2 E [ γββ
+∣∣ αp, βp
+]σ2
+β
++1
+8 E [ γααaα| αp, βp
+]σ4
+α
++1
+8 E [ γββββ
+∣∣ αp, βp
+]σ4
+β
++1
+4 E [ γααββ
+∣∣ αp, βp
+]σ2
+ασ2
+β , (37)
+where the expectations of derivatives E [γαα|αp, βp] and E [γαααα|αp, βp] are approximately calculated as follows:
+E [ γαα| αp, βp
+] − E [ 1 − β2∣∣ αp, βp
+]
+E [ γ 2∣∣ αp, βp
+](3/2)
+=−
+{
+1 − (β2
+p + τββ )
+}(1 − α2
+p − β2
+p − ταα − τββ
+)−3/2
+E [ γαααα| αp, βp
+] − E [ 3(1 − β2)(5α2 + γ 2)∣∣ αp, βp
+]
+E [ γ 2∣∣ αp, βp
+](7/2)
+= −3
+{
+1 + 4(α2
+p + ταα ) − 2(β2
+p + τββ )
+− 4 (α2
+p + ταα
+) (β2
+p + τββ )
++ (β4
+p + 6β2
+pτββ + 3τ 2
+ββ )
+}
+(1 − α2
+p−β2
+p − ταα −τββ )−7/2.
+(38)
+In the derivation of (38), higher-order moments of Gaussian variables can be obtained by applying Isserlis’ theorem. Let (λ1, · · · , λ4) follows a zero-mean multivariate Gaussian distribution, then the fourth-order moment would be specified as follows:
+E [λ1λ2λ3λ4] = E [λ1λ2] E [λ3λ4]
++ E [λ1λ3] E [λ2λ4] + E [λ1λ4] E [λ2λ3] . (39)
+In the case of a fourth-order moment, we have E [λα] = 3τα2α as in (38). The other expectations of derivatives can be computed in the same manner. The remaining expectation of the derivatives E [γββ |αp, βp], E [γααββ |αp, βp], and E [γββββ|αp, βp] can be derived further. The details of the nested conditioning and derivation of these derivatives can be found in [2] and [17]. Note that denominators in (38) have a term (1 − α2
+p − β2
+p − τα2 − τβ2)1/2 , which might seem to be negative in some cases and bring out unfavorable results. However, this would not happen in a real tracking problem since the DDCMKF adopts the two-point initialization. It would yield predictions (αp, βp) close to real measurements and predicted estimate error covariances ταα, τββ that are bounded by measurement error covariances. In addition, a practical tracking system usually limits operational offboresight angle [37] for avoiding performance degradation, which means the range of (αp, βp) is saturated and the estimated error of direction cosines would also be bounded.
+B. Cross-Correlated Terms in the Pseudo-Linearized Range-Rate Covariance
+The cross-covariance terms included in the error covariance of the pseudo-linearized range rate (24) are omitted. The derivation of equations υ1, υ2, and υ3 is lengthy and laborious while its significance turns out to be comparably small in practical cases. In this section, the equation of term υ1 is derived as an example. The other two terms υ2 and υ3 can be derived in the similar manner. Isserlis’ theorem introduced in Appendix A is used to calculate higher-order cross moments in the pseudo-linearized range-rate covariance. From (20), calculating the error covariance related to the decorrelated position yields the following:
+E [ ξ 2(λαxt + λβ yt + λγ zt )2∣∣ ˆzrr
+]
+− E [ ξ (λαxt + λβ yt + λγ zt )∣∣ ˆzrr
+]2
+= E [ξ 2{λα (rp − λr )(αp − λα ) + λβ (rp − λr )(βp − λβ )
++λγ (rp − λr )(γp − λγ )}2∣∣ ˆzrr
+]
+− ξ 2{−rp(ταα + τββ + τγ γ )−(αpτrα + βpτrβ +γpτrγ )}2
+CHO AND TAHK: DDCMKF FOR PHASED ARRAY RADAR TRACKING SYSTEM 593
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 09,2025 at 11:14:04 UTC from IEEE Xplore. Restrictions apply.
+
+
+= ξ 2{(r2
+p + τrr )(α2
+pταα + β2
+pτββ + γ 2
+p τγ γ )
++ (2r2
+p + 3τrr )(τ 2
+αα + τ 2
+ββ + τ2
+γγ )
++ 2τrr (ταατββ + ταατγ γ + τββ τγ γ ) + υ1} (40)
+where υ1 containing numerous cross-covariance terms is given as follows:
+υ1 = 10rp(αpτrαταα +βpτrβ τββ +γpτrγ τγ γ )
++2(r2
+p +τrr )(αpβpταβ +αpγpταγ +βpγpτβγ )
++4(r2
+p +τrr )(τ 2
+αβ +τ 2
+αγ +τ 2
+βγ )
++2(rpαp +τrα )(τrατββ +τrατγ γ +4τrβ ταβ +4τrγ ταγ )
++2(rpβp +τrβ )(τrβ ταα +τrβ τγ γ +4τrαταβ +4τrγ τβγ )
++2(rpγp +τrγ )(τrγ ταα +τrγ τββ +4τrαταγ +4τrβ τβγ )
++ (α2
+pτ 2
+rα +β2
+pτ 2
+rβ +γ 2
+pτ2
+rγ
++· · · + 2αpβpτrατrβ +2αpγpτrατrγ +2βpγpτrβ τrγ )
++2τ 2
+rα (6ταα +τββ +τγ γ )+2τ 2
+rβ (6τββ +ταα +τγ γ )
++2τ 2
+rγ (6τγ γ +ταα +τββ ). (41)
+REFERENCES
+[1] M. I. Skolink Radar Handbook, 3rd ed. New York, NY, USA: McGraw-Hill Education, 2008. [2] X. Tian and Y. Bar-Shalom Coordinate conversion and tracking for very long range radars IEEE Trans. Aerosp. Electron. Syst., vol. 45, no. 3, pp. 1073–1088, Jul. 2009. [3] D. Lerro and Y. Bar-Shalom Tracking with debiased consistent converted measurements versus EKF
+IEEE Trans. Aerosp. Electron. Syst., vol. 29, no. 3, pp. 1015–1022, Jul. 1993. [4] P. Suchomski Explicit expressions for debiased statistics of 3D converted measurements
+IEEE Trans. Aerosp. Electron. Syst., vol. 35, no. 1, pp. 368–370, Jan. 1999. [5] L. Mo, S. Xiaoquan, Z. Yiyu, S. Z. Kang, and Y. Bar-Shalom Unbiased converted measurements for tracking
+IEEE Trans. Aerosp. Electron. Syst., vol. 34, no. 3, pp. 1023–1027, Jul. 1998. [6] Z. Duan, C. Han, and X. R. Li “Comments on unbiased converted measurements for tracking,” IEEE Trans. Aerosp. Electron. Syst., vol. 40, no. 4, pp. 13741377, Oct. 2004. [7] S. V. Bordonaro, P. Willett, and Y. Bar-Shalom Unbiased tracking with converted measurements In Proc. IEEE Radar Conf., Atlanta, GA, USA, May 2012, pp. 0741–0745. [8] S. Bordonaro, P. Willett, and Y. Bar-Shalom Decorrelated unbiased converted measurement Kalman filter IEEE Trans. Aerosp. Electron. Syst., vol. 50, no. 2, pp. 1431–1444, Apr. 2014. [9] J. N. Spitzmiller and R. R. Adhami Tracking with estimate-conditioned debiased 3-D converted measurements In Proc. IEEE Aerosp. Conf., Big Sky, MT, USA, Mar. 2010, pp. 1–16. [10] W. Mei and Y. Bar-Shalom Unbiased Kalman filter using converted measurements: Revisit SPIE, vol. 7445, Sep. 2009, Art. no. 74450U.
+[11] S. T. Park and J. G. Lee Improved Kalman filter design for three-dimensional radar tracking
+IEEE Trans. Aerosp. Electron. Syst., vol. 37, no. 2, pp. 727–739, Apr. 2001. [12] B. Zhang, H. Qu, and S. Li A new method for target tracking with debiased consistent converted measurements in direction cosines Chin. J. Electron., vol. 19, no. 3, pp. 538–542, 2010. [13] G. Zhou, Z. Guo, X. Chen, R. Xu, and T. Kirubarajan Statically fused converted measurement Kalman filters for phased-array radars
+IEEE Trans. Aerosp. Electron. Syst., vol. 54, no. 2, pp. 554–568, Apr. 2017. [14] Y. Bar-Shalom Negative correlation and optimal tracking with Doppler measurements
+IEEE Trans. Aerosp. Electron. Syst., vol. 37, no. 3, pp. 1117–1120, Jul. 2001. [15] Y. Kosuge, H. Iwama, and Y. Miyazaki A tracking filter for phased array radar with range rate measurement
+In Proc. Int. Conf. Ind. Electron., Control Instrum., Kobe, Japan, Oct. 1991, pp. 2555–2560. [16] Z. Duan, C. Han, and X. R. Li Sequential nonlinear tracking filter with range-rate measurements in spherical coordinates
+In Proc. 7th Int. Conf. Inf. Fusion, Philadelphia, PA, USA, Jun. 2004, vol. 1, pp. 599–605. [17] F. Jinbin et al. Debiased converted position and Doppler measurement tracking with array radar measurements in direction cosine coordinates IET Radar, Sonar Navig., vol. 10, no. 1, pp. 155–165, 2016. [18] J. Wang, P. He, and T. Long Use of the radial velocity measurement in target tracking
+IEEE Trans. Aerosp. Electron. Syst., vol. 39, no. 2, pp. 401–413, Jan. 2003. [19] M. H. Cho et al. Modified gain pseudo-measurement filter design for radar target tracking with range rate measurement
+In Proc. 25th Mediterranean Conf. Control Automat., Valletta, Malta, Jul. 2017, pp. 1195–1200. [20] M. H. Cho, M. J. Tahk, and Y. M. Choi De-correlated converted measurement tracking filter for phased array radar
+(in Korean) In Proc. Spring Conf. Korean Soc. Aeronaut. Space Sci. Conf., Goseong, South Korea, Jul. 2020, pp. 240–242. [21] Z. Duan et al. Sequential unscented Kalman filter for radar target tracking with range rate measurements
+In Proc. 7th Int. Conf. Inf. Fusion, Philadelphia, PA USA, Jul. 2005, vol. 1, pp. 130–137. [22] M. Lei and C. Han Sequential nonlinear tracking using UKF and raw range-rate measurements
+IEEE Trans. Aerosp. Electron. Syst., vol. 43, no. 1, pp. 239–250, Jan. 2007. [23] S. Bordonaro, P. Willett, and Y. Bar-Shalom Performance analysis of the converted range rate and position linear Kalman filter
+In Proc. Asilomar Conf. Signals, Syst. Comput., Pacific Grove, CA, USA, Nov. 2013, pp. 1751–1755. [24] S. Bordonaro, P. Willett, and Y. Bar-Shalom Consistent linear tracker with converted range, bearing, and range rate measurements
+IEEE Trans. Aerosp. Electron. Syst., vol. 53, no. 6, pp. 3135–3149, Dec. 2017.
+594 IEEE TRANSACTIONS ON AEROSPACE AND ELECTRONIC SYSTEMS VOL. 58, NO. 1 FEBRUARY 2022
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 09,2025 at 11:14:04 UTC from IEEE Xplore. Restrictions apply.
+
+
+[25] X. R. Li and V. P. Jilkov Survey of maneuvering target tracking. Part I. Dynamic models IEEE Trans. Aerosp. Electron. Syst., vol. 39, no. 4, pp. 1333–1364, Oct. 2003. [26] Z. Zhao, X. R. Li, and V. P. Jilkov Best linear unbiased filtering with nonlinear measurements for target tracking
+IEEE Trans. Aerosp. Electron. Syst., vol. 40, no. 4, pp. 1324–1336, Oct. 2004. [27] Z. Duan, Y. Liu, and X. R. Li Recursive LMMSE filtering for target tracking with range and direction cosine measurements
+In Proc. 13th Int. Conf. Inf. Fusion, Edinburgh, U.K., Jul. 2010, pp. 1–8. [28] Y. Bar-Shalom, X. R. Li, and T. Kirubarajan
+Estimation With Applications to Tracking and Navigation. New York, NY, USA: Wiley, 2001. [29] M. Mallick and B. La Scala Comparison of single-point and two-point difference track initiation algorithms using position measurements Acta Automatica Sinica, vol. 34, no. 3, pp. 258–265, 2008. [30] M. Mallick, Y. Bar-Shalom, T. Kirubarajan, and M. Moreland An improved single-point track initiation using GMTI measurements
+IEEE Trans. Aerosp. Electron. Syst., vol. 51, no. 4, pp. 2697–2714, Oct. 2015. [31] E. A. Wan, R. van Der Merwe, and S. Haykin The unscented Kalman filter
+in Kalman Filtering and Neural Networks. Delft, The Netherlands: Delft Univ. Technology, 2004, ch. 2, pp. 221–280. [32] I. Arasaratnam, S. Haykin, and R. J. Elliott Discrete-time nonlinear filtering algorithms using GaussHermite quadrature Proc. IEEE, vol. 95, no. 5, pp. 953–977, May 2007. [33] I. Arasaratnam and S. Haykin Cubature Kalman filters IEEE Trans. Autom. Control, vol. 54, no. 6, pp. 1254–1269, May 2009. [34] X. R. Li, Z. Zhao, and V. P. Jilkov Estimator’s credibility and its measures In Proc. IFAC 15th World Congr., Barcelona, Spain, Jul. 2002, pp. 1–6. [35] P. Tichavsky, C. H. Muravchik, and A. Nehorai Posterior Cramer–Rao bounds for discrete-time nonlinear filtering IEEE Trans. Signal Process., vol. 46, no. 5, pp. 1386–1396, May 1998.
+[36] B. Ristic, S. Zollo, and S. Arulampalam Performance bounds for manoeuvring target tracking using asynchronous multi-platform angle-only measurements
+In Proc. 4th Int. Conf. Inf. Fusion, Montreal, QC, Canada, Jul. 2001, pp. 1–8. [37] M. Mallick, S. Arulampalam, and Y. Yan Posterior Cramér–Rao lower bound for angle-only filtering in 3D
+In Proc. Int. Conf. Control, Automat. Inf. Sci., Hangzhou, China, Oct. 2018, pp. 349–354. [38] G. K. Gaitanakis, G. Limnaios, and K. Zikidis AESA radar and IRST against low observable threats
+Aircraft Eng. Aerosp. Technol., vol. 92, no. 9, pp. 1421–1428, 2020.
+Min-Hyun Cho received the B.S. and M.S. degrees in aerospace engineering from the Korea Advanced Institute of Science and Technology, Daejeon, South Korea, in 2016 and 2018, respectively. Since 2018, he has been a Researcher with Agency for Defense Development, Daejeon, South Korea. His current research interests include flight dynamics, control and estimation application.
+Min-Jea Tahk (Member, IEEE) received the B.S. degree in aerospace engineering from Seoul National University, Seoul, South Korea, 1976, and the M.S. and Ph.D. degrees in aerospace engineering from the University of Texas, Austin, TX, USA, in 1983 and 1986, respectively. He is currently a Professor Emeritus of Aerospace Engineering with the Korea Advanced Institute of Science and Technology (KAIST), Daejeon, South Korea. From 1976 to 1981, he was a Research Engineer with the Agency for Defense Development in Korea, and from 1986 to 1989, he was employed by Integrated Systems, Inc., Santa Clara, CA, USA, before he joined KAIST. His recent research interests include missile guidance laws, weapon-target assignment, multiple target tracking, and convex programming for real-time applications. Prof. Tahk was a Technical Editor for the IEEE TRANSACTIONS ON AEROSPACE AND ELECTRONIC SYSTEMS from 2011 to 2016. He had also served as the Editor-in-Chief for International Journal of Aeronautical and Space Sciences from 2015 to 2018.
+CHO AND TAHK: DDCMKF FOR PHASED ARRAY RADAR TRACKING SYSTEM 595
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 09,2025 at 11:14:04 UTC from IEEE Xplore. Restrictions apply.

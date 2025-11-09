@@ -1,0 +1,498 @@
+Engineering Structures 329 (2025) 119830
+Available online 3 February 2025 0141-0296/© 2025 Elsevier Ltd. All rights are reserved, including those for text and data mining, AI training, and similar technologies.
+Recovery of missing strain data under multiple time-varying effects using IMM Kalman filtering
+Ke Gao a , Shun Weng a,b,*, Hong-Ping Zhu a,b,c, Chao-Jun Chen a,d
+a School of Civil and Hydraulic Engineering, Huazhong University of Science and Technology, Wuhan, China
+b Hubei Key Laboratory of Control Structure, Wuhan, China
+c National Center of Technology Innovation for Digital Construction, Wuhan, China
+d China Railway Steel Structure Co. Ltd, Nanjing, China
+ARTICLE INFO
+Keywords:
+Structural health monitoring Data recovery Strain measurement Kalman filtering Interactive multi-model
+ABSTRACT
+Data loss usually occurs in field structural health monitoring (SHM), which leads to difficulties in the data analysis and safety assessment of structures during the construction stage. Since the state model of structural deformation is complicated with multiple time-varying effects coupled, existing data recovery method based on a single state model is not capable to accurately recover long-term strain loss due to the perturbations and uncertainties in the state model. This study proposes an effective data recovery method for recovering missing strain based on the interactive multi-model (IMM) Kalman filtering. The estimation error brought by the model uncertainty is reduced by the fusion of multiple models. The accuracy and effectiveness of the proposed method were verified through a concrete shrinkage and creep experiment. The results showed that the recovered data is in good agreement with the real data within long-term missing zone. Furthermore, this method was applied to a real super high-rise building to recover the missing strain data during the construction stage. The recovered strain data provide valuable assistance to the construction managers to understand the complete evolution of the structural strain under time-varying effects during the construction process.
+1. Introduction
+The construction of the main structure of a large-scale structure, such as super high-rise building, usually occupies more than two years [1,2]. The material property, structural configuration and ambient condition of the structure all suffer remarkable variations during construction stage [3]. As a result, structural deformation is regarded as a multivariate time-varying model. In this situation, accurate construction positioning is difficult, thus construction errors are inevitable. Moreover, the construction errors will accumulate within the construction period [4]. Therefore, it is necessary to carry out consecutive monitoring during the construction period for evaluating the construction safety and conducting real-time construction control. To acquire the deformation evolution and structural condition of super high-rise building during construction period, several studies were carried on long-term structural health monitoring (SHM) [5–7]. According to engineering experiences, data loss is inevitable due to sensor failure, energy supply interruption, data transmission failure, and some other problems in the SHM system [8–11]. Moreover, the structural
+configuration, internal force, and deformation of a super high-rise building changes with the construction process, therefore the missing data period may contain one or more construction steps [12]. In this case, important information such as load changes or structural anomalies may be lost, which will affect the accuracy and reliability of data analysis and safety evaluation. In addition, many data mining or data analyses can only use complete data sets as their inputs; missing data will cause errors or even collapse of the data processing algorithms [13]. Therefore, restoring missing data is of great importance not only to facilitate data processing but also to avoid incorrect inference. As stated by previous studies, there are basically four categories of the data recovery method, i.e., interpolation methods, compressive sensing-based methods, statistical methods, and time-series model methods [12–14]. In terms of the interpolation methods, missing data are recovered by the data before and after the missing segment or the data of adjacent sensors using least square fitting, imputation, and correlation analysis [15–17]. The interpolations mainly rely on linear assumption and ignore the uncertainties in field measurement, which may cause large errors in the recovered data. Therefore, the
+* Corresponding author at: School of Civil and Hydraulic Engineering, Huazhong University of Science and Technology, Wuhan, China. E-mail address: wengshun@hust.edu.cn (S. Weng).
+Contents lists available at ScienceDirect
+Engineering Structures
+journal homepage: www.elsevier.com/locate/engstruct
+https://doi.org/10.1016/j.engstruct.2025.119830 Received 8 June 2024; Received in revised form 23 October 2024; Accepted 26 January 2025
+
+
+Engineering Structures 329 (2025) 119830
+2
+interpolation methods are merely fit for a short-term or small amount of missing data, whereas not suitable for restoring long-term missing data. On the other hand, the compressive sensing-based method is widely used to recover missing vibration data because the vibration signal is sparse or near sparse in the frequency domain, whereas not all SHM data has this property [18–20]. As for the statistical methods, they reconstruct the missing data using the available data via the principal component analysis [21,22], the distribution regression [23,24], and the machine learning algorithm [25,26]. These methods have advantages in recovering vibration data, whereas they require a large amount of dataset for the statistical analysis or the training of the neural network. Since structural deformation is a multivariate time-varying model, a time-series model method is more suitable for the deformation estimation. Turning to the time-series model method, a mathematical estimation model is established to characterize the relationship between the missing data and correlated measurements [27]. Missing data are then supplemented via filtering technique [28,29] or multivariable linear regression [30,31] based on the mathematical model. Time-series model-based method is reasonable because the estimation model has a distinct physical meaning, but the accuracy of the recovered data is highly depended on the accuracy of the estimation models [32]. In practice, the structural strain is influenced by multiple time-variant factors that are coupled together, leading to unknown model uncertainties such as parameter disturbance. In this situation, an estimation model with fixed parameter value is insufficient to estimate long-term strain due to the uncertainties, resulting in undesirable estimation errors or bias [33]. Some researchers performed joint estimation of both the state and uncertain parameters using nonlinear Kalman filters to tackle this problem [34]. Nonetheless, they are limited to estimate uncertain parameters with fast and violent disturbance. This is because the nonlinear Kalman filters require a relatively long time to converge to the real parameter value, whereas the parameter still suffers perturbation during the convergence [35]. To overcome the difficulties in estimating a complex time-varying system with parameter disturbance, multi-state models filtering techniques were proposed by scholars [36]. The variations of a time-varying system can be accurately estimated through the interactions of multiple state models [37]. Aiming to recover the long-term missing deformation data during construction period, this paper proposed an effective recovery method for the long-term missing strain data based on the interactive multi-model (IMM) Kalman filtering algorithm. Firstly, a single state model of the strain was established based on the physical relationships between the structural strain and its multi-coupled influences such as gravity load, concrete shrinkage, concrete creep, and temperature. Next, the single state model was expanded to IMMs by considering the time-variant parameters in the state model during long-term construction period. Subsequently, the IMM Kalman filtering was operated recursively to estimate the strain at every time step and thus the missing strain data are recovered. The estimation errors caused by the uncertainties are reduced by the optimal fusion of the IMMs, bringing significant improvement of the recovery accuracy. The effectiveness of the proposed method was demonstrated based on dataset of an experiment with different degrees of data loss. Furthermore, the proposed method was applied to a supertall structure to recover the missing data during construction period.
+2. Strain estimation model under multiple time-variant effects
+The deformation of structure during construction is mainly influenced by the structural gravity load, concrete shrinkage, concrete creep, and temperature variation [36,37]. As a result, the total strain is composed of elastic compressive strain, thermal strain, concrete shrinkage, and concrete creep. These categories of strain are all time-variant during the construction process, and the total strain at time t is presented according to the strain model of the widely used European code CEB-FIP 2010 [38].
+ε(t) = εe(t, t0) + εsh(t, t0) + εc(t, t0) + εT(t, t0) (1)
+where ε(t,t0), εe(t,t0), εsh(t,t0), εc(t,t0) and εT(t,t0) denote the total strain, elastic compressive strain, shrinkage strain, creep strain and temperature-induced strain, respectively; t indicates the current time and t0 the initial time of the measurement. The calculation model for each type of strain is presented in the following paragraphs. The elastic compressive strain of column and wall comes from the weight of upper structure and rises with the structural height. The elastic strain is calculated as
+εe
+(
+t, t0
+)
+= G(t)
+EA (2)
+where E is the elastic modulus of the column or shear wall, A is the crosssectional area of the column or wall. G(t) is the accumulated gravity loaded on the column or wall at time t. G(t) can be obtained according to the design information and construction schedule of the structure [39]. The variation of G(t) is usually nonuniform due to delays or hurry works during the actual construction process. The shrinkage strain begins since the pouring of the concrete. The speed of shrinkage is fast at the beginning and gradually slow down with time. The shrinkage strain of a column or wall is predicted as [38]
+εsh(t, t0) = εash(t, t0) + εdsh(t, t0) (3)
+where εash(t,t0) is the autogenous shrinkage and εdsh(t,t0) the drying shrinkage. The autogenous shrinkage is determined by the compressive strength and the age of the concrete. The drying shrinkage is highly related to the ambient humidity and the duration of drying [36]. Thus, εash(t,t0) and εdsh(t,t0) are calculated as
+εash
+(
+t, t0
+)
+= αash
+( fcm/10 6 + fcm/10
+)2.5
+⋅10 6[1 exp 0.2 ̅ ̅
+t t0
+√ )] (4)
+εdsh t, t0
+) = [(220 + 110αdsh1)exp( αdsh2)fcm]⋅10 6βRHβdsh (5)
+βRH =
+{
+1.55
+[
+1 (RH/100)3]
+40 ≤ RH ≤ 99%
+0.25 RH ≥ 99% (6)
+βdsh =
+( (t t0)
+0.035h2 + t t0
+)
+)0.5
+(7)
+where fcm is the compressive strength of concrete; αas, αds1, αds2 are coefficients determined by the cement property; βRH is a humidity-related coefficient; RH is the ambient relative humidity; βdsh is a correction coefficient according to the section size of the component; h is the notional size that related to the cross-section area and perimeter of the column. In addition, the upper weight also causes concrete creep. For a constant upper gravity load G applied at time t0, the creep prediction model of the column or wall is expressed as
+εc
+(
+t, t0
+)
+=G
+EcA φ
+(
+t, t0
+)
+(8)
+φ
+(
+t, t0
+)
+=
+(
+1 + 1 RH/100
+0.1⋅
+̅̅
+h
+√3 α1
+)
+α2 K̅ c ̅
+fcm
+√1
+0.1 + (t0)0.2
+( (t t0) βH + (t t0)
+)0.3
+(9)
+βH = 1.5h
+[
+1 + (1.2RH/100)18]
++ 250α3 < 1500α3 (10)
+where Ec is the elastic modulus of concrete; φ(t,t0) is the creep coefficient related to the composition of concrete and degree of hydration; Kc is a coefficient related to the concrete strength; βH is a humidity-related coefficient; α1, α2, and α3 are correction coefficients. In practice, the
+K. Gao et al.
+
+
+Engineering Structures 329 (2025) 119830
+3
+creep prediction model is affected by the nonlinear variation of upper load with the construction progress, thus the actual creep strain at time t is an integration of the time-variant upper load [40]. Dividing the construction progress into n stages, hence the integration form of εc(t,t0) is transformed to a discrete summation of the creep strain of each stage as
+εc
+(
+t, t0
+)
+=
+∫t
+t0
+φ(t, t0) EcA
+∂G(τ)
+∂τ dτ =
+n ∑
+i=1
+φ(t, t0)
+EcA Gi
+(
+t, ti
+)
+(11)
+where Gi(t,ti) is the additional upper load in the i-th construction stage, ti is the loading time of the i-th stage. The temperature deformation is caused by the temperature variations [41,42]. Generally, the structural temperature and strain is linearly correlated, and the correlation coefficient is called the coefficient of thermal expansion [43]. The temperature-induced strain is expressed as
+εT(t, t0) = εT(t0) + βTΔT(t, t0) (12)
+where εT(t0) is the temperature-induced strain at the initial time; ΔT(t,t0) is the relative temperature variation during the time interval; βT denotes the linear coefficient of thermal expansion with a unit of με/°C. Note that βT is influenced by the strength, aggregate, proportion and other parameters of the concrete, therefore βT should be determined by the practical information of the concrete used in the structure. The above detailed calculations of the structural strain are in accordance with the CEB-FIP 2010. Moreover, the deformation of the column or wall is also influenced by their complex boundary conditions [36,39]. Uneven deformation between connected components lead to constraints of the expansion or contraction of the component, resulting in extra unknown error of the strain model in Eq. (1). Consequently, the total strain of a column or shear wall is rewritten as
+ε(t, t0) = εe(t, t0) + εsh(t, t0) + εc(t, t0) + εT(t, t0) + wε(t, t0) (13)
+where wε(t,t0) is the unknown model error. Lastly, this study considers elastic strain (εe(t,t0), εT(t,t0)) and predictable plastic strain (εsh(t,t0), εc(t, t0)). Unpredictable plastic strain caused by extreme load, damage or other factors is not included in this study.
+3. Data recovery algorithm
+Kalman filtering is an optimal estimation technique for time-varying systems. This section proposes an IMM Kalman filtering-based strain estimation method to recover the missing strain data. Firstly, a basic state model is built based on the total strain model. The basic state model is then expanded to interactive multiple models by turning the fixed coefficient into a set of tunable coefficients. Subsequently, the framework of data recovery based on the IMM Kalman filtering is described.
+3.1. State-space model of strain
+To build the state-space model of the structural strain, Eq. (13) is transformed into a discrete iterative model because the data are discrete measurements with a fixed sampling interval. Denote the sample interval of strain data is Δt, then the state equation of the total strain is expressed as
+ε(k + 1) = ε(k) + Δεe(k) + Δεs(k) + Δεc(k) + ΔεT(k) + wε(k) (14)
+where ε(k + 1) and ε(k) are the total strain at two adjacent time steps; Δεe(k), Δεsh(k), Δεc(k) and ΔεT(k) denote the relative variations of the elastic strain, shrinkage strain, creep strain and temperature-induced strain within the time interval; wε(k) is the system error due to the error of the calculation models and the complex boundary condition, and it is assumed as a zero-mean Gaussian process. In terms of the formulas of the elastic strain, shrinkage strain and creep strain, parameters
+other than time t are all constants. Therefore, Δεe(k), Δεsh(k) and Δεc(k) can be combined for simplicity, thus the state equation is rewritten as
+ε(k + 1) = ε(k) + Δεesc(k) + βTΔT(k) + wε(k) (15)
+εesc(k + 1) = εesc(k) + Δεesc(k) + wesc(k) (16)
+where εesc(k) is a superposition of the elastic strain, shrinkage strain and creep strain; Δεesc(k)= Δεe(k)+ Δεsh(k)+ Δεc(k); wesc(k) is the system error of εesc(k), following to a zero-mean Gaussian noise. In addition, the measurement equation of strain data is expressed as
+εmea(k) = ε(k) + v(k) (17)
+where εmea(k) is the measurement of total strain. The measurement noise v(k) is also assumed to follow a Gaussian distribution N~(0, R). Denoting ε(k) and εesc(k) as state variables of the state-space vector
+x(k) = [ ε(k) εesc(k) ]T (18)
+By doing so, the state-space model of strain is established according to the state equation and the measurement equation as
+x(k + 1) = Ax(k) + BΔ(k) + w(k) (19)
+εmea(k + 1) = hx(k + 1) + v(k + 1) (20)
+A=
+[1 0 01
+]
+,B =
+[ βT 1 01
+]
+, Δ(k) =
+[ ΔT(k) Δεesc (k)
+]
+,h =
+[1 0
+]T
+, w(k)
+=
+[ wε(k) wesc (k)
+]
+, (21)
+where A is the state transition matrix; B is the input control matrix; Δ(k) is the input vector; h is the measurement vector; w is the vector of system errors. The bold lowercase character represents a vector, and bold uppercase character represents a matrix hereafter. As illustrated in the state-space model, the strain is estimated recursively along time steps.
+3.2. IMM Kalman filtering algorithm
+In Eq. (19), the structural strain is presented via a single state model. Nevertheless, several uncertain factors in field will lead to significant difference between the actual strain and the state model. Specifically, the estimation models of concrete shrinkage and creep are empirical models based on laboratory data, thus the parameter values in the estimation models are not completely consistent with practical situation [3,39]. For instance, the change of air humidity due to rainfall will significantly affect the drying shrinkage εds and the thermal expansion coefficient βT [44]. In addition, the uneven deformation between components brings uncertain boundary constraints of the component and thus cause errors in the estimated strain. Under these circumstances, the system error w(k) is not sufficient to cover the estimation error and bias in the state-space model because some of them are non-Gaussian process [45]. Therefore, a single state model is not capable to estimate the structural strain under the multiple time-variant effects and uncertainties. To address the unwanted model error brought by the uncertainties, multi-models rather than single-model are developed, for their ability to estimate the strain by the optimal weighted fusion of several state model. Assuming the coefficients in the state model suffer fluctuation changes due to the uncertain factors, hence the fixed coefficient value is expanded to a variant range. Specifically, the thermal expansion coefficient βT in the input control matrix B fluctuates within a range. Note that Δεesc(k) in the input vector Δin(k) is calculated based on empirical formulas with oversize or undersize bias, while the bias also fluctuates due to practical situation. Therefore, setting a proper range of βT according to the practical relationship between the measured strain and
+K. Gao et al.
+
+
+Engineering Structures 329 (2025) 119830
+4
+temperature data, then fetch several typical values from the range. In addition, the fluctuating bias of Δεesc(k) can be regarded as a variant correction coefficient βesc. Also, defining a range of βesc via comparison between the estimated strain and the strain measurement, and then fetch several typical values. As a result, a set of interactive multiple models (IMMs) is established based on the values of βT and βesc as
+x1(k + 1) = Ax1(k) + B1Δ(k) + w1(k)
+......
+xi(k + 1) = Axi(k) + BiΔ(k) + wi(k), Bi =
+[ βT(i) βesc(i)
+0 βesc(i)
+]
+......
+xm(k + 1) = Axm(k) + BmΔ(k) + wm(k)
+, (22)
+where xi(k) is the state vector of the i-th state model, m is the number of IMMs; Bi is the input control matrix of the i-th model; βT(i) is the thermal coefficient of the i-th model; βesc(i) is the correction coefficient of the i-th model; wi(k) is the system error of the i-th model, with a correlation matrix of Qi. The fundamental concept of IMMs is to use different state model to match different pattern of the strain variation [46–48]. The weight of each model is determined by calculating the model probability that indicates the degree of each model matches the actual state. The model probability will be updated at each time step, thus the IMM Kalman filtering is an adaptive filtering algorithm. Defining the model probability vector as
+μ(k) = [ μ1(k) ... μi(k) ... μm(k) ] (23)
+where μi(k) (i = 1, ..., m) is the model probability of each model at
+moment k (∑im=1μi = 1). The interaction among the multiple models is called ‘switch of model’, which is controlled by the transition probability matrix Pmarkov as
+Pmarkov =
+⎡
+⎣ p11 ... p1m
+... pij ...
+pm1 ... pmm
+⎤
+⎦ (24)
+where pij (i = 1, ..., m; j = 1, ..., m) denote the Markov transition
+probability from the i-th model to the j-th model (pij≥0, ∑jm=1pij = 1) [49]. As a recursive estimator, the IMM Kalman filtering consists of four steps as a cycle at every time step. The first step is calculating the interactive inputs of the state models, containing the mixed initial state and mixed initial covariance matrix. Before the interaction, the mixed probability between two models at moment k is obtained by multiplying
+the model probability and the Markov transition probability as
+μij(k) = pijμi(k)
+/ m ∑
+i=1
+pijμi(k) (25)
+where μij(k) (i = 1, ..., m; j = 1, ..., m) is the mixed probability from the i-th model to the j-th model. Next, the mixed initial state xε_j0(k) (j = 1, ..., m) and the mixed initial covariance matrix Pj0(k) of the j-th model are calculated based on the interaction of all models as
+xε j0(k) =
+m ∑
+i=1
+̂xε i(k)μij(k) (26)
+Pj0(k) =
+m ∑
+i=1
+μij(k){̂Pi(k) +
+[
+̂xε i(k) xε j0(k)
+] ⋅
+[
+̂xε i(k) xε j0(k)
+]T }
+(27)
+where ̂xε j(k) is the updated state estimation of the j-th model, and ̂Pj(k) is the corresponding covariance matrix. The second step is the parallel Kalman filters of each state model for the next time step. The mixed initial state xε_j0(k) and covariance matrix Pj0(k) are used as the inputs of the filter. Each model operates an independent Kalman filter which includes a predicting process and an updating process [47]. The prediction of the j-th model is presented as
+xj k + 1) = Axj0 + BjΔin(k) (28)
+Pj k + 1) = АPj0(k)AT + Qj (29)
+δj k + 1) = εmea k + 1) hxj k + 1) (30)
+sj k + 1) = hPj k + 1)hT + r (31)
+where xj(k +1) is the predicted state vector of the j-th model at the k + 1 time step, and Pj(k +1) is the covariance matrix of the prediction; δj(k + 1) is the residual error between the predicted strain and the measured strain, and sj(k + 1) is the covariance of δj(k + 1). Next, the updating process includes the calculation of the Kalman gain and the modification of xj(k +1) and Pj(k +1) based on the measured strain. The update of the j-th model is presented as
+Kj
+(
+k+1
+)
+= Pj
+(
+k+1
+)
+hT sj 1
+(
+k+1
+)
+(32)
+̂xj k + 1) = xj k + 1) + Kj k + 1)δj k + 1) (33)
+̂Pj k + 1) = I Kj k + 1)hT)Pj k + 1) (34)
+where Kj(k + 1) is the Kalman filter; ̂xj(k +1) is the updated state estimation and ̂Pj(k +1) the updated covariance matrix at the k + 1 time step; I is an identity matrix. Therefore, each model will obtain its own updated estimation after the parallel filtering. The third step is updating the model probability μ(k) via a maximum likelihood estimation process, indicating the variation of the matching degree between each state model and the actual state [48]. The likelihood function is established by minimizing the residual error δj(k + 1) and its covariance sj(k + 1) in the former step. Thus, the likelihood function of the j-th model, namely Λj(k + 1), is expressed as
+Afterward, the probability of the j-th model is updated as
+μj
+(
+k+1
+)
+= Λj
+(
+k+1
+) m ∑
+i=1
+pij μi (k)
+/ m ∑
+j=1
+(
+Λj
+(
+k+1
+) m ∑
+i=1
+pij μi (k)
+)
+(36)
+where exp()=e(), and e is the base of natural logarithm. The target for updating the model probability is to modify the weight of each state model in real-time, and thus the optimal strain estimation will be achieved in the next step.
+Λj
+(
+k+1
+)
+= (2π) n/2⃒⃒ sj k + 1)⃒⃒ 1/2exp
+(1
+2δjT
+(
+k+1
+)
+sj 1
+(
+k+1
+)
+δj
+(
+k+1
+))
+(35)
+K. Gao et al.
+
+
+Engineering Structures 329 (2025) 119830
+5
+In the fourth step, the updated estimations obtained from the second step are fused by appliying the updated model probability as weights [49]. As a result, the optimal strain estimation ̂x(k +1) and its corresponding covariance matrix ̂P(k +1) are calculated as
+̂x
+(
+k+1
+)
+=
+m ∑
+j=1
+̂xj
+(
+k+1
+) μj
+(
+k+1
+)
+(37)
+Fig. 1 illustrates the framework of the four steps for the IMM Kalman filtering. The optimal strain estimation at every moment is obtained by repeating these iterative steps.
+3.3. Recovery of missing data
+The scheme of recovering missing strain data is based on the above IMM Kalman filtering. Measured strain εmea(k + 1) is required to update the predicted state in the second step of the filtering algorithm, while the strain data usually suffer missing problem in field monitoring. When εmea(k + 1) is available, the prediction and the update processes of the filter operates normally. Nevertheless, when εmea(k + 1) is missing, the
+strain is estimated without update. In this case, the second step of the IMM Kalman filtering is simplified as
+̂xj k + 1) = xj k + 1) = Axj0 + BjΔin(k) (39)
+̂Pj k + 1) = Pj k + 1) = АPj0(k)AT + Qj (40)
+Meanwhile, the model probability is updated based on the average probability values of past few steps as
+μj
+(
+k+1
+)
+= mean(μi(k b) : μi(k)) (41)
+where b is the number of backward steps. Therefore, the strain estimations without update are fused in the fourth step, and the fused estimation is regarded as the recovered strain to supplement the missing data. Fig. 2 illustrates the flow chart of the data recovery process. In the situation that the data are missing continuously, the estimation without update will cause accumulative error due to the model uncertainty. The accuracy of the recovered strain is evaluated by the
+Fig. 1. Framework of the IMM Kalman filtering.
+̂P
+(
+k+1
+)
+=
+m ∑
+i=1
+μj
+(
+k+1
+){̂Pj k + 1) + [̂xj k + 1) ̂x k + 1)]⋅[̂xj k + 1) ̂x k + 1)]T} (38)
+K. Gao et al.
+
+
+Engineering Structures 329 (2025) 119830
+6
+root-mean-square error (RMSE) with a unit of με and the normalized RMSE (NRMSE) in percent as
+RMSE =
+̅̅ ̅ N ∑
+k=1
+(εrec(k) εreal(k))2
+/
+N
+√ √ √ √ (42)
+NRMSE =
+̅̅ ̅ N ∑
+k=1
+(εrec(k) εreal(k))2
+√ √ √ √
+/̅ ̅̅
+N ∑
+k=1
+(εreal (k))2
+√ √ √ √ × 100% (43)
+where εrec(k) denotes the recovered strain and εreal(k) the real strain. These two indices represent absolute and relative average estimation error, respectively.
+4. Experimental validation
+In this section, the accuracy and effectiveness of the proposed method is verified by recovering the missing strain data of a shrinkage and creep experiment that contains concrete specimens and concretefilled steel tube (CFST) specimens.
+4.1. Test setup
+The specimens were made on site of a practical super high-rise building using the same concrete and steel of the building, including two concrete cylinders and two CFST cylinders. The yield strength of the steel was 235 MPa, and the compressive strength of the concrete was 60 MPa. Each cylinder has a same dimension of 156 mm (diameter) × 400 mm (height). Besides, a BGK-4200 vibrating wire strain gauge [39] was embedded in the central part of each specimen to measure the strain and temperature data since the demoulding of the specimen (shown in Fig. 3(a)). The strain gauge also contains a thermistor that measures the structural temperature synchronously. The four specimens were divided into a shrinkage group and a creep group, with a concrete cylinder and a CFST cylinder in each group. The setup of the experiment is shown in Fig. 3(b), with a humidity sensor placed in the same room. Strain of the shrinkage specimens was caused by concrete shrinkage and temperature variation. Strain of the creep specimens was caused by not only concrete shrinkage and temperature variation, but also elastic deformation and concrete creep subject to the axial load. The loading time of the initial 100 kN axial load was the 17th day since the beginning of the test, following a duration of 70 days. Afterwards, additive load of 100 kN was added every 70 days. The average humidity of the experimental environment was set as 75 %, and the indoor temperature followed the ambient temperature. The experiment last from June 2018 to January 2019, and the strain and temperature data were measured every 10 minutes. Fig. 4 shows the strain variation of the four specimens within the 1st — 212th days since the demoulding of the specimen in the experiment.
+Fig. 2. The flow chart of the data recovery process.
+Fig. 3. Layout of the shrinkage and creep experiment.
+Fig. 4. Strain data of the four specimens.
+K. Gao et al.
+
+
+Engineering Structures 329 (2025) 119830
+7
+Each specimen had 144 data points per day, thus 30528 data points in total during the 212 days. The creep specimens experienced three loading times, leading to much larger total strains than that of the shrinkage specimens. The maximum strain of the shrinkage and creep specimens were about 300 με and 1200 με, respectively. Accordingly, Fig. 5 shows the temperature data of the specimens. It is observed that
+the temperature increased during the first 65 days (from spring to summer), and then decreased during the rest of time (from summer to winter). The partial data loss in Figs. 4 and 5 was caused by the malfunction of the power supply in the acquisition system. In this study, strain data of two stages are selected (Fig. 4). Stage I lasts for the 1st 65th days contained 9360 data points for each specimen. In this stage, the specimen was in the rapid shrinkage period, hence the shrinkage strain accounts for a large proportion of the total strain. Besides, the increased temperature during Stage I led to concrete expansion, which worked against the concrete shrinkage. Stage II lasts for the 134th 216th day, with 11808 data points for each specimen. The decreased temperature during Stage II caused axial shortening, which worked with the concrete shrinkage for the increase of the compressive strain.
+4.2. Preparation of datasets
+The measured data were partially removed to simulate different data loss situations. According to the proportion of missing data in the total data, three loss cases were considered, namely the 30 % loss, 50 % loss and 70 % loss. Two criteria were considered in the missing datasets. First, data segments with large strain fluctuations were artificial
+Fig. 5. Measured temperature data of the specimen.
+Fig. 6. Three data loss cases of the CFST-shrinkage specimen in two stages.
+K. Gao et al.
+
+
+Engineering Structures 329 (2025) 119830
+8
+removed, as the large fluctuations are more important for the structural safety. Second, long-term data loss that affected by more complex factors was considered since it is more difficult to be recovered. Short-term random data loss was not considered in this study because the shortterm missing data can be easily recovered by normal interpolation methods [15,17]. Taking the CFST shrinkage specimen as an example, Fig. 6 shows its complete strain data and three data loss cases during the two stages. The positive strain value indicates tensile strain, and the negative value indicates compressive strain. The pink blocks present the missing zones. Fig. 6(a) showed that the strain varies within a range of [ 60 με, 0 με] during Stage I. As for the 30 % loss case, the durations of the missing zones were lasted for 5 days to 10 days (Fig. 6(b)). As for the 70 % loss case, the largest missing zone within the 26th — 41st days lasts for 15 days, during which a strain variation around 70 με occurred (Fig. 6(d)). In addition, as shown in Fig. 6(e), the compressive strain during Stage II increased from 120 με to 320 με due to the combined influences of concrete shrinkage and seasonal decreased temperature. When 30 % of the strain data were missing, a strain variation larger than 100 με within the 160th — 170th days becomes unknown (Fig. 6(f)). When 70 % of the data were missing, the remaining data just showed a rough trend of the structural strain without knowing most of the significant strain fluctuations due to environmental changes.
+4.3. Specification of the model parameters
+In this experiment, practical uncertainties resulted in the variation of the model coefficients. Specifically, the daily thermal expansion coefficient βT varies due to the change of air humidity, and the correction coefficient βesc varies due to the change of humidity as well as the boundary constraints. In this case, the single state model was expanded to multi-state models via expanding the fixed βT and βesc to vectors βT and βesc. The daily βT is obtained by the linear correlation fitting between the temperature and strain data within 24 hours. Fig. 7 illustrates the daily-variant βT of the CFST shrinkage and creep specimens. Based on the fluctuating range of the points shown in Fig. 7, the vector of βT was set as βT= [βT-1, βT-2, βT-3, βT-4]. βT-1 and βT-4 are the lower and upper bounds of the 95 % confidence interval of the fluctuating range. βT-2 is the mean value of the points within the 95 % confidence interval, and βT3 is the median value. Since the variation trend of βesc is similar to βT because they are both affected by air humidity, the correction coefficient vector was set as βesc= [βesc-1, βesc-2, βesc-3, βesc-4]. Assuming that the mean value βesc-2= 1, and the other values were calculated as
+βesc i = 1 + βT i βT 2
+βT 2
+(44)
+where βesc-i is the value of βesc for the i-th state model. As a result, four interactive state models were established based on βT and βesc, namely Model 1 to Model 4. Subsequently, the input vector Δin(k) for the IMM Kalman filter at every time step was obtained via the calculated εesc(k) and the measured
+temperature data ΔT(k). The parameters in equations (1)—(10) were determined according to the actual material and the European code CEB-FIP 2010 [38]. The specific values are listed in Table 1 as follows. The original model probability vector was set as μ(1)= [0.1, 0.4, 0.4, 0.1], which is based on the probability distribution of the points in Fig. 7. The transition probability matrix Pmarkov is usually determined empirically [50,51]. In this study, Pmarkov was also regarded to be depended on the probability distribution of the points in Fig. 7, and was set as
+Pmarkov =
+⎡
+⎢⎢⎣
+0.2 0.4 0.35 0.05 0.1 0.6 0.25 0.05 0.05 0.25 0.6 0.1 0.05 0.3 0.45 0.2
+⎤
+⎥⎥⎦
+The backward step b in Eq. (41) is set as 20 in this case. Based on the above parameter specification, the missing strain data were estimated through the IMM Kalman filtering.
+4.4. Strain data recovery
+Fig. 8 illustrates the recovered strain data of the CFST shrinkage specimen in Stage I. In the situations of the 30 % loss and the 50 % loss, the recovered strain data are consistent with the real strain. As for the 70 % loss case, the recovered strain data is still in good agreement with the real data, although the difference between them is relatively larger than that in the former two cases as expected. The strain difference within the block of 25th — 40th days is mainly due to the accumulated estimation error caused by the lack of updates. Fig. 9 illustrates the comparison between the recovered strain and the real strain of the CFST-creep specimen within Stage I. It is seen that the significant strain variation during the loading period at the 15th day were missing. The loading-induced strain is elastic strain, hence it is estimated via Eq. (2) based on the known loading information. The recovered strain data are consistent with the real data for most of the time, whereas estimation error during the loading period is relatively larger. This is because the abrupt loading-induced strain decrease leads to an abrupt change to the covariance matrix in the IMM-KF, resulting in prediction error. Besides, the predicted error strain accumulates with time due to the lack of modification within the missing zone. The accumulated error is modified by the proposed IMM-KF algorithm when new strain data is available at the end of the missing zone. Table 2 shows the RMSEs and the NRMSEs of the four specimens during Stage I. With the loss ratio increases from 30 % to 70 %, the RMSEs of the CFST-shrinkage specimen gradually increases from 0.9 με to 2.9 με. Accordingly, the NRMSE increases from 2.4 % to 8.6 %. The RMSEs of the CFST-creep specimen indicate a slight growth from 3.5 με to 3.9 με as the loss ratio increases, indicating a minor rise of the NRMSEs from 2.1 % to 2.4 %, manifesting a high accuracy. In addition, the NRMSE of the concrete-shrinkage specimen is under 10 % if the data loss ratio is less than 50 %. The concrete-creep specimen shows a stable error level around 5 % NRMSE as the loss ratio increases. The averaged NRMSEs of all the specimens raises from 4.4 % to 7.8 % as the loss ratio increases from 30 % to 70 %. It is also noticed that the RMSEs of the concrete specimens are larger than that of the CFST counterparts in both
+Fig. 7. The daily-variant thermal expansion coefficient βT during Stage I.
+Table 1
+Specific values of the parameters in Eqs. (1) to (10).
+Parameter Value and Unit Parameter Value and Unit
+E 21500 *
+(0.1 *fcm)1/3 h 1000 fcm 60 MPa Kc 16.8
+αas, αds1, αds2
+700, 6, 0.012 α1、α2、α3 (35/fcm)0.7, (35/fcm)0.2, (35/
+fcm)0.5
+βRH 1.55 * (1 RH3) βH 1.5 h* [1 + (1.2RH)18]+ 250α3 RH 0.75
+K. Gao et al.
+
+
+Engineering Structures 329 (2025) 119830
+9
+the shrinkage and creep groups. This discrepancy arises from the fact that concrete specimens are more susceptible to uncertainties due to direct exposure to ambient temperature and humidity, which in turn affects the accuracy of shrinkage and creep estimations. The increased uncertainties result in a greater divergence between the modelled state and the actual strain, consequently amplifying the estimation error. Another observation indicated from Table 2 is that the RMSEs of the creep specimens are larger than those of the shrinkage counterparts. This is because the state space equation and the boundary condition of the creep specimens are more complex than that of the shrinkage specimens, leading to relatively larger error of the recovered strain. Conversely, the NRMSEs for the creep specimens are found to be lower than those for the shrinkage specimens. This can be attributed to the total strain variation of creep specimen is considerably larger than that of the shrinkage specimens, thereby reducing the relative variation ratio for the creep group. Next, the recovered strain of the CFST-shrinkage specimen during Stage II is shown in Fig. 10. The major data loss within the 160th —170th days and the 190th —200th days suffers strain variations larger than 100 με. It is noteworthy that the recovered strain data are coincident with the real strain for all the data loss cases, even when almost all strain data with large variations are missing in the 70 % loss case. Table 3 presents the estimation errors of the recovered data during Stage II. For the CFST-shrinkage specimen, RMSEs increase from 0.7 με
+to 1.8 με as data loss rises from 30 % to 70 %, with NRMSEs slightly rising from 0.3 % to 0.8 %. The CFST-creep specimen’s RMSEs stay below 2.2 με, with a 0.4 % NRMSE at 70 % loss. Concrete-shrinkage and concrete-creep specimens have NRMSEs below 2.2 % and 1.3 %, respectively. The average RMSE and NRMSE for all specimens at 70 % loss are 6.2 με and 1.2 %, indicating high recovery accuracy. In addition, the error indices in Table 3 are generally lower than those in Table 2. This reduction is attributed to two factors: First, the increased temperature during Stage I counteracts the shrinkage and creep on total strain, introducing more uncertainties into the estimation model than Stage II. Second, the rate of concrete shrinkage during Stage II is significantly lower than that during Stage I, leading to reduced uncertainties in the shrinkage term of the state model. To illustrate the interactions among the multiple state models during the data recovery process, taking the CFST-shrinkage specimen as an example, Fig. 11 illustrates the model probabilities for multiple state models during Stage II of the 50 % data loss case. Each model’s probability rapidly converged to a stable value, remaining consistent throughout most of the process. The stable probabilities were approximately 0.109, 0.465, 0.358, and 0.066 for Models 1, 2, 3, and 4, respectively. Notably, Model 2 had the highest probability, suggesting the best match with the actual state. The recovered strain data were derived from a weighted fusion of the estimated strains from each model, based on these probabilities.
+Fig. 8. Recovered strain of the CFST-shrinkage specimen during Stage I: (a) 30 % loss, (b) 50 % loss and (c) 70 % loss.
+K. Gao et al.
+
+
+Engineering Structures 329 (2025) 119830
+10
+Fig. 12 shows a comparison between the recovered strain based on a single state model with fixed parameter value and the recovered strain based on the proposed IMM Kalman filtering. The IMM-based strain is perfectly coincided with the real data, whereas the single model-based strain shows obvious deviation from the real data. This is because the single model-based estimation is unable to cope with the influence of model uncertainties. By contrast, the IMM Kalman filtering significantly reduces the adverse effect of the parameter perturbation by the weighted fusion of multiple models. Moreover, the step-by-step forward recursion of the proposed IMM method suffers cumulative estimation error in the long-term data recovery. To further enhance the accuracy of the recovered data, Kalman smoothing algorithm [2] can be utilized with the IMM to make use of data both before and after the missing zone. As revealed in Fig. 13, the IMM-based strain data suffers obvious drift error, whereas the
+smoothing method eliminates the drift error via the backward recursion of smoothing. As a result, the NRMSE of the recovered data decreases from 8.6 % to 3.7 % due to the use of Kalman smoothing.
+5. Field application
+Aiming at the data loss problem in field monitoring, the proposed method is used to recover the missing strain data during the construction period of the Wuhan Yangtze Navigation Centre (WYNC). As shown in Fig. 14, WYNC is a 335 m-high supertall building consists of 50 m × 50 m outer frame and 30 m × 30 m inner shear wall. The outer frame is made of CFST and steel reinforced concrete columns, and the inner shear wall is made of reinforced concrete. A sophisticated SHM system (Fig. 14) consists of about 210 sensors was implemented on the building to monitor the deformation and related factors during construction
+Fig. 9. Recovered strain of the CFST-creep specimen during Stage I: (a) 30 % loss, (b) 50 % loss and (c) 70 % loss.
+Table 2
+The RMSEs and NRMSEs of the specimens during Stage I (1st — 65th days).
+Error Specimen RMSE NRMSE
+30 % loss 50 % loss 70 % loss 30 % loss 50 % loss 70 % loss
+CFST-shrinkage 0.9 με 1.3 με 2.9 με 2.4 % 3.9 % 8.6 % Concrete-shrinkage 6.5 με 7.4 με 11.5 με 8.1 % 9.2 % 14.4 % CFST-creep 3.5 με 3.5 με 3.9 με 2.1 % 2.2 % 2.4 % Concrete-creep 15.5 με 15.8 με 17.4 με 4.9 % 5.1 % 5.6 % Averaged error 6.6 με 7.0 με 8.9 με 4.4 % 5.1 % 7.8 %
+K. Gao et al.
+
+
+Engineering Structures 329 (2025) 119830
+11
+period. However, data loss often occurred due to power failure and packet-loss. The 18th floor of the structure was constructed in September 2017, since when the strain and temperature data were collected. The strain data were sampled with a fixed time interval of 10 minutes, namely 6 times per hour and 144 times per day. Taking the sensors located at the columns E1 and W1 of the outer frame (Fig. 14 (b)) of the 18th floor into consideration, Fig. 15 illustrates the measured strain data for these two columns within 312 days from September 2017 to July 2018. The number of total strain data points is supposed to be 44928 according to the sampling rate and monitoring duration (312 days × 144 points/day), whereas the practical measured
+strain contained 25735 data points, meaning 57 % of the strain data were missing. Noting that the missing zones L1~L3 shown in Fig. 15 are mostly continuous sections, with their respective durations of 40 days, 35 days, and 30 days. Since the structure was constructed with an average speed of 10 days per floor, thus 3 or 4 floors were newly constructed during these long-term missing zones. Besides, Fig. 16 shows the temperature data within the 312 days, during which the temperature decreased from 27 °C to 2 °C and then increased to 35 °C, resulting in large thermal strain variations.
+Fig. 10. Recovered strain of the CFST-shrinkage specimen during Stage II: (a) 30 % loss, (b) 50 % loss and (c) 70 % loss.
+Table 3
+The RMSEs and NRMSEs of the specimens during Stage II (134st — 216th days).
+Error Specimen
+RMSE NRMSE
+30 % loss
+50 % loss
+70 % loss
+30 % loss
+50 % loss
+70 % loss
+CFSTshrinkage
+0.7 με 1.1 με 1.8 με 0.3 % 0.5 % 0.8 %
+Concreteshrinkage
+4.1 με 6.6 με 6.7 με 1.4 % 2.2 % 2.2 %
+CFST-creep 1.9 με 2.0 με 2.2 με 0.3 % 0.3 % 0.4 % Concretecreep
+8.2 με 11.4 με 14.3 με 0.8 % 1.1 % 1.3 %
+Averaged error
+3.7 με 5.3 με 6.2 με 0.7 % 1.0 % 1.2 %
+Fig. 11. Model probabilities of the CFST-shrinkage specimen under the 50 % loss case during Stage II.
+K. Gao et al.
+
+
+Engineering Structures 329 (2025) 119830
+12
+The constitutive models of the concrete shrinkage and concrete creep used in this study were obtained by modifying the CEB-FIP 2010 model based on the shrinkage and creep experiments presented in Section 4.1. The specimens in the experiment were made of the same material of the WYNC. The elastic strain caused by the gravity load of the upper floors was obtained by the construction simulation based on the practical
+construction schedule. The coefficients in the shrinkage and creep models fluctuated due to the variable ambient factors such as humidity and temperature. The boundary condition of the columns and walls are more complicated than that of the specimens, resulting in more uncertainties and larger parameter fluctuation in the state model. Fig. 17 shows the range of the daily βT of the E1 and W1 columns based on the strain and temperature measurements. The mean value, median value,
+Fig. 12. Comparison of the recovered data based on different single model and the fusion of multiple models using the IMM-KF.
+Fig. 13. Accuracy improvement of the recovered data via backward smoothing.
+Fig. 14. SHM System of WYNC: (a) global deployment, (b) sensor layout at each monitoring floor.
+Fig. 15. Incomplete strain data of the E1 and W1 columns.
+Fig. 16. Temperature data of the E1 and W1 columns.
+K. Gao et al.
+
+
+Engineering Structures 329 (2025) 119830
+13
+and the upper and lower bounds of the 95 % confidence intervals of the range were selected to establish the βT. Accordingly, a set of the βesc was determined via Eq. (44). Therefore, four interactive state models were established for the data recovery. The parameter b in Eq. (41) is set as 30 in this case. In order to verify the accuracy of recovered data in practical engineering, the complete data within the block of the 53th — 82th days of the W1 sensor were selected to consist a dataset. Next, strain data within the 60th — 77th days were artificially removed to generate a long-term missing zone, during which large strain variation occurred. The missing data were recovered via the proposed method, as shown in Fig. 18. It is observed that the recovered strain is close to the real measured strain, with a RMSE of 3.6 με and a NRMSE of 12.4 %. The accuracy level is acceptable in field application. Afterwards, the proposed method was applied to recover missing strain without knowing the real data. Fig. 19 and Fig. 20 illustrate the recovered strain data of the sensors in E1 and W1 columns. The recovered data were well linked to the incomplete measurements. The most valuable parts of the recovered data were the long-term data loss within the periods of the 80th — 120th day and the 130th—160th day. This is due to the large strain variations resulted from the coupled influences of construction steps and seasonal temperature change within these two segments. Therefore, the recovered data are very helpful to complement the whole evolution process of the structural deformation and inner force during long-term construction period. Additionally, Fig. 21 and Fig. 22 show the model probabilities during the data recovery process. The probability value indicates the matching degree between the state model and the real strain. The probability of Model 2 was relatively higher than the other three models for most of the time. In contrast, the probability of Model 4 stays around 0.1, showing the lowest matching degree to the real strain. By comparing the probability of field test and the laboratory experiment, it is found that the model probability in field suffered larger fluctuations than that of the experiments as expected. This is because the field structure suffers more complex force and environment conditions.
+In addition, the mapping relationship between structural temperature and ambient temperature can be regressed based on the existing structural and ambient temperature data [52]. If the environmental data are missing or if the ambient temperature is only available, structural temperature data can be derived from ambient temperature data, and then the missing strain data can be recovered by applying the proposed strain data recovery method.
+6. Conclusion
+This study proposed an IMM Kalman filtering-based missing strain data recovery method. A state space model was established to present the mechanical model of the structural strain under multiple time variant effects such as loads, concrete shrinkage, concrete creep and temperature variation. By considering the uncertainties in the statespace model, the single model was expanded to interactive multiple models (IMMs). Using temperature data, constitutive-predicted shrinkage and creep strains, calculated elastic strain as the inputs of estimation filter, the missing strain data were recovered via the proposed IMM Kalman filtering. The optimal weights of the IMMs were determined by updating the model probability at each time step, and the recovered data are the weighted fusion of the estimated strain of the IMMs. The estimation error due to the parameter perturbations was reduced via the fusion of multiple models, thus the missing data were recovered with high accuracy. The accuracy and stability of the proposed method were verified through a laboratory experiment. Data loss ratios from 30 % to 70 % were considered in the datasets. Results of the experiment demonstrated that the proposed method is capable to accurately recover the long-term missing strain data. The relative errors of the recovered data of the CFST-creep specimen are below 5 % within the first 65 days and are below 1 % within the 134th — 216th day, even under the 70 % loss condition. Moreover, the proposed method was applied on a supertall structure to recover the missing strain data during its construction period. The continuous data loss that over 17 days were effectively and
+Fig. 17. The daily βT of the E1 and W1 columns during 312 days.
+Fig. 18. Recovered strain data of W1 sensor within the 60th — 77th days.
+Fig. 19. Recovered strain data of the F18-E1 sensor.
+Fig. 20. Recovered strain data of the F18-W1 sensor.
+K. Gao et al.
+
+
+Engineering Structures 329 (2025) 119830
+14
+accurately recovered, indicating the applicability of the proposed method in field monitoring during long construction period, which is valuable to improve the effectiveness of construction control and structural safety assessment.
+Funding
+This work is supported by the grants from the National Natural Science Foundation of China (52308315), National Key Research and Development Program of China (2021YFF0501001), Interdisciplinary Research Program of HUST (2023JCYJ014), China Postdoctoral Science Foundation (2023M731206), Research Funds of China Railway Siyuan Survey and Design Group CO.LTD (KY2023014S, KY2023126S, 2021K085, 2020K006 and 2020K172), and Research Fund of China Construction Science and Industry (ZJKG-2024-KT-14).
+CRediT authorship contribution statement
+Gao Ke: Writing – original draft, Methodology, Funding acquisition, Formal analysis, Conceptualization. Weng Shun: Writing – review & editing, Validation, Funding acquisition, Formal analysis. Zhu Hongping: Resources, Project administration, Methodology. Chen ChaoJun: Validation, Resources, Formal analysis.
+Declaration of Competing Interest
+The authors declare that they have no known competing financial interests or personal relationships that could have appeared to influence the work reported in this paper.
+Data availability
+Data will be made available on request.
+References
+[1] Su JZ, Xia Y, Weng S. Review on field monitoring of high-rise structures. Struct Control Hlth 2020;27(12):e2629. [2] Zhu HP, Gao K, Xia Y, Gao F, Weng S, Sun Y, Hu Q. Multi-rate data fusion for dynamic displacement measurement of beam-like supertall structures using acceleration and strain sensors. Struct Health Monit 2020;19(2):520–36. [3] Xia Y, Ni YQ, Zhang P, Ko JM. Stress development of a supertall structure during construction: field monitoring and numerical analysis. Comput-Aided Civ Inf 2011; 26(7):542–59. [4] Li QS, He YH, Wang H, Zhou K, Yan B. Monitoring and time-dependent analysis of vertical deformations of the tallest building in China. Struct Control Hlth 2017;24 (7):e1936. [5] Glisic B, Inaudi D, Lau JM, Fong CC. Ten-year monitoring of high-rise building columns using long-gauge fiber optic sensors. Smart Mater Struct 2013;22(5): 055030. [6] Ni YQ, Xia Y, Liao WY, Ko JM. Technology innovation in developing the structural health monitoring system for Guangzhou New TV Tower. Struct Control Hlth 2009; 16(1):73–98. [7] Choi SW, Kim YS, Kim JM, Park HS. Field monitoring of column shortenings in a high-rise building during construction. Sensors 2013;13(11):14321–38. [8] Bao YQ, Chen ZC, Wei S, et al. The State of the Art of Data Science and Engineering in Structural Health Monitoring. Engineering 2019;5:234–42. [9] Ni K, Ramanathan N, Chehade M, et al. Sensor network data fault types. ACM T Sens Netw 2009;5(25):1–25. [10] Zhang Z, Mehmood A, Shu L, et al. A Survey on Fault Diagnosis in Wireless Sensor Networks. IEEE Access 2018;6:11349–64. [11] Peng Y, Qiao W, Qu L, et al. Sensor Fault Detection and Isolation for a Wireless Sensor Network-Based Remote Wind Turbine Condition Monitoring System. IEEE T Ind Appl 2018;54:1072–9. [12] Luo YF, Ye ZW, Guo XN, et al. Data Missing Mechanism and Missing Data RealTime Processing Methods in the Construction Monitoring of Steel Structures. Adv Struct Eng 2015;18(4):585–601. [13] Bao YQ, Yu Y, Li H, et al. Compressive sensing-based lost data recovery of fastmoving wireless sensing for structural health monitoring. Struct Control Hlth 2015; 22(3):433–48. [14] Zou Z, Bao YQ, Li H, et al. Embedding compressive sensing-based data loss recovery algorithm into wireless smart sensors for structural health monitoring. IEEE Ses J 2015;15(2):797–808. [15] Hadeed SJ, O’Rourke MK, Burgess JL, et al. Imputation methods for addressing missing data in short-term monitoring of air pollutants. Sci Total Environ 2020; 730:139140. [16] Josse J, Chavent M, Liquet B, et al. Handling Missing Values with Regularized Iterative Multiple Correspondence Analysis. J Cl 2012;29(1):91–116. [17] Zhang Z, Luo Y. Restoring method for missing data of spatial structural stress monitoring based on correlation. Mech Syst Signal Pr 2017;91:266–77. [18] Bao YQ, Li H, Sun X, et al. Compressive sampling–based data loss recovery for wireless sensor networks used in civil structural health monitoring. Struct Health Monit 2012;12(1):78–95. [19] Huang Y, Beck JL, Wu S, et al. Bayesian compressive sensing for approximately Sparse Signals and application to structural health monitoring signals for data loss recovery. Probabilist Eng Mech 2016;46:62–79. [20] Yang Y, Nagarajaiah S. Harnessing data structure for recovery of randomly missing structural vibration responses time history: Sparse representation versus low-rank structure. Mech Syst Signal Pr 2016;74:165–82. [21] Husson F, Josse J. Handling missing values in multiple factor analysis. Food Qual Prefer 2013;30(2):77–85. [22] Lopez JLA, Uteuov A, Kalyuzhnaya AV. Quality control and data recovery of metocean Arctic data. Procedia Comput Sci 2017;119:315–24. [23] Chen ZC, Bao YQ, Li H, et al. A novel distribution regression approach for data loss compensation in structural health monitoring. Struct Health Monit 2017;17(6): 1473–90. [24] Chen ZC, Bao YQ, Li H, et al. LQD-RKHS-based distribution-to-distribution regression methodology for restoring the probability distributions of missing SHM data. Mech Syst Signal Pr 2019;121:655–74. [25] Jeong S, Ferguson M, Hou R, et al. Sensor data reconstruction using bidirectional recurrent neural network with application to bridge monitoring. Adv Eng Inf 2019; 42:100991. [26] Gulgec NS, Taka ́ˇc M, Pakzad SN. Structural sensing with deep learning: Strain estimation from acceleration data for fatigue assessment. Comput-Aided Civ Inf 2020;35(12):1349–64. [27] Kazlauskas K, Pupeikis R. Missing Data Recovery Algorithm. Informatica 2014;25 (2):209–20. [28] Fu L, Zhang M, Liu Z, et al. Reconstruction of seismic data with missing traces using normalized Gaussian weighted filter. J Geophys Eng 2018;15(5):2009–20. [29] Zhang CD, Xu YL. Structural damage identification via multi-type sensors and response reconstruction. Struct Health Monit 2016;15(6):715–29. [30] Allen RJ, DeGaetano AT. Estimating missing daily temperature extremes using an optimized regression approach. Int J Clim 2001;21(11):1305–19. [31] Hayes T, McArdle JJ. Should we impute or should we weight? Examining the performance of two CART-based techniques for addressing missing data in small sample research with nonnormal variables. Comput Stat Data 2017;115:35–52. [32] Afshari HH, Al-Ani D, Habibi S. A new adaptive control scheme based on the interacting multiple model (IMM) estimation. J Mech Sci Technol 2016;30(6): 2759–67.
+Fig. 21. Variation of the model probability for the F18-E1 sensor.
+Fig. 22. Variation of the model probability for the F18-W1 sensor.
+K. Gao et al.
+
+
+Engineering Structures 329 (2025) 119830
+15
+[33] Mateos A, Harvey J, Bolander J, et al. Field evaluation of the impact of environmental conditions on concrete moisture-related shrinkage and coefficient of thermal expansion. Constr Build Mater 2019;225:348–57. [34] Azam SE, Chatzi E, Papadimitriou C. A dual Kalman filter approach for state estimation via output-only acceleration measurements. Mech Syst Signal Pr 2015; 60-61:866–86. [35] Erazo K, Nagarajaiah S. Bayesian structural identification of a hysteretic negative stiffness earthquake protection system using unscented Kalman filtering. Struct Control Health Monit 2018;25:e2203. [36] Khodarahmi M, Maihami V. A Review on Kalman Filter Models. Arch Comput Method E 2022 (Early Access). [37] Akca A, Efe MN. Multiple Model Kalman and Particle Filters and Applications: A Survey. IFAC-Pap OnLine 2019;52(3):73–8. [38] Gao F, Chen P, Xia Y, et al. Efficient calculation and monitoring of temperature actions on supertall structures. Eng Struct 2019;193:1–11. [39] Gao F, Zhou H, Weng S, et al. Structural deformation monitoring and numerical simulation of a supertall building during construction stage. Eng Struct 2020;209: 110033. [40] Beton C.E.-I.D. CEB-FIP model for concrete structures. Switzerland: Lausanne; 2010. [41] Samarakkody DI, Thambiratnam DP, Chan THT, et al. Differential axial shortening and its effects in high rise buildings with composite concrete filled tube columns. Constr Build Mater 2017;143:659–72. [42] Pan Z, Li B, Lu Z. Re-evaluation of CEB-FIP 90 prediction models for creep and shrinkage with experimental database. Constr Build Mater 2013;38(2):1022–30.
+[43] Zahabizadeh B, Edalat-Behbahani A, Granja J, et al. A new test setup for measuring early age coefficient of thermal expansion of concrete. Cem Concr Comp 2019;98: 14–28. [44] Ni YQ, Ye XW, Lin KC, et al. Modeling of temperature distribution in a reinforced concrete supertall structure based on structural health monitoring data. Comput Concr 2011;8(3):293–309. [45] Afshari HH, Al-Ani D, Habibi S. A new adaptive control scheme based on the interacting multiple model (IMM) estimation. J Mech Sci Technol 2016;30(6): 2759–67. [46] Yeom SN, Kirubarajan T, Bar-Shalom Y. Track segment association, fine-step IMM and initialization with Doppler for improved track performance. IEEE T Aero Elec Sys 2004;40(1):293–309. [47] Lopez R, Malarde J-P, Royer F, et al. Improving Argos Doppler Location Using Multiple-Model Kalman Filtering. IEEE T Geosci Remote 2014;52(8):4744–55. [48] Salam AOA, Sheriff RE, Hu YF, et al. Automatic Modulation Classification Using Interacting Multiple Model Kalman Filter for Channel Estimation. IEEE T Veh Technol 2019;68(9):8928–39. [49] Deng L, Li D, Li R. Improved IMM Algorithm based on RNNs. J Phys: Conf Ser 2020;1518:012055. [50] Ma J, Guo X. Combination of IMM Algorithm and ASTRWCKF for Maneuvering Target Tracking. IEEE Access 2020;8:143095–103. [51] Zhang L, Mao D, Niu J, et al. Continuous Tracking of Targets for Stereoscopic HFSWR Based on IMM Filtering Combined with ELM. Remote Sens-Basel 2020;12 (2):e272. [52] Oh BK, Park HS, Glisic B. Time-dependent structural response estimation method for concrete structures using time information and convolutional neural networks. Eng Struct 2023;275:115193.
+K. Gao et al.

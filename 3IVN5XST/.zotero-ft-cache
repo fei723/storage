@@ -1,0 +1,728 @@
+Controlling the Kalman
+Update: A Covariance
+Constrained Approach
+JAMES MCELREATH , Member, IEEE
+DAVID E. J. VAN WIJK , Member, IEEE
+MANORANJAN MAJJI , Senior Member, IEEE Texas A&M University, College Station, TX USA
+This manuscript introduces the covariance-constrained Kalman filter (CKF), designed to enhance the performance of the traditional Kalman filter (KF) and extended KF (EKF). The EKF, particularly when applied to highly nonlinear systems, can suffer from significant issues. Large covariance updates may cause rapid convergence, which in turn leads to overconfidence in state estimates. In addition, large state updates degrade the accuracy of the first-order Taylor series approximation, resulting in linear error covariances that poorly represent the true estimation errors. To mitigate these scenarios, the CKF constrains the Kalman gain to limit the size of both state and covariance updates, preventing overconfidence in the filter’s state estimates and improving overall filter stability. The derivation of the CKF, applicable to both linear and nonlinear systems, employs Lagrange multipliers to enforce these constraints analytically. The performance of the covariance-constrained EKF (CEKF) is benchmarked against
+Received 2 October 2024; revised 15 January 2025 and 26 February 2025; accepted 3 March 2025. Date of publication 27 March 2025; date of current version 11 August 2025.
+DOI. No. 10.1109/TAES.2025.3552071
+Refereeing of this contribution was handled by R. Yang.
+This work was supported in part by the Air Force Office of Scientific Research (AFOSR) Space University Research Initiative (SURI) through Project Breaking the Launch Once Use Once Paradigm under Grant FA9550-22-1-0093, in part by the Air Force Office of Scientific Research (AFOSR) Space University Research Initiative (SURI) through Project entitled Multi-Phenomenological, Autonomous, and Understandable SDA and XDA Decision Support under Grant FA 9550-23-1-0726, in part by the Naval Engineering Education Consortium (NEEC) through Project Sentient Engineering Autonomy: Learning, Intelligent, and Optimal Naval Systems (SEALIONS) under Grant N00174-23-1-0016, in part by the National Science Foundation under Grant 10.13039/100000001, and in part by Industry University Collaborative Research Center (IUCRC) Phase I Texas A&M University: Center for Autonomous Air Mobility and Sensing (CAAMS) under Grant 2137265.
+Authors’ addresses: James McElreath, David E. J. van Wijk and Manoranjan Majji are with the Department of Aerospace Engineering, Texas A&M University, College Station, TX 77840 USA E-mail: (j.mcelreath@tamu.edu; davidvanwijk@tamu.edu; mmajji@tamu.edu). (Corresponding author: James McElreath.)
+0018-9251 © 2025 IEEE
+the standard EKF and partial-update EKF (PEKF) through two numerical simulations: 1) a falling-body tracking problem; and 2) an orbit determination problem. Monte Carlo analyses reveal that the CEKF successfully reduces the number of diverging cases, enhances covariance accuracy, and matches the Mahalanobis distance to the expected performance, outperforming the EKF in the scenarios investigated. The CEKF exhibits control over both the state and covariance updates, where the PEKF is only able to control the covariance. The results confirm that the CKF is a robust and efficient alternative for filtering nonlinear systems prone to divergence due to large state and covariance updates.
+I. INTRODUCTION
+The Kalman filter (KF) is perhaps the most widely known and utilized state estimation technique. Introduced by Kalman in 1960 [1], it has been applied to numerous domains due to its ability to minimize the estimation error vector for linear systems. However, strictly linear systems are rare in nature, as most systems are governed by nonlinear dynamics. This necessitates modifications of the KF, such as the extended KF (EKF). The EKF employs a first-order Taylor series approximation to linearize the system for error and covariance analysis while using nonlinear dynamics to propagate state estimates between measurements. Despite its utility, implementation issues can arise. These issues often occur when the model-dynamics/state-estimate deviate significantly from the true-dynamics/true-state, respectively, as the Taylor series approximation becomes inaccurate [2]. The deviations can often lead to bias accumulation, filter divergence, or inaccurate uncertainty measures. To combat this, methods, such as the second-order EKF [3], unscented EKF [4], or nonlinear filtering techniques can be applied. However, these techniques often come at the expense of increased computational or increased solver complexity. Another technique to address these problems involves restricting the state and covariance update, preventing updates from exceeding specified tolerances. In this work, a new modified KF/EKF is formulated where the expected value of the state update is constrained to produce gradual changes in both state estimates and covariances, enhancing filter performance with minimal computational increase. In the EKF, large updates to states and associated covariances can lead to poor filter performance when the model-dynamics/state-estimate differ from truth [5], [6]. The KF/EKF update is designed to minimize the trace of the updated state covariance matrix, achieving the optimal reduction in state covariance for the state estimate. While this is typically an advantage, it can result in poor filter performance. To address such issues, Schmidt [7] introduced the consider KF, updating state estimates and covariances while considering model parameter covariance. Woodbury and Junkins [8] further refined this approach, providing an improved analysis of parameter errors in dynamic models. The consider KF was extended with the partial-update KF (PKF), where only a portion of the traditional full filter update is applied to selected states [9]. While the PKF mitigates divergence by reducing updates, it does not inherently control the size of state and covariance updates. In the PKF, one can modify the filter to reduce either state or
+9460 IEEE TRANSACTIONS ON AEROSPACE AND ELECTRONIC SYSTEMS VOL. 61, NO. 4 AUGUST 2025
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 09,2025 at 11:12:26 UTC from IEEE Xplore. Restrictions apply.
+
+
+covariance updates by a specified amount, but not both. In this work, a new KF is developed that constrains the gain such that the expected value of state updates fall below a specified threshold, providing control over both the state estimate and covariance update magnitudes and improving filter performance in certain scenarios. While a covariancecontrolling estimator has not been previously implemented, the authors in [10] and [11] performed covariance control in the linear controls field. Their work provides a theory for designing linear feedback controllers to achieve a specified state covariance in the closed-loop system. Although similar, this work differs in two ways. The constraints on covariance are applied in the calculation of the Kalman gain, and the constraints are applied in discrete time instead of continuously. The new covariance-constrained KF is implemented for two example cases, demonstrating how both state and covariance updates are reduced, enhancing filter performance. The constrained Kalman gain for the covarianceconstrained KF is determined by applying an expected value state constraint. Lagrange multipliers have been employed previously for state equality/inequality-constrained KFs and norm-constrained KFs. State equality constraints on the Kalman gain calculation have been applied where there is known state information, as shown by [12]. The authors incorporated state equality constraints by projecting the unconstrained Kalman solution onto the state constraint surface. A similar effect can also be achieved by incorporating perfect measurements of the known state [13], [14], but often results in singular covariance matrices. Gupta and Hauser [15] continued this work by restricting the Kalman gain so that the update lies within the constrained space. The gain restriction method, a specialized solution to the projection method summarized by [16], has also been used to apply inequality state constraints (e.g., positivity constraints) by [17]. Another application of state equality constraints using Lagrange multipliers is the norm-constrained KF. Introduced by Zanetti et al. [18], this method determines the gain matrix while constraining the entire or part of the state vector to a desired norm, resulting in an additive update that satisfies the norm constraint on the attitude quaternion. State equality/inequality constraints have also been applied to the EKF, as demonstrated in [19], [20], [21], and [22]. While these methods are excellent for incorporating physical constraints into an estimator, applying a state-constrained KF to constrain state updates is ill-advised. This is because the constraints are formulated such that, when the constraints are active, the estimator interprets that the estimate must be equal to the state value of the reduced update, leading to bias accumulation when applied often [23]. Thus, the covariance-constrained KF (CKF) formulation is introduced, constraining the expected value of the state update instead of the state update itself. To the best of our knowledge, controlling both the state and covariance during state estimation has not been addressed in literature. Therefore, the primary contribution of this work is the development of a constrained KF that restricts the Kalman gain to reduce state and covariance
+updates. Although the main feature of the CKF is control over the covariance, it simultaneously regulates state updates, distinguishing the proposed approach from previous work. Notably, the derivation of the constrained gain is fully analytical, resulting in minimal computational overhead compared to the standard KF/EKF and significantly less complexity than nonlinear estimators. Furthermore, the technique used to constrain the covariance and state updates is not specific to the KF and could be applied to advanced filtering techniques, such as higher order filters or nonlinear filters without loss of generality. Therefore, the CKF provides an efficient estimation framework that enhances stability and performance without significantly increasing computational cost. The rest of this article is organized as follows. In Section II, the standard KF and EKF are presented to introduce the notation in this work. In Section III, the CKF and the covariance-constrained EKF (CEKF) are derived and it is proven that the constraint formulation will restrict the updates to state covariances. In Section IV, the partial-update EKF (PEKF) is reviewed and a method utilizing the PEKF to control the size of the covariance updates is presented. In Section V, two numerical simulations demonstrate that the CEKF improves filter performance. Finally, Section VI concludes this article.
+II. THE KALMAN FILTER AND EXTENDED KALMAN FILTER
+The section serves to introduce the notation employed for this work as well as to present the equations for the KF and the extended KF. The implementation is that of the discrete-continuous formulation, where continuous dynamics are assumed between updates with discrete measurements.
+A. Kalman Filter
+To start, first assume a general state vector x is subject to the dynamics of (1), where w is a zero-mean Gaussian process noise with a spectral density matrix Q.
+x ̇ (t ) = F (t )x(t ) + G(t )w(t ). (1)
+Next, it is assumed that discrete measurements are taken of x, given in (2), where ν is a zero-mean Gaussian measurement noise with covariance R.
+ ̃yk = Hkxk + νk. (2)
+The subscript k denotes the measurement number. Now let ˆx and P denote the estimate of x and covariance matrix of ˆx, respectively. The covariance matrix is defined as the expected value of the difference between the estimated state vector and the true state vector
+P = E {[x − ˆx][x − ˆx]T } = E {δxδxT } (3)
+where E {. . .} is the expected value operator and δx denotes the difference between the true and estimated state. Note that R = E {ννT } and Q = E {wwT }. The state estimate and covariance matrix are subject to the dynamics of (4) and
+MCELREATH ET AL.: CONTROLLING THE KALMAN UPDATE: A COVARIANCE CONSTRAINED APPROACH 9461
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 09,2025 at 11:12:26 UTC from IEEE Xplore. Restrictions apply.
+
+
+(5), respectively.
+ˆ ̇x(t ) = F (t )ˆx(t ) (4)
+P ̇ (t ) = F (t )P(t ) + P(t )F T (t ) + G(t )Q(t )GT (t ). (5)
+It is desired that the current estimate of the state (ˆx−) be updated to a new state estimate (ˆx+) whenever a new measurement is received. An additive linear state update is assumed, where the update is proportional to some unknown gain matrix K and the error residuals, (6). The covariance update is given by (7), where I is the identity matrix, P− the state error covariance matrix of the previous estimate, and P+ the state error covariance matrix of the updated estimate.
+ˆx+
+k = ˆx−
+k + Kk[ ̃yk − Hk ˆx−
+k ] (6)
+P+
+k = [I − KkHk]P−
+k [I − KkHk]T + KkRKT
+k . (7)
+Currently, the gain K is unknown. The gain can be found by minimizing the trace of the updated state covariance matrix, which is the cost function (J) defined by (8).
+Jk = tr(P+
+k ). (8)
+As seen in (7), the gain matrix K is the only unknown. Thus, a derivative of the cost function is taken with respect to the gain matrix and set equal to zero.
+0 = ∂Jk
+∂ Kk
+= 2KkMk − 2P−
+k HT
+k (9)
+Mk = HkP−
+k HT
+k + Rk. (10)
+Rearranging (9) for the unknown gain matrix yields the well-known solution for the Kalman gain.
+Kk = P−
+k HT
+k M−1
+k . (11)
+Using the gain given by (11), the state estimate and state error covariance matrix are updated with each new measurement. Then, (4) and (5) are used to propagate the updated state estimate and covariance matrix until a new measurement is available.
+B. Extended Kalman Filter
+When considering nonlinear dynamics and a nonlinear measurement function, one may transition from a standard KF to an EKF. For the EKF, let the dynamics of the state vector be governed by (12) and the measurement function by (13).
+x ̇ (t ) = f (x(t ), t ) + G(t )w(t ) (12)
+ ̃yk = h(xk ) + νk. (13)
+The state estimate is propagated by (14).
+ˆ ̇x(t ) = f (ˆx(t ), t ). (14)
+Because the function f (x(t ), t ) is nonlinear, the dynamics must be linearized to propagate the state error covariance. This is achieved through the use of a first-order Taylor series expansion about the current state estimate yielding
+P ̇ (t ) = F ′(t )P(t ) + P(t )F ′T (t ) + G(t )Q(t )GT (t ) (15)
+where
+F ′(t ) = ∂f (x(t ), t )
+∂x(t ) . (16)
+The state update structure of the EKF is nearly identical to that of the KF, utilizing the nonlinear measurement function to calculate the error residuals.
+ˆx+
+k = ˆx−
+k + Kk[ ̃yk − h( ˆx−
+k )]. (17)
+The update to the state covariance matrix is altered slightly, using a Taylor series approximation to linearize the measurement function as well:
+P+
+k = [I − KkH ′
+k ]P−
+k [I − KkH ′
+k]T + KkRkK T
+k (18)
+where
+H′
+k = ∂h(xk )
+∂ xk
+. (19)
+The Kalman gain is again determined by the minimizing (8) with respect to the unknown gain and solving for K, as shown in (20)-(22).
+0 = ∂Jk
+∂ Kk
+= 2KkM′
+k − 2P−
+k H′
+k
+T (20)
+M′
+k = H′
+k P−
+k H′
+k
+T + Rk (21)
+Kk = P−
+k H′
+k
+T M′−1
+k . (22)
+III. COVARIANCE-CONSTRAINED KALMAN FILTER
+In this section, the equations required to calculate the CKF/CEKF gain are derived. The derivation is shown for both a linear measurement function H and a nonlinear measurement function h(x). Note that because a linear measurement function can be employed in the EKF, the derivation assuming a linear measurement function can be applied to either the KF or EKF. It is demonstrated that restricting the expected value of a state update will in turn restrict the update to the state uncertainty. The selection of the constraint value is then discussed and an algorithm that summarizes the gain calculation is presented. The restriction of state and covariance updates is accomplished by bounding the innovation covariance that has been mapped into the state-update space via the Kalman gain. In other words, the expected value of the state update is restricted. The boundedness of the innovation term ( ̃y − H x + ν) is fundamentally different from the boundedness of the measurement noise (ν), as it depends not only on the noise but also on the accuracy of the state predictions. The expected value of the measurement noise is inherently bounded by its covariance matrix R and reflects sensor limitations, whereas the innovation term incorporates both the state prediction error and the measurement noise. The constraint formulated in this work specifically addresses this by limiting the magnitude of the expected state update value, and, as a result, the reduction in innovation covariance. This prevents a rapid reduction in the innovation covariance, which can cause the filter to become overconfident. The distinction between the innovation term and measurement
+9462 IEEE TRANSACTIONS ON AEROSPACE AND ELECTRONIC SYSTEMS VOL. 61, NO. 4 AUGUST 2025
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 09,2025 at 11:12:26 UTC from IEEE Xplore. Restrictions apply.
+
+
+noise is crucial because while measurement noise boundedness is a fixed property of the sensor, innovation boundedness requires active control to mitigate the combined effects of prediction errors and noise.
+A. Linear Measurement Function
+In this subsection, it is assumed that the constrained Kalman gain is determined for the case of a linear measurement function. If a KF or EKF is employed, then the state estimate/uncertainty propagation, measurement, and update equations of Section II-A or II-B would apply, respectively. What varies between the KF/EKF and CKF/CEKF is the determination of the update gain K. First, it is assumed that the update to the state vector ( x) is given as the difference between the previous (ˆx−) and updated (ˆx+) state estimate
+x = ˆx+ − ˆx− = K[ ̃y − H xˆ−]. (23)
+Note that (. . .)k notation has been dropped to provide neater notation, but it is understood that the values change for each incoming measurement. Next, the measurements  ̃y are replaced by (2)
+x = K[H x − H ˆx− + ν]. (24)
+Collecting like terms and simplifying yields
+x = K[H [x − ˆx−] + ν] = K[H δx− + ν]. (25)
+We seek to restrict the calculation of the gain such that the expected value of a specific element of the state update is less than a specified value. Assume that the state update consists of the following elements:
+x=
+[
+x1 x2 . . . xn
+]T . (26)
+To extract a general element of the state update ( xi), a constraint vector bi is introduced such that
+xi = bT
+i x. (27)
+For example, to extract the update to the first term in the state vector, the constraint vector would be formulated as
+b1 =
+[
+1 0 ... 0
+]T . (28)
+With the extraction of an element of the state update complete, the constraint is thus formulated as
+E {( xi )2} = E {bT
+i x xT bi} ≤ c2
+i (29)
+where ci is the constraint value associated with the state update being restricted. Note that a constraint vector c is defined to contain all values of ci (c = [c1, c2, . . .cn]T ). A square has been applied to both the constraint value and state update to remove the sign ambiguity. As is shown in the next subsection, this constraint formulation restricts the gain such that the difference between the previous and updated state standard deviation is less than or equal to the constraint value. Note that this formulation is designed to restrict updates to the variance terms in the covariance matrix, not cross-correlation terms. Constraining cross-correlation terms is possible but requires that the constraint vector be different on each side of x.
+The expression for the state update vector (25) is now substituted into (29)
+E {bT
+i
+[K[H δx− + ν]] [K[H δx− + ν]]T bi} ≤ c2
+i . (30)
+The terms are then multiplied out, the expected value operator is split between each term, and the vector bi, gain K, and measurement matrix H are pulled out of the expected value operator
+bT
+i K[H E {δx−(δx−)T }H T + E {ννT }
++ H E {δx−νT } + E {ν(δx−)T }H T ]KT bi ≤ c2
+i . (31)
+The expected value operator is now applied under the assumption that the state estimate error is uncorrelated to the current measurement noise, yielding
+bT
+i KMKT bi ≤ c2
+i . (32)
+Lagrange multipliers (λ) are employed to apply the constraints to the cost function, where the cost function is augmented as follows:
+J = tr(P+) +
+n ∑
+i=1
+λi
+(bT
+i KMKT bi − c2
+i
+) . (33)
+To minimize the cost function and determine the constrained Kalman gain, derivatives of (33) are taken with respect to the unknowns (K and λi) and set equal to zero
+∂J
+∂K = 0, ∂J
+∂ λi
+= 0. (34)
+Solving the resulting system of equations yields the gain matrix that minimizes the trace of the updated state covariance subject to the imposed constraints. See the Appendix for the full derivations of (35) and (37).
+K = BP−H T M−1 (35)
+B=I−
+n ∑
+i=1
+λi 1 + λi
+bi bT
+i (36)
+λi =
+√
+bT
+i
+[P−H T M−1H P−] bi
+c2
+i
+− 1. (37)
+It is straightforward to observe that the constrained Kalman gain of (35) is similar to the unconstrained Kalman gain of (11) besides the additional matrix quantity B. Importantly, the matrix B is computationally cheap to compute as the Lagrange multipliers are determined analytically. As of this point, the constraints have been treated as equality constraints, not the inequality constraints posed by (29). Since inequality constraints are employed, it must be determined if the constraints are active or inactive. If a constraint is active, the Lagrange multiplier of the associated constraint will be positive and the constraint converts to an equality constraint. If a constraint is inactive, the Lagrange multiplier is instead negative and the constraint should be removed as it is not needed. One may also change the Lagrange multiplier from negative to zero to achieve the same effect. This methodology is referred to as the active-set method, derived from the Karush-Kuhn-Tucher
+MCELREATH ET AL.: CONTROLLING THE KALMAN UPDATE: A COVARIANCE CONSTRAINED APPROACH 9463
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 09,2025 at 11:12:26 UTC from IEEE Xplore. Restrictions apply.
+
+
+(KKT) conditions [24]. Note that because the Lagrange multipliers are determined independently of one another, an inactive constraint will not affect the calculation of other constraints. The formulation presented assumes that each of the state update elements is constrained, but that need not be the case. One may select which elements of the state update are restricted and adjust the formulation accordingly. To do so, one need only adjust what values for i are used in the summation of (36). For example, to restrict the first, third, and fifth element of the state update, one would select from the set
+i ∈ {1, 3, 5}. (38)
+Again, because the Lagrange multipliers are determined independently of one another, mixing which constraints are imposed can be done without the need for recalculation. By restricting the Kalman gain subject to the constraints on the expected value of the state update, the filter becomes suboptimal by definition. The KF, which provides the state update that minimizes the trace of the updated covariance, will always outperform the CKF with regards to shrinking the size of the covariances. This difference in performance is directly proportional to the constraint value, with smaller constraint values yielding greater suboptimality. However, the tradeoff in covariance reduction performance can be acceptable when the accuracy of the state uncertainty becomes poor. By accepting suboptimality in the short term, the CKF can yield more accurate covariance matrices in the long term, a valid concession when performing real-time state estimation.
+B. Nonlinear Measurement Function
+In this subsection, we obtain the constrained Kalman gain for the case of a nonlinear measurement function. Since nonlinear measurement functions are most often associated with an EKF, the state estimate/uncertainty propagation, measurement, and update equations of Section II-B apply. To begin, the state update is again defined as the difference between the previous and updated state estimate
+x = ˆx+ − ˆx− = K[ ̃y − h(ˆx−)]. (39)
+Next, the measurements ( ̃y) are replaced by (13)
+x = K[h(x) + ν − h(ˆx−)]. (40)
+To ensure that the constrained Kalman gain can be obtained analytically, the difference between the nonlinear measurement function about the true state and state estimate is linearized using a first-order Taylor series expansion
+h(x) − h(ˆx−) ≈ H ′[x − ˆx−] = H ′δx−. (41)
+The state update equation is then linearized by substituting (41) into (40)
+x = K[H ′δx− + ν]. (42)
+Note the similar structure between (25) and (42), with the difference that H has been replaced by H ′. Assuming
+the same constraint formulation of Section III-A, the constrained gain is determined by the same method. Since the derivation is near identical to the case of a linear measurement function, the equations for calculating the constrained gain with a nonlinear measurement are presented and not derived
+K = BP−H ′T M′−1 (43)
+B=I−
+n ∑
+i=1
+λi 1 + λi
+bi bT
+i (44)
+λi =
+√
+bT
+i
+[P−H ′T M′−1H ′P−] bi
+c2
+i
+− 1. (45)
+Again, KKT conditions are employed to determine when the constraints are active or inactive.
+C. Restriction of Standard Deviation
+In this subsection, it is shown why the filter introduced in this work is referred to as a CKF. To begin, start with the general constraint equation
+E {( xi )2} ≤ c2
+i . (46)
+The state update is then expanded by use of the previous and updated estimate.
+E {(x+
+i − x−
+i )2} ≤ c2
+i . (47)
+The truth is then subtracted from each estimate
+E {[(x+
+i − x) − (x−
+i − x)]2} = E {(δx+
+i − δx−
+i )2} ≤ c2
+i
+(48)
+The square operator is applied
+E {(δx+
+i )2 + (δx−
+i )2 − 2δx−
+i δx+
+i } ≤ c2
+i . (49)
+The expected value operator is split between each term
+E {(δx+
+i )2} + E {(δx−
+i )2} − 2E {δx−
+i δx+
+i } ≤ c2
+i (50)
+and the expected value operator is now applied
+(σ +
+i )2 + (σ −
+i )2 − 2(ρ+−
+i,i )(σ +
+i σ−
+i ) ≤ c2
+i (51)
+where σ is the linear standard deviation and ρ is the crosscorrelation coefficient. Using the identity
+−1 ≤ ρ+−
+i,i ≤ 1 (52)
+(51) is rewritten as
+(σ +
+i )2 + (σ −
+i )2 − 2σ +
+i σ−
+i ≤ c2
+i (53)
+and further simplified as
+(σ +
+i − σ−
+i )2 ≤ c2
+i . (54)
+The square root of both sides is then taken, yielding the result that the constraint prevents a change in standard deviation from being larger in magnitude than the constraint value
+|σ +
+i − σ−
+i | ≤ ci. (55)
+While this work is currently shown for restriction on standard deviation (and by extension variance), crosscorrelation terms can also be restricted using the CKF.
+9464 IEEE TRANSACTIONS ON AEROSPACE AND ELECTRONIC SYSTEMS VOL. 61, NO. 4 AUGUST 2025
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 09,2025 at 11:12:26 UTC from IEEE Xplore. Restrictions apply.
+
+
+D. Selecting a Constraint Value
+The determination of appropriate constraint values ci is a critical step in the implementation of the CKF. These values dictate the magnitude of permissible updates in the state and covariance, influencing the filter’s responsiveness and stability. If the value is tuned too aggressively, the covariance will grow faster than it can be reduced, resulting in uncertainties growing to infinity. If the values are tuned too loosely, there will be little to no difference between the CKF and standard KF. Several strategies can be employed to define ci effectively. The simplest selection method involves selecting ci based on the desired value of the state updates. If one would like the average value of state updates to be less than or equal to a specified value, then one would set ci to that value. Constraint values can also be determined as a percentage of the initial standard deviation of the state uncertainty. For instance,
+ci = α · √Pii(t0) (56)
+where α is a tuning parameter (e.g., 1–10% ). This method ensures that constraints scale proportionally with the initial uncertainty, providing balanced control across states. Another strategy involves calculating ci to ensure a minimum predefined number of steps N for the state uncertainty to reach zero under ideal conditions. Assuming each update reduces the variance by Pii = −c2
+i , the constraint value can be determined by
+ci =
+√Pii(t0 )
+N (57)
+allowing for a controlled and gradual reduction of uncertainty. Constraint values can also be designed to ensure updates do not exceed a percentage of the initial standard deviation update of the standard KF. For this, ci is given as
+ci = τ ·
+∣∣∣
+√
+P−
+k=1,ii −
+√
+P+
+k=1,ii
+∣∣∣ (58)
+where τ is a scaling factor (e.g., 0.1–1.0). This approach directly ties ci to the initial KF performance, ensuring constraints are relative to the filter’s inherent performance. Adaptive schemes can also be employed to dynamically adjust ci based on filter performance metrics, such as the Mahalanobis distance (MD) or normalized innovation. For instance, increasing ci when the filter appears overly conservative or reducing it to counter divergence tendencies ensures the constraints remain effective under varying conditions. States with high sensitivity to updates, such as directly observable states, may require smaller ci to prevent instability. Physical system characteristics also influence the choice of ci. For instance, states influenced by precise measurements might necessitate tighter constraints to mitigate the effects of large jumps in states. Tradeoff analyses, such as multiobjective optimization, can refine ci values by balancing estimation precision and filter responsiveness. Simulations can be employed to test different ci
+Algorithm 1: Covariance-Constrained Kalman Gain Calculation Pseudo Code.
+configurations and identify the setup that minimizes state estimation errors while maintaining consistency. Determining which elements of the state vector should be constrained can be done by leveraging information on which elements have large uncertainty values and how the elements relate to the measurements and/or dynamic model. For instance, if a state element is directly observable, this will lead to a rapid convergence in its uncertainty. Even if not directly observable, state elements that can be used to construct the measurements, such as range measurements from a position state, can also converge rapidly. State elements that are not directly related to the measurements, such as a velocity state and range measurements, will generally converge slower as they require confidence in other states before converging. Elements that significantly influence the dynamics, such as a ballistic coefficient or a flight path angle, are also of interest when restricting updates, as large updates will cause dramatic shifts in the state predictions. Thus, it is generally effective to focus on elements that are closely tied to the measurement model or that dominate the dynamics. By tailoring ci to the system’s specific requirements and performance goals, the CKF can effectively balance estimation performance and accuracy.
+E. CEKF Algorithm
+To aid the reader, an algorithm that shows how to determine the covariance-constrained Kalman gain is presented, Algorithm 1. Only the gain calculation is shown in Algorithm 1, as the state and covariance propagation/update equations are the same as the standard KF implementation. A linear measurement function is assumed, but the algorithm is easily modified to fit nonlinear measurement functions by swapping out H and M with H ′ and M′, respectively.
+MCELREATH ET AL.: CONTROLLING THE KALMAN UPDATE: A COVARIANCE CONSTRAINED APPROACH 9465
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 09,2025 at 11:12:26 UTC from IEEE Xplore. Restrictions apply.
+
+
+IV. PARTIAL-UPDATE KALMAN FILTER
+In this work, the CKF is used to constrain the magnitude of the covariance updates. The PKF is another extension to the KF employed previously to reduce the size of updates to improve filter performance. As such, the PEKF is compared against the CEKF in the results of this work. To compare the two closely, the PEKF is set up such that the update to the standard deviation of a state element does not exceed a specified magnitude (the condition proved in the previous section). The PKF reduces the full Kalman update by a specified percentage, allowing one to delay the convergence of the filter. The PKF/PEKF varies from the standard KF/EKF only in the update equations. The equation for the state update is given as
+ˆx++ = ˆx+ + (ˆx− − ˆx+) (59)
+= diag(γ ) ; γ =
+[
+γ1 γ2 . . . γn
+]T
+(60)
+where ˆx− is the previous state estimate, ˆx+ is the fully updated state estimate, ˆx++ is the partially updated state estimate, and γ is the weighting vector containing elements γi. The weighting vector defines what percentage of the full update is not applied. For example, if the first state element update was to receive the entire or none of the Kalman update, then γ1 = 0 or γ1 = 1, respectively. The equation for the covariance update is given as
+P++ = P+ + (P− − P+) (61)
+where P− is the previous state covariance, P+ is the fully updated state covariance, and P++ is the partially updated state covariance. The values for γ are determined such that the partial update to the standard deviation must be less than or equal to a constraint value
+(σ −
+i − σ ++
+i )2 =
+(√
+P−
+ii −
+√
+P++
+ii
+)2
+≤ c2
+i . (62)
+First, one must determine if the constraint is active. This can be done by seeing if the difference between the previous standard deviation (σ −
+i ) and the fully updated standard
+deviation (σ +
+i ) is greater than the constraint value (ci). If
+not, γi is set to zero and the full Kalman update is applied. However, if the difference exceeds the constraint value, the percentage not applied is determined by converting (62) to an equality constraint and then solving for γi. In the case that the constraint is active, solving for γi is a matter of algebraic bookkeeping. Converting the inequality constraint to an equality constraint, one obtains (√
+P−
+ii −
+√
+P++
+ii
+)2
+= c2
+i (63)
+and by rearranging terms and substituting the elementwise definition of (61) into (63), we have
+P+
+ii + γ 2
+i (P−
+ii − P+
+ii ) =
+(√
+P−
+ii − ci
+)2
+. (64)
+Finally, solving for γi gives
+γi =
+√√√√√
+(√
+P−
+ii − ci
+)2
+− P+
+ii
+P−
+ii − P+
+ii
+. (65)
+V. NUMERICAL RESULTS
+To demonstrate the effectiveness of the CEKF, two numerical simulations were conducted. The first numerical simulation was a falling body tracking problem and the second an orbit determination problem. The intention behind the first simulation was to show how modifying the constraint value affects the filter behavior. The second simulation was completed to demonstrate how the CEKF implementation controls the size of the state and covariance updates and, as a result, improves filter performance. For the simulations, Monte Carlo (MC) analyses utilizing 1000 runs were performed to reveal the behaviors and performance of the filters examined. The measurements were sampled using the associated observation covariance matrix (R), leading to different measurement values between each MC run. Similar to the measurements, the initial state estimates were determined by sampling from the associated initial state covariance matrix (P(t0)) for each run. Note that the initial uncertainties were selected to be at least one order of magnitude larger than those at the final simulation time, allowing for large updates to the state estimates and covariances in the standard EKF implementation. Throughout the analysis, the following relevant metrics were used to investigate the performance of the filters presented: The state estimation error of a MC run (e), the average state estimation error over the MC runs ( ̄e), the average three standard deviation state uncertainty of the covariance matrices over the MC runs (3σ ̄ ), the three standard deviation uncertainty of the state estimation error over MC runs (3σ ∗), the MD of an MC run (d), and the MD averaged over the MC runs (d ̄ ). Each metric was determined by (66)–(71), respectively, where j indexed a MC run, M was the total number of runs, and N was the length of the state vector. If a filter performs with statistical accuracy, one would expect the  ̄e to be near zero at all times and 3σ ̄ to match 3σ ∗. If a filter performs poorly,  ̄e would be nonzero (indicating bias accumulation) and 3σ ∗ would be greater in value than 3σ ̄ (indicating overconfidence in uncertainty information). Cases where 3σ ̄ is less than 3σ ∗ also indicate statistically inconsistent uncertainty information but are of less concern as they indicate that the filter is pessimistic in its estimate uncertainty (covariance matrices larger than expected errors). Another method to determine if the filter is overconfident/pessimistic is through MD. The MD is a scalar measure of the number of multidimensional standard deviations an estimate is from the truth [25]. If this value is equal to one, the estimate is approximately one standard deviation away from the center of the associated N-dimensional covariance ellipsoid. When averaged over a MC analysis, values greater than 1 would indicate an overconfident filter, and values less than one would indicate
+9466 IEEE TRANSACTIONS ON AEROSPACE AND ELECTRONIC SYSTEMS VOL. 61, NO. 4 AUGUST 2025
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 09,2025 at 11:12:26 UTC from IEEE Xplore. Restrictions apply.
+
+
+a pessimistic filter
+ei(t , j) = xi(t ) − xˆi(t , j) (66)
+ ̄ei(t ) = 1
+M
+M ∑
+j=1
+ei(t , j) (67)
+3σ ̄i(t ) = 3 1
+M
+M ∑
+j=1
+√Pii(t , j) (68)
+3σ ∗
+i (t ) = 3
+√1
+M
+∑M
+j=1
+[ei(t , j)]2 (69)
+d (t, j) =
+√
+[x(t ) − ˆx(t , j)]T P(t , j)−1[x(t ) − ˆx(t , j)]
+N
+(70)
+d ̄ (t ) = 1
+M
+M ∑
+j=1
+d (t, j). (71)
+To investigate the update behavior of the standard filters investigated, plots were generated containing the following information: the square root of the state updates squared averaged over the MC runs ( x ̄) and the absolute value of the standard deviation updates averaged over the MC runs ( σ ̄ ), given by (72) and (73), respectively. The average value of the state updates was calculated to confirm the constraint formulation of the CEKF, designed to prevent the expected value of the state update squared from being greater than the constraint value squared, (46). The absolute value of the standard deviation was determined to confirm the standard deviation restriction of the CEKF and PEKF, derived such that the updates to the standard deviation would be less than the constraint value, (55). As mentioned in the PEKF derivation, the values for γ were determined such that (55) would hold for the PEKF implementation
+x ̄i(t ) =
+√1
+M
+∑M
+j=1( xi(t , j ))2 (72)
+σ ̄i(t ) = 1
+M
+M ∑
+j=1
+σi(t , j). (73)
+σi(t , j) =
+∣∣∣∣
+√
+P+
+ii (t , j ) −
+√
+P−
+ii (t , j )
+∣∣∣∣ (74)
+A. Tracking Problem
+In this example, we consider the 2-D tracking problem introduced by Gelb [26]. The goal is to track a free-falling particle with an altitude-dependent drag coefficient. The state variables to be estimated, x = [x1, x2, β]T , are the altitude x1, velocity x2, and ballistic coefficient β. The equations of motion are given by
+x ̇ =
+⎡
+⎢⎣
+x2
+d −g
+0
+⎤
+⎥⎦ (75)
+where d = ρx2
+2/2x3 is the acceleration due to drag with
+the atmospheric density ρ = ρ0 exp{−x1/kρ}, and g is the acceleration due to gravity. ρ0 is the atmospheric density
+TABLE I Values of Parameter Constants for Tracking Problem
+at sea level, and kρ is the decay constant. Scalar range measurements from an offset radar are generated at a rate of 10 Hz using an additive Gaussian model given by
+ ̃y = h(x) + ν with ν ∼ pg(ν | 0, R) (76)
+where ∼ signifies “drawn from” and R is the measurement noise covariance. For this problem, R = 500 ft2. The measurement function is given by
+h(x) =
+√
+r2
+1 + (x1 − r2 )2 (77)
+where the radar is offset from the object horizontally by r1 and is a distance of r2 above the ground. The initial true state was set to
+x(t0) =
+⎡
+⎢⎣
+2 × 105 ft
+−7000 ft/sec
+100 lb/ft2
+⎤
+⎥⎦ (78)
+and the initial estimates were sampled from a Gaussian distribution centered around x(t0) with initial covariance P(t0) = diag{[500ft2, 2 × 103ft2/sec2, 400lb2/ft4]}. G was assumed equal to the identity matrix (G = I3×3) and the spectral density matrix Q was set to Q = diag{[5 × 10−8ft2, 5 × 10−8ft2/sec2, 5 × 10−8lb2/ft4]}. Table I contains the values for all constants used in the simulations. An MC analysis with 1000 trials was performed for the EKF and the CEKF with a range of constraint values. Each simulation ran for 45 s. For the CEKF runs, only the update of β was constrained, with a values ranging from c3 = 0.1 lb/ft2 to c3 = 3 lb/ft2. As discussed in Section III-D, constraining values directly affecting the dynamics can be advantageous since inaccurate estimates of these parameters can cause filter divergence. For this reason, β was constrained, which is shown to significantly improve performance in the simulation examples that follow. While the measurements are a function of the position state, and thus, x1 could also be constrained, it was found empirically that the β constraint dominated, and thus only β was constrained. Figs. 1 and 2 plot the state estimation error for the EKF and the c3 = 0.5 lb/ft2 CEKF configuration, respectively. The state estimation error for each MC trial is plotted in gray and the average state estimation error per state is plotted with the dotted black line. A sign of a well-performing estimator is an average state estimation error which is near zero. From Fig. 1 one can observe that the EKF is unable to achieve a near zero  ̄e, especially for the altitude and velocity states. This is due to the numerous individual runs in which
+MCELREATH ET AL.: CONTROLLING THE KALMAN UPDATE: A COVARIANCE CONSTRAINED APPROACH 9467
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 09,2025 at 11:12:26 UTC from IEEE Xplore. Restrictions apply.
+
+
+Fig. 1. EKF state estimation error for tracking problem over 1000 MC trials.
+Fig. 2. CEKF state estimation error for tracking problem over 1000 MC trials with c3 = 0.5 lb/ft2.
+the EKF diverges, which are cases in which the individual state errors (e) wander significantly outside of both the 3σ ̄ and 3σ ∗ intervals, seen especially from 20 s onward. In addition, the 3σ ̄ and 3σ ∗ intervals do not closely align for the EKF, showing statistically inconsistent performance. For the CEKF in Fig. 2, only the updates of β are constrained. In contrast to the EKF, the average state estimation error remains near zero throughout. The 3σ ̄ and 3σ ∗ intervals were seen to closely align, indicating statistically consistent filter performance using the CEKF. This result exemplifies an important aspect of the CKF; controlling the updates of a key parameter can improve the overall filter estimation accuracy.
+To glean additional intuition on the choice of the constraint values when using the CEKF, MC analyses for constraint values of c3 = 3 lb/ft2, c3 = 1.5 lb/ft2, c3 = 0.5 lb/ft2, and c3 = 0.1 lb/ft2 were performed. Fig. 3 plots the 3σ ̄ per state for each MC analysis, and Fig. 4 plots the average MD over time for the EKF as well as for each CEKF configuration. From the figures, it was seen that the convergence rate decreased alongside the constraint value. Indeed, larger constraint values allow larger jumps in the state and covariance, leading to the covariance shrinking quickly. In the case of this example, selecting a value of c3 = 3 lb/ft2 resulted in performance that is nearly identical to the EKF. Because the constraint value is too large, the
+9468 IEEE TRANSACTIONS ON AEROSPACE AND ELECTRONIC SYSTEMS VOL. 61, NO. 4 AUGUST 2025
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 09,2025 at 11:12:26 UTC from IEEE Xplore. Restrictions apply.
+
+
+Fig. 3. 3σ ̄ per state over time for four MC analyses with varying constraint values on β.
+Fig. 4. Average mean MD versus time for the tracking problem over 1000 MC trials for EKF and CEKF with various values of c3.
+constraint is rarely active. Thus, 3σ ̄ of β is reduced at almost the same rate as for the EKF. In contrast, a value of c3 = 0.1 lb/ft2 is representative of a case where the value is too low. The constraint value is too restrictive, causing the 3σ ̄ of β to converge very slowly and in turn causing the 3σ ̄ of the altitude and velocity to grow very large. The values of c3 = 1.5 lb/ft2 and c3 = 0.5 lb/ft2 represent more desirable constraint values, as the 3σ ̄ values for each state element converged and the average MD values were more reasonable (near one). Furthermore, Fig. 4 further emphasizes the conclusions drawn from Figs. 1 and 2 with regards to statistical consistency. It is clear from the high
+average MD that the uncertainty was not consistent with the error for the EKF, whereas the low MD for c3 = 0.5 lb/ft2 indicated more statistically consistent state estimates.
+B. Orbit Determination Problem
+For the orbit determination example, the CEKF was compared against the PEKF and standard EKF. The PEKF was implemented for this simulation to show how it could be used to restrict the state covariance similar to that of the CEKF. For the simulation, it was assumed that the dynamics of the orbiter followed the classical two-body motion of an
+MCELREATH ET AL.: CONTROLLING THE KALMAN UPDATE: A COVARIANCE CONSTRAINED APPROACH 9469
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 09,2025 at 11:12:26 UTC from IEEE Xplore. Restrictions apply.
+
+
+orbiter around the Earth
+x ̇ = f (x(t )) =
+[ v
+−μ
+||r||3 r
+]
+(79)
+where μ was the gravitational parameter of the Earth. The state consisted of a position (r) and velocity (v) vector expressed in an Earth-centered-inertial frame
+x=
+[ r
+v
+]
+=
+[
+r1 r2 r3 v1 v2 v3
+]T . (80)
+With regards to process noise, G was assumed equal to the identity matrix (G = I6×6) and the spectral density matrix Q was set to
+Q=
+[
+I3×3 · 10−3 km2 03×3
+03×3 I3×3 · 10−9 km2
+s2
+]
+. (81)
+Observations were assumed to consist of azimuth (ψ), elevation (θ), and range (ρ) measurements and were received at a rate of 2 Hz. For simplicity, measurements were assumed to be taken from the Earth-center (coordinate system origin)
+h(x(t )) =
+⎡
+⎢⎣
+ψ θ ρ
+⎤
+⎥⎦ =
+⎡
+⎢⎢⎣
+atan2(ry, rx )
+asin
+( rz ρ
+)
+√
+rx2 + ry2 + rz2
+⎤
+⎥⎥⎦ . (82)
+The observation covariance matrix R was set equal to
+R=
+⎡
+⎢⎣
+1 deg2 0 0
+1 deg2 0
+0 0 1 · 10−2 km2
+⎤
+⎥⎦ .
+The true state at the initial time was assumed to be
+x(t0) =
+⎡
+⎢⎢⎢⎢⎢⎢⎢⎢⎣
+8870 km
+0 km
+0 km
+0 km
+s
+4.742 km
+s
+4.742 km
+s
+⎤
+⎥⎥⎥⎥⎥⎥⎥⎥⎦
+(83)
+and the associated initial covariance
+P(t0) =
+[
+I3×3 · (200)2 km2 03×3
+03×3 I3×3 · (10)2 km2
+s2
+]
+. (84)
+Finally, the constraint values that were used to determine the constrained gain for both the CEKF and PEKF were assumed to be
+c=
+⎡
+⎢⎣
+5 km
+5 km
+5 km
+⎤
+⎥⎦ (85)
+where only the position elements were constrained and the velocity elements were left unconstrained. As discussed in Section III-D, state elements that are directly related to the measurements can rapidly converge, resulting in overconfident uncertainty measures due to large state and covariance
+updates. As such, the position elements were chosen to be constrained as the measurement function directly depends on the spacecraft’s position. Figs. 5–7 give the estimator results for the orbit determination simulation, where the most apparent takeaway was that the standard EKF significantly underperformed when compared against the CEKF and PEKF implementations. Fig. 5 shows that values for 3σ ∗ were significantly larger than the 3σ ̄ values for all states. The error profiles (e) of the individual runs support this notion, as many profiles exceeded the 3σ ̄ intervals. However, the poor performance behavior was not exhibited to the same extent when considering the CEKF or PEKF. The PEKF performed significantly better than the EKF but still exhibited performance issues. The 3σ ∗ profiles exceeded the 3σ ̄ values for most elements, with the 3σ ∗ associated with elements r1 and r2 growing much larger than 3σ ̄ during initialization. The CEKF showed the best performance of all filters tested. These observations were supported by the results of MD. Individual run values and the average MD are plotted in Fig. 8. The average MD of the EKF was seen to grow significantly during initialization, with some runs reaching up to a value of 600. The EKF was able to reduce the MD as the simulation proceeded, preventing divergence, but the average value failed to return to the desired d ̄ value of 1 by the end of the simulation. With regards to the PEKF, d ̄ was seen to grow to a value of 3 during initialization, but was able to reduce back to a value of 1 before termination. The best performance was seen in the CEKF, where d ̄ only grew to a value of about 1.5 during initialization and returned to a value of 1 within a few minutes. While the PEKF and CEKF were tuned with the same constraint values, the CEKF was able to outperform the PEKF in this simulation. The reason becomes apparent when investigating the size of the state and covariance updates. Figs. 9 and 10 contain the results of the standard deviation and state update magnitudes, respectively, for each filter for each run. Only the position elements are shown, as only the position elements were constrained. From Fig. 9, it was seen that the EKF had the largest updates to the position element standard deviations, which is unsurprising as they were unconstrained. Also expected was the prevention of any runs exceeding the constraint value for the PEKF/CEKF standard deviation updates, as both were constrained. However, the two filters exhibited varying behavior in the standard deviation updates, most visible in elements r2 and r3. Between the two filters, the CEKF ramped down the standard deviation update magnitudes smoothly, whereas the PEKF ramp-down was much more erratic and aggressive. The slower rate of decrease of the standard deviation updates provided a smoother transition from CEKF to EKF as the constraints became inactive, reducing the likelihood of increasing the MD during the transition. The PEKF transition was not as smooth, showing a discontinuity in the average standard derivation updates at around the 0.4-min mark. This discontinuity is a result of the filter switching between active and inactive due to the standard deviation updates being close to the
+9470 IEEE TRANSACTIONS ON AEROSPACE AND ELECTRONIC SYSTEMS VOL. 61, NO. 4 AUGUST 2025
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 09,2025 at 11:12:26 UTC from IEEE Xplore. Restrictions apply.
+
+
+Fig. 5. EKF state estimation error for the orbit determination simulation.
+Fig. 6. PEKF state estimation error for the orbit determination simulation.
+constraint value. While behaving as intended and not allowing standard deviation updates above the constraint, the PEKF allowed large state updates (over 80 km), especially at the 0.4-min mark in Fig. 10. Although better than the EKF, which let updates of 300 km through, the PEKF allowed state updates significantly larger than the constraint (5 km). In contrast, the CEKF’s average state update did not exceed the constraint value and the largest state update was less than 20 km. As stated, a goal when designing the CEKF was to reduce the size of state and covariance updates by limiting the expected value of the state updates to improve filter performance. The authors attempted to produce this behavior with the PEKF by directly limiting updates based
+on the standard deviation update magnitude, but the PEKF still allowed large state updates through, leading to a poorer performance than the CEKF as characterized by the MD. Thus, while the PEKF can reduce the size of the covariance updates, the CEKF can provide control over the state and covariance updates. As stated, the slower ramp-down of standard deviation updates provided a smoother transition from CEKF-to-EKF than for PEKF-to-EKF. However, one can lengthen the transitions by decreasing the value ci further, increasing the time it takes for the CEKF/PEKF to deactivate and estimates to reach steady state. By lengthening the transition, increases in MD should be reduced. This was confirmed in numerical
+MCELREATH ET AL.: CONTROLLING THE KALMAN UPDATE: A COVARIANCE CONSTRAINED APPROACH 9471
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 09,2025 at 11:12:26 UTC from IEEE Xplore. Restrictions apply.
+
+
+Fig. 7. CEKF state estimation error for the orbit determination simulation.
+Fig. 8. MD for each filter over time for the orbit determination simulation.
+Fig. 9. Average standard deviation update size for each filter.
+9472 IEEE TRANSACTIONS ON AEROSPACE AND ELECTRONIC SYSTEMS VOL. 61, NO. 4 AUGUST 2025
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 09,2025 at 11:12:26 UTC from IEEE Xplore. Restrictions apply.
+
+
+Fig. 10. Average state update size for each filter.
+Fig. 11. MD for varying levels of ci.
+simulations, where values for c{1,2,3} were varied between 1 and 10 km. The results of this analysis are plotted in Fig. 11, where it was seen that decreasing the constraint value reduced the increase in MD during the CEKF/EKF transition. For each constraint value tested, the CEKF was seen to yield a lower average MD than the PEKF at nearly all times, with the PEKF closing the gap between it and the CEKF as the constraint value decreased. Note that while one may desire to use a smaller ci with the PEKF to achieve a similar CEKF average MD profile, this should be avoided as it results in longer times to steady state. Thus, for a given constraint value, the CEKF should be employed over the PEKF to provide more accurate state uncertainties.
+VI. CONCLUSION
+This article introduces the CKF, an enhancement of the standard KF and EKF that analytically constrains the Kalman gain to regulate the size of covariance and state updates. By constraining state and covariance updates within predefined bounds, the CEKF ensures stability and prevents drastic estimate changes that could destabilize controllers or compromise system performance. It is shown that it is an effective alternative to standard EKFs, which lack explicit mechanisms for managing update sizes, and nonlinear filtering techniques, such as particle filters, unscented EKFs, or second-order EKFs, which are often computationally
+expensive. The CEKF also offers greater flexibility than state-constrained EKFs by avoiding rigid constraints that can lead to bias accumulation. Numerical simulations demonstrated that properly selecting constraint values for the CEKF significantly improved filter accuracy in scenarios where large updates lead to divergence or overconfidence in state estimates. The CEKF effectively reduced divergence cases, maintained statistical accuracy by keeping the MD near the ideal value of 1, and provided consistent uncertainty estimates. Compared to the PEKF, the CEKF offered superior control over both state and covariance updates. The CEKF is particularly well suited for real-time, safety-critical applications, such as robotic navigation, spacecraft attitude control, and systems with highly sensitive dynamics. By mitigating the risks associated with large updates, the CEKF provides a reliable and practical solution for challenging state estimation problems.
+APPENDIX
+The Appendix serves to show the necessary derivations required to determine the covariance-constrained Kalman gain. Note that as mentioned previously, replacing the linear measurement function H with the nonlinear measurement function Jacobian H ′ is all that is necessary to determine the covariance-constrained gain for a nonlinear measurement function.
+MCELREATH ET AL.: CONTROLLING THE KALMAN UPDATE: A COVARIANCE CONSTRAINED APPROACH 9473
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 09,2025 at 11:12:26 UTC from IEEE Xplore. Restrictions apply.
+
+
+To begin, start with the definition of the augmented cost function
+J = tr(P+) +
+n ∑
+i=1
+λi
+(bT
+i KMKT bi − c2
+i
+) . (86)
+The derivative of the cost function with respect to the unknown gain matrix K is taken and set to zero
+0 = ∂J
+∂K = 2KM − 2P−H T + 2
+n ∑
+i=1
+λi bi bT
+i KM. (87)
+The gain is then isolated as a function of the unknown Lagrange multipliers
+KM +
+n ∑
+i=1
+λi bi bT
+i KM = P−H T (88)
+[
+I+
+n ∑
+i=1
+λi bi bT
+i
+]
+KM = P−H T (89)
+K=
+[
+I+
+n ∑
+i=1
+λi bi bT
+i
+]−1
+P−H T M−1. (90)
+The inverse operator is applied and the matrix quantity B is introduced for neater notation
+K = BP−H T M−1 (91)
+B=
+[
+I−
+n ∑
+i=1
+λi 1 + λi
+bi bT
+i
+]
+. (92)
+Now, the derivative of the cost function with respect to the first Lagrange multiplier is taken and set equal to zero
+0 = ∂J
+∂ λ1
+= bT
+1 KMKT b1 − c2
+1. (93)
+The expression for K is now substituted in and like terms are grouped
+c2
+1 = bT
+1
+[BP−H T M−1] M [BP−H T M−1]T b1. (94)
+The transpose operator is applied and the matrix quantity A is now introduced to group known terms
+c2
+1 = bT
+1 BABT b1 (95)
+A = P−H T M−1H P−. (96)
+The expression for B is now substituted back in and the expression is simplified using the logic that bT
+i bi = 1 and
+bT
+j bibT
+i = 01×n when i = j
+c2
+1=
+[
+bT
+1 − λ1
+1 + λ1
+bT
+1
+]
+A
+[
+bT
+1 − λ1
+1 + λ1
+bT
+1
+]T
+. (97)
+The transpose operator is then applied and like terms are grouped
+c2
+1=
+(
+1 − λ1
+1 + λ1
+)2
+bT
+1 Ab1. (98)
+Finally, the Lagrange multiplier is isolated and the expression for A is substituted back in
+λ1 =
+√
+bT
+1 P−H T M−1H P−b1
+c2
+1
+− 1. (99)
+From the result, it is seen that the calculation of the Lagrange multiplier is made independently from the others. As such, the expression to determine any of the Lagrange multipliers is made by
+λi =
+√
+bT
+i
+[P−H T M−1H P−] bi
+c2
+i
+− 1. (100)
+ACKNOWLEDGMENT
+The authors would like to thank Dr. Puneet Singla and Daniel Whitten for their valuable inputs and suggestions; Drs. Howie Choset, Andrew Sinclair, Fred Levy, Stacie Williams, Mr. Matt Cleal, and Mr. Andy K for their motivation, technical support, and discussions; Drs. Marcus Holzinger and Erik Blasche the technical discussions and support; Ms. Michelle P. Bolner her mentorship and support; and Dr. Jeremy Davis of VectorNav Solutions, Dr. Kevin Brink of AFRL labs, and Dr. John Valasek for their support.
+REFERENCES
+[1] R. E. Kalman, “A new approach to linear filtering and prediction problems,” ASME J. Basic Eng., vol. 82, pp. 35–45, 1960. [2] J. L. Crassidis and J. L. Junkins, Optimal Estimation of Dynamic Systems. Boca Raton, FL, USA: Chapman and Hall/CRC, 2004. [3] M. Athans, R. Wishner, and A. Bertolini, “Suboptimal state estimation for continuous-time nonlinear systems from discrete noisy measurements,” IEEE Trans. Autom. Control, vol. 13, no. 5, pp. 504–514, Oct. 1968. [4] S. J. Julier, J. K. Uhlmann, and H. F. Durrant-Whyte, “A new approach for filtering nonlinear systems,” in Proc. Amer. Control Conf., vol. 3, 1995, pp. 1628–1632. [5] R. Fitzgerald, “Divergence of the Kalman filter,” IEEE Trans. Autom. Control, vol. 16, no. 6, pp. 736–747, Dec. 1971. [6] F. Schlee, C. Standish, and N. Toda, “Divergence in the Kalman filter,” AIAA J., vol. 5, no. 6, pp. 1114–1120, 1967. [7] S. F. Schmidt, “Application of state-space methods to navigation problems,” in Advances in Control Systems, vol. 3. Amsterdam, The Netherlands: Elsevier, 1966, pp. 293–340. [8] D. Woodbury and J. Junkins, “On the consider Kalman filter,” in Proc. AIAA Guid., Navigation, Control Conf., 2010, Art. no. 7752. [9] K. M. Brink, “Partial-update Schmidt–Kalman filter,” J. Guid., Control, Dyn., vol. 40, no. 9, pp. 2214–2228, 2017. [10] A. Hotz and R. E. Skelton, “Covariance control theory,” Int. J. Control, vol. 46, no. 1, pp. 13–32, 1987. [11] G. Zhu, K. M. Grigoriadis, and R. E. Skelton, “Covariance control design for hubble space telescope,” J. Guid., Control, Dyn., vol. 18, no. 2, pp. 230–236, 1995. [12] D. Simon and T. L. Chia, “Kalman filtering with state equality constraints,” IEEE Trans. Aerosp. Electron. Syst., vol. 38, no. 1, pp. 128–136, Jan. 2002. [13] S. Hayward, J. McWhirter, and I. Proudler, “Constrained Kalman filter for least-squares estimation of time-varying beamforming weights,” in Proc. Inst. Math. Appl. Conf. Ser., vol. 67, 1998, pp. 113–126. [14] J. Porrill, “Optimal combination and constraints for geometrical sensor data,” Int. J. Robot. Res., vol. 7, no. 6, pp. 66–77, 1988.
+9474 IEEE TRANSACTIONS ON AEROSPACE AND ELECTRONIC SYSTEMS VOL. 61, NO. 4 AUGUST 2025
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 09,2025 at 11:12:26 UTC from IEEE Xplore. Restrictions apply.
+
+
+[15] N. Gupta and R. Hauser, “Kalman filtering with equality and inequality state constraints,” Oxford Univ. Numer. Anal. Group Tech. Rep., 2007. [Online]. Available: https://doi.org/10.48550/ arXiv.0709.2791 [16] D. Simon, “Kalman filtering with state constraints: A survey of linear and nonlinear algorithms,” Control Theory Appl. IET, vol. 4, pp. 1303–1318, 2010. [17] D. Simon and D. L. Simon, “Kalman filtering with inequality constraints for turbofan engine health estimation,” IEE Proc.-Control Theory Appl., vol. 153, no. 3, pp. 371–378, 2006. [18] R. Zanetti, M. Majji, R. H. Bishop, and D. Mortari, “Normconstrained Kalman filtering,” J. Guid., Control, Dyn., vol. 32, no. 5, pp. 1458–1465, 2009. [19] S. Ungarala, E. Dolence, and K. Li, “Constrained extended Kalman filter for nonlinear state estimation,” IFAC Proc. Volumes, vol. 40, no. 5, pp. 63–68, 2007. [20] D. Zhai and J. M. Mendel, “An inequality-constrained extended Kalman filter for continual forecasting of interwell connectivities in waterfloods,” in Proc. SPE Western Regional Meeting, 2010, Art. no. SPE–134006. [21] S. Ansari, S. Molaei, K. Oldham, M. Heung, K. R. Ward, and K. Najarian, “An extended Kalman filter with inequality constraints for real-time detection of intradialytic hypotension,” in Proc. 39th Annu. Int. Conf. IEEE Eng. Med. Biol. Soc., 2017, pp. 2227–2230. [22] L. Böhler, D. Ritzberger, C. Hametner, and S. Jakubek, “Constrained extended Kalman filter design and application for on-line state estimation of high-order polymer electrolyte membrane fuel cell systems,” Int. J. Hydrogen Energy, vol. 46, no. 35, pp. 18604–18614, 2021. [23] J. W. McElreath, “Analysis and development of novel space domain awareness algorithms in the lunar domain,” Ph.D. dissertation, Dept. Aerosp. Eng., Texas A&M Univ., College Station, TX, USA, 2023. [24] G. Gordon and R. Tibshirani, “Karush–Kuhn–Tucker conditions,” Optimization, vol. 10, no. 725/36, 2012, Art. no. 725. [25] P. C. Mahalanobis, “On the generalized distance in statistics,” in Proc. Nat. Inst. Sci. India, 1936, vol. 2, no. 1, pp. 49–55. [26] A. Gelb, J. F. Kasper, R. A. Nash, C. F. Price, and A. A. Sutherland, Applied Optimal Estimation, Cambridge, MA, USA: The M. I. T. Press, 1974.
+James McElreath (Member, IEEE) received the B.S. degree in aerospace engineering and the Ph.D. degree in aerospace engineering from Texas A&M University, College Station, TX, USA, in 2019 and 2023, respectively. He is currently a Postdoctoral Researcher pursuing research in the field of astrodynamics. His research interests include the guidance of hypersonic vehicles, orbit determination, and orbit trajectory design and optimization.
+David E. J. van Wijk (Member, IEEE) received the B.S. degree in mechanical engineering from Cornell University, Ithaca, NY, USA, in 2021. He is currently working toward the Ph.D. degree in aerospace engineering with the Land, Air and Space Robotics Laboratory, Texas A&M University, College Station, TX, USA. He was an Undergraduate Researcher with the Laboratory for Intelligent Systems and Controls, Cornell University. His research interests include robotics and safety-critical control for autonomous systems.
+Manoranjan Majji (Senior Member, IEEE) received the B.E. (hons) in mechanical engineering from the Birla Institute of Technology and Science, Pilani, Rajasthan, India, in 2003, and the M.S. and Ph.D. degrees in aerospace engineering from Texas A&M University, College Station, TX, USA, in 2006 and 2009, respectively. He was a Research Associate working on computational vision with Texas A&M University, and an Assistant Professor of Mechanical and Aerospace Engineering with the University at Buffalo, Getzville, NY, USA. He then joined the faculty of Texas A&M University, where is currently a Professor of Aerospace Engineering and also directs the Land, Air and Space Robotics (LASR) laboratory. He has a diverse background in several aspects of dynamics and control of aerospace vehicles with expertise spanning the whole spectrum of modeling, analysis, computations and experiments. His ten Ph.D. graduates are making valuable contributions in the academic, national laboratory, and industrial research establishments. In addition to being a scholar, he has a great deal of engineering experience developing software systems and embedded systems from OEM products. He holds a provisional patent on a simultaneous location and mapping software suite, and was awarded a patent for developing a novel omnidirectional robot. He has authored or coauthored over 150 publications in the areas of state estimation, astrodynamics, tensegrity systems, vision navigation, and system identification, where he has made fundamental contributions. Dr. Majji is an Associate Fellow of the American Institute of Aeronautics and Astronautics and a Fellow of the American Astronautical Society. He was the recipient of the Milton Plesur award for excellence in teaching from the University at Buffalo, SUNY, and the 2021 Dean of Engineering Excellence Award at Texas A&M, and a 2021 Career Initiation Fellowship of the Texas A&M Institute of Data Science. He is an Associate Editor for the Journal of Astronautical Sciences.
+MCELREATH ET AL.: CONTROLLING THE KALMAN UPDATE: A COVARIANCE CONSTRAINED APPROACH 9475
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 09,2025 at 11:12:26 UTC from IEEE Xplore. Restrictions apply.

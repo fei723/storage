@@ -79,7 +79,7 @@ estimation error, furtherly improving the accuracy.
 Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 07,2025 at 09:59:54 UTC from IEEE Xplore. Restrictions apply.
 
 
-II. INVARIANT EXTENDED KALMAN FILTERING
+ II. INVARIANT EXTENDED KALMAN FILTERING
 This section involved some fundamental concepts related to
 the special orthogonal group SOሺ3ሻ and its associated Lie
 algebra soሺ3ሻ, which are essential to speculate the InEKF theory.
@@ -190,7 +190,7 @@ Lqሺξሻ ൌ
 Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 07,2025 at 09:59:54 UTC from IEEE Xplore. Restrictions apply.
 
 
-where ሺ⋅ሻൈ represents a 3 ൈ 3 skew-symmetric matrix. The
+ where ሺ⋅ሻൈ represents a 3 ൈ 3 skew-symmetric matrix. The
 adjoint operator is shown as follows.
 AdX೟ ൌ ൦
 R 0 00
@@ -296,7 +296,7 @@ right-invariant error, the matrix H௧ can simply add zero to
 Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 07,2025 at 09:59:54 UTC from IEEE Xplore. Restrictions apply.
 
 
-satisfy the dimensionality requirements. The linear update
+ satisfy the dimensionality requirements. The linear update
 equation becomes
 
 ൤
@@ -907,7 +907,7 @@ be speculated by the following formula.
 Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 07,2025 at 09:59:54 UTC from IEEE Xplore. Restrictions apply.
 
 
-቎
+ ቎
 ξ௧ோ
 ξ௧௩
 ξ௧௣቏ ൌ ൥ I 0 0 0
@@ -992,7 +992,7 @@ Fig.2 Velocity estimation comparison
 Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 07,2025 at 09:59:54 UTC from IEEE Xplore. Restrictions apply.
 
 
-Fig.3 Posture estimation comparison
+ Fig.3 Posture estimation comparison
 Compared to the typical EKF, the improved filter
 convergency rate attributed to the higher accuracy of the
 proposed estimation flow with large deviation between initial

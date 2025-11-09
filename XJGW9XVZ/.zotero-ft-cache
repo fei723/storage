@@ -12,7 +12,7 @@ Recently, people have designed LiDAR-camera fusion deep networks to better lever
 arXiv:2205.13790v3 [cs.CV] 11 Nov 2022
 
 
-Camera Network
+ Camera Network
 Multi-view 2D Features
 3D Features
 (a) Point-level Fusion
@@ -39,7 +39,7 @@ On the nuScenes dataset, our simple framework shows great generalization ability
 2
 
 
-all baselines significantly by a margin of 15.7% ∼28.9% mAP and demonstrate the robustness of our approach.
+ all baselines significantly by a margin of 15.7% ∼28.9% mAP and demonstrate the robustness of our approach.
 Our contribution can be summarized as follow: i) we identify an overlooked limitation of current LiDAR-camera fusion methods, which is the dependency of LiDAR inputs; ii) we propose a simple yet novel framework to disentangle LiDAR camera modality into two independent streams that can generalize to multiple modern architectures; iii) we surpass the state-of-the-art fusion methods under both normal and robust settings.
 2 Related Works
 Here, we categorize the 3D detection methods broadly based on their input modality.
@@ -52,7 +52,7 @@ Other modalities. There exist other works to leverage other modalities, such as 
 3
 
 
-2D Backbone
+ 2D Backbone
 3D Backbone
 3D Object
 Detection
@@ -86,7 +86,7 @@ View Projector Module. As the image features are still in 2D image coordinate, w
 4
 
 
-Conv3x3
+ Conv3x3
 F!"#$%
 F&'()*'
 C
@@ -112,7 +112,7 @@ In this section, we present our experimental settings and the performance of BEV
 5
 
 
-Table 1: Generalization ability of BEVFusion. We validate the effectiveness of our fusion framework on nuScenes validation set, compared to single modality streams over three popular methods [20, 59, 1]. Note that each method here defines the structure of the LiDAR stream and associated detection head while the camera stream remains the same as in Sec. 3.1.
+ Table 1: Generalization ability of BEVFusion. We validate the effectiveness of our fusion framework on nuScenes validation set, compared to single modality streams over three popular methods [20, 59, 1]. Note that each method here defines the structure of the LiDAR stream and associated detection head while the camera stream remains the same as in Sec. 3.1.
 Modality PointPillars CenterPoint TransFusion-L Camera LiDAR mAP NDS mAP NDS mAP NDS
 X 22.9 31.1 27.1 32.1 22.7 26.1 X 35.1 49.8 57.1 65.4 64.9 69.9 X X 53.5 60.4 64.2 68.0 67.9 71.0
 4.1 Experimental settings
@@ -127,7 +127,7 @@ Here, we use TransFusion-L as our LiDAR stream and present the results on the te
 6
 
 
-Table 2: Results on the nuScenes validation (top) and test (bottom) set.
+ Table 2: Results on the nuScenes validation (top) and test (bottom) set.
 Method Modality mAP NDS Car Truck C.V. Bus Trailer Barrier Motor. Bike Ped. T.C.
 FUTR3D [5] LC 64.2 68.0 86.3 61.5 26.0 71.9 42.1 64.4 73.6 63.3 82.6 70.1 BEVFusion LC 67.9 71.0 88.6 65.0 28.1 75.4 41.4 72.2 76.7 65.8 88.7 76.9 BEVFusion* LC 69.6 72.1 89.1 66.7 30.9 77.7 42.6 73.5 79.0 67.5 89.4 79.3
 PointPillars[20] L 30.5 45.3 68.4 23.0 4.1 28.2 23.4 38.9 27.4 1.1 59.7 30.8 CBGS[67] L 52.8 63.3 81.1 48.5 10.5 54.9 42.9 65.7 51.5 22.3 80.1 70.9 CenterPoint[59]† L 60.3 67.3 85.2 53.5 20.0 63.6 56.0 71.1 59.5 30.7 84.6 78.4 TransFusion-L [1] L 65.5 70.2 86.2 56.7 28.2 66.3 58.8 78.2 68.3 44.2 86.1 82.0 PointPainting[46] LC 46.4 58.1 77.9 35.8 15.8 36.2 37.3 60.2 41.5 24.1 73.3 62.4 3D-CVF[61] LC 52.7 62.3 83.0 45.0 15.9 48.8 49.6 65.9 51.2 30.4 74.2 62.9 PointAugmenting[47]† LC 66.8 71.0 87.5 57.3 28.0 65.2 60.7 72.6 74.3 50.9 87.9 83.6 MVP[60] LC 66.4 70.5 86.8 58.5 26.1 67.4 57.3 74.8 70.0 49.3 89.1 85.0 FusionPainting[55] LC 68.1 71.6 87.1 60.8 30.0 68.5 61.7 71.8 74.7 53.5 88.3 85.0 TransFusion[1] LC 68.9 71.7 87.1 60.0 33.1 68.3 60.8 78.1 73.6 52.9 88.4 86.7
@@ -147,7 +147,7 @@ previous LiDAR-camera fusion methods and achieves the state-of-the-art performan
 7
 
 
-Table 3: Results on robustness setting of limited LiDAR field-of-view. Our method significantly boosts the performance of LiDAR-only methods over all settings. Note that, compared to the TransFusion with camera fusion, our method still achieves over 15.3% mAP and 6.6% NDS improvement, showcasing the robustness of our approach.
+ Table 3: Results on robustness setting of limited LiDAR field-of-view. Our method significantly boosts the performance of LiDAR-only methods over all settings. Note that, compared to the TransFusion with camera fusion, our method still achieves over 15.3% mAP and 6.6% NDS improvement, showcasing the robustness of our approach.
 PointPillars CenterPoint TransFusion FOV Metrics LiDAR ↑BEVFusion LiDAR ↑BEVFusion LiDAR ↑BEVFusion LC
 (−π/2, mAP 12.4 36.8 (+24.4) 23.6 45.5 (+21.9) 27.8 46.4 (+18.6) 31.1 π/2) NDS 37.1 45.8 (+8.7) 48.0 54.9 (+6.9) 50.5 55.8 (+5.3) 49.2
 (−π/3, mAP 8.4 33.5 (+25.1) 15.9 40.9 (+25.0) 19.0 41.5 (+22.5) 21.0 π/3) NDS 34.3 42.1 (+7.8) 43.5 49.9 (+6.4) 45.3 50.8 (+5.5) 41.2
@@ -165,7 +165,7 @@ LiDAR fails to receive object reflection points. Here exist common scenarios whe
 8
 
 
-Table 5: Results on robustness setting of camera failure cases. F denotes front camera.
+ Table 5: Results on robustness setting of camera failure cases. F denotes front camera.
 Clean Missing F Preserve F Stuck Approach mAP NDS mAP NDS mAP NDS mAP NDS
 DETR3D[53] 34.9 43.4 25.8 39.2 3.3 20.5 17.3 32.3 PointAugmenting[47] 46.9 55.6 42.4 53.0 31.6 46.5 42.1 52.8 MVX-Net[43] 61.0 66.1 47.8 59.4 17.5 41.7 48.3 58.8 TransFusion[1] 66.9 70.9 65.3 70.1 64.4 69.3 65.9 70.2
 BEVFusion 67.9 71.0 65.9 70.7 65.1 69.9 66.2 70.3
@@ -188,7 +188,7 @@ Dynamic fusion module. To illustrate the performance of our fusing strategy for 
 9
 
 
-(left part in Fig. 3), BEVFusion greately improves its LiDAR stream by 16.5% (35.1% → 51.6%) mAP for PointPillars, 5.9% (57.1% → 63.0%) mAP for CenterPoint, and 2.4% (64.9% → 67.3%) mAP for TransFusion. When adaptive feature selection (right part in Fig. 3) is adopted, the mAP can be futher improved by 1.9%, 1.2%, and 0.6% mAP for PointPillars, CenterPoint, and TransFusion, respectively. The results demonstrate the necessity of fusing camera and LiDAR BEV features and effectiveness of our Dynamic Fusion Module in selecting important fused features.
+ (left part in Fig. 3), BEVFusion greately improves its LiDAR stream by 16.5% (35.1% → 51.6%) mAP for PointPillars, 5.9% (57.1% → 63.0%) mAP for CenterPoint, and 2.4% (64.9% → 67.3%) mAP for TransFusion. When adaptive feature selection (right part in Fig. 3) is adopted, the mAP can be futher improved by 1.9%, 1.2%, and 0.6% mAP for PointPillars, CenterPoint, and TransFusion, respectively. The results demonstrate the necessity of fusing camera and LiDAR BEV features and effectiveness of our Dynamic Fusion Module in selecting important fused features.
 5 Conclusion
 In this paper, we introduce BEVFusion, a surprisingly simple yet unique LiDAR-camera fusion framework that disentangles the LiDAR-camera fusion dependency of previous methods. Our framework comprises two separate streams that encode raw camera and LiDAR sensor inputs into features in the same BEV space, followed by a simple module to fuse these features such that they can be passed into modern task prediction head architectures. The extensive experiments demonstrate the strong robustness and generalization ability of our framework against the various camera and LiDAR malfunctions. We hope that our work will inspire further investigation of robust multi-modality fusion for the autonomous driving task.
 Broader Impacts Statement and Limitations
@@ -198,7 +198,7 @@ We thank the anonymous reviewers for their careful reading of our manuscript and
 10
 
 
-References
+ References
 [1] Xuyang Bai, Zeyu Hu, Xinge Zhu, Qingqiu Huang, Yilun Chen, Hongbo Fu, and Chiew-Lan Tai. Transfusion: Robust lidar-camera fusion for 3d object detection with transformers. arXiv preprint arXiv:2203.11496, 2022.
 [2] Holger Caesar, Varun Bankiti, Alex H. Lang, Sourabh Vora, Venice Erin Liong, Qiang Xu, Anush Krishnan, Yu Pan, Giancarlo Baldan, and Oscar Beijbom. nuScenes: A multimodal dataset for autonomous driving. In IEEE Conference on Computer Vision and Pattern Recognition (CVPR), 2020.
 [3] Simon Chadwick, Will Maddern, and Paul Newman. Distant vehicle detection using radar and vision. In International Conference on Robotics and Automation (ICRA), 2019.
@@ -225,7 +225,7 @@ We thank the anonymous reviewers for their careful reading of our manuscript and
 11
 
 
-[24] Ming Liang, Binh Yang, Shenlong Wang, and R. Urtasun. Deep continuous fusion for multi-sensor 3d object detection. In European Conference on Computer Vision (ECCV), 2018.
+ [24] Ming Liang, Binh Yang, Shenlong Wang, and R. Urtasun. Deep continuous fusion for multi-sensor 3d object detection. In European Conference on Computer Vision (ECCV), 2018.
 [25] Tingting Liang, Xiaojie Chu, Yudong Liu, Yongtao Wang, Zhi Tang, Wei Chu, Jingdong Chen, and Haibing Ling. Cbnet: A composite backbone network architecture for object detection. arXiv preprint arXiv:2107.00420, 2021.
 [26] Tsung-Yi Lin, Piotr Dollár, Ross B. Girshick, Kaiming He, Bharath Hariharan, and Serge J. Belongie. Feature pyramid networks for object detection. In IEEE Conference on Computer Vision and Pattern Recognition (CVPR), 2017.
 [27] Zhijian Liu, Haotian Tang, Alexander Amini, Xingyu Yang, Huizi Mao, Daniela Rus, and Song Han. Bevfusion: Multi-task multi-sensor fusion with unified bird’s-eye view representation. arXiv preprint arXiv:2205.13542, 2022.
@@ -250,7 +250,7 @@ We thank the anonymous reviewers for their careful reading of our manuscript and
 12
 
 
-[46] Sourabh Vora, Alex H Lang, Bassam Helou, and Oscar Beijbom. Pointpainting: Sequential fusion for 3d object detection. In IEEE Conference on Computer Vision and Pattern Recognition (CVPR), 2020.
+ [46] Sourabh Vora, Alex H Lang, Bassam Helou, and Oscar Beijbom. Pointpainting: Sequential fusion for 3d object detection. In IEEE Conference on Computer Vision and Pattern Recognition (CVPR), 2020.
 [47] Chunwei Wang, Chao Ma, Ming Zhu, and Xiaokang Yang. PointAugmenting: Cross-modal augmentation for 3d object detection. In IEEE Conference on Computer Vision and Pattern Recognition (CVPR), 2021.
 [48] Li Wang, Liang Du, Xiaoqing Ye, Yanwei Fu, Guodong Guo, Xiangyang Xue, Jianfeng Feng, and Li Zhang. Depth-conditioned dynamic message propagation for monocular 3d object detection. In IEEE Conference on Computer Vision and Pattern Recognition (CVPR), 2021.
 [49] Li Wang, Li Zhang, Yi Zhu, Zhi Zhang, Tong He, Mu Li, and Xiangyang Xue. Progressive coordinate transforms for monocular 3d object detection. In Neural Information Processing Systems (NeurIPS), 2021.
@@ -276,7 +276,7 @@ Jose M. Alvarez. M2bev: Multi-camera joint 3d detection and segmentation with un
 13
 
 
-Checklist
+ Checklist
 The checklist follows the references. Please read the checklist guidelines carefully for information on how to answer these questions. For each question, change the default [TODO] to [Yes] , [No] , or [N/A] . You are strongly encouraged to include a justification to your answer, either by referencing the appropriate section of your paper or providing a brief inline description. For example:
 • Did you include the license to the code and datasets? [Yes]
 • Did you include the license to the code and datasets? [No] The code and the data are proprietary.
@@ -295,7 +295,7 @@ Please do not modify the questions and only use the provided macros for your ans
 14
 
 
-Appendix
+ Appendix
 The supplementary document is organized as follows:
 • Sec. A depicts the detailed network architectures of our adaptive module in FPN.
 • Sec. B provides the implementation details of BEVFusion.
@@ -324,7 +324,7 @@ Our training consists of two stages: i) We first train the LiDAR stream and came
 15
 
 
-Table 8: Ablating the Dynamic fusion module in LiDAR and camera malfunctions.
+ Table 8: Ablating the Dynamic fusion module in LiDAR and camera malfunctions.
 Dynamic Fusion Clean Object Failure Missing F Preserving F Stuck CSF AFS mAP↑ NDS↑ mAP↑ NDS↑ mAP↑ NDS↑ mAP↑ NDS↑ mAP↑ NDS↑
 64.9 69.9 34.6 53.6 - - - - - X 67.3 70.5 50.1 57.5 65.4 70.5 63.5 68.7 65.6 69.9 X X 67.9 71 50.3 57.6 65.9 70.7 65.1 69.9 66.2 70.3
 Table 9: Results when facing both camera and LiDAR malfunction.
@@ -348,7 +348,7 @@ We show the mAP results on different subsets based on the object distance range 
 16
 
 
-Table 11: Results on the distance between object center and ego vehicle in meters.
+ Table 11: Results on the distance between object center and ego vehicle in meters.
 Modality PointPillars CenterPoint TransFusion-L
 Camera LiDAR <15m 15-30m >30m <15m 15-30m >30m <15m 15-30m >30m X 28.2 21.2 15.1 73.1 57.8 33.6 76.3 66.1 43.2 X 22 12.9 4.6 49.1 23.1 5.8 41.9 19.2 4.9 X X 32.5 27.7 20.9 77.7 65 42.9 77.3 69.4 49.2
 Table 12: Distant regions performance comparison with TransFusion.
