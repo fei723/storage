@@ -1,0 +1,438 @@
+arXiv:cond-mat/9805244v1 [cond-mat.stat-mech] 20 May 1998
+Social force model for pedestrian dynamics
+Dirk Helbing and P ́eter Moln ́ar
+II. Institute of Theoretical Physics, University of Stuttgart, 70550 Stuttgart, Germany
+Abstract
+It is suggested that the motion of pedestrians can be described as if they
+would be subject to ‘social forces’. These ‘forces’ are not directly exerted by
+the pedestrians’ personal environment, but they are a measure for the internal
+motivations of the individuals to perform certain actions (movements). The
+corresponding force concept is discussed in more detail and can be also applied
+to the description of other behaviors.
+In the presented model of pedestrian behavior several force terms are es
+sential: First, a term describing the acceleration towards the desired velocity
+of motion. Second, terms reflecting that a pedestrian keeps a certain distance
+to other pedestrians and borders. Third, a term modeling attractive effects.
+The resulting equations of motion are nonlinearly coupled Langevin equa
+tions. Computer simulations of crowds of interacting pedestrians show that
+the social force model is capable of describing the self-organization of several
+observed collective effects of pedestrian behavior very realistically.
+Typeset using REVTEX
+1
+
+
+I. INTRODUCTION
+During the last two decades models of pedestrian behavior have found notable interest for
+several reasons. First, there are some striking analogies with gases [1–3] and fluids [1,2,4,5].
+Second, all model quantities like places ~rα and velocities ~vα of pedestrians α are measurable
+and, therefore, comparable with empirical data. Third, there already exists a considerable
+amount of data material like flow measurements or (video) films [6–8]. Fourth, pedestrian
+models can provide valuable tools for designing and planning pedestrian areas, subway or
+railroad stations, big buildings, shopping malls, etc. [9–11].
+In the 1970s Henderson [4,5] has compared measurements of pedestrian flows with
+Navier-Stokes equations with considerable success. His phenomenological fluid-dynamic
+approach has been improved and mathematically founded by Helbing in the 1990s on the
+basis of a pedestrian specific gaskinetic (Boltzmann-like) model [1,2]. This model is closely
+related to some gaskinetic [12,13] and fluid-dynamic [14–16] traffic models. Recently, much
+attention has been attracted by ‘microscopic’ approaches for vehicular traffic [17–20]. In the
+following, we will introduce a social force model for pedestrian motion. First ideas of this
+‘microscopic’ modeling concept were formulated in [2,21]. A short overview of ‘microscopic’,
+‘mesoscopic’ and ‘macroscopic’ descriptions of pedestrian behavior and their interrelations
+is given in Ref. [22].
+II. THE SOCIAL FORCE CONCEPT
+Many people have the feeling that human behavior is ‘chaotic’ or at least very irregular
+and not predictable. This is probably true for behaviors that are found in complex situa
+tions. However, at least for relatively simple situations stochastic behavioral models may be
+developed if one restricts to the description of behavioral probabilities that can be found in
+a huge population (resp. group) of individuals (see [3,23,24]). This idea has been followed
+by the gaskinetic pedestrian model [1–3].
+2
+
+
+Another approach for modeling behavioral changes has been suggested by Lewin [25].
+According to his idea behavioral changes are guided by socalled social fields resp. social
+forces. In the following we will examine if this idea could be applied to the description of
+pedestrian behavior.
+Figure 1 illustrates a scheme of the processes that lead to behavioral changes. According
+to this, a sensory stimulus causes a behavioral reaction that depends on the personal aims
+and is chosen from a set of behavioral alternatives with the objective of utility maximization.
+Table 1 suggests a classification of stimuli into simple or standard situations that are well
+predictable, and complex or new situations that may be modelled with probabilistic models.
+However, since a pedestrian is used to the situations he/she is normally confronted with,
+his/her reaction is usually rather automatic, and determined by his/her experience of which
+reaction will be the best. It is therefore possible to put the rules of pedestrian behavior into
+an equation of motion. According to this equation the systematic temporal changes dw~α/dt
+of the prefered velocity w~α(t) of a pedestrian α are described by a vectorial quantity F~α(t)
+that can be interpreted as social force. Clearly, this force must represent the effect of the
+environment (e.g. other pedestrians or borders) on the behavior of the described pedestrian.
+However, the social force is not excerted by the environment on a pedestrian’s body. It is
+rather a quantity that describes the concrete motivation to act. In the case of pedestrian
+behavior this motivation evokes the physical production of an acceleration or deceleration
+force as reaction to the perceived information that he/she obtains about his/her environment
+(see figure 1). In summary, one can say that a pedestrian acts as if he/she would be subject
+to external forces. This idea has been mathematically founded in Ref. [26].
+III. FORMULATION OF THE SOCIAL FORCE MODEL
+In the following the main effects that determine the motion of a pedestrian α will be
+introduced:
+1. He/She wants to reach a certain destination ~r 0
+α as comfortable as possible. Therefore,
+3
+
+
+he/she normally takes a way without detours, i.e., the shortest possible way. This way
+will usually have the shape of a polygon with edges ~r 1
+α, . . . , ~rαn := ~r 0
+α. If ~rαk is the next
+edge of this polygon to reach, his/her desired direction ~eα(t) of motion will be
+~eα(t) := ~rαk − ~rα(t)
+‖~rαk − ~rα(t)‖ , (1)
+where ~rα(t) denotes the actual position of pedestrian α at time t. Exactly speaking,
+the goals of a pedestrian are usually rather gates or areas than points ~rαk. In this
+case, he/she will at every time t steer for the nearest point ~rαk(t) of the corresponding
+gate/area.
+If a pedestrian’s motion is not disturbed, he/she will walk into the desired direction
+~eα(t) with a certain desired speed v0
+α. A deviation of the actual velocity ~vα(t) from the
+desired velocity ~v 0
+α (t) := v0
+α~eα(t) due to necessary deceleration processes or avoidance
+processes leads to a tendency to approach ~v 0
+α(t) again within a certain relaxation time
+τα. This can be described by an acceleration term of the form
+F~ 0
+α (~vα, v0
+α~eα) := 1
+τα
+(v0
+α~eα − ~vα). (2)
+2. The motion of a pedestrian α is influenced by other pedestrians. Especially, he/she
+keeps a certain distance from other pedestrians that depends on the pedestrian density
+and the desired speed v0
+α. Here, the privat sphere of each pedestrian, which can be
+interpreted as territorial effect [27], plays an essential role. A pedestrian normally feels
+increasingly incomfortable the closer he/she gets to a strange person, who may react
+in an aggressive way. This results in repulsive effects of other pedestrians β that can
+be represented by vectorial quantities
+f~αβ(~rαβ) := −∇~rαβ Vαβ[b(~rαβ)] . (3)
+We will assume that the repulsive potential Vαβ(b) is a monotonic decreasing function
+of b with equipotential lines having the form of an ellipse that is directed into the
+4
+
+
+direction of motion. The reason for this is that a pedestrian requires space for the
+next step which is taken into account by other pedestrians. b denotes the semi-minor
+axis of the ellipse and is given by
+2b :=
+√
+(‖~rαβ‖ + ‖~rαβ − vβ ∆t ~eβ‖)2 − (vβ ∆t)2 , (4)
+where ~rαβ := ~rα − ~rβ. sβ := vβ ∆t is of the order of the step width of pedestrian β.
+Despite the simplicity of this approach, it describes avoidance maneuvers of pedestrians
+quite realistically.
+A pedestrian also keeps a certain distance from borders of buildings, walls, streets,
+obstacles, etc. [8]. He/She feels the more incomfortable the closer to a border he/she
+walks since he/she has to pay more attention to avoid the danger of getting hurt, e.g.
+by accidentally touching a wall. Therefore, a border B evokes a repulsive effect that
+can be described by
+F~αB(~rαB) := −∇~rαB UαB(‖~rαB‖) (5)
+with a repulsive and monotonic decreasing potential UαB(‖~rαB‖). Here, the vector
+~rαB := ~rα − ~rBα has been introduced, where ~rBα denotes the location of that piece of
+border B that is nearest to pedestrian α.
+3. Pedestrians are sometimes attracted by other persons (friends, street artists, etc.) or
+objects (e.g. window displays). These attractive effects f~αi at places ~ri can be modelled
+by attractive, monotonic increasing potentials Wαi(‖~rαi‖, t) in a similar way like the
+repulsive effects:
+f~αi(‖~rαi‖, t) := −∇~rαiWαi(‖~rαi‖, t) (6)
+(~rαi := ~rα − ~ri). The main difference is that the attractiveness ‖f~αi‖ is normally
+decreasing with time t since the interest is declining. The attractive effects are, e.g.,
+responsible for the formation of pedestrian groups (that are comparable to molecules).
+5
+
+
+However, the formulas above for attractive and repulsive effects only hold for situations that
+are perceived in the desired direction ~eα(t) of motion. Situations located behind a pedestrian
+will have a weaker influence c with 0 < c < 1. In order to take this effect of perception (i.e.
+of the effective angle 2φ of sight) into account we have to introduce the direction dependent
+weights
+w(~e, f~) :=
+
+  
+  
+1 if ~e · f~ ≥ ‖f~‖ cos φ
+c otherwise.
+(7)
+In summary, the repulsive and attractive effects on a pedestrian’s behavior are given by
+F~αβ(~eα, ~rα − ~rβ) := w(~eα, −f~αβ)f~αβ(~rα − ~rβ) ,
+F~αi(~eα, ~rα − ~ri, t) := w(~eα, f~αi)f~αi(~rα − ~ri, t) . (8)
+We can now set up the equation for a pedestrian’s total motivation F~α(t). Since all the
+previously mentioned effects influence a pedestrian’s decision at the same moment, we will
+assume that their total effect is given by the sum of all effects, like this is the case for forces.
+This results in
+F~α(t) := F~ 0
+α (~vα, v0
+α~eα) + ∑
+β
+F~αβ(~eα, ~rα − ~rβ)
++
+∑
+B
+F~αB(~eα, ~rα − ~rBα) + ∑
+i
+F~αi(~eα, ~rα − ~ri, t) . (9)
+The social force model is now defined by
+dw~ α
+dt := F~α(t) + fluctuations. (10)
+Here, we have added a fluctuation term that takes into account random variations of the
+behavior. These fluctuations stem, on the one hand, from ambiguous situations in which
+two or more behavioral alternatives are equivalent (e.g. if the utility of passing an obstacle
+on the right or left hand side is the same). On the other hand, fluctuations arise from
+accidental or deliberate deviations from the usual rules of motion.
+In order to complete the model of pedestrian dynamics a relation between the actual
+velocity ~vα(t) and the prefered velocity w~α(t) must be introduced. Since the actual speed
+6
+
+
+is limited by a pedestrian’s maximal acceptable speed vmax
+α , we will assume that the realized
+motion is given by
+d~rα
+dt = ~vα(t) := w~α(t) g
+( vmax
+α
+‖w~ α‖
+)
+(11)
+with
+g
+( vmax
+α
+‖w~ α‖
+)
+:=
+
+  
+  
+1 if ‖w~ α‖ ≤ vmax
+α
+v
+max
+α /‖w~α‖ otherwise.
+(12)
+Note that the pedestrian model (10), (11) has the form of nonlinearly coupled Langevin
+equations. A simplified version of it can be extended to an active walker model [28–30] for
+the self-organization of systems of ways [31]. This is related to the mathematical description
+of trunk trail formation by ants [32].
+IV. COMPUTER SIMULATIONS
+The model of pedestrian dynamics developed in Section III has been simulated on a
+computer for a large number of interacting pedestrians confronted with different situations.
+Despite the fact that the the proposed model is very simple it describes a lot of observed
+phenomena very realistically. In the following, two examples will be presented showing the
+self-organization of collective phenomena of pedestrian behavior.
+The simulations assumed that the desired speeds v0 are Gaussian distributed [4,7] with
+mean 〈v0〉 = 1.34ms−1 and standard deviation √θ = 0.26ms−1 [33]. Speeds were limited
+to vmax
+α = 1.3v0
+α. Pedestrians enter the walkway at the ends at random positions. Those
+intending to walk from the left to the right hand side are represented by full circles, whereas
+pedestrians intending to move into the opposite direction are represented by empty circles.
+The diameter of a circle is a measure for the actual speed ‖~vα‖ of a pedestrian α. For
+simplicity, no attractive effects f~αi or fluctuations were taken into account. The repulsive
+potentials were assumed to decrease exponentially, i.e.
+Vαβ(b) = V 0
+αβe−b/σ , UαB(‖~rαB‖) = U 0
+αB e−‖~rαB‖/R (13)
+7
+
+
+with V 0
+αβ = 2.1m2s−2, σ = 0.3m and U 0
+αB = 10m2s−2, R = 0.2m. Potentials with a hard core
+would be more realistic, of course, but they will not yield other results since the simulated
+pedestrians always keep enough distance.
+Walkways were chosen 10m wide. For ∆t in formula (4) we took ∆t = 2s, and for
+the relaxation times we used τα = 0.5s. Smaller values of τα let the pedestrians walk
+more aggressive. Finally, the effective angle of sight (which also takes into account head
+movements) was set to 2φ = 200◦. Situations outside the angle of sight were assumed to
+have an influence of c = 0.5. The model parameters introduced above were chosen in a way
+that is compatible with empirical data.
+Figure 2 shows the empirically confirmed [6] development of dynamically varying lanes
+consisting of pedestrians who intend to walk into the same direction. Periodic boundary
+conditions in transversal direction would stabilize these lanes since they were not any more
+destroyed at the ends of the walkway by randomly entering pedestrians [2,21]. Figure 3 shows
+the number of forming lanes in dependence of the width of the walkway for a pedestrian
+density of 0.3m−2.
+The segregation effect of lane formation is not a result of the initial pedestrian config
+uration but a consequence of the pedestrians’ interactions. Nevertheless, it normally leads
+to a more effective pedestrian flow since time-consuming avoidance maneuvers occur less
+frequently.
+Figures 4 and 5 depict different moments of two pedestrian groups that try to pass a
+narrow door into opposite directions. The corresponding simulation shows the following:
+Once a pedestrian has passed the door, other pedestrians intending to move into the same
+direction are able to follow him/her easily (see Figure 4). However, the stream of passing
+pedestrians is stopped by the pressure of the opposing group after some time. Subsequently,
+the door is captured by pedestrians who pass the door into the opposite direction (see Figure
+5). This change of the passing direction may occur several times and is well-known from
+observations.
+8
+
+
+V. SUMMARY AND OUTLOOK
+It has been shown that pedestrian motion can be described by a simple social force model
+for individual pedestrian behavior. Computer simulations of pedestrian groups demonstrated
+1. the development of lanes consisting of pedestrians who walk into the same direction, 2.
+oscillatory changes of the walking direction at narrow passages. These spatio-temporal
+patterns arise due to the nonlinear interactions of pedestrians. They are not the effect of
+strategical considerations of the individual pedestrians since they were assumed to behave
+in a rather ‘automatical’ way.
+Presently, the social force model is extended by a model for the route choice behavior of
+pedestrians. As soon as the computer program is completed it will provide a comfortable
+tool for town- and traffic-planning.
+The investigation of pedestrian behavior is an ideal starting point for the development
+of other or more general quantitative behavioral models, since the variables of pedestrian
+motion are easily measurable so that corresponding models are comparable with empirical
+data. A further step could be the application of the social force concept to the description
+of opinion formation, group dynamics, or other social phenomena [26]. For this purpose, an
+abstract behavioral space has to be introduced.
+ACKNOWLEDGEMENTS
+The authors want to thank W. Weidlich, M. R. Schroeder, and W. Scholl for valuable
+and inspiring discussions.
+9
+
+
+REFERENCES
+[1] D. Helbing, Complex Systems 6, 391 (1992).
+[2] D. Helbing, Physikalische Modellierung des dynamischen Verhaltens von Fußg ̈angern
+(Diplom thesis, Georg-August University, G ̈ottingen, Germany, 1990).
+[3] D. Helbing, Stochastische Methoden, nichtlineare Dynamik und quantitative Modelle
+sozialer Prozesse (Shaker, Aachen, Germany, 1993).
+[4] L. F. Henderson, Nature 229, 381 (1971).
+[5] L. F. Henderson, Transp. Res. 8, 509 (1974).
+[6] D. Oeding, Verkehrsbelastung und Dimensionierung von Gehwegen und anderen An
+lagen des Fußg ̈angerverkehrs (Straßenbau und Straßenverkehrstechnik, Heft 22, Bonn,
+Germany, 1963).
+[7] F. P. D. Navin and R. J. Wheeler, Traffic Engineering 39, 30 (1969).
+[8] Highway Capacity Manual, Chap. 13 (Transportation Research Board, Special Report
+209, Washington, D.C., 1985).
+[9] G. P. Gipps and B. Marksj ̈o, Math. Comput. Simul. 27, 95 (1985).
+[10] A. Borgers and H. Timmermans, Geographical Analysis 18, 115 (1986).
+[11] G. G. Løva ̊s, in Proceedings of the 1993 European Simulation Multiconference, Lyon,
+France, June 7–9, 1993.
+[12] I. Prigogine and R. Herman, Kinetic Theory of Vehicular Traffic (American Elsevier,
+New York, 1971).
+[13] S. L. Paveri-Fontana, Transp. Res. 9, 225 (1975).
+[14] B. S. Kerner and P. Konh ̈auser, Phys. Rev. E 48, 2335 (1993).
+[15] B. S. Kerner and P. Konh ̈auser, Phys. Rev. E 50, 54 (1994).
+10
+
+
+[16] D. Helbing, An improved fluid-dynamic model for vehicular traffic, Phys. Rev. E. (sub
+mitted).
+[17] O. Biham, A. A. Middleton, and D. Levine, Phys. Rev. A 46, 6124 (1992).
+[18] K. Nagel and M. Schreckenberg, J. Phys. I France 2, 2221 (1992).
+[19] T. Nagatani, Phys. Rev. E 48, 3290 (1993).
+[20] J. A. Cuesta, F. C. Mart ́ınez, J. M. Molera, and A. S ́anchez, Phys. Rev. E. 48, 4175
+(1993).
+[21] D. Helbing, Behavioral Science 36, 298 (1991).
+[22] D. Helbing, in Natural Structures. Principles, Strategies, and Models in Architecture
+and Nature, Part II (Sonderforschungsbereich 230, Stuttgart, Germany, 1992).
+[23] W. Weidlich and G. Haag, Concepts and Models of a Quantitative Sociology (Springer,
+Berlin, 1983).
+[24] W. Weidlich, Physics Reports 204, 1 (1991).
+[25] K. Lewin, Field Theory in Social Science (Harper & Brothers, New York, 1951).
+[26] D. Helbing, Physica A 196, 546 (1993).
+[27] A. E. Scheflen and N. Ashcraft, Human Territories: How We Behave in Space-Time
+(Prentice-Hall, Englewood Cliffs, 1976).
+[28] R. D. Freimuth and L. Lam, in Modeling Complex Phenomena, edited by L. Lam and
+V. Naroditsky (Springer, New York, 1992).
+[29] D. R. Kayser, L. K. Aberle, R. D. Pochy, and L. Lam, Physica A 191, 17 (1992).
+[30] F. Schweitzer and L. Schimansky-Geier, Physica A 206, 359 (1994).
+[31] D. Helbing, P. Moln ́ar, and F. Schweitzer, in Evolution of Natural Structures (Sonder
+11
+
+
+forschungsbereich 230, Stuttgart, Germany, 1994).
+[32] F. Schweitzer, K. Lao, and F. Family, Active Walker simulate trunk trail formation by
+ants, Adaptive Behavior (submitted).
+[33] U. Weidmann Transporttechnik der Fußg ̈anger, pp. 87–88 (Schriftenreihe des Insti
+tuts f ̈ur Verkehrsplanung, Transporttechnik, Straßen- und Eisenbahnbau Nr. 90, ETH
+Z ̈urich, 1993).
+12
+
+
+TABLES
+Stimulus Simple/Standard Complex/New
+Situations Situations
+Reaction Automatic Re- Result of Evaluation,
+action, ‘Reflex’ Decision Process
+Characterization Well Predictable Probabilistic
+Modeling Social Force Decision Theore
+Concept Model, etc. tical Model, etc.
+Example Pedestrian Destination Choice
+Motion by Pedestrians
+TABLE I. Classification of behaviors according to their complexity.
+13
+
+
+FIGURES
+Physical Realization: Behavioral Change, Action
+❄
+Motivation to Act
+Psychological Tension:
+❄
+Decision
+Result:
+❄
+Utility Maximization
+Assessment of Alternatives,
+Information Processing:
+❍❍❍❍❍❍ ❥
+Situation/Environment
+Perception of the
+✟✟
+✟ ✙✟✟✟
+Aims/Interests
+Personal
+Stimulus
+Reaction
+Processes
+Mental
+Psychological/
+FIG. 1. Schematic representation of processes leading to behavioral changes.
+14
+
+
+FIG. 2.
+FIG. 2. Above a critical pedestrian density one can observe the formation of lanes consisting of
+pedestrians with a uniform walking direction. Here, the computational result shows N = 4 lanes
+on a walkway that is 10m wide and 50m long. Empty circles represent pedestrians with a desired
+direction of motion which is opposite to that of pedestrians symbolized by full circles.
+15
+
+
+1
+2
+3
+4
+5
+6
+7
+8
+9
+2 4 6 8 10 12 14 16 18 20
+Average Number of Lanes
+Walkway Width (m)
+FIG. 3. The average number N of lanes emerging on a walkway scales linearly with its width
+W (N (W ) = 0.36m−1W + 0.59).
+16
+
+
+FIG. 4.
+FIG. 4. If one pedestrian has been able to pass a narrow door, other pedestrians with the same
+desired walking direction can follow easily whereas pedestrians with an opposite desired direction
+of motion have to wait. The diameters of the circles are a measure for the actual velocity of motion.
+17
+
+
+FIG. 5.
+FIG. 5. After some time the pedestrian stream is stopped, and the door is captured by indi
+viduals who pass the door into the opposite direction.
+18
