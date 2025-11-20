@@ -1,0 +1,391 @@
+MapFusion: A Novel BEV Feature Fusion Network for Multi-modal Map Construction
+Xiaoshuai Haoa, Yunfeng Diaob,∗, Mengchuan Weic, Yifan Yangc, Peng Haoc, Rong Yind,∗, Hui Zhangc, Weiming Lic, Shu Zhaoe and Yu Liuf
+aBeijing Academy of Artificial Intelligence, 150 Chengfu Road, Haidian District, 100083, Beijing, China b School of Computer Science and Information Engineering, Hefei University of Technology, Shushan District, 230009, Hefei, China cSamsung R&D Institute China–Beijing, No. 12, Taiyangong Middle Road, 100028, Beijing, China dInstitute of Information Engineering, Chinese Academy of Sciences, No. 19, Rd. Shucun, 100195, Beijing, China ePennsylvania State University, State College, 16801, Pennsylvania, United States fDepartment of Biomedical Engineering, Hefei University of Technology, Shushan District, 230009, Hefei, China
+ARTICLE INFO
+Keywords:
+BEV Feature Fusion Cross-modal Interaction Dual Dynamic Fusion Multi-modal Map Construction
+ABSTRACT
+Map construction task plays a vital role in providing precise and comprehensive static environmental information essential for autonomous driving systems. Primary sensors include cameras and LiDAR, with configurations varying between camera-only, LiDAR-only, or cameraLiDAR fusion, based on cost-performance considerations. While fusion-based methods typically perform best, existing approaches often neglect modality interaction and rely on simple fusion strategies, which suffer from the problems of misalignment and information loss. To address these issues, we propose MapFusion, a novel multi-modal Bird’s-Eye View (BEV) feature fusion method for map construction. Specifically, to solve the semantic misalignment problem between camera and LiDAR BEV features, we introduce the Cross-modal Interaction Transform (CIT) module, enabling interaction between two BEV feature spaces and enhancing feature representation through a self-attention mechanism. Additionally, we propose an effective Dual Dynamic Fusion (DDF) module to adaptively select valuable information from different modalities, which can take full advantage of the inherent information between different modalities. Moreover, MapFusion is designed to be simple and plug-and-play, easily integrated into existing pipelines. We evaluate MapFusion on two map construction tasks, including High-definition (HD) map and BEV map segmentation, to show its versatility and effectiveness. Compared with the state-of-the-art methods, MapFusion achieves 3.6% and 6.2% absolute improvements on the HD map construction and BEV map segmentation tasks on the nuScenes dataset, respectively, demonstrating the superiority of our approach.
+1. Introduction
+Map construction task provides abundant and precise static environmental information of the driving scene, which is vital yet challenging for planning in autonomous driving systems. Recently, researchers have focused on two crucial tasks: High-definition (HD) map construction and semantic map construction. Both tasks increasingly utilize the Bird’s Eye View (BEV) representation as an ideal feature space for multi-view perception, thanks to its effectiveness in addressing scale ambiguity and occlusion challenges. Specifically, HD map construction methods [21, 28, 25, 36, 40, 58, 38] consider this task as the problem of predicting a collection of vectorized static map elements in bird’s-eye view (BEV), such as pedestrian crossing, lane divider, road boundaries, etc. On the other hand, semantic map construction methods [41, 35, 11, 31] treat map construction as a BEV semantic segmentation task, where each pixel in the BEV plane is assigned a semantic label. Based on the input sensor modality, map construction methods can be categorized into camera based [58, 48, 12], LiDAR based [20, 53] and camera-LiDAR fusion [21, 28, 25, 44, 54, 31] methods. Camera sensors capture rich
+∗Corresponding author.
+xshao@baai.ac.cn (X. Hao); diaoyunfeng@hfut.edu.cn (Y. Diao); mc.wei@samsung.com (M. Wei); yifan.yang@samsung.com (Y. Yang); peng1.hao@samsung.com (P. Hao); yinrong@iie.ac.cn (R. Yin); hui123.zhang@samsung.com (H. Zhang); weiming.li@samsung.com (W. Li); smz5505@psu.edu (S. Zhao); yuliu@hfut.edu.cn (Y. Liu) ORCID(s): 0009-0007-4209-6695 (X. Hao); 0000-0002-9455-1510 (Y. Diao); 0000-0001-6448-3062 (P. Hao); 0000-0003-1894-7561 (R. Yin); 0000-0002-9912-1157 (H. Zhang); 0000-0003-4054-5956 (W. Li); 0009-0001-2310-9442 (S. Zhao); 0000-0003-2211-3535 (Y. Liu)
+Hao et al.: Preprint submitted to Information Fusion Page 1 of 19
+arXiv:2502.04377v1 [cs.CV] 5 Feb 2025
+
+
+MapFusion: A Novel BEV Feature Fusion Network for Multi-modal Map Construction
+Camera Features
+LiDAR Features
+Shared BEV Space
+Camera BEV Features LiDAR BEV Features
+Figure 1: Illustration of different modalities BEV features. Although both LiDAR and camera BEV features are presented in the shared BEV space, they may still be semantically misaligned due to the significant modality gap. (Best viewed in color. Blue color means small values and red means large.)
+semantic information, but methods relying solely on them often struggle with spatial distortions when projecting Perspective View (PV) features into Bird’s Eye View (BEV) using geometric priors. In contrast, LiDAR provides explicit geometric data with point-wise depth information, though it faces challenges related to data sparsity and sensing noise. To maximize the advantages of both modalities, recent advancements in camera-LiDAR BEV feature fusion have gained traction, effectively leveraging the semantic richness of camera data alongside the precise geometric information from LiDAR. Recently, BEV-level fusion methods have gained significant attention for their ability to encode raw inputs from camera and LiDAR sensors into features within the same BEV space using two independent streams. These methods are popular because they harmonize information from different modalities while maintaining spatial consistency. However, as illustrated in Fig. 1, LiDAR and camera BEV features can still exhibit semantic misalignment within the shared BEV space due to the substantial modality gap. Furthermore, existing BEV-level fusion approaches often overlook modality interaction, relying on simple element-wise operations to combine modalities, such as summation [2], weighted averaging [24], or concatenation [31, 21]. These naive fusion strategies fail to effectively address modality misalignment and do not mitigate information loss during the fusion process. Addressing these challenges is the motivation behind our work. To effectively mitigate modality misalignment and information loss, a multi-modal fusion method should incorporate the following characteristics. First, it should enable interaction and integration across multiple modalities. Modality interaction involves enhancing features from one modality using information from another, thereby reducing misalignment. In contrast, modality integration fuses the well-aligned features from different modalities to produce the final output. Second, the method should employ a variety of operations, such as attention for global information exchange, convolution for effective local information aggregation, and weighting across both spatial and channel domains. This combination allows for the accumulation of each operation’s strengths, leading to high-quality fusion. Currently, existing approaches only incorporate some of these elements, resulting in suboptimal fusion performance. To address these issues, we propose a novel multi-modal BEV feature fusion method for map construction, named MapFusion, which consists of the CIT and DDF modules to include both modality interaction and integration. To tackle the semantic misalignment between camera and LiDAR BEV features, we propose the new Cross-modal Interaction Transform (CIT) module, which facilitates interaction between the two BEV feature spaces and enhances feature representation using a self-attention mechanism. Specifically, we utilize a correlation matrix to weight each position in the input multi-modal BEV features. This allows the CIT module to perform simultaneous intra-modality and inter-modality fusion across spatial locations, effectively capturing complementary information across different BEV
+Hao et al.: Preprint submitted to Information Fusion Page 2 of 19
+
+
+MapFusion: A Novel BEV Feature Fusion Network for Multi-modal Map Construction
+modalities and mitigating modality misalignment. To further refine the feature fusion from different modalities, we propose an effective Dual Dynamic Fusion (DDF) module to adaptively select valuable information from different modalities in a soft manner. In summary, CIT acts as modality interaction, providing flexibility by allowing fusion across both spatial locations and modalities, while DDF refines and fuses the CIT results by concentrating on modality-specific information. Both modules are indispensable for achieving optimal performance. Importantly, the core components of MapFusion, i.e., CIT module and DDF module, are simple yet effective plug-and-play techniques compatible with existing pipelines for various map tasks. Extensive experiments on several benchmarks demonstrate the superiority of our method. Our main contributions are summarized as follows:
+• To address the Bird’s-Eye View (BEV) feature fusion challenge in the multi-modal map construction task, we introduce MapFusion, a novel method that leverages complementary information from BEV features across different modalities with both modality interaction and integration.
+• To solve the semantic misalignment problem between camera and LiDAR BEV features, we propose the Crossmodal Interaction Transform (CIT) module, facilitating interaction between the two BEV feature spaces and enhancing feature representation through a self-attention mechanism.
+• For better feature fusion, we propose an effective Dual Dynamic Fusion (DDF) module to adaptively select valuable information from different modalities.
+• Compared with the state-of-the-art methods, MapFusion achieves 3.6% and 6.2% absolute improvements on the HD map construction and BEV map segmentation tasks on the nuScenes dataset, respectively, demonstrating the superiority of our approach.
+The rest of this paper is organized as follows. We briefly review related works in Section 2. In Section 3, we introduce our proposed method. We then present a variety of experimental results and analyses in Section 4. Finally, Section 5 concludes this paper. This paper is an extension of our preliminary work [15] published on ICRA 2024. The main differences between this paper and the conference version are: (1) General Algorithm for BEV-based Multi-Modal Map Construction. More BEV-based Multi-Modal Map Construction task is realized to validate that our MapFusion, namely the CIT and DDF modules, are effective plug-and-play techniques compatible with existing pipelines for various map tasks. In the conference version we only experimented with vectorized HD map construction task, and in this paper we further include BEV map segmentation task as the new evidence of the versatility and effectiveness of our method. (2) Enhanced Insights into the CIT Module. We provide an internal diagram (see Fig. 4) and equation (see Eq. 5) to clarify the theoretical foundations of the CIT module, enhancing understanding of its mechanisms. The main idea behind our CIT module is to leverage the self-attention mechanism to learn the binary relationships between camera and LiDAR modalities. Specifically, we utilize a correlation matrix to weight each position of the input feature maps, formulated as Eq. 5, where αi,j represents the correlation between the ith and j-th positions on the feature maps. This leads to the inference of four matrix blocks when calculating the correlation matrix α: two intra-modality correlation matrix blocks (for Camera and LiDAR) and two inter-modality correlation matrix blocks, as illustrated in Fig. 4. Consequently, the CIT module can adaptively perform simultaneous intra-modality and inter-modality information fusion, comprehensively capturing complementary information between BEV features of different modalities. (3) Extensive Ablation Studies and Analysis. We conduct additional ablation studies to validate the effectiveness of each proposed component across two BEV-based multi-modal map construction tasks. These studies include: the contributions of CIT and DDF (See Tab. 5 and Tab. 6), variations of different fusion methods (See Tab. 7 and Tab. 8), compatibility with other HD map construction methods (See Tab. 9), and an analysis of the accuracy-computation trade-off using our proposed CIT module and different fusion strategies (See Fig. 6). Based on these ablation experiments, we also conduct a deeper analysis of the working mechanism of our method. (4) More Visualization Results. We include additional visualization results to further illustrate our findings. Fig. 7 shows the visualization results of the t-SNE and the feature maps before and after the CIT module, demonstrating the CIT module’s ability to mitigate the misalignment between different modalities. Fig. 8 illustrates the feature maps before and after the CIT module, which integrates various modes of BEV features into a unified space. In addition, we present the qualitative results of the CIT and DDF modules for the BEV map segmentation and HD map tasks in Fig. 9 and Fig. 10, respectively.
+Hao et al.: Preprint submitted to Information Fusion Page 3 of 19
+
+
+MapFusion: A Novel BEV Feature Fusion Network for Multi-modal Map Construction
+Pedestrian Divider Boundary
+Front Left Front Front Right
+Back Left Back Back Right
+Camera View LiDAR View HD Map BEV Map Segmentation
+Drivable Area Lane Divider Walkway Car Park Stop Line Pedestrian
+Figure 2: Illustration of different map construction tasks (HD map construction and BEV map segmentation).
+2. Related Work
+Our work is highly related to map construction task (See Fig. 2) and multi-sensor fusion methods, which will be discussed thoroughly in the following.
+2.1. Map Construction Task
+HD map construction. HD map construction is a critical and extensively researched area in autonomous driving. Based on input sensor modalities, HD map construction models can be categorized into camera-based [56, 9, 39, 26, 55], LiDAR-based [20, 53] and camera-LiDAR fusion [21, 28, 25, 13, 14] models. Camera-only methods [56, 9, 39, 26, 55] have increasingly adopted the Bird’s-eye view (BEV) representation as an ideal feature space for multi-view perception, owing to its remarkable ability to mitigate scale ambiguity and occlusion challenges. Various techniques have been proposed to project perspective view (PV) features onto the BEV space by leveraging geometric priors, such as LSS [37], Deformable Attention [22], and GKT [4]. Nevertheless, camera-only methods lack explicit depth information, which forces them to rely on higher resolution images or larger backbone models to achieve enhanced accuracy [30, 29, 16, 46, 22, 52, 49]. In contrast, LiDAR-only approaches [20, 53] benefit from the accurate 3D geometric information provided by LiDAR input. However, they face challenges related to data sparsity and sensing noise. Recently, camera-LiDAR fusion methods [21, 28, 25] leverage the semantic richness of camera data and the geometric information from LiDAR in a collaborative manner. BEV-level fusion, which uses two independent streams to encode raw inputs from camera and LiDAR sensors into features within the same BEV space, has gained significant attention [31, 24]. This approach incorporates complementary modality features, outperforming uni-modal input approaches. Existing HD map construction multi-sensor fusion methods—HDMapNet [21], VectorMapNet [28], and MapTR [25]— utilize straightforward channel concatenation and convolution for multi-modal feature fusion. However, these methods overlook modality interaction and employ very simple fusion strategies, leading to issues of misalignment and information loss. BEV map segmentation. Semantic map construction methods [41, 35, 11, 31] take map construction as a BEV semantic segmentation task, assigning semantic labels to each pixel in the BEV plane. Building on Perspective View (PV) segmentation [42, 36], early approaches utilize homography transformations to convert camera images into bird’s-eye view (BEV) representations, followed by the estimation of segmentation maps [1, 57, 10, 59]. However, homography transformation introduces strong artifacts, and BEV-based methods [58, 48, 31], i.e. performing segmentation directly on BEV plane, have received extensive attention. CVT [58] employs a learned map embedding and an attention mechanism between map queries and camera features. Furthermore, BEVFusion [31], BEVerse [57] and M2BEV [48] explore multi-task learning with 3D object detection. However, these approaches lack explicit utilization of depth information, resulting in unsatisfactory performance. Existing fusion methods [44, 54] primarily focus on object-centric and geometry-oriented approaches. For instance, PointPainting [44] enhances only the foreground LiDAR points, while MVP [54] concentrates solely on densifying foreground 3D objects. Both methods also assume that LiDAR is the more effective modality for sensor fusion, which may not be valid for map construction tasks [31]. Additionally, X-Align [2] employs an integration method that combines the features of the two modalities before applying attention, neglecting modality interactions and relying on
+Hao et al.: Preprint submitted to Information Fusion Page 4 of 19
+
+
+MapFusion: A Novel BEV Feature Fusion Network for Multi-modal Map Construction
+overly simplistic fusion strategies. In summary, these methods utilize basic feature concatenation to merge multi-modal features, necessitating the network to implicitly reconcile information from misaligned features.
+2.2. Multi-sensor Fusion
+Multi-sensor fusion has garnered significant attention in the field of autonomous driving. Existing approaches can be broadly categorized into three types: point-level fusion, feature-level fusion, and BEV-level fusion. Pointlevel fusion methods [45, 44, 50, 6, 54] typically project image semantic features onto foreground LiDAR points, enabling LiDAR-based detection on the enhanced point cloud. While effective for 3D object detection tasks, these methods are less suitable for semantically driven tasks such as BEV map segmentation [31, 24, 58, 48] and HD map construction [21, 28, 25]. This limitation stems from the lossy projection of camera features to LiDAR, where only about 5% of camera features align with points from a typical 32-beam LiDAR scanner, resulting in significant information loss. Feature-level fusion methods [5, 23] first project LiDAR points into a feature space or generate proposals, query the corresponding camera features, and then concatenate them back into the feature space. However, both point-level and feature-level fusion approaches encounter generalization challenges. Specifically, point-level fusion is not easily extendable to other sensor modalities, while feature-level fusion struggles with generalization across different tasks. Recently, multi-modal feature fusion in a unified BEV space has gained considerable attention [25, 28, 21, 31, 24]. BEV-level fusion employs two independent streams to encode raw inputs from camera and LiDAR sensors into features within the same BEV space. This approach offers a straightforward yet effective means to integrate BEV-level features from both streams, facilitating their use in various downstream tasks. However, existing BEV-level fusion methods often overlook modality interactions, relying on element-wise operations (such as summation or mean) or simple concatenation. This can lead to issues of misalignment and information loss. In this paper, we propose a simple and effective camera-LiDAR BEV feature fusion method that simultaneously integrates complementary information from different modalities, specifically targeting multi-modal map construction tasks. Comparison with Existing Works. This work differs from prior literature in three key aspects. Firstly, we focus on the BEV-based multi-modal map construction task, distinct from other BEV perception tasks [7, 45, 50], as it aims at predicting map elements, such as pedestrian crossing, lane divider, road boundaries, etc. In fact, the map construction task is a semantic-oriented task, which pays more attention to the semantic information in the image. Therefore, the performance of directly using the fusion method on the 3D object detection task to the map task is not satisfactory. Secondly, to solve the semantic misalignment problem between Camera and LiDAR BEV features, we propose Cross-modal Interaction Transform (CIT) module to enable the two BEV feature spaces to interact with each other and enhance feature representation through a self-attention mechanism. Additionally, to further fuse features from different modalities, we propose an effective Dual Dynamic Fusion (DDF) module to adaptively select valuable information from different modalities. To the best of our knowledge, MapFusion is the first to explore the effectiveness of interactive modules on multi-modal map construction tasks. Last but not least, the core components of MapFusion, i.e., CIT module and DDF module, are simple yet effective plug-and-play techniques compatible with existing pipelines for various map tasks, such as HD map and semantic map construction.
+3. Methodology
+We propose a novel multi-modal BEV map construction approach called MapFusion, which is a simple yet effective plug-and-play technique compatible with existing pipelines for various map construction tasks. The overview framework of MapFusion is shown in Fig. 3. Given different sensory inputs, we first apply modality-specific encoders to extract their features. These multi-modal features are then transformed into a unified BEV representation that preserves both geometric and semantic information. Then, we propose Cross-modal Interaction Transform (CIT) module to make these two BEV feature spaces exchange knowledge with each other to enhance the feature representation by the self-attention mechanism. Additionally, we introduce a novel Dual Dynamic Fusion (DDF) module to automatically select valuable information from different modalities, which can take full advantage of the inherent complementary information between different modalities. Finally, the fused multi-modal BEV features are fed into decoder and prediction heads for map construction tasks.
+3.1. Preliminaries
+For notation clarity, we first introduce some symbols and definitions used throughout this paper. Our goal is to design a novel framework taking multi-modal sensor data χ as input and predicting map elements in BEV space, and
+Hao et al.: Preprint submitted to Information Fusion Page 5 of 19
+
+
+MapFusion: A Novel BEV Feature Fusion Network for Multi-modal Map Construction
+Camera Branch
+LiDAR Branch
+Map Decoder
+2D Encoder Camera-BEV
+Tranformation
+Camera-Only BEV Features
+3D Encoder LiDAR-BEV
+Flatten
+Multi-modal BEV Feature Fusion
+Layer Norm
+Layer Norm
+MLP
+Multi-Head Attention AvgPool
+Dynamic Fusion
+Multi-View Images Camera Features
+LiDAR Point Cloud LiDAR Features
+LiDAR-Only
+BEV Features Flatten & Concatnate
+PE
+Split & Reshape
+MLP
+CIT DDF
+Figure 3: An overview of MapFusion framework. First, we extract features from multi-modal inputs and convert them into a shared bird’s-eye view (BEV) space efficiently using view transformations. To fuse the BEV features from different modalities, we first propose Cross-modal Interaction Transform (CIT) module to enhance one modality from another modality by self-attention mechanism. Afterwards, we propose a Dual Dynamic Fusion (DDF) module to automatically select valuable information from different modalities for better feature fusion. Finally, the fused multi-modal BEV features are fed into a shared decoder and prediction heads for map construction tasks.
+the types of the map elements (supported types are road boundary, lane divider, and pedestrian crossing, etc). Formally, assume that we have a set of inputs, χ = {Camera, LiDAR}, containing multi-view RGB camera images in perspective
+view, Camera ∈ RNcam×Hcam×W cam×3, Ncam, Hcam, W cam denote number of cameras, image height, and image width, respectively, as well as a LiDAR point cloud, LiDAR ∈ RP ×5, with number of points P . Each point consists of its 3-dimensional coordinates, reflectivity, and beam index. The detailed architectural designs are described as follows.
+3.2. Map Encoder
+We apply modality-specific encoders to extract their features and transform multi-modal features into a unified BEV representation that preserves both geometric and semantic information. Note that our approach is compatible with other Map Encoders that can also be employed to generate camera-only and LiDAR-only BEV features. Camera to BEV. We extract BEV features from multi-view RGB images with the BEV feature extractor. It consists of a backbone [17, 30] to extract multi-scale 2D features from each perspective view, an FPN [27] to refine and fuse multi-scale features into single-scale features, and a 2D-to-BEV feature transformation module [36, 4] to map 2D features into BEV features. The camera BEV features can be denoted as FBEV
+Camera ∈ RH×W ×C , where H, W , C refer to
+the spatial height, spatial width, and the number of channels of BEV feature maps, respectively. LiDAR to BEV. For the LiDAR points, we follow SECOND [51] in using voxelization and a sparse LiDAR encoder. The LiDAR features are projected to BEV space using a flattening operation as in [31], to obtain the unified LiDAR BEV representation FBEV
+LiDAR ∈ RH×W ×C .
+3.3. Cross-modal Interaction Transform (CIT)
+Existing methods directly convert all sensory features to the shared BEV representation, and then fuse them via arithmetic or splicing operations to obtain multi-modal BEV features. However, despite being in the same BEV space, LiDAR BEV features and camera BEV features can still be semantically misaligned due to the significant modality gap, leading to a misalignment problem. To address this issue, we propose a new and powerful Cross-Modal Interaction Transformer (CIT) module to enhance one modality from another modality by the self-attention mechanism. Next, we describe in detail our proposed CIT module. Concatenation Interaction Transformer. First, given the BEV features from both camera ( FBEV
+Camera ∈ RH×W ×C
+) and LiDAR ( FBEV
+LiDAR ∈ RH×W ×C ) sensors, the BEV tokens TBEV
+Camera ∈ RHW ×C and TBEV
+LiDAR ∈ RHW ×C are
+obtained by flattening each BEV feature and permuting the order of the matrices. Second, we concatenate the tokens of each modality and add a learnable positional embedding, which is a trainable parameter of dimension 2HW × C,
+Hao et al.: Preprint submitted to Information Fusion Page 6 of 19
+
+
+MapFusion: A Novel BEV Feature Fusion Network for Multi-modal Map Construction
+Camera-BEV
+Intra-Modality Correlation
+Lidar-BEV
+Intra-Modality Correlation
+Inter-Modality
+Correlation
+Inter-Modality
+Correlation
+Figure 4: Illustration of the Correlation Matrix α.
+to get the input BEV tokens Tin ∈ R2HW ×C of the Transformer [43]. The positional embedding enables the model to differentiate spatial information between different tokens at training time. Third, the input token Tin uses linear projections for computing a set of queries, keys and values ( Q, K and V ),
+Q = TinWQ, K = TinWK, V = TinWV, (1)
+where WQ ∈ RC×DQ , WK ∈ RC×DK and WV ∈ RC×DV are weight matrices. Moreover, DQ, DK and DV are equal in our Transformer, i.e., DQ = DK = DV = C. Fourth, the self-attention layer uses the scaled dot products between Q and K to compute the attention weights and then multiply by the values to infer the refined output Z,
+Z = Attention(Q, K, V) = sof tmax
+(
+QKT
+√Dk
+)
+V, (2)
+where 1
+√Dk
+is a scaling factor for preventing the softmax function from falling into a region with extremely small
+gradients when the magnitude of dot products grows large. To encapsulate multiple complex relationships from different representation subspaces at different positions, the multi-head attention mechanism is adopted,
+̂Z = MultiHead(Q, K, V) = Concat(Z1, ⋯ , Zh)WO,
+Zi = Attention(QWQ
+i , KWK
+i , VWV
+i ), i ∈ {1, ⋯ , h}.
+(3)
+The subscript h denotes the number of heads, and WO ∈ Rh⋅C×C denotes the projected matrix of Concat(Z1, ⋯ , Zh).
+Finally, the transformer uses a non-linear transformation to calculate the output features, Tout which are of the same shape as the input features Tin,
+Tout = MLP( ̂Z) + Tin. (4)
+The output Tout are converted into ̂FBEV
+Camera and ̂FBEV
+LiDAR for further feature fusion.
+Remarks: The main idea behind our CIT module is to leverage the self-attention mechanism to learn the binary relationships between Camera and LiDAR modalities. More specifically, we utilize a correlation matrix to weight each position in the input feature maps. This can be formulated as shown in Eq. 5. In this formula, αi,j represents the correlation between the i-th position and the j-th position on the feature maps. According to Eq. 5, four matrix blocks can be naturally inferred when calculating the correlation matrix α. Two of these blocks represent intra-modality correlation matrices (for Camera and LiDAR), while the other two represent inter-modality correlation matrices, as
+Hao et al.: Preprint submitted to Information Fusion Page 7 of 19
+
+
+MapFusion: A Novel BEV Feature Fusion Network for Multi-modal Map Construction
+α = sof tmax
+(
+QKT
+√DK
+)
+=
+⎛
+⎜
+⎜
+⎜
+⎜
+⎜
+⎜
+⎜
+⎜
+⎜ ⎝
+C BEV
+1 CBEV
+HW CBEV
+HW +1 C BEV
+2H W
+LBEV
+1 α1,1 α1,2 ⋯ α1,HW α1,HW +1 α1,HW +2 ⋯ α1,2HW
+α2,1 α2,2 ⋯ α2,HW α2,HW +1 α2,HW +2 ⋯ α2,2HW
+⋮ ⋮⋱ ⋮ ⋮ ⋮ ⋱ ⋮
+LBEV
+HW αHW ,1 αHW ,2 ⋯ αHW ,HW αHW ,HW +1 αHW ,HW +2 ⋯ αHW ,2HW
+LBEV
+HW +1 αHW +1,1 αHW +1,2 ⋯ αHW +1,HW αHW +1,HW +1 αHW +1,HW +2 ⋯ αHW +1,2HW
+αHW +2,1 αHW +2,2 ⋯ αHW +2,HW αHW +2,HW +1 αHW +2,HW +2 ⋯ αHW +2,2HW
+⋮ ⋮⋱ ⋮ ⋮ ⋮ ⋱ ⋮
+LBEV
+2HW α2HW ,1 α2HW ,2 ⋯ α2HW ,HW α2HW ,HW +1 α2HW ,HW +2 ⋯ α2HW ,2HW
+⎞
+⎟
+⎟
+⎟
+⎟
+⎟
+⎟
+⎟
+⎟
+⎟ ⎠
+,
+(5)
+illustrated in Fig. 4. Thus, we utilize the correlation matrix to weight each position of the input multi-modal BEV features. The CIT module can then adaptively perform simultaneous intra-modality and inter-modality information fusion, robustly capturing the complementary information between BEV features of different modalities.
+3.4. Dual Dynamic Fusion (DDF)
+Despite the effectiveness of the cross-modal interaction transform module, we argue that how to design an effective cross-modal fusion strategy to adaptively select valuable information from different modalities for better feature fusion is still very important. Recently, multi-modal BEV feature fusion methods [24, 31] have received much attention. It is a common approach to utilize concatenation followed by convolution to combine features from multi-modal BEV feature inputs, ̂FBEV
+Camera and ̂FBEV
+LiDAR, resulting in the aggregated features Ffused, as shown in Fig. 5 (a) Conv Fusion.
+Another common method is to use CNN to convolve the BEV features of different modalities separately, and then add the convolutional features, as shown in Fig. 5 (b) Add Fusion. As Fig. 5 (c) illustrates, the input of the Dynamic Fusion (DF) module is the Conv Fusion output features, and then they are fused with learnable static weights, inspired by Squeeze-and-Excitation mechanism [19]. To effectively select valuable information from different modalities, we propose a Dual Dynamic Fusion (DDF) module for better feature fusion and maximum performance gain. Next, we describe in detail our proposed fusion designs. Dual Dynamic Fusion. As shown in Fig. 5(d), our Dual Dynamic Fusion (DDF) module takes two sets of features from the camera BEV features and LiDAR BEV features as input. In order to generate meaningful attention weights that can effectively select informative features from both inputs, we first sum the features from both branches before performing the squeeze and excitation operations that generate the attention weights. We can formulate this process as:
+w=σ
+(
+γ
+(
+AvgPool
+( ̂FBEV
+Camera + ̂FBEV
+LiDAR
+)))
+, (6)
+where σ and γ represent the sigmoid function and linear layers respectively, AvgPool is the global average pooling operation, and w denotes the attention weights. We then multiply w and 1 − w to both input features before the summation so that the fusion process essentially acts as a self-gating mechanism to adaptively select useful information from different BEV features:
+Ffused = Adaptive
+(
+Conv3×3
+([
+w ⋅ ̂FBEV
+Camera, (1 − w) ⋅ ̂FBEV
+LiDAR
+]))
+, (7)
+where [⋅, ⋅] denotes the concatenation operation along the channel dimension. ⋅ is element-wise multiplication. Conv3×3 fuses the channel and spatial information with a 3×3 convolution layer to reduce the channel dimension of concatenated feature to C. With input feature ̂F ∈ RH×W ×C , the Adaptive operation is formulated as:
+Adaptive( ̂F) = σ
+(
+W AvgPool( ̂F)
+)
+⋅ ̂F, (8)
+where W denotes linear transform matrix (e.g., 1 × 1 convolution) and σ denotes sigmoid function. Therefore, the DDF module can adaptively select valuable information from two modalities for better feature fusion. The output fused feature Ffused will be used for map construction task, with the decoder and prediction heads. Remarks: DF only performs channel-wise fusion, while DDF first conducts spatial fusion and then channel-wise fusion. DDF enhances DF by incorporating global average pooling, utilizing global weights to reduce information loss. In DDF module, the AvgPool in Eq 6 is performed in the spatial domain with an input dimension of W × H × C and an output of C; The AvgPool in Eq. 8 is performed in the channel domain with an input of W × H × C and an output of W × H.
+Hao et al.: Preprint submitted to Information Fusion Page 8 of 19
+
+
+MapFusion: A Novel BEV Feature Fusion Network for Multi-modal Map Construction
+(b) Add Fusion
+(c) Dynamic Fusion
+AvgPool MLP
+Dynamic Fusion
+(d) Dual Dynamic Fusion
+Camera Bev Feature LiDAR Bev Feature Fused Bev Feature Element-wise Addition Element-wise Multiplication
+(a) Conv Fusion
+Figure 5: Three existing fusion strategies and our proposed Dual Dynamic Fusion (DDF) strategy.
+3.5. Map-Task Heads
+We apply specific heads for different map tasks to the fused BEV features. We show two examples: HD map construction and BEV map segmentation. HD map construction head. HD map constructors formulate this task as predicting a collection of vectorized static map elements in bird’s eye view (BEV), i.e., pedestrian crossings, lane dividers, road boundaries. We follow MapTR [25] to train the map head with the classification loss [34], the point2point loss [33], and the edge direction loss [25]. BEV map segmentation head. Different map categories may overlap (e.g., crosswalk is a subset of drivable space). Therefore, we formulate this problem as multiple binary semantic segmentation, one for each class. We follow BEVFusion [31] to train the segmentation head with the standard focal loss [34].
+4. Experiments
+4.1. Dataset
+NuScenes Datasets. We evaluate our method on the widely-used challenging nuScenes [3] dataset following the standard settings of previous methods [31, 25]. The nuScenes dataset contains 1,000 sequences of recordings collected by autonomous driving cars. Each sample is annotated at 2Hz and contains 6 camera images covering 360◦ horizontal FOV of the ego-vehicle. For the HD map construction task, we following MapTR [25] and three kinds of map elements are chosen for fair evaluation – pedestrian crossing, lane divider, and road boundary. Moreover, for the BEV map segmentation task, we following BEVFusion [31], we predict six semantic classes: drivable lanes, pedestrian crossings, walkways, stop lines, carparks, and lane dividers. Argoverse2 Dataset. There are 1,000 logs in the Argoverse2 dataset [47]. Each log contains 15s of 20Hz RGB images from 7 cameras, 10Hz LiDAR sweeps, and a 3D vectorized map. The train, validation, and test sets contain 700, 150, and 150 logs, respectively. For both HD map construction and BEV map segmentation tasks, we select three map elements for fair evaluation: pedestrian crossing, lane divider, and road boundary.
+4.2. Evaluation Metrics
+HD map construction task. We adopt the evaluation metrics consistent with previous works [21, 28, 25], where average precision (AP) is used to evaluate the map construction quality and Chamfer distance DChamfer determines the matching between predictions and ground truth. We calculate the APτ under several DChamfer thresholds (τ ∈ T = {0.5m, 1.0m, 1.5m}), and then average across all thresholds as the final mean AP (mAP) metric,
+mAP = 1
+|T |
+∑
+τ ∈T
+APτ . (9)
+The perception ranges are [−15.0m, 15.0m]∕[−30.0m, 30.0m] for X/Y-axes. BEV map segmentation task. For the BEV map segmentation task, our primary evaluation metric is the mean Intersection over Union (mIoU). Due to potential overlaps between classes, we apply binary segmentation separately to
+Hao et al.: Preprint submitted to Information Fusion Page 9 of 19
+
+
+MapFusion: A Novel BEV Feature Fusion Network for Multi-modal Map Construction
+Table 1 Comparisons with state-of-the-art methods on nuScenes val set for the HD map construction task. We compare with existing methods from literature, where the numbers are taken from MapTR [25]. We also provide information on the backbones, epochs and input modalities in the table. Our proposed MapFusion outperforms all existing approaches in both single-class APs and the overall mAP by a significant margin.
+Method Modality Backbone Epochs APped APdivider APboundary mAP
+HDMapNet [21] C Efficient-B0 30 14.4 21.7 33.0 23.0 HDMapNet [21] L PointPillars 30 10.4 24.1 37.9 24.1 HDMapNet [21] C & L Efficient-B0 & PointPillars 30 16.3 29.6 46.7 31.0 VectorMapNet [28] C ResNet-50 110 36.1 47.3 39.3 40.9 VectorMapNet [28] L PointPillars 110 25.7 37.6 38.6 34.0 VectorMapNet [28] C & L ResNet-50 & PointPillars 110 37.6 50.5 47.5 45.2 MapTR [25] C ResNet-50 24 46.3 51.5 53.1 50.3 MapTR [25] L SECOND 24 48.5 53.7 64.7 55.6 MapTR [25] C & L ResNet-50 & SECOND 24 55.9 62.3 69.3 62.5 MapFusion (Ours) C & L ResNet-50 & SECOND 24 61.6 64.4 72.5 66.1+3.6
+Table 2 Results of the HD map construction task on the Argoverse2 dataset. † denotes our re-implementation following the setting in the paper.
+Method Modality Backbone Epochs APped APdivider APboundary mAP
+HDMapNet [21] C Efficient-B0 30 13.1 5.70 37.6 18.8 VectorMapNet [28] C ResNet-50 110 38.3 36.1 39.2 37.9 MapTR† [25] C ResNet-50 6 58.7 59.3 60.3 59.4 MapTR† [25] C & L ResNet-50 & SECOND 6 65.1 61.6 75.1 67.3 MapFusion (Ours) C & L ResNet-50 & SECOND 6 69.4 65.8 78.9 71.4+4.1
+each class and choose the highest IoU over different thresholds. We then average these values over all semantic classes to produce the mIoU. This evaluation protocol was proposed in BEVFusion [31].
+4.3. Experimental Setting
+MapFusion is trained with 4 NVIDIA RTX A6000 GPUs. For the HD map construction task, we build upon MapTR [25] as the baseline. Specifically, we adopt ResNet50 [18] and SECOND [51] as the backbone and employ GKT [4] as the default 2D-to-BEV module. Training losses include classification loss, point2point loss, and edge direction loss. with weights of 2.0, 5.0, and 0.005, respectively. The model is trained for 24 and 6 epochs on the nuScenes and Argoverse2 datasets respectively. All the data pre-processing steps for both datasets follow MapTR [25]. We set the mini-batch size to 16, and use a step-decayed learning rate with an initial value of 4e−3. For the BEV map segmentation task, we use BEVFusion [31] as our baseline and train our networks within the mmdetection3d framework [8]. Specifically, we adopt Swin-T [30] and VoxelNet [51] as the backbone, and utilize LSS [36] as the default 2D-to-BEV module. The model is trained for 20 and 6 epochs on the nuScenes and Argoverse2 datasets, respectively. The baseline is trained using the hyperparameters reported in [31], following a learning schedule of 20 epochs with a cyclic learning rate, starting for 1e−4 and performing a single cycle with target ratios 10, 1e−4 and a step of 0.4 For the CIT module described in Section 3.3 of the paper, we added this module before the fuser operation in the baseline model. To implement the cross-modal interaction, we first obtain BEV tokens by flattening each BEV feature and permuting the order of the matrix. Then, we concatenate the tokens of each modality and add a learnable positional embedding. This step is followed by a multi-head self-attention block as described in [43], containing 8 heads and an embedding dimension of 256. For the DDF module described in Section 3.4 of the paper, we replace the the naive convolutional fuser with the DDF module in the baseline model.
+Hao et al.: Preprint submitted to Information Fusion Page 10 of 19
+
+
+MapFusion: A Novel BEV Feature Fusion Network for Multi-modal Map Construction
+Table 3 Results of the BEV map segmentation task on the nuScenes dataset. We compare with existing methods from literature, where the numbers are taken from BEVFusion [31]. We also provide information on the backbones and input modalities in the table. MapFusion outperforms the state-of-the-art multi-sensor fusion methods and achieves consistent improvements across different categories. Note that, we use BEVFusion [31] as the baseline model.
+Method Modality Backbone Drivable Ped. Cross. Walkway Stop Line Carpark Divider mIoU
+OFT [42] C ResNet18 74.0 35.3 45.9 27.5 35.9 33.9 42.1 LSS [36] C ResNet18 75.4 38.8 46.3 30.3 39.1 36.5 44.4 CVT [58] C EfficientNet-B4 74.3 36.8 39.9 25.8 35.0 29.4 40.2 M2BEV [48] C ResNet101 77.2 % % % % 40.5 % BEVFusion [31] C Swin-T 81.7 54.8 58.4 47.4 50.7 46.4 56.6 X-Align [2] C Swin-T 82.4 55.6 59.3 49.6 53.8 47.4 58.0 PointPillars [20] L VoxelNet 72.0 43.1 53.1 29.7 27.7 37.5 43.8 CenterPoint [53] L VoxelNet 75.6 48.4 57.5 36.5 31.7 41.9 48.6 PointPainting [44] C & L ResNet-101 & PointPillars 75.9 48.5 57.1 36.9 34.5 41.9 49.1 MVP [54] C & L ResNet-101 & VoxelNet 76.1 48.7 57.0 36.9 33.0 42.2 49.0 BEVFusion [31] C & L Swin-T & VoxelNet 85.5 60.5 67.6 52.0 57.0 53.7 62.7 X-Align [2] C & L Swin-T & VoxelNet 86.8 65.2 70.0 58.3 57.1 58.2 65.7 MapFusion (Ours) C & L Swin-T & VoxelNet 88.9 69.6 74.0 63.0 56.5 61.5 68.9+6.2
+4.4. Comparison with the State-of-the-Arts 4.4.1. HD map construction task
+We compare MapFusion with state-of-the-art HD map construction methods on nuScenes and Argoverse2 datasets. Our proposed MapFusion outperforms all existing approaches in both single-class APs and the overall mAP by a significant margin. Experimental Settings. We adopt average precision (AP) to evaluate the map construction quality. Chamfer distance DChamfer is used to determine whether the prediction and GT are matched or not. We calculate the APτ under several DChamfer thresholds (τ ∈ T , T = {0.5, 1.0, 1.5}, unit is meter), and then average across all thresholds as the final AP metric. The resolution of source images is 1, 600 × 900. During the training phase, we resize the source images using a ratio of 0.5. Moreover, we set the maximum number of map elements in one frame, the number of points in one map element, the size of each BEV grid, and the number of transformer decoder layers to 100, 20, 0.75m, and 2, respectively. We follow the experimental settings of existing methods from MapTR [25]. Experimental Results. With the same settings and data partition, we compare the proposed MapFusion method with several state-of-the-art methods, i.e., HDMapNet [21], VectorMapNet [28] and MapTR [25]. Tab. 1 and Tab. 2 show the overall performance of MapFusion and all the baselines on nuScenes and Argoverse2 datasets, respectively. Note that re-implementation is needed because the reference methods do not report results on Argoverse2 data set, which has different input data format from nuScenes. The experimental results reveal a number of interesting points: (1) The performance of multi-modal methods are obviously better than that of single-modal methods, which proves the significance of utilizing complementary cues from camera and LiDAR to improve the HD map construction performance. (2) In the multi-modality setting, the proposed MapFusion approach achieves a 3.6% absolute improvement in mAP over the previous state-of-the-art MapTR [25] on the nuScenes dataset. Similarly, it shows a 4.1% absolute improvement in mAP compared to MapTR [25] on the Argoverse2 dataset. This advantage arises from the limitations of the three compared HD map construction methods—HDMapNet [21], VectorMapNet [28], and MapTR [25]—which rely on straightforward channel concatenation and convolution for multi-modal feature fusion, as shown in Fig. 5 (a) (Conv Fusion). These methods neglect modality interaction and employ overly simplistic fusion strategies, resulting in misalignment and information loss. In a nutshell, MapFusion shows significant superiority over other multi-modal methods, indicating the benefit of cross-modal interaction transform (CIT) module and dual dynamic fusion (DDF) module. This is due to the fact that the CIT module enables the two feature spaces to interact with each other and enhances feature representation through a self-attention mechanism, while the DDF module automatically selects valuable information from different modalities and can make full use of the inherent complementary information between different modalities.
+Hao et al.: Preprint submitted to Information Fusion Page 11 of 19
+
+
+MapFusion: A Novel BEV Feature Fusion Network for Multi-modal Map Construction
+Table 4 Results of the BEV map segmentation task on the Argoverse2 dataset. † denotes our re-implementation following the setting in the paper.
+Method Modality Backbone Drivable P ed.Cross. Divider mIoU
+BEVFusion† [31] C & L Swin-T & VoxelNet 78.1 30.7 46.3 51.7
+MapFusion (Ours) C & L Swin-T & VoxelNet 83.5 37.4 53.7 58.2+6.5
+Table 5 An ablation study of the proposed MapFusion components is performed on the nuScenes dataset HD map construction task. “DDF” and “CIT” respectively denote Dual Dynamic Fusion module and Cross-modal Interaction Transform module. We show the effects of our proposed modules.
+DDF CIT Modality Backbone Epochs APped APdivider APboundary mAP
+% % C & L ResNet-50 & SECOND 24 55.9 62.3 69.3 62.5 " % C & L ResNet-50 & SECOND 24 58.4 64.1 72.5 65.0+2.5 % " C & L ResNet-50 & SECOND 24 60.2 64.3 72.1 65.5+3.0 " " C & L ResNet-50 & SECOND 24 61.6 64.4 72.5 66.1+3.6
+4.4.2. BEV map segmentation task
+We further compare MapFusion with state-of-the-art BEV map segmentation models, where MapFusion outperforms the state-of-the-art multi-sensor fusion methods and achieves consistent improvements across different categories. Experimental Settings. We report the Intersection-over-Union (IoU) on 6 background classes (drivable space, pedestrian crossing, walkway, stop line, car-parking area, and lane divider) on nuScenes dataset and 3 background classes (drivable space, pedestrian crossing and lane divider) on Argoverse2 dataset. The class-averaged mean IoU as our evaluation metric. For each frame, we only perform the evaluation in the [−50m, 50m] × [−50m, 50m] region around the ego car following [44, 54, 31, 24]. In MapFusion model, we use a single model that jointly performs binary segmentation for all classes instead of following the conventional approach to train a separate model for each class. We follow the experimental results of existing methods from BEVFusion [31]. Experimental Results. With the same settings and data partition, we compare the proposed MapFusion method with several state-of-the-art methods, i.e., PointPainting [44], MVP [54], and BEVFusion [31]. Tab. 3 and Tab. 4 show the overall performance of MapFusion and all the baselines on nuScenes and Argoverse2 datasets, respectively. Similar to HD map construction, we also re-implemented the experimental results for the Argoverse2 dataset. The experimental results reveal several interesting points: (1) In the single-modality setting, camera-based models perform significantly better than LiDAR-based models. This observation is the exact opposite of results in 3D object detection task [24, 31]. The main reason is that the map construction task is a semantic-oriented task, which pays more attention to the semantic information in the image. Therefore, the performance of directly using the fusion method on the 3D object detection task for the map task is not satisfactory. (2) In the multi-modality setting, MapFusion outperforms existing state-of-the-art multi-sensor fusion methods, consistently across various categories. This advantage arises from the limitations of these methods: PointPainting [44] is object-centric, focusing solely on enhancing foreground LiDAR points, while MVP [54] is geometry-oriented, concentrating exclusively on densifying foreground 3D objects—neither effectively segments map components. Furthermore, BEVFusion [31] and X-Align [2] neglect modality interactions and rely on overly simplistic fusion strategies (see Fig. 5(a) Conv Fusion and Fig. 5(c) Dynamic Fusion), resulting in misalignment and information loss. Our proposed MapFusion approach achieves a 6.2% absolute improvement in mean Intersection over Union (mIoU) compared to the previous state-of-the-art BEVFusion [31] on the nuScenes dataset, and a 6.5% absolute improvement on the Argoverse2 dataset. Notably, we re-implemented the BEVFusion method following the original settings outlined in their paper. Overall, MapFusion consistently enhances the performance of existing fusion methods on both the nuScenes and Argoverse2 datasets, demonstrating the effectiveness of our proposed CIT and DDF components.
+Hao et al.: Preprint submitted to Information Fusion Page 12 of 19
+
+
+MapFusion: A Novel BEV Feature Fusion Network for Multi-modal Map Construction
+Table 6 An ablation study of the proposed MapFusion components is performed on the nuScenes dataset BEV map segmentation task.
+DDF CIT Modality Backbone Drivable Ped. Cross. Walkway Stop Line Carpark Divider mIoU
+% % C & L ResNet-50 & VoxelNet 85.5 60.5 67.6 52.0 57.0 53.7 62.7 " % C & L ResNet-50 & VoxelNet 86.2 62.2 68.9 54.4 56.4 56.0 64.1+1.4 % " C & L ResNet-50 & VoxelNet 88.8 68.3 73.6 62.6 56.0 60.5 68.3+5.6 " " C & L ResNet-50 & VoxelNet 88.9 69.6 74.0 63.0 56.5 61.5 68.9+6.2
+Table 7 Performance comparison of different fusion strategies on HD map construction task. Our proposed dual dynamic fusion strategy outperforms all existing approaches by a significant margin.
+Method Modality Backbone Epochs APped APdivider APboundary mAP
+Baseline(Conv. Fusion) C & L ResNet-50 & SECOND 24 55.9 62.3 69.3 62.5
+Add Fusion C & L ResNet-50 & SECOND 24 61.1 60.3 71.8 64.4+1.9 Dynamic Fusion C & L ResNet-50 & SECOND 24 58.4 63.1 71.5 64.3+1.8 Dual Dynamic Fusion C & L ResNet-50 & SECOND 24 58.4 64.1 72.5 65.0+2.5
+Table 8 Performance comparison of different fusion strategies on BEV map segmentation task.
+Method Modality Backbone Drivable Ped. Cross. Walkway Stop Line Carpark Divider mIoU
+Baseline(Conv. Fusion) C&L ResNet-50 & VoxelNet 85.5 60.5 67.6 52.0 57.0 53.7 62.7
+Add Fusion C&L ResNet-50 & VoxelNet 85.4 60.6 67.8 52.3 57.5 53.9 62.9+0.2 Dynamic Fusion C&L ResNet-50 & VoxelNet 86.1 62.5 68.7 53.9 54.7 55.6 63.6+0.9 Dual Dynamic Fusion C&L ResNet-50 & VoxelNet 86.2 62.2 68.9 54.4 56.4 56.0 64.1+1.4
+4.5. Ablation Studies
+4.5.1. Contribution of each component
+To systematically evaluate the effectiveness of each module of our proposed MapFusion, we train the model using different components and show the experimental results of the HD map construction task and BEV map segmentation task in Tab. 5 and Tab. 6 respectively. In the main ablation study, we design the following model variants: (1) MapFusion (Baseline) : we train the model without the cross-modal interaction transform module and dual dynamic fusion module. (2) MapFusion (w/ DDF) : we train the model with the dual dynamic fusion module. (3) MapFusion (w/ CIT) : we train the model with the cross-modal interaction transform module. (4) MapFusion (full) : we train the model with the cross-modal interaction transform module and dual dynamic fusion module. The experimental results reveal some interesting findings: (1) The results of both MapFusion (w/ DDF) and MapFusion (w/ CIT) are significantly better than the MapFusion (Baseline), verifying the effectiveness of CIT and DDF components for improving multi-modal BEV map construction. Compared with the baseline model, DDF and CIT modules achieve 2.5% and 3.0% absolute improvements respectively on HD map construction task, demonstrating the superiority of our approach. Similarly, compared with the baseline model, DDF and CIT modules achieve 1.4% and 5.6% absolute improvements respectively on BEV map segmentation task. (2) The results of MapFusion (w/ DDF) and MapFusion (w/ CIT) are inferior to the MapFusion (full), verifying the effectiveness of using both CIT and DDF simultaneously. MapFusion (full) achieves 3.6% and 6.2% absolute improvements on the HD map construction and semantic map construction tasks, respectively, demonstrating the superiority of our method. These experimental results demonstrate that the CIT module enables the camera and LiDAR BEV space to interact with each other to enhance feature representation through the cross-attention mechanism. Moreover, it is verified that the DDF module can automatically select valuable information from different modalities, thereby making full use of the inherent complementary information between different modalities.
+Hao et al.: Preprint submitted to Information Fusion Page 13 of 19
+
+
+MapFusion: A Novel BEV Feature Fusion Network for Multi-modal Map Construction
+Table 9
+Compatibility to other HD map construction methods. Adding MapFusion leads to consistent performance boost on nuScenes val set in terms of mAP. † denotes our re-implementation following the setting in the original papers.
+Method Venue Modality Backbone Epochs APped APdivider APboundary mAP
+HDMapNet† [21] ICRA 22 C & L Efficient-B0 & PointPillars 30 13.3 26.9 44.3 28.2 HDMapNet + MapFusion − C & L Efficient-B0 & PointPillars 30 21.1 34.2 52.1 35.8+7.6
+VectorMapNet† [28] ICML 23 C & L ResNet-50 & PointPillars 110 35.8 48.2 45.3 43.1 VectorMapNet + MapFusion − C & L ResNet-50 & PointPillars 110 41.1 53.7 50.9 48.6+5.5
+MapTR [25] ICLR 23 C & L ResNet-50 & SECOND 24 55.9 62.3 69.3 62.5 MapTR + MapFusion − C & L ResNet-50 & SECOND 24 61.6 64.4 72.5 66.1+3.6
+4.5.2. Analysis on different Fusion methods
+To systematically evaluate the effectiveness of the dual dynamic fusion (DDF) method, we train the model using different fusion methods detailed in Section 3.4. Tab. 7 and Tab. 8 show the experimental results on the HD map construction task and BEV map segmentation task using different fusion methods, respectively. For instance, the proposed DDF method achieves 2.5% absolute improvements compared with Baseline model (Conv. Fusion) method on HD map construction task. Similarly, DDF method achieves 1.4% absolute improvement compared with Baseline model (Conv. Fusion) on BEV map segmentation task. Experimental results show that the DDF module plays a vital role in multi-modal BEV feature fusion and can automatically select valuable information from different modalities for better feature fusion.
+4.5.3. Compatibility with other HD Map Construction methods
+We show MapFusion is compatibility with other HD Map Construction methods, i.e., HDMapNet [21], VectorMapNet [28], and MapTR [25]. Besides adding MapFusion, we do not modify their original training settings. For all experiments, we report the result of the nuScenes val set. As shown in Tab. 9, simply adding MapFusion on top of these strong baselines consistently improves state-of-the-art performance. MapFusion demonstrates a significant accuracy boost (absolute): HDMapNet(+7.6%), VectorMapNet (+5.5%), and MapTR (+3.6%). This shows the versatility of MapFusion as a multi-modal BEV feature fusion method.
+4.5.4. Accuracy-Computation Analysis
+In Fig. 6, we report the accuracy-computation trade-off by utilizing our proposed CIT module (See section 3.3) and different fusion strategies (See section 3.4). It can be seen that when using the CIT module, we achieve the highest accuracy improvement at a higher computational cost, while the DDF module introduces less additional cost but provides less performance gain. It can be seen that all our proposed fusion modules achieve better trade-offs compared with the baselines. Furthermore, we find that the CIT module significantly outperforms existing BEV fusion strategies, which again verifies that the baseline fusion using simple concatenation and convolutions does not provide the suitable capacity for the model to align and aggregate multi-modal features.
+4.6. Visualization
+t-SNE. We randomly choose 500 samples from the nuScenes validation dataset and show the t-SNE [32] visualizations of (a) Before CIT module and (b) After CIT module in Fig. 7. Red/Blue denotes camera BEV feature/LiDAR BEV feature. As can be seen, Fig. 7 (a) Before CIT module shows that blue and red features are clearly separated, indicating that although in the same space, camera BEV features and LiDAR BEV features can still be misaligned to some extent due to the inaccurate depth in the view transformer and the large modality gap. Fig. 7 (b) After the CIT module, the BEV features from different modalities are aligned in a shared space, i.e., red and blue dots are close after the CIT module. Feature map visualizations. In order to visually demonstrate the effectiveness of the CIT module, we visualize the feature map before and after the CIT module in Fig. 8. Before the CIT module, the BEV features of different modalities look quite different. While after the CIT module, they look more similar, verifying mitigated modality misalignment. We can also find that: (1) The camera feature map is enhanced, as shown in the red circles of the left top and left bottom images, making the feature representation more powerful; (2) Missing features in the LiDAR feature map are recovered, as shown in the red circles of the right top and right bottom images. In summary, the CIT module integrates
+Hao et al.: Preprint submitted to Information Fusion Page 14 of 19
+
+
+MapFusion: A Novel BEV Feature Fusion Network for Multi-modal Map Construction
+42 44 46 48 50 #Parameters
+62
+63
+64
+65
+66
+67
+68
+69
+70
+MIoU
+Conv. Fusion [42.11M]
+Add Fusion [42.11M]
+Dynamic Fusion [42.60M]
+Dual Dynamic Fusion [42.66M]
+CIT-only [48.88M]
+Full (Dual Dynamic + CIT) [49.43M]
+40 42 44 46 48 #Parameters
+62
+63
+64
+65
+66
+67
+MAP
+Conv. Fusion [39.79M]
+Add Fusion [39.79M]
+Dynamic Fusion [40.28M]
+Dual Dynamic Fusion [40.34M] CIT-only [46.56M]
+Full (Dual Dynamic + CIT) [47.01M]
+(a) BEV Map Segmentation (b) HD Map Construction
+Figure 6: Accuracy-Computation Analysis. We report the accuracy-computation trade-off by utilizing our proposed crossmodal interaction transform module and different fusion strategies.
+(a) Before CIT Module (b) After CIT Module
+Figure 7: The t-SNE visualizations of (a) Before CIT module and (b) After CIT module on HD map construction task. Red/Blue denotes camera BEV feature/LiDAR BEV feature. After the CIT module, the BEV features from different modalities are aligned in a shared space, i.e, red and blue dots are close after the CIT module (best viewed in color).
+different modes of BEV features into a shared space, thereby enhancing representation learning and overall model performance. Qualitative Results. In Fig. 9, we present more sample scenes from nuScenes on the BEV map segmentation task. Each scene consists of 5 parts: a) six surround camera inputs b) LiDAR scan, c) ground-truth BEV segmentation map, d) baseline BEV segmentation (BEVFusion [31]), e) BEV segmentation using CIT module, and d) BEV segmentation of MapFusion (full). In Fig. 10, we present qualitative results on a sample scene from nuScenes on the HD map
+Hao et al.: Preprint submitted to Information Fusion Page 15 of 19
+
+
+MapFusion: A Novel BEV Feature Fusion Network for Multi-modal Map Construction
+Camera BEV Feature LiDAR BEV Feature
+Before CIT Module
+After CIT Module
+Figure 8: Visualization of feature maps before and after the CIT module for the HD map construction task.
+construction task, showing both LiDAR and camera inputs. We compare the predicted vectorized HD map results of different models, including HDMapNet [21], VectorMapNet [28], the baseline (MapTR [25]), MapFusion (only using the CIT module), and the full MapFusion. We observe that the baseline model prediction is highly erroneous. By using the CIT module can already correct substantial errors in the baseline prediction, and the full MapFusion model further improves accuracy. Qualitative results demonstrate the advantages of the CIT module and the DDF module on the multi-modal map construction task.
+5. Conclusion
+To tackle the multi-modal BEV feature fusion problem in multi-modal map construction task, we propose a novel method named MapFusion, which can take advantage of the complementary information between BEV features of different modalities. Specifically, we first propose Cross-modal Interaction Transform (CIT) module to enhance one modality from another modality by the cross-attention mechanism. Moreover, we propose a Dual Dynamic Fusion (DDF) module to adaptively select valuable information from two modalities for better feature fusion. Extensive experiments on several benchmarks demonstrate the superiority of our method. We also verified the effectiveness of the MapFusion components via an extensive ablation study. This paper provides a novel multi-modal BEV feature fusion method MapFusion for optimal fusion of RGB and LiDAR information. As shown in our experiments, our MapFusion brings consistent accuracy improvements for two different types of map reconstruction tasks in different datasets. Our MapFusion model can be simply integrated into existing pipelines in plug-and-play manner. Besides the map reconstruction task, we believe that MapFusion can also benefit other multi-modal perception tasks, which we leave for future work.
+Acknowledgments
+This work was supported by the National Natural Science Foundation of China (No. 62302139), the National Natural Science Foundation of China (No. 62106259), the National Natural Science Foundation of China (No. 62176081) and the FRFCU-HFUT(JZ2023HGTA0202, JZ2023HGQA0101).
+Hao et al.: Preprint submitted to Information Fusion Page 16 of 19
+
+
+MapFusion: A Novel BEV Feature Fusion Network for Multi-modal Map Construction
+(a) Six camera inputs (b) LiDAR Point Cloud (c) Ground Truth (d) BEVFusion (Baseline) (e) MapFusion (CIT only) (f) MapFusion (full)
+Figure 9: Qualitative results on BEV map segmentation task. We present a sample scene from nuScenes: a) six camera inputs, b) LiDAR scan, c) ground-truth BEV map segmentation map, d) baseline BEV segmentation map (BEVFusion [31]), e) BEV segmentation map of only using CIT module, and f) BEV segmentation map of MapFusion (full).
+(a) Six camera inputs (b) LiDAR Point Cloud (c) Ground Truth (f) MapTR (Baseline) (g) MapFusion (CIT only) (h) MapFusion (full)
+(d) HDMapNet (e) VectorMapNet
+Figure 10: Qualitative results on HD map task. We present a sample scene from nuScenes: a) six camera inputs, b) LiDAR scan, c) ground-truth BEV vectorized HD map, d) HDMapNet [21], e) VectorMapNet [28], f) baseline BEV vectorized HD map (MapTR [25]), g) BEV vectorized HD map of only using CIT module, and h) BEV vectorized HD map of MapFusion (full).
+Hao et al.: Preprint submitted to Information Fusion Page 17 of 19
+
+
+MapFusion: A Novel BEV Feature Fusion Network for Multi-modal Map Construction
+References
+[1] Ammar Abbas, S., Zisserman, A., 2019. A geometric approach to obtain a bird’s eye view from an image, in: Proceedings of the IEEE/CVF international conference on computer vision workshops. [2] Borse, S., Klingner, M., Kumar, V.R., Cai, H., Almuzairee, A., Yogamani, S., Porikli, F., 2023. X-align: Cross-modal cross-view alignment for bird’s-eye-view segmentation, in: Proceedings of the IEEE/CVF Winter Conference on Applications of Computer Vision, pp. 3287–3297. [3] Caesar, H., Bankiti, V., Lang, A.H., Vora, S., Liong, V.E., Xu, Q., Krishnan, A., Pan, Y., Baldan, G., Beijbom, O., 2020. nuscenes: A multimodal dataset for autonomous driving, in: IEEE/CVF Conference on Computer Vision and Pattern Recognition, pp. 11618–11628. [4] Chen, S., Cheng, T., Wang, X., Meng, W., Zhang, Q., Liu, W., 2022a. Efficient and robust 2d-to-bev representation learning via geometryguided kernel transformer. arXiv preprint arXiv:2206.04584 . [5] Chen, Y., Li, Y., Zhang, X., Sun, J., Jia, J., 2022b. Focal sparse convolutional networks for 3d object detection, in: IEEE/CVF Conference on Computer Vision and Pattern Recognition, pp. 5418–5427. [6] Chen, Z., Li, Z., Zhang, S., Fang, L., Jiang, Q., Zhao, F., Zhou, B., Zhao, H., 2022c. Autoalign: Pixel-instance feature aggregation for multi-modal 3d object detection, in: International Joint Conference on Artificial Intelligence, pp. 827–833. [7] Chen, Z., Zhao, H., Hao, X., Yuan, B., Li, X., 2025. Stvit+: improving self-supervised multi-camera depth estimation with spatial-temporal context and adversarial geometry regularization. Applied Intelligence 55, 328. [8] Contributors, M., 2020. Mmdetection3d: Openmmlab next-generation platform for general 3d object detection. [9] Ding, W., Qiao, L., Qiu, X., Zhang, C., 2023. Pivotnet: Vectorized pivot learning for end-to-end hd map construction, in: Proceedings of the IEEE/CVF International Conference on Computer Vision, pp. 3672–3682. [10] Garnett, N., Cohen, R., Pe’er, T., Lahav, R., Levi, D., 2019. 3d-lanenet: end-to-end 3d multiple lane detection, in: Proceedings of the IEEE/CVF International Conference on Computer Vision, pp. 2921–2930. [11] Gosala, N., Valada, A., 2022. Bird’s-eye-view panoptic segmentation using monocular frontal view images. IEEE Robotics and Automation Letters 7, 1968–1975. [12] Hao, X., Li, R., Zhang, H., Li, D., Yin, R., Jung, S., Park, S.I., Yoo, B., Zhao, H., Zhang, J., 2024a. Mapdistill: Boosting efficient camera-based hd map construction via camera-lidar fusion model distillation, in: European Conference on Computer Vision, Springer. pp. 166–183. [13] Hao, X., Liu, G., Zhao, Y., Ji, Y., Wei, M., Zhao, H., Kong, L., Yin, R., Liu, Y., 2025. Msc-bench: Benchmarking and analyzing multi-sensor corruption for driving perception. arXiv preprint arXiv:2501.01037 . [14] Hao, X., Wei, M., Yang, Y., Zhao, H., Zhang, H., Zhou, Y., Wang, Q., Li, W., Kong, L., Zhang, J., 2024b. Is your hd map constructor reliable under sensor corruptions? [15] Hao, X., Zhang, H., Yang, Y., Zhou, Y., Jung, S., Park, S.I., Yoo, B., 2024c. Mbfusion: A new multi-modal bev feature fusion method for hd map construction, in: 2024 IEEE International Conference on Robotics and Automation (ICRA), IEEE. pp. 15922–15928. [16] Hao, X., Zhu, Y., Appalaraju, S., Zhang, A., Zhang, W., Li, B., Li, M., 2023. Mixgen: A new multi-modal data augmentation, in: Proceedings of the IEEE/CVF winter conference on applications of computer vision, pp. 379–389. [17] He, K., Zhang, X., Ren, S., Sun, J., 2016a. Deep residual learning for image recognition, in: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. [18] He, K., Zhang, X., Ren, S., Sun, J., 2016b. Deep residual learning for image recognition, in: IEEE Conference on Computer Vision and Pattern Recognition, pp. 770–778. [19] Hu, J., Shen, L., Sun, G., 2018. Squeeze-and-excitation networks, in: Proceedings of the IEEE conference on computer vision and pattern recognition, pp. 7132–7141. [20] Lang, A.H., Vora, S., Caesar, H., Zhou, L., Yang, J., Beijbom, O., 2019. Pointpillars: Fast encoders for object detection from point clouds, in: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pp. 12697–12705. [21] Li, Q., Wang, Y., Wang, Y., Zhao, H., 2022a. Hdmapnet: An online hd map construction and evaluation framework, in: IEEE International Conference on Robotics and Automation, pp. 4628–4634. [22] Li, Z., Wang, W., Li, H., Xie, E., Sima, C., Lu, T., Qiao, Y., Dai, J., 2022b. Bevformer: Learning bird’s-eye-view representation from multicamera images via spatiotemporal transformers, in: European Conference on Computer Vision, pp. 1–18. [23] Liang, M., Yang, B., Wang, S., Urtasun, R., 2018. Deep continuous fusion for multi-sensor 3d object detection, in: European Conference on Computer Vision, pp. 663–678. [24] Liang, T., Xie, H., Yu, K., Xia, Z., Lin, Z., Wang, Y., Tang, T., Wang, B., Tang, Z., 2022. Bevfusion: A simple and robust lidar-camera fusion framework, pp. 10421–10434. [25] Liao, B., Chen, S., Wang, X., Cheng, T., Zhang, Q., Liu, W., Huang, C., 2023a. Maptr: Structured modeling and learning for online vectorized HD map construction, in: International Conference on Learning Representations. [26] Liao, B., Chen, S., Zhang, Y., Jiang, B., Zhang, Q., Liu, W., Huang, C., Wang, X., 2023b. Maptrv2: An end-to-end framework for online vectorized HD map construction. arXiv preprint arXiv:2308.05736 . [27] Lin, T.Y., Dollár, P., Girshick, R., He, K., Hariharan, B., Belongie, S., 2017. Feature pyramid networks for object detection, in: Proceedings of the IEEE conference on computer vision and pattern recognition, pp. 2117–2125. [28] Liu, Y., Yuan, T., Wang, Y., Wang, Y., Zhao, H., 2023a. Vectormapnet: End-to-end vectorized hd map learning, in: International Conference on Machine Learning, pp. 22352–22369. [29] Liu, Z., Hu, H., Lin, Y., Yao, Z., Xie, Z., Wei, Y., Ning, J., Cao, Y., Zhang, Z., Dong, L., Wei, F., Guo, B., 2022. Swin transformer v2: Scaling up capacity and resolution, in: International Conference on Computer Vision and Pattern Recognition, pp. 11999–12009. [30] Liu, Z., Lin, Y., Cao, Y., Hu, H., Wei, Y., Zhang, Z., Lin, S., Guo, B., 2021. Swin transformer: Hierarchical vision transformer using shifted windows, in: Proceedings of the IEEE/CVF International Conference on Computer Vision, pp. 9992–10002. [31] Liu, Z., Tang, H., Amini, A., Yang, X., Mao, H., Rus, D.L., Han, S., 2023b. Bevfusion: Multi-task multi-sensor fusion with unified bird’s-eye view representation, in: ICRA, IEEE. pp. 2774–2781. [32] van der Maaten, L., Hinton, G., 2008. Visualizing data using t-SNE. Journal of Machine Learning Research .
+Hao et al.: Preprint submitted to Information Fusion Page 18 of 19
+
+
+MapFusion: A Novel BEV Feature Fusion Network for Multi-modal Map Construction
+[33] Malkauthekar, M., 2013. Analysis of euclidean distance and manhattan distance measure in face recognition, in: Third International Conference on Computational Intelligence and Information Technology (CIIT 2013), pp. 503–507. [34] Mukhoti, J., Kulharia, V., Sanyal, A., Golodetz, S., Torr, P., Dokania, P., 2020. Calibrating deep neural networks using focal loss. Advances in Neural Information Processing Systems , 15288–15299. [35] Pan, B., Sun, J., Leung, H.Y.T., Andonian, A., Zhou, B., 2020. Cross-view semantic segmentation for sensing surroundings. IEEE Robotics and Automation Letters 5, 4867–4873. [36] Philion, J., Fidler, S., 2020a. Lift, splat, shoot: Encoding images from arbitrary camera rigs by implicitly unprojecting to 3d, in: European Conference on Computer Vision, pp. 194–210. [37] Philion, J., Fidler, S., 2020b. Lift, splat, shoot: Encoding images from arbitrary camera rigs by implicitly unprojecting to 3d, in: European Conference on Computer Vision, pp. 194–210. [38] Qiao, L., Ding, W., Qiu, X., Zhang, C., 2023a. End-to-end vectorized hd-map construction with piecewise bézier curve, in: IEEE/CVF Conference on Computer Vision and Pattern Recognition, pp. 13218–13228. [39] Qiao, L., Ding, W., Qiu, X., Zhang, C., 2023b. End-to-end vectorized hd-map construction with piecewise bezier curve, in: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pp. 13218–13228. [40] Roddick, T., Cipolla, R., 2020a. Predicting semantic map representations from images using pyramid occupancy networks, in: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pp. 11135–11144. [41] Roddick, T., Cipolla, R., 2020b. Predicting semantic map representations from images using pyramid occupancy networks, in: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pp. 11138–11147. [42] Roddick, T., Kendall, A., Cipolla, R., 2018. Orthographic feature transform for monocular 3d object detection. arXiv preprint arXiv:1811.08188 . [43] Vaswani, A., Shazeer, N., Parmar, N., Uszkoreit, J., Jones, L., Gomez, A.N., Kaiser, L., Polosukhin, I., 2017. Attention is all you need, in: Advances in Neural Information Processing Systems, pp. 5998–6008. [44] Vora, S., Lang, A.H., Helou, B., Beijbom, O., 2020. Pointpainting: Sequential fusion for 3d object detection, in: IEEE/CVF Conference on Computer Vision and Pattern Recognition, pp. 4603–4611. [45] Wang, C., Ma, C., Zhu, M., Yang, X., 2021. Pointaugmenting: Cross-modal augmentation for 3d object detection, in: IEEE Conference on Computer Vision and Pattern Recognition, pp. 11794–11803. [46] Wang, W., Dai, J., Chen, Z., Huang, Z., Li, Z., Zhu, X., Hu, X., Lu, T., Lu, L., Li, H., et al., 2022. Internimage: Exploring large-scale vision foundation models with deformable convolutions. arXiv preprint arXiv:2211.05778 . [47] Wilson, B., Qi, W., Agarwal, T., Lambert, J., Singh, J., Khandelwal, S., Pan, B., Kumar, R., Hartnett, A., Pontes, J.K., Ramanan, D., Carr, P., Hays, J., 2021. Argoverse 2: Next generation datasets for self-driving perception and forecasting, in: Proceedings of the Neural Information Processing Systems Track on Datasets and Benchmarks.
+[48] Xie, E., Yu, Z., Zhou, D., Philion, J., Anandkumar, A., Fidler, S., Luo, P., Álvarez, J.M., 2022. M2bev: Multi-camera joint 3d detection and segmentation with unified birds-eye view representation. arXiv preprint arXiv:2204.05088 . [49] Xiong, X., Liu, Y., Yuan, T., Wang, Y., Wang, Y., Zhao, H., 2023. Neural map prior for autonomous driving, in: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pp. 17535–17544. [50] Xu, S., Zhou, D., Fang, J., Yin, J., Zhou, B., Zhang, L., 2021. Fusionpainting: Multimodal fusion with adaptive attention for 3d object detection, in: IEEE International Intelligent Transportation Systems Conference, pp. 3047–3054. [51] Yan, Y., Mao, Y., Li, B., 2018. SECOND: sparsely embedded convolutional detection. Sensors 18, 3337. [52] Yang, C., Chen, Y., Tian, H., Tao, C., Zhu, X., Zhang, Z., Huang, G., Li, H., Qiao, Y., Lu, L., et al., 2022. Bevformer v2: Adapting modern image backbones to bird’s-eye-view recognition via perspective supervision. arXiv preprint arXiv:2211.10439 . [53] Yin, T., Zhou, X., Krahenbuhl, P., 2021a. Center-based 3d object detection and tracking, in: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pp. 11784–11793. [54] Yin, T., Zhou, X., Krähenbühl, P., 2021b. Multimodal virtual point 3d detection, in: Conference on Neural Information Processing Systems, pp. 16494–16507. [55] Yuan, T., Liu, Y., Wang, Y., Wang, Y., Zhao, H., 2024. Streammapnet: Streaming mapping network for vectorized online hd map construction, in: IEEE/CVF Winter Conference on Applications of Computer Vision, pp. 7356–7365. [56] Zhang, G., Lin, J., Wu, S., Song, Y., Luo, Z., Xue, Y., Lu, S., Wang, Z., 2023. Online map vectorization for autonomous driving: A rasterization perspective. arXiv preprint arXiv:2306.10502 . [57] Zhang, Y., Zhu, Z., Zheng, W., Huang, J., Huang, G., Zhou, J., Lu, J., 2022. Beverse: Unified perception and prediction in birds-eye-view for vision-centric autonomous driving. arXiv preprint arXiv:2205.09743 . [58] Zhou, B., Krähenbühl, P., 2022. Cross-view transformers for real-time map-view semantic segmentation, in: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pp. 13760–13769. [59] Zhu, M., Zhang, S., Zhong, Y., Lu, P., Peng, H., Lenneman, J., 2021. Monocular 3d vehicle detection using uncalibrated traffic cameras through homography, in: 2021 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS), pp. 3814–3821.
+Hao et al.: Preprint submitted to Information Fusion Page 19 of 19

@@ -1,0 +1,373 @@
+Learning IMM Filter Parameters from
+Measurements using Gradient Descent
+Andre ́ Brandenburger Fraunhofer FKIE Wachtberg, Germany andre.brandenburger@fkie.fraunhofer.de
+Folker Hoffmann Fraunhofer FKIE Wachtberg, Germany folker.hoffmann@fkie.fraunhofer.de
+Alexander Charlish Fraunhofer FKIE Wachtberg, Germany alexander.charlish@fkie.fraunhofer.de
+Abstract—The performance of data fusion and tracking algorithms often depends on parameters that not only describe the sensor system, but can also be taskspecific. While for the sensor system tuning these variables is time-consuming and mostly requires expert knowledge, intrinsic parameters of targets under track can even be completely unobservable until the system is deployed. With state-of-the-art sensor systems growing more and more complex, the number of parameters naturally increases, necessitating the automatic optimization of the model variables. In this paper, the parameters of an interacting multiple model (IMM) filter are optimized solely using measurements, thus without necessity for any ground-truth data. The resulting method is evaluated through an ablation study on simulated data, where the trained model manages to match the performance of a filter parametrized with ground-truth values. Index Terms—Data Fusion, Tracking, Optimization, Machine Learning
+I. Introduction
+The parametrization of complex models is a prevalent topic of discussion in many research areas. While the machine-learning community already utilizes powerful automated optimization frameworks, the classical data fusion models are often parametrized manually. In this paper, we present a method to tune the popular interacting multiple model (IMM) filter [1] solely using measurements. By defining an appropriate loss function, gradient descent can be used to update the parameters successively. A schematic overview of the algorithm is shown in Fig. 1. While the IMM filter can already be seen as an approximator of target noise [2]–[4], the performance of the filter still strongly depends on its parametrization. Since the IMM filter allows for different noise characteristics in its modes, it is intuitively able to interpolate between the noise covariances of the modes. However, this comes with two major caveats. Firstly, the mode transition probabilities have to be set accordingly, as these are not automatically estimated, thus still requiring manual tuning. Secondly, using the IMM filter for noise estimation utilizes the mode weight as an interpolation scale, rather than an estimate of the target mode. This is an unwanted side-effect, as the mode probability is of interest in many
+Updated IMM Parameters θ
+Measurement Likelihood Ψt = N (zt; . . . )
+IMM Filter
+Tracks with mode weights
+xt|t
+μt|t
+θi+1 = θi − η∇θi L (θi)
+L (θi) = − ∑
+t log Ψt
+Gradient Descent Optimizer
+Negative Log-Likelihood Loss
+L
+θi
+θi+1
+Fig. 1: An overview of the IMM filter optimization strategy. Based on its parametrization θ, the IMM filter generates tracks (top) which are utilized by the gradient descent optimizer (bottom). The optimizer successively updates the IMM filter parameters with the goal to minimize the negative log-likelihood of the measurements.
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 20,2025 at 12:41:59 UTC from IEEE Xplore. Restrictions apply.
+
+
+applications, for instance when actions are triggered based on detected maneuvers. A classical approach to filter optimization is the method of expectation maximization, where the model is optimized by successive calculation of the expected parameter likelihood, followed by its maximization [5]–[7]. In the literature, this optimization is realized with a potentially complex analytical calculation of the maximum, which may need to be recalculated if the underlying model or sensor architecture changes. More recently, Barrat et al. [8] have applied convex optimization tools to train Kalman smoother parameters. While it is simpler to employ, the method also requires analytical calculations, which can impede the use of more complex architectures. Similarly, Abbeel et al. [9] have shown that an extended Kalman filter (EKF) can be trained on data using coordinate ascent and Greenberg et al. [10] utilized gradient descent to optimize a Kalman filter. While the filter can be trained on ground-truth data [9], [10], for instance using the residual error, Abbeel et al. also present a method to optimize the measurement likelihood without need for ground-truth data [9]. When applied on a real system, [9] was able to outperform hand-tuned parametrizations. Closely related, Xu et al. [11] presented EKFNet, which fits the parameters of an EKF using gradient descent, analogous to the optimization of a neural network. While this approach is mostly independent to changes in the sensor system, the method utilizes parameter regularization functions, which are problem specific and need to be defined before the method can be employed. In addition, Coskun et al. [12] proposed an online generation of the Kalman filter matrices using long-short-termmemory (LSTM) networks. While the method outperforms traditional Kalman filters and LSTM networks, the generation of the noise covariances using neural networks can lead to an arbitrary and unexpected filter behavior. This is also the case when neural networks are directly applied to replace parts or even a complete filter [13][15]. While this is the state-of-the-art for very complex environments and dynamical latent states [16], [17], the trained neural network is naturally opaque. This means, that significant efforts have to be taken to estimate the behavior of the model, which can lead to issues in explainability and can result in uncertifiability. Furthermore, these methods typically require training on ground-truth data, which is only rarely available. In this paper, we present a method to learn parameters of an IMM filter from measurements using gradient descent. Similar to [9], this method utilizes a loss based on the measurement likelihood, however applied on the more difficult IMM filter. This loss function does neither necessitate regularization nor ground-truth data. The optimization of the filter is independent to the sensor system, only requiring the dynamics- and measurement model to be differentiable. The learned parameters are traditional
+variables of the IMM filter, which can be easily interpreted and confirmed by operators. Experiments support that the optimized IMM filter performs better than an optimized single-mode Kalman filter. In addition, it is shown that the optimized filter matches the performance of ground-truth parameters.
+II. Interacting Multiple Model Filter
+The Kalman filter [18] is the foundation of many tracking algorithms. Given a target state xt ∈ Rn at time step t, the Kalman filter assumes linear state dynamics and a linear measurement process, both corrupted by Gaussian noise. For non-linear differentiable state dynamics, the EKF can be utilized, where the state transition is defined as
+xt+1 = f (xt) + ut , ut ∼ N (0, Q) , (1)
+for a differentiable state transition function f and Gaussian process noise ut parametrized by the covariance matrix Q. Furthermore, a measurement zt ∈ Rl of the true state can be observed at each time step t, where
+zt = h(xt) + vt , vt ∼ N (0, R) , (2)
+for a differentiable measurement model h and measurement noise vt with corresponding covariance matrix R. The construction of a Bayesian filter on these assumptions leads to the EKF equations
+Ft = ∂f
+∂x
+(xt−1|t−1
+) (3)
+xt|t−1 = f (xt−1|t−1) (4)
+Pt|t−1 = FtPt−1|t−1FT
+t + Q (5)
+Ht = ∂h
+∂x
+(xt|t−1
+) (6)
+St = HtPt|t−1HT
+t + R (7)
+Kt = Pt|t−1HT
+t S−1
+t (8)
+xt|t = xt|t−1 + Kt
+(zt − h(xt|t−1)) (9)
+Pt|t = (I − KtHt) Pt|t−1 (I − KtHt)T + KtRKT
+t , (10)
+for a state estimate x with covariance P, where the subscript •t|t denotes the posterior at time t and •t+1|t the prediction respectively. Note that Eq. (10) is the Joseph form of the covariance update which is stable with regard to suboptimal Kalman gains Kt [1, p. 206]. This is required for iterative parameter optimization, as the Kalman gain is suboptimal per definition, due to the incorrect parameters of the filter before training. A popular extension to the Kalman filter is the IMM filter. By defining multiple state transition models f i it is possible to model different dynamical modes i = 1, . . . , m of the system. Typically this corresponds to maneuvering modes of a target, but it can also be applied to system
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 20,2025 at 12:41:59 UTC from IEEE Xplore. Restrictions apply.
+
+
+state estimation [19]. At each time step the IMM filter assumes the system dynamics to be defined as
+P (it+1 = j|it = i) = pij (11)
+xt+1 = f it (xt) + ut , ut ∼ N (0, Qit ) . (12)
+Following Eq. (11), the subsequent dynamics mode it+1 is sampled according to the Markov chain defined with the transition probabilities pij relative to the currently active dynamics mode j = it. Consequently, the mode transition probabilities pij define the probability of switching from mode i to mode j over the course of a single time step. Thus, pij satisfies ∀i = 1 . . . m : ∑m
+j=1 pij = 1. Depending
+on the active mode, specific state transition functions f i are used in the process model. As shown in Eq. (12), these different transition functions are parametrized by a modespecific process noise Qi. During the IMM filter iteration, the states of the individual modes are calculated separately through the parallel execution of m differently parametrized Kalman filters. For each mode i, a corresponding weight μit is assigned with respect to the mode transition probabilities. The IMM filter recursion can be expressed as
+μj
+t|t−1 =
+m
+∑
+i=1
+pij μi
+t−1|t−1 (13)
+μi|j
+t−1|t−1 = pij μi
+t−1|t−1
+μj
+t|t−1
+(14)
+x0j
+t−1|t−1 =
+m
+∑
+i=1
+μi|j
+t−1|t−1xi
+t−1|t−1 (15)
+P0j
+t−1|t−1 =
+m
+∑
+i=1
+μi|j
+t−1|t−1
+(
+Pi
+t−1|t−1+
+[
+xi
+t−1|t−1 − x0j
+t−1|t−1
+][
+xi
+t−1|t−1 − x0j
+t−1|t−1
+]T )
+(16)
+Λj
+t =N
+(
+zt; h(x0j
+t|t−1), S0j
+t
+)
+(17)
+μj
+t|t = 1
+c Λj
+t μj
+t|t−1 c =
+m
+∑
+j=1
+Λj
+t μj
+t|t−1 (18)
+xt|t =
+m
+∑
+j=1
+μj
+t|txj
+t|t (19)
+Pt|t =
+m
+∑
+j=1
+μj
+t|t
+(
+Pj
+t|t +
+[
+xj
+t|t − xt|t
+][
+xj
+t|t − xt|t
+]T )
+, (20)
+where S0j
+t corresponds to the predicted innovation covari
+ance with respect to x0j
+t−1|t−1 (see Eq. (7)). A detailed explanation of the IMM framework can be found in [1, pp. 453-457]. Note that Eq. (19) and Eq. (20) only have to be computed when a condensed state representation is required, but are not required for the IMM filter recursion.
+III. IMM Parameter Optimization
+Each optimization technique requires an objective- or loss-function. If ground-truth data is supplied, a loss can be easily implemented through the mean-squared-error (MSE) between the ground-truth and the filter outputs. In reality, however, ground-truth data is only rarely available and the true state can only be partially observed through noisy measurements. While [11] has shown that singlemode models can also be optimized with the MSE loss between the measurements and filter output, the optimization of the IMM filter is more challenging. Specifically, it has to be ensured that the training does not converge to a single-mode representation, i.e. ∀i : pii < 1 and ∀i ̸= j : Qi ̸= Qj.
+Consequently, the loss should not only be defined on the error with respect to the state, but must also contain information about the distinct modes. In our approach, this is achieved by utilizing the measurement likelihood with respect to the predicted measurement. Namely, the filter predicts the moment-matched measurement distribution
+xˆt|t−1 =
+m
+∑
+i=1
+μi
+t|t−1xi
+t|t−1 (21)
+νi
+t|t−1 = h
+(
+xi
+t|t−1
+)
+− h (xˆt|t−1
+) (22)
+Sˆt|t−1 =
+m
+∑
+i=1
+μi
+t|t−1
+(
+Si
+t + νi
+t|t−1
+(
+νi
+t|t−1
+)T )
+, (23)
+where h corresponds to the measurement function and Si
+t
+is the covariance of the expected measurement in mode i (see Eq.(7)). Given the model parameters θ and using this distribution, the likelihood of the observed measurement is evaluated
+Ψt (θ) = N
+(
+zt; h (xˆt|t−1 (θ)) , Sˆt|t−1 (θ)
+)
+. (24)
+The joint likelihood over multiple time steps can be calculated through the multiplication of the corresponding likelihoods. Since the product of probabilities can quickly approach zero, a log-space transform can be applied to keep the values numerically representable for longer time sequences and particularly suboptimal parameter initializations. This leads to a negative-log-likelihood loss
+L (θ) = − log
+∏
+t
+Ψt (θ) = −
+∑
+t
+log Ψt (θ) . (25)
+While the derivation of the loss is focused on the measurement likelihood and thus directly encodes the effects of the measurement model, the state prediction is also influenced by the mode transition and process model. Therefore, it is possible to optimize all model parameters with the single loss function L (θ). Due to its simplicity and broad applicability, gradient descent is one of the most prevalent methods for optimizing differentiable models. This is further reinforced by
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 20,2025 at 12:41:59 UTC from IEEE Xplore. Restrictions apply.
+
+
+the easy implementation through widely available autodifferentiation frameworks. In each training iteration k, the parameters θk of the model are updated according to
+θk+1 = θk − η∇θk L (θk) , (26)
+where η is the learning rate. It is visible in Section II that most operations in the IMM filter are linear. In addition, the state dynamics, measurement model and the evaluation of the likelihood on a multivariate Gaussian distribution are differentiable. Thus, the gradient ∇θL (θ) of the loss with respect to the model parameters θ can be calculated as ∂L(θ)
+∂θ using the repeated application of the chain rule. This process can also be handled automatically by utilizing autodifferentiation. Using autodifferentiation adds to the flexibility of the method for practical operation, just as well as optimization, since the dynamics- and measurement model can be adapted, without requiring manual recalculation of the gradient functions.
+IV. Experimental Results
+To assess the capabilities of the method, 100 IMM filters with linear state dynamics and measurement models are trained on simulated datasets. In addition, the quality of the loss function is evaluated and the performance of an optimized IMM filter is compared to a trained Kalman filter.
+A. Data Generation
+Each of the 100 datasets consists of 60 trajectories, for each of which 120 positional measurements are generated. In each dataset, the trajectories are generated with identical parameters, which are sampled uniformly at random prior to the trajectory generation. The full state vector consists of position and velocity in two dimensions. The used kinematic model is the 2-dimensional discretized white noise acceleration model [1, p. 270], which is defined for each mode i as
+F=
+
+  
+1τ 00 0100 001τ 0001
+
+  
+(27)
+Qi = (σi
+v
+)2
+
+  
+1
+3τ3 1
+2τ2 0 0
+1
+2τ2 τ 0 0
+0 01
+3τ3 1
+2τ2
+0 01
+2τ2 τ
+
+  
+. (28)
+In addition, a linear measurement model is utilized, s.t.
+H=
+[1 0 0 0 0010
+]
+, R=
+[σr2 0
+0 σr2
+]
+. (29)
+The initial parameters are sampled uniformly at random from the intervals
+σ0
+v ∈ [10−3, 0.98] , σ1
+v ∈ [9.81, 49.1] , (30)
+pii ∈ [0.95, 0.999] , σr ∈ [1, 25] , (31)
+where σiv corresponds to the process noise parameter of dynamics mode i and σr sets a diagonal measurement standard deviation. The range of the process noise magnitude is set s.t. the non-maneuvering state generates peak accelerations in the order of 0.1 g, while 1-5 g are allowed when the target is maneuvering (see [1, p. 270]). The simulation step interval is τ = 1 s and the trajectories are generated according to Eq.(11) and Eq. (12). An example trajectory is shown in Fig. 2. In total, the parameters of the utilized model can be summarized as θ = {σv0, σv1, p00, p11, σr}.
+B. Loss Evaluation
+To analyze the quality of the loss function, it is evaluated for different IMM parameters in proximity of the dataset parameters. In each experiment, only one variable is altered, while all other parameters are fixed to the ground-truth. Consequently, the resulting graphs in Fig. 3 correspond to a projection of the loss function on each parameter dimension. It is visible that the local minima of the loss function are located reasonably close to the ground-truth parameters of the dataset. Furthermore, the shown projections are smooth and mostly convex, indicating that the gradient descent optimizer is well suited. The local minima of the posterior RMSE with respect to the ground-truth trajectories are similarly close to the minima of the loss function, with the exception of the process noise and mode transition probability for the first mode. Here it is important to underline that this evaluation is conveyed on a projection of the loss function and thus only provides partial insight on its general shape. In particular, these projections do not capture the correlations that exist between the variables, such as the process noise and mode transition probabilities. In addition, since only a limited number of trajectories are generated, sampling error can also have an effect. Still, it seems that under-estimating the process noise is preferred for minimization of the RMSE for this dataset.
+C. Training
+Each dataset is split 1 : 1 into train- and test-set. Thus, the filter is trained on 1 hour of data (3600 measurements) in total. The model is initialized with parameters that are drawn analogously to the dataset variables following Eq. (30) and Eq. (31). In the following ablation study, whenever a model parameter is not trained, it is initialized with the true value that is used for dataset generation. The training is performed over K = 1000 epochs using the AMSGrad optimizer [20] with a learning rate of η = 2.0 × 10−2. The training takes approximately three minutes on four CPU cores with 2.6 GHz clock frequency. Table I shows the method performance relative to the initial parameters and a filter based on the parameters that generated the corresponding dataset. Furthermore, an ablation study over the combinations of either training the measurement noise or process noise, just as well as a
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 20,2025 at 12:41:59 UTC from IEEE Xplore. Restrictions apply.
+
+
+0 5 10 15 X Position [km]
+−8
+−6
+−4
+−2
+0
+2
+Y Position [km]
+Platform Trajectory
+0.0
+0.5
+1.0
+Mode
+0 20 40 60 80 100 Time [s]
+0
+5
+10
+Acceleration [g]
+Fig. 2: A sample from the datasets. The ground-truth trajectory is shown on the left and starts at the coordinate origin. The mode switch is highlighted by the red circle. The ground-truth target motion mode and the absolute acceleration (process noise) are displayed on the right.
+Number of Train Qi
+Train R Metric Trained model Trained model
+modes and pij vs. untrained vs. true param.
+2 Yes Yes
+State Prediction RMSE -16.07% -0.53% State Posterior RMSE -15.30% -0.78% Mode Prediction MAE -40.71% -6.99% Mode Posterior MAE -44.68% -6.52%
+2 Yes No
+State Prediction RMSE -3.67% -0.49% State Posterior RMSE -3.87% -0.76% Mode Prediction MAE -23.87% -7.29% Mode Posterior MAE -24.50% -7.01%
+2 No Yes
+State Prediction RMSE -13.46% -0.04% State Posterior RMSE -11.42% -0.03% Mode Prediction MAE -23.57% +0.18% Mode Posterior MAE -28.78% +0.29% 1 Yes Yes State Prediction RMSE -8.11% -0.02%
+State Posterior RMSE -7.16% +0.07% 1 Yes No State Prediction RMSE -3.67% -0.02%
+State Posterior RMSE -2.70% +0.00% 1 No Yes State Prediction RMSE -7.07% -0.01%
+State Posterior RMSE -6.37% +0.02%
+TABLE I: Performance comparison of method ablations. Each ablation is evaluated on 100 differently parametrized datasets. The entries show the change in root-mean-squared-error (RMSE) for the state and the mean-absolute-error (MAE) for the mode probability estimate. Each ablation is compared to the performance of the filter before training and to a filter that is parametrized with the true dataset variables. Negative values indicate an improvement from the baselines.
+comparison to a single-mode Kalman filter is made. In all cases, the state estimation quality of the model improves compared to the initial parameters, most significantly by 16% for the two-mode IMM filter where all parameters are trained. In a direct comparison, optimizing the measurement noise has a stronger impact than optimizing the process noise parameters. However, the optimization of the process model proves to be beneficial for the estimation of the mode probabilities where it enables the model to outperform the filter with ground-truth parameters by 7% in estimation of the mode weights. A possible explanation for this improvement can be the dissimilarity between the modes of the optimized process noise parameters,
+which appears larger than in the ground-truth. Therefore, the filter may estimate the individual modes with higher confidence. In combination with the sub-optimality of the IMM filter, this can explain the improvement to the filter parametrized with true variables [21]. In addition, Table I shows that a single-mode Kalman filter can also be trained using this approach. For this setting, the datasets are restricted to a single mode. Since these experiments consider linear state dynamics and measurement models, the model with true parameters produces optimal results up to a sampling error. Remarkably, the trained filter closely matches the performance of this optimal filter.
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 20,2025 at 12:41:59 UTC from IEEE Xplore. Restrictions apply.
+
+
+0.0 0.2 0.4 0.6 0.8 1.0
+σ0
+v
+10.619
+10.620
+10.621
+10.622
+Loss
+56.50
+56.55
+56.60
+56.65
+Posterior RMSE
+40 45 50 55
+σ1
+v
+10.62
+10.63
+10.64
+Loss
+56.6
+56.8
+Posterior RMSE
+0.94 0.96 0.98
+p00
+10.620
+10.625
+10.630
+Loss
+56.4
+56.5
+56.6
+56.7
+Posterior RMSE
+0.97 0.98 0.99
+p11
+10.62
+10.63
+Loss
+56.55
+56.60
+56.65
+56.70
+Posterior RMSE
+15 20 25 30 σr
+10.6
+10.8
+11.0
+Loss
+60
+65
+Posterior RMSE
+Loss L Posterior RMSE Ground-Truth Parameters
+Fig. 3: A projection of the loss for different parameters. For each graph, a single variable is assessed for a fixed dataset. The corresponding ground-truth value of the respective IMM parameter in the analyzed dataset is marked red. The loss with respect to the IMM parameter is shown in blue and the posterior RMSE to the ground-truth trajectories is shown in orange.
+Train Qi
+Train R Metric IMM filter
+and pij vs. KF Yes Yes State Prediction RMSE -17.33%
+State Posterior RMSE -16.88% Yes No State Prediction RMSE -17.34%
+State Posterior RMSE -16.83% No Yes State Prediction RMSE -29.33%
+State Posterior RMSE -22.74%
+TABLE II: Direct comparison between a trained Kalman filter and the ground-truth IMM filter on targets with two motion states. The IMM filter outperforms the Kalman filter in all cases. Note for the last comparison, that the IMM filter is initialized with the true motion model, while the Kalman filter is initialized with the motion model of the first mode. Since the Kalman filter can not optimize on this initialization, the difference between the Kalman filter and IMM filter are most apparent.
+D. Comparison of IMM and Single-Mode Kalman Filter
+In contrast to [9], [11], the proposed approach utilizes an IMM filter. To assess the necessity of optimizing an IMM filter versus a Kalman filter on data that features multiple motion modes, experiments for a direct comparison have been conducted. As shown in Table II, the optimized IMM filter outperforms the optimized Kalman filter by more than 16% in all settings. It is clearly visible, that the relative performance of the Kalman filter and the IMM filter is not affected by enabling or disabling the optimization of the measurement model. This is expected, as the measurement models of the IMM filter and Kalman filter are identical. Altogether, this indicates that the measurement models of the two filters converge similarly. The optimization without the motion model is clearly in favor of the IMM filter which outperforms the Kalman filter by more than 22%. While the IMM filter is initialized with the correctly parametrized two-mode motion model, it is crucial to note that the Kalman filter is initialized with a single mode corresponding to the non-maneuvering mode. Since the motion models are not optimized, the Kalman filter is not able to improve on this faulty initialization. In summary, the observations in this experiment are twofold. Firstly, the results confirm the importance of utilizing an IMM filter on data that is generated with multiple motion models. Secondly, it is shown that the optimization of a single-mode Kalman filter can help to alleviate the effects of modeling errors, such as violations of the assumptions on the target motion model.
+The results of the experiments clearly show that the proposed strategy and the formulated loss function are well suited for IMM filter optimization. Furthermore, the resulting optimized filter matches the track accuracy of the ground-truth parameters. In addition, the optimized filter shows a significant improvement regarding motion mode prediction.
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 20,2025 at 12:41:59 UTC from IEEE Xplore. Restrictions apply.
+
+
+V. Conclusion
+The proposed method enables the tuning of IMM filter parameters based only on measurement data, without the need for hand tuning parameters or ground-truth data. This is of significant practical importance due to the typical abundance of measurement data, while groundtruth data is rare at most. Furthermore, hand tuning filter parameters can easily lead to modeling errors and degraded system performance. Through the performed experiments, a significant improvement in accuracy has been observed in comparison to mismatched (i.e. incorrect) model parameters. It is particularly encouraging that the method demonstrates a performance close to the ideal, but unrealistic case of known parameters. This result confirms the practical viability of this method for tuning IMM tracking filters. In the scope of future work, the proposed IMM optimization approach can be applied to more complex sensor architectures, where it could also alleviate sensor degradation, potentially even while the sensor is still in service.
+References
+[1] Y. Bar-Shalom, X. R. Li, and T. Kirubarajan, Estimation with applications to tracking and navigation: theory algorithms and software. John Wiley & Sons, 2001. [2] X. R. Li and Y. Bar-Shalom, “A recursive multiple model approach to noise identification,” IEEE Transactions on Aerospace and Electronic Systems, vol. 30, pp. 671–684, 1994. [3] E. Mazor, A. Averbuch, Y. Bar-Shalom, and J. Dayan, “Interacting multiple model methods in target tracking: A survey,” IEEE Transactions on Aerospace and Electronic Systems, vol. 34, pp. 103–123, 1998. [4] H. H. Afshari, S. A. Gadsden, and S. Habibi, “Gaussian filters for parameter and state estimation: A general review of theory and recent trends,” Signal Processing, vol. 135, pp. 218–238, 2017. [5] M. Lei and C.-Z. Han, “Expectation-maximization (EM) algorithm based on IMM filtering with adaptive noise covariance,” Acta Automatica Sinica, vol. 32, no. 1, pp. 28–37, 2006. [6] D. Huang and H. Leung, “EM-IMM based land-vehicle navigation with GPS/INS,” in 7th International IEEE Conference on Intelligent Transportation Systems. IEEE, 2004, pp. 624–629.
+[7] ——, “An expectation-maximization-based interacting multiple model approach for cooperative driving systems,” IEEE Transactions on Intelligent Transportation Systems, vol. 6, no. 2, pp. 206–228, 2005. [8] S. T. Barratt and S. P. Boyd, “Fitting a Kalman smoother to data,” in 2020 American Control Conference (ACC). IEEE, 2020, pp. 1526–1531. [9] P. Abbeel, A. Coates, M. Montemerlo, A. Y. Ng, and S. Thrun, “Discriminative training of Kalman filters,” Robotics: Science and Systems, vol. 1, pp. 289–296, 2005. [10] I. Greenberg, S. Mannor, and N. Yannay, “The fragility of noise estimation in Kalman filter: Optimization can handle model-misspecification,” 4 2021. [Online]. Available: https://arxiv.org/abs/2104.02372v4 [11] L. Xu and R. Niu, “EKFNet: Learning system noise statistics from measurement data,” in IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP). IEEE, 2021, pp. 4560–4564. [12] H. Coskun, F. Achilles, R. DiPietro, N. Navab, and F. Tombari, “Long short-term memory Kalman filters: Recurrent neural estimators for pose regularization,” in IEEE International Conference on Computer Vision (ICCV), 2017, pp. 5524–5532.
+[13] S. Jung, I. Schlangen, and A. Charlish, “Sequential Monte Carlo filtering with long short-term memory prediction,” in 22th International Conference on Information Fusion (FUSION). IEEE, 2019, pp. 1–7. [14] ——, “A mnemonic Kalman filter for non-linear systems with extensive temporal dependencies,” IEEE Signal Processing Letters, vol. 27, pp. 1005–1009, 2020. [15] D. Iter, J. Kuck, and P. Zhuang, “Target tracking with Kalman filtering, KNN and LSTMs,” CS229: Machine Learning, Stanford University. [16] A. Doerr, C. Daniel, M. Schiegg, N.-T. Duy, S. Schaal, M. Toussaint, and S. Trimpe, “Probabilistic recurrent state-space models,” in International Conference on Machine Learning (ICML). PMLR, 2018, pp. 1280–1289. [17] D. Hafner, T. P. Lillicrap, M. Norouzi, and J. Ba, “Mastering atari with discrete world models,” in International Conference on Learning Representations (ICLR), 2021.
+[18] R. E. Kalman, “A new approach to linear filtering and prediction problems,” 1960. [19] K. Jo, K. Chu, and M. Sunwoo, “Interacting multiple model filter-based sensor fusion of GPS with in-vehicle sensors for real-time vehicle positioning,” IEEE Transactions on Intelligent Transportation Systems, vol. 13, no. 1, pp. 329–343, 2011. [20] S. J. Reddi, S. Kale, and S. Kumar, “On the convergence of Adam and beyond,” in International Conference on Learning Representations (ICLR), 2018.
+[21] Y. Bar-Shalom, S. Challa, and H. A. Blom, “IMM estimator versus optimal estimator for hybrid systems,” IEEE Transactions on Aerospace and Electronic Systems, vol. 41, no. 3, pp. 986–991, 2005.
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 20,2025 at 12:41:59 UTC from IEEE Xplore. Restrictions apply.
