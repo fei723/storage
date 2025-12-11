@@ -29,7 +29,7 @@ Keywords: Self-organization – Crowds – Pedestrian interactions – Social fo
 Controlled experiments
 
 
-2
+ 2
 1. Introduction
 The idea that large-scale collective behaviour emerges from local interactions among individuals
 has become a key concept in the understanding of human crowd dynamics (Ball 2004; Couzin &
@@ -63,7 +63,7 @@ Johansson et al. 2007).
 In this study, we use a novel approach by measuring the behavioural effects of interactions
 
 
-3
+ 3
 between pedestrians in controlled experiments. Indeed, under controlled conditions, the response
 of individuals to mutual interactions can be easily observed and described in statistical terms,
 which then enables the extraction of individual behavioural laws. Similar experimental
@@ -93,7 +93,7 @@ predictions of the model with the experimental results and empirical data of ped
 recorded in a crowded street.
 
 
-4
+ 4
 2. Material and Methods
 (a) Laboratory experiments
 Controlled experiments have been conducted from February to March 2006 at the Hospital
@@ -126,7 +126,7 @@ same instructions as in condition 1, but starting from opposite ends of the corr
 had to evade each other. A starting signal was given for each new trial, so that pedestrians always
 
 
-5
+ 5
 met each other in the center of the corridor. Pairs of participants were chosen randomly, and each
 replication ended after 20 trials. We have reconstructed 90, 148 and 123 trajectories for
 conditions 1, 2 and 3 respectively. For a better fit of the acceleration behaviour, the data from
@@ -155,7 +155,7 @@ obtained by evaluation of 10 simulation runs over 10 minutes each to reflect the
 conditions.
 
 
-6
+ 6
 3. Model description
 In accordance with the social force concept (Helbing & Molnar 1995), we consider that the
 motion of a pedestrian i can be described by means of three different components: (1) the internal
@@ -212,7 +212,7 @@ dt  f i
 wall  f ij
 
 
-7
+ 7
 4.2 Interaction law
 Conditions 2 and 3 were then used to determine the exact trajectories when avoiding a standing
 or moving pedestrian (Figure 2). By the formula
@@ -266,7 +266,7 @@ x>0.25m). Pedestrians decelerate significantly primarily in case of head-on enco
 the pedestrian j is located in front of pedestrian i (see the light grey area in figure 3). This
 
 
-8
+ 8
 corresponds to the zone where pedestrians choose the side on which they want to pass. For this
 reason, we interpret this central area as a decision zone: for head-on encounters, it is necessary to
 take a binary decision, whether to evade the other pedestrian on the left-hand side or on the right
@@ -321,7 +321,7 @@ and
 f(d,)  AKed / B(nB)2 (5)
 
 
-9
+ 9
 (see Figure 3). There, we have dropped the indices i and j. K = θ/|θ| is the sign of the angle θ, and
 A, B, n, n’ are model parameters. Equation (4) represents an exponential decay of the deceleration
 with distance d. The decay is faster for large values of θ, i.e. towards the sides of the pedestrian.
@@ -361,7 +361,7 @@ the fact that pedestrians make a faster side choice when the relative speed incr
 other countries like Japan, the pedestrians have a preference for the left-hand side (Helbing et al.,
 
 
-10
+ 10
 2005), which corresponds to a negative value of
 
 .
@@ -393,7 +393,7 @@ density, which supports the idea that a minimum amount of interactions is necess
 separation to emerge (see Figure 6 in Supp. Info.).
 
 
-11
+ 11
 5. Discussion
 We have presented a set of controlled experiments that revealed the detailed mechanisms and
 functional dependencies of pedestrian interactions in space and time. In contrast to previous
@@ -425,7 +425,7 @@ In other words, the side preference may be interpreted as a cultural bias. This 
 interpretation could potentially be checked by performing walking experiments with young
 
 
-12
+ 12
 children, but these may involve a variety of ethical and organizational issues. Alternatively, the
 hypothesis that asymmetrical evading behaviour is based on a self-organized behavioural
 convention could also be tested by empirically studying the occurrence of a side preference in
@@ -459,7 +459,7 @@ been recently observed in various other group-living organisms (Ame et al. 2004;
 colony choice of a path to a food source (Dussutour et al. 2005). Our results, therefore, show that
 
 
-13
+ 13
 similar mechanisms seem to guide the dynamics of human crowds.
 These findings may be used to assess the suitability of pedestrian facilities and escape routes
 under various conditions, such as the movement of homogeneous as compared to multinational
@@ -489,7 +489,7 @@ doctoral-engineer fellowship from the ETH Zürich and the CNRS. Simon Garnier is
 a research grant from the French Ministry of Education, Research and Technology.
 
 
-14
+ 14
 Figure caption
 Figure 1: (a) Snapshot of the experimental setup. Red circles indicate the location of cameras. (b)
 Calibration of the acceleration behaviour on the basis of the average time-dependent pedestrian
@@ -501,7 +501,7 @@ pedestrians (moving from left to right) is represented in blue, while the other 
 red.
 
 
-15
+ 15
 Figure 3: (a) Average value of the interaction effect
 
 f ij at various distance dij and angle θij
@@ -516,7 +516,7 @@ sign of θ and a, c are fit parameters. The function fv(d,θ) for speed changes 
 to a similar functional dependency.
 
 
-16
+ 16
 Figure 4: Numerical simulations as compared to experimental observations during conditions 2
 and 3. In (a) and (b), the blue lines correspond to the average observed trajectories, with
 pedestrians moving from left to right. The blue dashed lines indicate the standard deviation. Red
@@ -528,7 +528,7 @@ Figure 5: Asymmetry of bidirectional pedestrian traffic. As sketched in (a), six
 distinguished for the measurements: 1) left sidewalk, 2) and 3) left side of the walkway, 4) and 5)
 
 
-17
+ 17
 right side of the walkway and 6) right sidewalk. 'Left' and 'right' are referring to the walking
 direction. The sidewalks next to shops were occupied by a small number of standing pedestrians.
 The blue bars in (b) show the proportion of observed pedestrians walking in each area, while the
@@ -544,7 +544,7 @@ Couzin, I. & Krause, J. 2003 Self-organization and collective behavior in verteb
 Couzin, I., Krause, J., James, R., Ruxton, G. & Franks, N. 2002 Collective memory and spatial sorting in animal groups. Journal of Theoretical Biology 218, 1-11.
 
 
-18
+ 18
 Deffuant, G., Neau, D., Amblard, F. & Weisbuch, G. 2001 Mixing beliefs among interacting agents. Advances in Complex Systems 3, 87-98.
 Dussutour, A., Deneubourg, J.-L. & Fourcassié, V. 2005 Amplification of individual preferences in a social context: the case of wall-following in ants. Proceedings of the Royal Society B: Biological Sciences 272, 705-714.
 Dussutour, A., Fourcassié, V., Helbing, D. & Deneubourg, J. 2004 Optimal traffic organization in ants under crowded conditions. Nature 428, 70-73. Dyer, J., Ioannou, C., Morrell, L., Croft, D., Couzin, I., Waters, D. & Krause, J. 2007 Consensus decision making in human crowds. Animal Behaviour 75, 461-470. Dyer, J., Johansson, A., Helbing, D., Couzin, I. & Krause, J. 2008 Leadership, consensus decision making and collective behaviour in humans. Philosophical Transactions of the Royal Society B: Biological Sciences.
@@ -554,7 +554,7 @@ Hoogendoorn, S. & Bovy, P. 2003 Simulation of pedestrian flows by optimal contro
 Hoogendoorn, S. & Daamen, W. 2005 Pedestrian Behavior at Bottlenecks. Transportation Science 39, 147-159. Hoogendoorn, S. & Daamen, W. 2007 Microscopic Calibration and Validation of Pedestrian Models: Cross-Comparison of Models Using Experimental Data. In Traffic and Granular Flow‚Äô05, pp. 329-340. Isobe, M., Helbing, D. & Nagatani, T. 2004 Experiment, theory, and simulation of the evacuation of a room without visibility. Physical Review E 69, 066132. Jeanson, R., Rivault, C., Deneubourg, J., Blanco, S., Fournier, R., Jost, C. & Theraulaz, G. 2005 Self-organized aggregation in cockroaches. Animal Behaviour 69, 169-180. Johansson, A., Helbing, D. & Shukla, P. 2007 Specification of the social force pedestrian model by evolutionary adjustment to video tracking data. Advances in Complex Systems 10, 271288. Kirchner, A. & Schadschneider, A. 2002 Simulation of evacuation processes using a bionicsinspired cellular automaton model for pedestrian dynamics. Physica A 312, 260-276. Kretz, T., Gr√onebohm, A. & Schreckenberg, M. 2006 Experimental study of pedestrian flow through a bottleneck. Journal of Statistical Mechanics: Theory and Experiments P10014. Lakoba, T., Kaup, D. J. & Finkelstein, N. 2005 Modifications of the Helbing-Molnar-FarkasVicsek Social Force Model for Pedestrian Evolution. Simulation 81, 339-352.
 
 
-19
+ 19
 Milgram, S. & Toch, H. 1969 Collective Behavior: Crowds and Social Movements. In Handbook of Social Psychology, vol. 4 (ed. G. Lindzey & E. Aronson), pp. 507-610. Millor, J., Pham-Delegue, M., Deneubourg, J. L. & Camazine, S. 1999 Self-organized defensive behavior in honeybees. Proceedings of the National Academy of Sciences 96, 1261112615. Moussaid, M., Garnier, S., Theraulaz, G. & Helbing, D. 2009 Collective Information Processing and Pattern Formation in Swarms, Flocks, and Crowds. Topics in Cognitive Science 1, 129. Older, S. J. 1968 Movement of pedestrians on footways in shopping streets. Traffic Engineering and Control 10, 160-163.
 Pauls, J., Fruin, J. & Zupan, J. 2007 Minimum Stair Width for Evacuation, Overtaking Movement and Counterflow ‚Äî Technical Bases and Suggestions for the Past, Present and Future. In Pedestrian and Evacuation Dynamics 2005, pp. 57-69.
 Seyfried, A., Steffen, B., Klingsch, W. & Boltes, M. 2005 The Fundamental Diagram of Pedestrian Movement Revisited. Journal of Statistical Mechanics: Theory and Experiment P10002.

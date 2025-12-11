@@ -14,7 +14,7 @@ Hung-yi Lee hungyilee@ntu.edu.tw
 123
 
 
-1422 Machine Learning (2019) 108:1421–1441
+ 1422 Machine Learning (2019) 108:1421–1441
 Fig. 1 Historical prices of crude oil, gasoline, and lumber. Units are omitted and scales are normalized for simplicity
 1 Introduction
 In everyday life, time series data are everywhere. We observe evolving variables generated from sensors over discrete time steps and organize them into time series data. For example, household electricity consumption, road occupancy rate, currency exchange rate, solar power production, and even music notes can all be seen as time series data. In most cases, the collected data are often multivariate time series (MTS) data, such as the electricity consumption of multiple clients, which are tracked by the local power company. There can exist complex dynamic interdependencies between different series that are significant but difficult to capture and analyze. Analysts often seek to forecast the future based on historical data. The better the interdependencies among different series are modeled, the more accurate the forecasting can be. For instance, as shown in Fig. 1,1 the price of crude oil heavily influences the price of gasoline, but has a smaller influence on the price of lumber. Thus, given the realization that gasoline is produced from crude oil and lumber is not, we can use the price of crude oil to predict the price of gasoline. In machine learning, we want the model to automatically learn such interdependencies from data. Machine learning has been applied to time series analysis for both classification and forecasting (Zhang et al. 1998; Zhang 2003; Lai et al. 2018; Qin et al. 2017). In classification, the machine learns to assign a label to a time series, for instance evaluating a patient’s diagnostic categories by reading values from medical sensors. In forecasting, the machine predicts future time series based on past observed data. For example, precipitation in the next days, weeks, or months can be forecast according to historical measurements. The further ahead we attempt to forecast, the harder it is. When it comes to MTS forecasting using deep learning, recurrent neural networks (RNNs) (Rumelhart et al. 1986; J.Werbos 1990; Elman 1990) are often used. However, one disadvantage in using RNNs in time series analysis is their weakness on managing long-term dependencies, for instance yearly patterns in a daily recorded sequence (Cho et al. 2014). The attention mechanism (Luong et al. 2015; Bahdanau et al. 2015), originally utilized in encoder–decoder (Sutskever et al. 2014) networks, somewhat alleviates this problem, and thus boosts the effectiveness of RNN (Lai et al. 2018). In this paper, we propose the temporal pattern attention, a new attention mechanism for MTS forecasting, where we use the term “temporal pattern” to refer to any time-invariant pattern across multiple time steps. The typical attention mechanism identifies the time steps relevant to the prediction, and extracts the information from these time steps, which poses
@@ -22,7 +22,7 @@ In everyday life, time series data are everywhere. We observe evolving variables
 123
 
 
-Machine Learning (2019) 108:1421–1441 1423
+ Machine Learning (2019) 108:1421–1441 1423
 obvious limitations for MTS prediction. Consider the example in Fig. 1. To predict the value of gasoline, the machine must learn to focus on “crude oil” and ignore “lumber”. In our temporal pattern attention, instead of selecting the relevant time steps as in the typical attention mechanism, the machine learns to select the relevant time series. In addition, time series data often entails noticeable periodic temporal patterns, which are critical for prediction. However, the periodic patterns spanning multiple time steps are difficult for the typical attention mechanism to identify, as it usually focuses only on a few time steps. In temporal pattern attention, we introduce a convolutional neural network (CNN) (LeCun and Bengio 1995; Krizhevsky et al. 2012) to extract temporal pattern information from each individual variable. The main contributions of this paper are summarized as follows:
 – We introduce a new attention concept in which we select the relevant variables as opposed to the relevant time steps. The method is simple and general to apply on RNN. – We use toy examples to verify that our attention mechanism enables the model to extract temporal patterns and focus on different time steps for different time series. – Attested by experimental results on real-world data ranging from periodic and partially linear to non-periodic and non-linear tasks, we show that the proposed attention mechanism achieves state-of-the-art results across multiple datasets. – The learned CNN filters in our attention mechanism demonstrate interesting and interpretable behavior.
 The remainder of this paper is organized as follows. In Sect. 2 we review related work and in Sect. 3 we describe background knowledge. Then, in Sect. 4 we describe the proposed attention mechanism. Next, we present and analyze our attention mechanism on toy examples in Sect. 5, and on MTS and polyphonic music dataset in Sect. 6. Finally, we conclude in Sect. 7.
@@ -31,7 +31,7 @@ The most well-known model for linear univariate time series forecasting is the a
 123
 
 
-1424 Machine Learning (2019) 108:1421–1441
+ 1424 Machine Learning (2019) 108:1421–1441
 Fig. 2 Proposed attention mechanism. ht represents the hidden state of the RNN at time step t. There are k 1-D CNN filters with length w, shown as different colors of rectangles. Then, each filter convolves over m
 features of hidden states and produces a matrix H C with m rows and k columns. Next, the scoring function calculates a weight for each row of H C by comparing with the current hidden state ht . Last but not least, the
 weights are normalized and the rows of H C is weighted summed by their corresponding weights to generate
@@ -45,7 +45,7 @@ ht = F(ht−1, xt ) (1)
 123
 
 
-Machine Learning (2019) 108:1421–1441 1425
+ Machine Learning (2019) 108:1421–1441 1425
 where the implementation of function F depends on what kind of RNN cell is used. Long short-term memory (LSTM) (Hochreiter and Schmidhuber 1997) cells are widely used, which have a slightly different recurrent function:
 ht , ct = F(ht−1, ct−1, xt ), (2)
 which is defined by the following equations:
@@ -70,7 +70,7 @@ While previous work focuses mainly on changing the network architecture of the a
 123
 
 
-1426 Machine Learning (2019) 108:1421–1441
+ 1426 Machine Learning (2019) 108:1421–1441
 attends to its row vectors. The attention weights on rows select those variables that are helpful for forecasting. Since the context vector vt is now the weighted sum of the row vectors containing the information across multiple time steps, it captures temporal information.
 4.1 Problem formulation
 In MTS forecasting, given an MTS, X = {x1, x2, . . . , xt−1}, where xi ∈ Rn represents the observed value at time i, the task is to predict the value of xt−1+Δ, where Δ is a fixed horizon with respect to different tasks. We denote the corresponding prediction as yt−1+Δ, and the ground-truth value as yˆt−1+Δ = xt−1+Δ. Moreover, for every task, we use only {xt−w, xt−w+1, . . . , xt−1} to predict xt−1+Δ, where w is the window size. This is a common practice (Lai et al. 2018; Qin et al. 2017), because the assumption is that there is no useful information before the window and the input is thus fixed.
@@ -102,7 +102,7 @@ h′t = Wh ht + Wvvt , (14)
 123
 
 
-Machine Learning (2019) 108:1421–1441 1427
+ Machine Learning (2019) 108:1421–1441 1427
 Fig. 3 Visualization of the first type of toy examples without interdependencies (left) and the second type of toy examples with interdependencies (right) for D = 6, which means that there are 6 time series in each example
 yt−1+Δ = Wh′ h′t , (15)
 where ht , h′t ∈ Rm , Wh ∈ Rm×m , Wv ∈ Rm×k , and Wh′ ∈ Rn×m and yt−1+Δ ∈ Rn.
@@ -127,7 +127,7 @@ All models in the following analyses are trained with window size w = 64, horizo
 123
 
 
-1428 Machine Learning (2019) 108:1421–1441
+ 1428 Machine Learning (2019) 108:1421–1441
 Fig. 4 Mean absolute loss and the range of standard deviation in log10 of the first type of toy examples without interdependencies (left) and the second type of toy examples with interdependencies (right), both in ten runs. The baseline indicates the loss if all predicted values are zero
 last sample, we use values from t = 63 to 126 as the input series correspondingly. Note that values from t = 64 to 127 are equal to those from t = 0 to 63. We trained the models for 200 epochs on two types of toy examples for D = {1, 6, 11, . . . , 56} and record mean absolute loss in training. There is no validation and testing data because the intent of this section is to demonstrate the greater capability of our attention over typical attention to fit MTS data not the generalizability of our attention. The results are shown in Fig. 4.
 5.1 Failure of traditional attention mechanisms
@@ -135,7 +135,7 @@ Intuitively, for the first toy example, the model can accurately predict the nex
 123
 
 
-Machine Learning (2019) 108:1421–1441 1429
+ Machine Learning (2019) 108:1421–1441 1429
 LSTM with our attention is better than the LSTM without attention on average, even though its hidden size is smaller. Also, removing the CNN from our attention, which results in the same model as the “Sigmoid - W/o CNN” cell in Table 4, does not affect the performance, which implies that our feature-wise attention is indispensable.
 5.2 Influence of interdependencies
 When there are interdependencies in MTS data, it is desirable to leverage the interdependencies to further improve forecasting accuracy. The right plot in Fig. 4 shows that both the LSTM with Luong attention and the LSTM without attention do not benefit from the added interdependencies, since the loss values remain the same. On the other hand, the loss of the LSTM with the proposed attention is lower when there are interdependencies, which suggests that our attention successfully utilized the interdependencies to facilitate MTS forecasting. Again, removing the CNN from our attention does not affect the performance in this case.
@@ -151,7 +151,7 @@ These datasets are real-world data that contains both linear and non-linear inte
 123
 
 
-1430 Machine Learning (2019) 108:1421–1441
+ 1430 Machine Learning (2019) 108:1421–1441
 Table 1 Statistics of all datasets, where L is the length of the time series, D is the number of time series, S is the sampling spacing, and B is size of the dataset in bytes
 Dataset L D S B
 Solar Energy 52,560 137 10 min 172 M
@@ -170,7 +170,7 @@ AR, LRidge, LSVR, GP and SETAR are traditional baseline methods, whereas LSTNet-
 123
 
 
-Machine Learning (2019) 108:1421–1441 1431
+ Machine Learning (2019) 108:1421–1441 1431
 with Luong attention as the baseline models to evaluate the proposed model on polyphonic music datasets:
 – LSTM: RNN cells as introduced in Sect. 3. – LSTM with Luong attention: LSTM with an attention mechanism scoring function of which f (hi , ht ) = (hi ) W ht , where W ∈ Rm×m (Luong et al. 2015).
 6.3 Model setup and parameter settings
@@ -200,7 +200,7 @@ i=1(yˆt,i − yˆt0:t1,1:n )2
 123
 
 
-1432 Machine Learning (2019) 108:1421–1441
+ 1432 Machine Learning (2019) 108:1421–1441
 Table 2 Results on typical MTS datasets using RAE, RSE and CORR as metrics
 RAE Solar Energy Traffic
 Horizon 3 6 12 24 3 6 12 24
@@ -230,7 +230,7 @@ SETAR 0.2374 0.3381 0.4394 0.5271 0.4611 0.4805 0.4846 0.4898
 123
 
 
-Machine Learning (2019) 108:1421–1441 1433
+ Machine Learning (2019) 108:1421–1441 1433
 Table 2 continued
 RSE Solar Energy Traffic
 LSTNet-Skip 0.1843 0.2559 0.3254 0.4643 0.4777 0.4893 0.4950 0.4973
@@ -257,7 +257,7 @@ Our model 0.9850 ± 0.0001 0.9742 ± 0.0003 0.9487 ± 0.0023 0.9081 ± 0.0151 0.
 123
 
 
-1434 Machine Learning (2019) 108:1421–1441
+ 1434 Machine Learning (2019) 108:1421–1441
 Table 2 continued
 CORR Solar Energy Traffic
 CORR Electricity Exchange Rate
@@ -274,7 +274,7 @@ model is referenced from the paper of LSTNet Lai et al. (2018)
 123
 
 
-Machine Learning (2019) 108:1421–1441 1435
+ Machine Learning (2019) 108:1421–1441 1435
 Fig. 5 Prediction results for proposed model and LSTNet-Skip on Traffic testing set with 3-hour horizon. Proposed model clearly yields better forecasts around the flat line after the peak and in the valley
 Fig. 6 Validation loss under different training epochs on MuseData (left), and LPD-5-Cleansed (right)
 and finally the third metric is the empirical correlation coefficient (CORR):
@@ -294,7 +294,7 @@ On typical MTS datasets, we chose the best model on the validation set using RAE
 123
 
 
-1436 Machine Learning (2019) 108:1421–1441
+ 1436 Machine Learning (2019) 108:1421–1441
 Table 3 Precision, recall, and F1 score of different models on polyphonic music datasets
 Metric MuseData
 Precision Recall F1
@@ -314,14 +314,14 @@ DFT is a variant of the Fourier transform (FT) which handles equally-spaced samp
 123
 
 
-Machine Learning (2019) 108:1421–1441 1437
+ Machine Learning (2019) 108:1421–1441 1437
 Fig. 7 Magnitude comparison of (1) DFT of CNN filters trained on Traffic with a 3-hour horizon, and (2) every window of the Traffic dataset. To make the figure more intuitive, the unit of the horizontal axis is the period
 Fig. 8 Two different CNN filters trained on Traffic with a 3-hour horizon, which detect different periods of temporal patterns
 Since we expect our CNN filters to learn temporal MTS patterns, the prevailing frequency components in the average CNN filters should be similar to that of the training MTS data. Hence, we also apply avg-DFT on the k = 32 CNN filters that are trained on Traffic with a 3-hour horizon; in Fig. 7 we plot the result alongside with the avg-DFT of every window of Traffic dataset. Impressively, the two curves reach peaks at the same periods most of the time, which implies that the learned CNN filters resemble bases in DFT. At the 24, 12, 8, and 6-hour periods, not only is the magnitude of the Traffic dataset at its peak, but the magnitude of CNN filters also tops out. Moreover, in Fig. 8, we show that different CNN filters behave differently. Some specialize at capturing long-term (24-hour) temporal patterns, while others are good at recognizing short-term (8-hour) temporal patterns. As a whole, we suggest that the proposed CNN filters play the role of bases in DFT. As demonstrated in the work by Rippel et al. (2015), such a “frequency domain” serves as a powerful representation for CNN to use in training and modeling. Thus, LSTM relies on the frequency-domain information extracted by the proposed attention mechanism to accurately forecast the future.
 123
 
 
-1438 Machine Learning (2019) 108:1421–1441
+ 1438 Machine Learning (2019) 108:1421–1441
 Table 4 Ablation study
 Dataset Solar Energy (horizon = 24) Traffic (horizon = 24)
 Position Filter W/o CNN Position Filter W/o CNN
@@ -337,7 +337,7 @@ corpus, bold text represents the best and underlined text represents second best
 123
 
 
-Machine Learning (2019) 108:1421–1441 1439
+ Machine Learning (2019) 108:1421–1441 1439
 6.8 Ablation study
 In order to verify that the above improvement comes from each added component rather than a specific set of hyperparameters, we conducted an ablation study on the Solar Energy, Traffic, Electricity, and MuseData datasets. There were two main settings: one controlling how we attend to hidden states, H , of RNN and the other controlling how we integrate the scoring function f into the proposed model, or even disable the function. First, in the proposed method, we let the model attend to values of various filters on each position (H C
 i ); we
@@ -350,7 +350,7 @@ Acknowledgements This work was financially supported by the Ministry of Science 
 123
 
 
-1440 Machine Learning (2019) 108:1421–1441
+ 1440 Machine Learning (2019) 108:1421–1441
 References
 Bahdanau, D., Cho, K., & Bengio, Y. (2015). Neural machine translation by jointly learning to align and translate. ICLR. Bloomfield, P. (1976). Fourier analysis of time series: An introduction. New York, NY: Wiley.
 Bouchachia, A., & Bouchachia, S. (2008). Ensemble learning for time series prediction. Proceedings of the 1st international workshop on nonlinear dynamics and synchronization.
@@ -367,7 +367,7 @@ Rumelhart, D. E., Hinton, G. E., & Williams, R. J. (1986). Learning representati
 123
 
 
-Machine Learning (2019) 108:1421–1441 1441
+ Machine Learning (2019) 108:1421–1441 1441
 Sutskever, I., Vinyals, O., & Le, Q. V. (2014). Sequence to sequence learning with neural networks. Advances in Neural Information Processing Systems, pp. 3104–3112.
 Tong, H., & Lim, K. S. (2009). Threshold autoregression, limit cycles and cyclical data. In Exploration of a nonlinear world: An appreciation of Howell Tong’s contributions to statistics, World Scientific, pp. 9–56. Vapnik, V., Golowich, S. E., & Smola, A. (1997). Support vector method for function approximation, regression estimation, and signal processing. Advances in Neural Information Processing Systems, pp. 281–287. Werbos, P. J. (1990). Backpropagation through time: What it does and how to do it. Proceedings of the IEEE, pp. 1550–1560. Zhang, G. P. (2003). Time series forecasting using a hybrid ARIMA and neural network model. Neurocomputing, pp. 159–175. Zhang, G., Patuwo, B. E., & Hu, M. Y. (1998). Forecasting with artificial neural networks: The state of the art. International Journal of Forecasting, pp. 35–62.
 Publisher’s Note Springer Nature remains neutral with regard to jurisdictional claims in published maps and institutional affiliations.

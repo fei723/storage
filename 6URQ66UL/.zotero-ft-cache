@@ -8,7 +8,7 @@ Fig. 1: We present OPEN TEACH, a unified robot teleoperation framework that supp
 arXiv:2403.07870v1 [cs.RO] 12 Mar 2024
 
 
-Abstract—Open-sourced, user-friendly tools form the bedrock of scientific advancement across disciplines. The widespread adoption of data-driven learning has led to remarkable progress in multi-fingered dexterity, bimanual manipulation, and applications ranging from logistics to home robotics. However, existing data collection platforms are often proprietary, costly, or tailored to specific robotic morphologies. We present OPEN TEACH, a new teleoperation system leveraging VR headsets to immerse users in mixed reality for intuitive robot control. Built on the affordable Meta Quest 3, which costs $500, OPEN TEACH enables realtime control of various robots, including multi-fingered hands, bimanual arms, and mobile manipulators, through an easy-touse app. Using natural hand gestures and movements, users can manipulate robots at up to 90Hz with smooth visual feedback and interface widgets offering closeup environment views. We demonstrate the versatility of OPEN TEACH across 38 tasks on different robots. A comprehensive user study indicates significant improvement in teleoperation capability over the AnyTeleop framework. Further experiments exhibit that the collected data is compatible with policy learning on 10 dexterous and contactrich manipulation tasks. Currently supporting Franka, xArm, Jaco, Allegro, and Hello Stretch platforms, OPEN TEACH is fully open-sourced to promote broader adoption. Videos are available at https://open-teach.github.io/.
+ Abstract—Open-sourced, user-friendly tools form the bedrock of scientific advancement across disciplines. The widespread adoption of data-driven learning has led to remarkable progress in multi-fingered dexterity, bimanual manipulation, and applications ranging from logistics to home robotics. However, existing data collection platforms are often proprietary, costly, or tailored to specific robotic morphologies. We present OPEN TEACH, a new teleoperation system leveraging VR headsets to immerse users in mixed reality for intuitive robot control. Built on the affordable Meta Quest 3, which costs $500, OPEN TEACH enables realtime control of various robots, including multi-fingered hands, bimanual arms, and mobile manipulators, through an easy-touse app. Using natural hand gestures and movements, users can manipulate robots at up to 90Hz with smooth visual feedback and interface widgets offering closeup environment views. We demonstrate the versatility of OPEN TEACH across 38 tasks on different robots. A comprehensive user study indicates significant improvement in teleoperation capability over the AnyTeleop framework. Further experiments exhibit that the collected data is compatible with policy learning on 10 dexterous and contactrich manipulation tasks. Currently supporting Franka, xArm, Jaco, Allegro, and Hello Stretch platforms, OPEN TEACH is fully open-sourced to promote broader adoption. Videos are available at https://open-teach.github.io/.
 I. INTRODUCTION
 The integration of learning-based methods has sparked a revolution in robotics, significantly enhancing capabilities in manipulation [10, 67, 7, 53], locomotion [17, 36, 57, 9], and aerial robotics [65, 16, 26]. More recent work has been making advancements in complex single-task behavior learning [60, 4, 67], multitask scenarios [43, 5], multimodal behavior learning [52, 13, 11, 49], and efficient fine-tuning of pretrained behavior models [21, 22, 40]. A fundamental requirement across all these threads of research is the need to collect data in the form of task demonstrations. Commonly used teleoperation systems include devices such as joysticks and 3D spacemouses [34, 55], commercial VR headsets [19, 66, 3, 4, 48, 18], kinesthetic teaching [6], and phone teleoperation [37]. The aforementioned devices are cost-effective and easy to set up. However, they are often unintuitive to use and require extensive user-training to demonstrate intricate motions. Recently proposed exoskeleton-based teleoperation frameworks like ALOHA [67], GELLO [61], and AirExo [14] attempt to alleviate this problem by having the human teleoperator directly control a kinematically isomorphic version of the same robot arm. These frameworks directly impose the kinematic constraints of the robot arm during teleoperation making it more compatible and intuitive to control the motion of the robot. Although highly effective, these systems can require an additional robot for each robot being controlled, have high initial setup costs, and are designed for specific robot morphologies. The challenge of easy-to-use teleoperation devices is more apparent in dexterous manipulation problems [24, 47, 3, 4], owing to the high dimensional action space. Such frameworks typically involve the use of expensive gloves [8, 29, 32],
 Correspondence to: aadhithya.iyer@nyu.edu
@@ -20,7 +20,7 @@ A. Robot-Specific Teleoperation
 Teleoperation, as a medium for human-robot interaction, has been a crucial part of robotics. Recent strides in learningbased methods demand extensive data collection, giving rise to diverse teleoperation systems — joysticks and spacemouses [34, 55], VR controllers [19, 66, 3, 4, 48, 18], RGB cameras [24, 56, 47, 58], IMU sensors [30, 28, 62], kinesthetic teaching [6], phone teleoperation [37], gloves [8, 29, 32], marker-based motion capture systems [68, 35], and reachergrabber sticks [44, 53]. However, several challenges remain in the robot-specific nature of these devices. For instance, devices like joysticks, spacemouses, and phones are limited to
 
 
-TABLE I: Comparison of OPEN TEACH’s capabilities with prior teleoperation systems on features such as being calibration-free, compatible with multi-fingered hands, bimanual arms, and mobile manipulators, and being open-sourced.
+ TABLE I: Comparison of OPEN TEACH’s capabilities with prior teleoperation systems on features such as being calibration-free, compatible with multi-fingered hands, bimanual arms, and mobile manipulators, and being open-sourced.
 Calibration Free Hands Arms Bimanual Mobile Manipulation Open-source Joystick ✓ ✗ ✓ ✗ ✗ ✓ Spacemouse ✓ ✗ ✓ ✗ ✗ ✓ Phone Teloperation [37] ✓ ✗ ✓ ✗ ✗ ✗ DexPilot [24] ✗ ✓ ✓ ✗ ✗ ✗ Holo-Dex [4] ✓ ✓ ✗ ✗ ✗ ✓ DIME [3] ✗ ✓ ✗ ✗ ✗ ✓ TeachNet [31] ✓ ✓ ✗ ✗ ✗ ✓ Telekinesis [56] ✓ ✓ ✓ ✗ ✗ ✗ Qin et al. [46] ✓ ✓ ✗ ✓ ✗ ✓ MVP-Real [48] ✗ ✓ ✓ ✗ ✗ ✗ Transteleop [33] ✗ ✓ ✓ ✗ ✗ ✗ Mosbach et al. [39] ✗ ✓ ✓ ✗ ✗ ✓ AnyTeleop [47] ✓ ✓ ✓ ✗ ✗ ✗ ALOHA [67] ✓ ✗ ✓ ✓ ✗ ✓ Mobile ALOHA [15] ✓ ✗ ✓ ✓ ✓ ✓ GELLO [61] ✓ ✗ ✓ ✓ ✗ ✓ AirExo [14] ✓ ✗ ✓ ✓ ✗ ✓ Dobb-E [53] ✓ ✗ ✓ ✗ ✓ ✓ OPEN TEACH ✓ ✓ ✓ ✓ ✓ ✓
 controlling robot arms due to their lack of fidelity for multifingered hands. There have been systems developed to map the human hand pose to the robot pose [3, 4, 47, 31, 2, 38], but they are often restricted to only controlling robot hands. Further, all of these frameworks lack awareness of the robot’s kinematic constraints, leading to challenges in intuitive control, especially in complex poses. As a solution, there are more conventional but expensive exo-skeleton based teleoperation systems [25, 27, 51] that use a second arm for controlling the manipulator arm. Recently proposed ALOHA [67, 15] affirms the effectiveness of this approach through impressive results in fine-grained bimanual manipulation. However, these systems require an exact copy of the manipulator robot arm, rendering them costly and less practical for heavier robots. In addressing these issues, GELLO [61] and AirExo [14] introduce exo-skeleton teleoperation frameworks, utilizing a kinematically isomorphic variant of the robot arm. This approach proves more affordable and lightweight, enhancing usability for humans. Despite their success in fine-grained manipulation tasks, these solutions are constrained to robot arms and face challenges in extending seamlessly to control robot hands. For multi-fingered robot hands, gloves, visionbased, and VR-based methods have been employed. These systems either assume a fixed robot arm [3, 4] or are tied to a specific robot setup [24, 33], making them difficult to transfer to new arm-hand systems and new environments.
 B. Unified Teleoperation Frameworks
@@ -39,7 +39,7 @@ B. Inverse Reinforcement Learning
 In this work, we employ FISH [22] and TAVI [20] to learn visual and visuotactile policies respectively. For both of these methods, the first phase involves obtaining a non-parametric base-policy πb : Z → A with encoded representations z ∈ Z and actions a ∈ A. Then a residual policy πr : Z × A → A is learned atop the base policy πb such that an action sampled from the final policy π is the sum of the base action ab ∼ πb(z) and the residual offset ar ∼ πr(z, ab). The reward for learning the residual policy through inverse RL is obtained through optimal transport based trajectory matching [21, 12].
 
 
-Human-to-Robot Retargeting
+ Human-to-Robot Retargeting
 Hardware
 Network Server
 Hand Pose Detection
@@ -62,7 +62,7 @@ Robot Arm: We use the wrist keypoint and the knuckle points of the index and pin
 Robot Hand: We use the teacher’s hand pose obtained from the VR to compute the individual joint angles in the teacher’s hand. Given these joint angles, a straightforward method of retargeting is to directly command the robot’s joints to the corresponding angles. In practice, this works well for all fingers except the thumb. To address this, we improve upon Arunachalam et al. [4], where the spatial coordinate of the teacher’s thumb tip is mapped to that of the robot hand and then an inverse kinematics solver is used to compute the joint angles of the thumb. More details about the improvement in
 
 
-Pack Basket Iron Cloth Make Sandwich
+ Pack Basket Iron Cloth Make Sandwich
 Fig. 3: The demonstration collection process as viewed from within the VR application. Shown here is one task being performed for each real-world setup. High resolution images are streamed at 90 Hz to the VR application, allowing for an immersive experience and improved teleoperation compared to prior VR-based systems. The high frame rate streaming enables reactive control by the user, while widgets for visualizing the robot’s camera view help the user focus on fine-grained movements.
 thumb retargeting have been included in Appendix A. Since the Allegro hand does not have a pinky finger, we ignore the teacher’s pinky joints.
 Two-fingered gripper: To detect the opening and closing of the two-fingered gripper, we utilize the pinch between the pinky finger and the thumb. The pinch is detected by computing the distance between the tips of the two fingers and setting a threshold on the pinch distance. We use a toggle mechanism for opening and closing the gripper where each pinch indicates toggling to the alternate state of the gripper.
@@ -74,7 +74,7 @@ D. Robot Control
 Achieving minimal error and low latency is pivotal for OPEN TEACH to facilitate the intuitive teleoperation of the robot hand by the human teacher. In this study, we employ the Allegro Hand as our robotic hand, controlling it asynchronously through the ROS [59] communication framework. Using the computed robot joint positions from the retargeting procedure, a PD controller outputs desired torques at a frequency of 300Hz. To mitigate steady-state error, we include a gravity compensation module to compute offset torques. We use three different robot arms for our evaluations xArm, Franka Emika Panda, and Kinova Jaco. We use different controllers for each. The xArm is directly controlled through the official xArm API [63]. For the Franka Emika Panda, we use the Deoxys controller [69]. For the Kinova Jaco, we use
 
 
-the controller open-sourced by Arunachalam et al. [3]. The Allegro hand’s streaming frequency is configured at 60 Hz, while the xArm, Franka Emika Panka, and Kinova Jaco arms are set to 90 Hz, 60 Hz, and 60 Hz, respectively. Such high frequency teleoperation allows the human teacher to see the robot move in real time and immediately correct execution errors in the robot. The Hello Stretch is controlled at 5Hz using the controller released by Shafiullah et al. [53]. Further, we acknowledge the fact that the human hand possesses fewer degrees of freedom than the robot. In response, we introduce a pause functionality, allowing the teacher to momentarily halt teleoperation, reorient themselves, and resume the process. Furthermore, we implement a resolution adjustment feature, which provides a performance boost for high-precision tasks such as delicately picking up a tea sachet. Details about these implementations have been included in Appendix A.
+ the controller open-sourced by Arunachalam et al. [3]. The Allegro hand’s streaming frequency is configured at 60 Hz, while the xArm, Franka Emika Panka, and Kinova Jaco arms are set to 90 Hz, 60 Hz, and 60 Hz, respectively. Such high frequency teleoperation allows the human teacher to see the robot move in real time and immediately correct execution errors in the robot. The Hello Stretch is controlled at 5Hz using the controller released by Shafiullah et al. [53]. Further, we acknowledge the fact that the human hand possesses fewer degrees of freedom than the robot. In response, we introduce a pause functionality, allowing the teacher to momentarily halt teleoperation, reorient themselves, and resume the process. Furthermore, we implement a resolution adjustment feature, which provides a performance boost for high-precision tasks such as delicately picking up a tea sachet. Details about these implementations have been included in Appendix A.
 V. EXPERIMENTAL EVALUATION
 Our experiments and tasks are designed to answer the following questions:
 1) How versatile is OPEN TEACH across a range of robotics setups? 2) How successful are policies trained with OPEN TEACH? 3) Can OPEN TEACH be used for performing complex, longhorizon tasks? 4) How intuitive is the system for new users?
@@ -95,7 +95,7 @@ E. Can OPEN TEACH be used for performing complex, longhorizon tasks?
 In this section, we emphasize the efficacy of OPEN TEACH in executing a diverse array of complex, long-horizon tasks across various robotic configurations. Illustrated in Fig. 4 are
 
 
-Make Sandwich: Make a sandwich by sequentially adding the ingredients placed on a table.
+ Make Sandwich: Make a sandwich by sequentially adding the ingredients placed on a table.
 Bimanual
 Insert USB: Insert a USB charging cable into the adapter.
 Pack and Lift a Basket: Place the honey bottle and soda can inside the basket, lift the handles and pick up the basket.
@@ -109,7 +109,7 @@ Stretch
 Fig. 4: Real world task rollouts demonstrating the ability of OPEN TEACH to perform intricate, long-horizon tasks.
 
 
-TABLE II: Teleoperation Frequency across all robots.
+ TABLE II: Teleoperation Frequency across all robots.
 Domain Robot Setup Stream
 Frequency (in Hz) Arm End Effector Real Franka-Allegro 60 60 Kinova-Allegro 60 60 Bimanual 90 90 Stretch 5 5 Sim Allegro Sim 60 60 LIBERO Sim 20 20
 TABLE III: Performance of policies learned on data collected through OPEN TEACH. For Franka-Allegro, Allegro Sim, and Libero Sim, TAVI [20], FISH [22] and BC were respectively used to train policies.
@@ -128,7 +128,7 @@ VI. LIMITATIONS AND DISCUSSION
 In this work, we introduce OPEN TEACH, an open-source unified framework designed to facilitate low-latency, highfrequency robot teleoperation. This versatile framework is tailored to accommodate diverse tasks and is compatible with a range of robot morphologies. However, we recognize a few limitations in this work: (a) OPEN TEACH relies on the accuracy of the in-built hand pose detection in the VR headset. Inaccuracies, particularly when fingers are occluded from view, can diminish the quality of hand tracking, posing
 
 
-challenges to teleoperation. (b) In specific instances, the pose detector on the Oculus board may misconstrue finger positions, leading to difficulties in executing gestures like gripper closing, which relies on precise pinches between fingers. Addressing these challenges through future research on hand pose detection and tracking holds the potential to enhance the ease and intuitiveness of teleoperation using VR headsets.
+ challenges to teleoperation. (b) In specific instances, the pose detector on the Oculus board may misconstrue finger positions, leading to difficulties in executing gestures like gripper closing, which relies on precise pinches between fingers. Addressing these challenges through future research on hand pose detection and tracking holds the potential to enhance the ease and intuitiveness of teleoperation using VR headsets.
 VII. INVITATION FOR CONTRIBUTIONS TO OPEN TEACH
 We firmly advocate for the advancement of robotics through the unrestricted accessibility of research projects to the broader community. In line with this principle, we will open-source every component of this research endeavor, including the VR application, the human-robot interface, and the robot controllers. Further, we encourage fellow researchers in establishing the infrastructure for their own robotic setups, and we invite inquiries for assistance. Finally, we view our work as a step towards achieving more accessible and affordable robot teleoperation. Recognizing that there is ample room for enhancement, we enthusiastically welcome contributions to our repositories and would be happy to share such contributions with the world with proper attribution given to the contributors.
 ACKNOWLEDGMENTS
@@ -147,7 +147,7 @@ REFERENCES
 [19] Zaid Gharaybeh, Howard Chizeck, and Andrew Stewart. Telerobotic control in virtual reality. In OCEANS 2019 MTS/IEEE SEATTLE, pages 1–8, 2019. doi: 10.23919/ OCEANS40490.2019.8962616. [20] Irmak Guzey, Yinlong Dai, Ben Evans, Soumith Chintala, and Lerrel Pinto. See to touch: Learning tac
 
 
-tile dexterity through visual incentives. arXiv preprint arXiv:2309.12300, 2023.
+ tile dexterity through visual incentives. arXiv preprint arXiv:2309.12300, 2023.
 [21] Siddhant Haldar, Vaibhav Mathur, Denis Yarats, and Lerrel Pinto. Watch and match: Supercharging imitation with regularized optimal transport. arXiv preprint arXiv:2206.15469, 2022.
 [22] Siddhant Haldar, Jyothish Pari, Anant Rai, and Lerrel Pinto. Teach a robot to fish: Versatile imitation from one minute of demonstrations. arXiv preprint arXiv:2303.01497, 2023.
 [23] Shangchen Han, Beibei Liu, Randi Cabezas, Christopher D. Twigg, Peizhao Zhang, Jeff Petkau, Tsz-Ho Yu, Chun-Jung Tai, Muzaffer Akbay, Zheng Wang, Asaf Nitzan, Gang Dong, Yuting Ye, Lingling Tao, Chengde Wan, and Robert Wang. Megatrack: Monochrome egocentric articulated hand-tracking for virtual reality. 2020. [24] Ankur Handa, Karl Van Wyk, Wei Yang, Jacky Liang, Yu-Wei Chao, Qian Wan, Stan Birchfield, Nathan Ratliff, and Dieter Fox. Dexpilot: Vision-based teleoperation of dexterous robotic hand-arm system. In 2020 IEEE International Conference on Robotics and Automation (ICRA), pages 9164–9170, 2020. doi: 10.1109/ ICRA40945.2020.9197124. [25] Thomas Hulin, Katharina Hertkorn, Philipp Kremer, Simon Scha ̈tzle, Jordi Artigas, Mikel Sagardia, Franziska Zacharias, and Carsten Preusche. The dlr bimanual haptic device with optimized workspace. In 2011 IEEE International Conference on Robotics and Automation, pages 3441–3442. IEEE, 2011. [26] Jemin Hwangbo, Inkyu Sa, Roland Siegwart, and Marco Hutter. Control of a quadrotor with reinforcement learning. IEEE Robotics and Automation Letters, 2(4):20962103, 2017. doi: 10.1109/LRA.2017.2720851.
@@ -159,7 +159,7 @@ In 2019 International Conference on Robotics and Automation (ICRA), pages 416–
 [41] Andrew Y Ng, Stuart J Russell, et al. Algorithms for inverse reinforcement learning. In ICML, 2000. [42] Octo Model Team, Dibya Ghosh, Homer Walke, Karl Pertsch, Kevin Black, Oier Mees, Sudeep Dasari, Joey Hejna, Charles Xu, Jianlan Luo, Tobias Kreiman, You Liang Tan, Dorsa Sadigh, Chelsea Finn, and Sergey Levine. Octo: An open-source generalist robot policy.
 
 
-https://octo-models.github.io, 2023. [43] Abhishek Padalkar, Acorn Pooley, Ajinkya Jain, Alex Bewley, Alex Herzog, Alex Irpan, Alexander Khazatsky, Anant Rai, Anikait Singh, Anthony Brohan, et al. Open x-embodiment: Robotic learning datasets and rt-x models. arXiv preprint arXiv:2310.08864, 2023.
+ https://octo-models.github.io, 2023. [43] Abhishek Padalkar, Acorn Pooley, Ajinkya Jain, Alex Bewley, Alex Herzog, Alex Irpan, Alexander Khazatsky, Anant Rai, Anikait Singh, Anthony Brohan, et al. Open x-embodiment: Robotic learning datasets and rt-x models. arXiv preprint arXiv:2310.08864, 2023.
 [44] Jyothish Pari, Nur Muhammad Shafiullah, Sridhar Pandian Arunachalam, and Lerrel Pinto. The surprising effectiveness of representation learning for visual imitation, 2021. [45] Dean A. Pomerleau. Alvinn: An autonomous land vehicle in a neural network. In D. Touretzky, editor, NeurIPS, volume 1. Morgan-Kaufmann, 1988. [46] Yuzhe Qin, Hao Su, and Xiaolong Wang. From one hand to multiple hands: Imitation learning for dexterous manipulation from single-camera teleoperation. arXiv preprint arXiv:2204.12490, 2022.
 [47] Yuzhe Qin, Wei Yang, Binghao Huang, Karl Van Wyk, Hao Su, Xiaolong Wang, Yu-Wei Chao, and Dietor Fox. Anyteleop: A general vision-based dexterous robot arm-hand teleoperation system. arXiv preprint arXiv:2307.04577, 2023.
 [48] Ilija Radosavovic, Tete Xiao, Stephen James, Pieter Abbeel, Jitendra Malik, and Trevor Darrell. Real-world robot learning with masked visual pre-training, 2022. URL https://arxiv.org/abs/2210.03109. [49] Moritz Reuss, Maximilian Li, Xiaogang Jia, and Rudolf Lioutikov. Goal-conditioned imitation learning using score-based diffusion policies. arXiv preprint arXiv:2304.02532, 2023.
@@ -171,7 +171,7 @@ Robotic telekinesis: Learning a robotic hand imitator by watching humans on yout
 [62] Yuqiang Wu, Pietro Balatti, Marta Lorenzini, Fei Zhao, Wansoo Kim, and Arash Ajoudani. A teleoperation interface for loco-manipulation control of mobile collaborative robotic assistant. IEEE Robotics and Automation Letters, 4(4):3593–3600, 2019. [63] xArm Developer. xarm python sdk. https://github.com/ xArm-Developer/xArm-Python-SDK. [64] Fan Zhang, Valentin Bazarevsky, Andrey Vakunov, Andrei Tkachenka, George Sung, Chuo-Ling Chang, and Matthias Grundmann. Mediapipe hands: On-device realtime hand tracking, 2020. [65] Tianhao Zhang, Gregory Kahn, Sergey Levine, and Pieter Abbeel. Learning deep control policies for autonomous aerial vehicles with mpc-guided policy search. In 2016 IEEE international conference on robotics and automation (ICRA), pages 528–535. IEEE, 2016. [66] Tianhao Zhang, Zoe McCarthy, Owen Jow, Dennis Lee, Xi Chen, Ken Goldberg, and Pieter Abbeel. Deep imitation learning for complex manipulation tasks from virtual reality teleoperation. In ICRA, 2018. [67] Tony Z Zhao, Vikash Kumar, Sergey Levine, and Chelsea Finn. Learning fine-grained bimanual manipulation with low-cost hardware. arXiv preprint arXiv:2304.13705, 2023. [68] Wenping Zhao, Jinxiang Chai, and Ying-Qing Xu. Combining marker-based mocap and rgb-d camera for acquiring high-fidelity hand motion data. In Proceedings of the ACM SIGGRAPH/eurographics symposium on computer animation, pages 33–42, 2012. [69] Yifeng Zhu, Abhishek Joshi, Peter Stone, and Yuke Zhu. Viola: Imitation learning for vision-based manipulation with object proposal priors. arXiv preprint arXiv:2210.11339, 2022. doi: 10.48550/arXiv.2210. 11339.
 
 
-APPENDIX
+ APPENDIX
 A. Framework details
 1) Structure of the framework: We use ZeroMQ for networking between nodes. The OPEN TEACH framework is divided into two parts - teleoperation and data collection.
 Teleoperation: The teleoperator is divided into 5 components - Detector, Keypoint Transformer, Operator, Controller, and Visualizer. A brief description of each has been provided below. 1) Detector: Receives the hand keypoints from the Meta Quest 3 and publishes them to ZMQ sockets. 2) Keypoint Transformer: Subscribes the keypoints published by the detector and maps them to the robot pose. 3) Operator: Receives the robot pose from the keypoint transformer and the current robot state from the controller. The operator computes the robot’s actions which are published to a ZMQ socket. 4) Controller: Subscribes an action from the operator and takes an action in the real or simulated environment. After taking the action, the controller publishes the current states of the environment for use by the operator. 5) Visualizer: Subscribes the RGB images from the camera process (or the environment in case of simulations) and puts it on the screen inside the VR app for visualization during teleoperation.
@@ -188,18 +188,18 @@ C. User Study
 Following up from Section V-F, we provide the success rate and average completion times for all 15 users for each task performed in Table VI and Table VII respectively. Each user roughly performed 3 tasks on average, with 5 trials for each task. As mentioned in Section V-F, since the HoloDex [4] and AnyTeleop [47] baselines lack open-source code for arm retargeting, we were unable to evaluate them on tasks involving arm movements. We observe a wide range of differences in success rates and average completion times demonstrating the inherent variations across users.
 
 
-Zone 1 Zone 2 Zone 3 Zone 1
+ Zone 1 Zone 2 Zone 3 Zone 1
 (a) Holo-Dex (b) Open Teach
 Fig. 5: Thumb retargeting difference
 TABLE VI: Success rates for the user study conducted across 15 individuals. Each user roughly performs 3 tasks on average.
 User Method Success Rate (in 5 trials) Flip Cube Pinch Grasp Pour Pick and Place Open Box of Mints User 1 Holo-Dex 1 0 - - AnyTeleop 0.8 0.2 - - Open Teach 1 0.8 0.2 - User 2 Holo-Dex - 0.2 - - AnyTeleop - 0.2 - - Open Teach - 0.8 - 0.8 0.8 User 3 Holo-Dex 1 0 - - AnyTeleop 1 0.2 - - Open Teach 1 0.8 - - 0.2 User 4 Holo-Dex 1 0 - - AnyTeleop 1 0.2 - - Open Teach 1 0.8 - 0.6 0.4 User 5 Holo-Dex - 0 - - AnyTeleop - 0.6 - - Open Teach - 0.2 0.4 1 User 6 Holo-Dex - 0 - - AnyTeleop - 0.6 - - Open Teach - 0.8 - 0.2 User 7 Holo-Dex - 0 - - AnyTeleop - 0 - - Open Teach - 0.6 0.8 0.8 0.4 User 8 Holo-Dex 1 - - - AnyTeleop 1 - - - Open Teach 1 - - - User 9 Holo-Dex - 0 - - AnyTeleop - 0.4 - - Open Teach - 0.8 0 - 0.6 User 10 Holo-Dex - 0 - - AnyTeleop - 0.2 - - Open Teach - 0.6 0.4 1 1 User 11 Holo-Dex 1 - - - AnyTeleop 1 - - - Open Teach 1 - - 0.8 0.4 User 12 Holo-Dex 1 - - - AnyTeleop 1 - - - Open Teach 1 - - - User 13 Holo-Dex 1 - - - AnyTeleop 1 - - - Open Teach 1 - 0.6 - User 14 Holo-Dex - 0 - - AnyTeleop - 0.4 - - Open Teach - 0.6 - - 0.8 User 15 Holo-Dex 1 - - - AnyTeleop 1 - - - Open Teach 1 - 0.4 - 
 
 
-TABLE VII: Average completion times for successful trials for the user study conducted across 15 individuals. Each user roughly performs 3 tasks on average. NS denotes cases where no successes were achieved.
+ TABLE VII: Average completion times for successful trials for the user study conducted across 15 individuals. Each user roughly performs 3 tasks on average. NS denotes cases where no successes were achieved.
 User Method Average completion time for successful demonstrations (in s) Flip Cube Pinch Grasp Pour Pick and Place Open Box of Mints User 1 Holo-Dex 4.6 NS - - AnyTeleop 20.2 22.5 - - Open Teach 5.4 18.6 66 - User 2 Holo-Dex - 17.5 - - AnyTeleop - 18.9 - - Open Teach - 20.6 - 29.7 12.2 User 3 Holo-Dex 5.4 NS - - AnyTeleop 18.3 7.8 - - Open Teach 5.1 12.6 - - 11.3 User 4 Holo-Dex 11 NS - - AnyTeleop 13.2 31.4 - - Open Teach 6.2 7.5 - 16.9 48.4 User 5 Holo-Dex - NS - - AnyTeleop - 11.4 - - Open Teach - 10.9 41.6 12.4 User 6 Holo-Dex - NS - - AnyTeleop - 12.7 - - Open Teach - 10.5 - 23.57 User 7 Holo-Dex - NS - - AnyTeleop - NS - - Open Teach - 19.1 21.49 49 37.8 User 8 Holo-Dex 6.5 - - - AnyTeleop 5.4 - - - Open Teach 4.7 - - - User 9 Holo-Dex - NS - - AnyTeleop - 49.9 - - Open Teach - 65.3 NS - 32.21 User 10 Holo-Dex - NS - - AnyTeleop - 48 - - Open Teach - 30.8 40.3 48.7 21.3 User 11 Holo-Dex 6.7 - - - AnyTeleop 11.5 - - - Open Teach 5.6 - - 21.8 15.7 User 12 Holo-Dex 6.2 - - - AnyTeleop 11 - - - Open Teach 3.8 - - - User 13 Holo-Dex 8.9 - - - AnyTeleop 14.2 - - - Open Teach 5.8 - 18.1 - User 14 Holo-Dex - NS - - AnyTeleop - 49.9 - - Open Teach - 65.3 - - 132.5 User 15 Holo-Dex 13.2 - - - AnyTeleop 14.6 - - - Open Teach 6.3 - 53.1 - 
 
 
-Slice Cucumber: Stabilize the cucumber with one arm and use a knife for cutting a slice with the other arm.
+ Slice Cucumber: Stabilize the cucumber with one arm and use a knife for cutting a slice with the other arm.
 Make Sandwich: Make a sandwich by sequentially adding the ingredients placed on a table.
 Bimanual
 Insert USB: Insert a USB charging cable into the adapter.
@@ -210,7 +210,7 @@ Uncap Marker: Lift the marker with one arm and uncap it with the other.
 Fig. 6: Real world task rollouts demonstrating the ability of OPEN TEACH to perform intricate, long-horizon tasks.
 
 
-Handover can: Pick up the can with one arm and hand it over to the other arm.
+ Handover can: Pick up the can with one arm and hand it over to the other arm.
 Pour Sprinkles: Pour sprinkles into a bowl.
 Bimanual
 Undo latch and open box: Undo the latch and open the box.
@@ -222,7 +222,7 @@ Franka-Allegro
 Fig. 7: Real world task rollouts demonstrating the ability of OPEN TEACH to perform intricate, long-horizon tasks.
 
 
-Open box: Lift the lid of the box.
+ Open box: Lift the lid of the box.
 Grasp object and twist: Grasp the lemon on the table and rotate the hand to face upwards.
 Stack Blocks: Stack blocks on top of each other.
 Open Ketchup Bottle: Open the cap of a ketchup bottle.
@@ -233,7 +233,7 @@ Kinova-Allegro Franka-Allegro
 Fig. 8: Real world task rollouts demonstrating the ability of OPEN TEACH to perform intricate, long-horizon tasks.
 
 
-Iron Towel: Move the hand to the iron and iron the towel.
+ Iron Towel: Move the hand to the iron and iron the towel.
 Hit Hammer: Hit a nail with the hammer.
 Undo Latch and Open Box: Undo the latch and open the box.
 Write Alphabet: Write the alphabet “A” on a paper placed on the table.
@@ -245,7 +245,7 @@ Laptop Opening: Open the lid of a laptop. The passthrough of the VR app is being
 Fig. 9: Real world task rollouts demonstrating the ability of OPEN TEACH to perform intricate, long-horizon tasks.
 
 
-Pinch Grasp: Grasp the block with a pinch and lift it.
+ Pinch Grasp: Grasp the block with a pinch and lift it.
 Flip Cube: Flip the cube in-hand.
 Put pan on stove and turn it on: Pick up the pan and put it on the stove. Then turn on the stove.
 Organize basket: Pick up everything placed on the table and put it in the basket.
@@ -256,7 +256,7 @@ Turn on Stove: Turn on the stove.
 Fig. 10: Real world task rollouts demonstrating the ability of OPEN TEACH to perform intricate, long-horizon tasks.
 
 
-Open Door: Move close to the cabinet door and open it.
+ Open Door: Move close to the cabinet door and open it.
 Put plastic bag in garbage can: Pick up the plastic bag from the counter and put it in the garbage can.
 Open Drawer: Move close to the drawer and open it.
 Stretch

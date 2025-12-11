@@ -18,7 +18,7 @@ The transformative power of large-scale data has fundamentally reshaped machine 
 arXiv:2511.02832v1 [cs.RO] 4 Nov 2025
 
 
-TABLE I: Comparison of recent humanoid data collection systems. We compare existing humanoid teleoperation systems across key dimensions essential for effective data collection. TWIST2 is the first system to combine full whole-body control with portability, achieving comprehensive capabilities including egocentric teleoperation, accurate tracking, and single-operator efficiency. Unlike previous works that either sacrifice portability for full whole-body control (TWIST) or sacrifice full whole-body control for portability (AMO, CLONE), our system achieves all critical requirements for scalable humanoid data collection.
+ TABLE I: Comparison of recent humanoid data collection systems. We compare existing humanoid teleoperation systems across key dimensions essential for effective data collection. TWIST2 is the first system to combine full whole-body control with portability, achieving comprehensive capabilities including egocentric teleoperation, accurate tracking, and single-operator efficiency. Unlike previous works that either sacrifice portability for full whole-body control (TWIST) or sacrifice full whole-body control for portability (AMO, CLONE), our system achieves all critical requirements for scalable humanoid data collection.
 Humanoid Data Portability & Scalability Holistic Control Collection System Category Source Portable No Calibration Single Operator Whole-Body Tracking Egocentric Teleop Foot Control Wrist Control
 HOMIE [2] Decoupled Exoskeleton ✗ ✓ ✓ ✗ ✗ ✗ ✓ AMO [3] Partial VR ✓ ✓ ✗ ✗ ✓ ✗ ✓ CLONE [4] Partial VR ✓ ✓ ✓ ✗ ✗ ✗ ✓ TWIST [1] Full MoCap ✗ ✗ ✓ ✓ ✗ ✓ ✗ TWIST2 (ours) Full VR ✓ ✓ ✓ ✓ ✓ ✓ ✓
 all joints including arms, torso, and legs in a unified manner (e.g., HumanPlus [12], TWIST [1]). Among these, VR-based solutions such as AMO and CLONE offer practicality but are limited to mobile skills with simple locomotion, falling short of capturing dynamic whole-body coordination skills that humans naturally exhibit. In contrast, full whole-body control holds the greatest promise for unleashing the versatility of humanoid robots, as evidenced by TWIST [1]. However, such systems typically depend on expensive, non-portable motion capture setups, restricting deployment to lab environments.
@@ -33,7 +33,7 @@ A. Whole-Body Humanoid Teleoperation
 Teleoperation is crucial for enabling humanoid robots to interact with complex real-world environments and perform sophisticated loco-manipulation tasks. Unlike wheel-based robots or tabletop arms, the anthropomorphic nature of humanoids makes whole-body control the most natural and effective teleoperation approach [1], [3], [4], [12], [14][16]. As shown in Table I, we categorize recent works into three categories: a) decoupled control, b) partial whole-body control, and c) full whole-body control. Full whole-body control, as demonstrated by TWIST [1], shows promising results in coordinated whole-body dexterity, which is the
 
 
-primary focus of this work. As detailed in Table I, we identify several critical aspects in scalable & holistic teleoperation and data collection that remain lacking in previous works for real-world deployment. which we address comprehensively in this work.
+ primary focus of this work. As detailed in Table I, we identify several critical aspects in scalable & holistic teleoperation and data collection that remain lacking in previous works for real-world deployment. which we address comprehensively in this work.
 B. Visual Humanoid Control
 Previous works on visual humanoid control predominantly rely on LiDAR for perceptive locomotion [17]–[19], typically employing task-specific sim-to-real reinforcement learning (RL) approaches. Recent works like HEAD [20] propose keypoint-based hierarchical frameworks with humanoid egocentric vision, while limiting in simple navigation tasks. VideoMimic [18] introduced a real2sim2real pipeline that enables real robots to perform environment interactions such as sitting, though their interactions remain limited to static settings like the ground or stone chairs. Some works such as PDC [21] are conducted only in simulation and face significant sim-to-real transfer challenges. In contrast, our work focuses on developing general visuomotor humanoid policies that can interact with complex environments and perform long-horizon whole-body loco-manipulation and legged manipulation tasks—capabilities not demonstrated in previous works.
 III. OUR SYSTEM
@@ -69,7 +69,7 @@ We use Unitree G1 with 29 DoF (3 DoF waist + two 6 DoF legs + two 7 DoF arms), e
 Add-on low-cost neck (TWIST2 Neck). Unlike recent works [3], [23] that build built-in necks, we design an addon neck module that can be seamlessly attached to the Unitree G1 without disassembling its original head (see Figure 3). Our design is inspired by ToddlerBot [24]. We use two Dynamixel XC330-T288 motors to control the yaw and pitch angles, connected via a U2D2 and powered by the onboard 12V/5A supply. All structural parts are 3D printed. The cost of the neck is $250. We use Zed Mini as our stereo camera attached to the neck (the ZED Mini stereo camera will cost extra $400). Since human roll DoF is rarely used in everyday interaction, we find that the two-DoF design already enables smooth and human-like neck motions (Figure 5). To further standardize the TWIST2 neck usage, we build the corresponding simulation model in MuJoCo as shown in Figure 4.
 
 
-Add-On Low-Cost Neck $250
+ Add-On Low-Cost Neck $250
 Portable Device
 PICO4U VR
 +2x PICO Motion Tracker $1000
@@ -115,7 +115,7 @@ D. Holistic Human-to-Humanoid Retargeting
 In this section, we describe how human motion data is holistically leveraged to control the humanoid robot’s body, hands, and neck. Body retargeting. We adapt GMR [1], [29], a real-time motion retargeting method, to the PICO human motion format (Figure 6). The original GMR employs a two-stage optimization: (1) solving for link rotation consistency, and (2) refining global pose alignment. Since PICO motion capture often yields inaccurate global pose estimation, we modify the second optimization stage as follows: 1) for the lower body, optimize for position and rotation constraints; 2) for the upper body, only optimize for rotation constraints. This ensures 1) less feet sliding and 2) better upper-body teleportation experience.
 
 
-We partition the retargeted links into lower-body Llow (e.g., pelvis, hips, knees, ankles, feet) and upper-body Lup (e.g., spine, shoulders, elbows, wrists, head). Let Rhuman
+ We partition the retargeted links into lower-body Llow (e.g., pelvis, hips, knees, ankles, feet) and upper-body Lup (e.g., spine, shoulders, elbows, wrists, head). Let Rhuman
 i and
 Rrobot
 i (q) be the link orientations, and phuman
@@ -171,7 +171,7 @@ We now describe our humanoid teleoperation and data collection system built with
 Egocentric whole-body teleoperation. During teleoperation, we obtain real-time streamed human motions from PICO (Section III-C) and map human motions into robot motion commands pcmd, and then send pcmd to πlow (Section III-E) through Redis [34]. Additionally, our teleoperation system is equipped with stereoscopic vision via the custom shader implemented in [26] that adjusts the interpupillary distance and sets the focal point at approximately 3.3 feet, providing teleoperators with depth perception (see Figure 8) The stereo images are streamed from ZED Mini to PICO
 
 
-SYSTEM 2 SYSTEM 1
+ SYSTEM 2 SYSTEM 1
 Diffusion Policy
 Robot Image
 History Action Motion Target
@@ -206,7 +206,7 @@ high.
 Observation and action space. The visuomotor policy operates on visual observations and proprioceptive information to generate motion commands. Visual input consists of
 
 
-[Teleop] Folding Towels
+ [Teleop] Folding Towels
 [Teleop] Transporting Baskets through Door
 Fig. 10: Long-horizon humanoid teleoperation powered by TWIST2. All tasks are achieved with streamed robot egocentric vision, full whole-body control, and a single operator.
 360 × 640 RGB images captured by the ZED Mini camera, which are downsampled to 224 × 224 for computational efficiency. For robot proprioception, we use the historical command sequence pcmd rather than raw robot states s. This choice of proprioception serves two purposes: 1) it decouples the high-level policy from the low-level controller, enabling modular training and deployment, and 2) it mitigates error accumulation in this high-dimensional system by avoiding direct dependence on noisy raw robot states s. The action space consists of the same command vector pcmd used during teleoperation, ensuring consistency between data collection and policy execution. All proprioceptive inputs are normalized to improve training stability. Network architecture. We employ Diffusion Policy [35] as our policy learning framework, utilizing 1D convolutional blocks for temporal modeling of action sequences. The policy predicts 64 action chunks using sample-based prediction [16], [36], corresponding to 2 seconds of future motion commands at the policy execution frequency. For visual encoding, we use a ResNet-18 backbone pre-trained with R3M [37], which provides robust visual representations learned from diverse robotic datasets.
@@ -218,7 +218,7 @@ A. Long-Horizon Teleoperation
 TWIST2 enables very long-horizon teleoperation. We showcase two representative tasks that cannot be achieved by previous systems (see Figure 10). We observe that 1) egocentric active perception and 2) smooth whole-body tracking instead of decoupled control are keys that enable such natural & smooth, long-horizon, whole-body, and mobile tasks. Folding towels. The robot uses its egocentric vision to locate the towel, move the towel to its front, grasp it, and shakes it to spread. Then it will pinch the corner to fold the towel in half with two hands. It repeats the motion to fold into thirds (or quarters) to the target size, presses along the crease to set it, and neatly places the finished towel to its left-hand side. The entire process requires fine-grained control of the
 
 
-[Autonomous] Whole-Body Dex Pick & Place
+ [Autonomous] Whole-Body Dex Pick & Place
 6x Consecutive Successful Grasp
 [Autonomous] Kick-T
 Fig. 11: Closed-loop whole-body visuomotor policy execution in the real world. TWIST2 enables effective and holistic whole-body humanoid data collection, which further enables versatile autonomous whole-body humanoid loco-manipulation & legged manipulation skills.
@@ -237,7 +237,7 @@ Bimanul Manip 1 18.5 min 98 100% 11 s Mobile Manip 19.5 min 46 100% 25 s
 Second, we conduct a user study to quantify the effectiveness of our data collection system. We evaluate two users:
 
 
-1) an expert who has extensive experience using this system for data collection, and 2) a novice who is using the system for the first time during the test. Since the novice user gains proficiency through practice, we have them start with our complete system and then progressively remove features to isolate the impact of each component. As shown in Table III, TWIST2 achieves the shortest completion times and highest success rates across all configurations. As illustrated in Figure 12, we observe several key findings: 1) without stereo vision for teleoperation, users tend to grasp higher than the actual object location, significantly increasing grasp failure rates; 2) without the neck module, users cannot perceive objects beyond the fixed field of view, making teleoperation extremely challenging; 3) when using third-person view with VR pass-through (i.e., w/o Egocentric View), the expert can collect data remarkably fast (10 episodes in 43 seconds), but this is only possible because the expert stands directly beside the robot, which is infeasible for long-horizon mobile manipulation tasks which require remote control via egocentric vision.
+ 1) an expert who has extensive experience using this system for data collection, and 2) a novice who is using the system for the first time during the test. Since the novice user gains proficiency through practice, we have them start with our complete system and then progressively remove features to isolate the impact of each component. As shown in Table III, TWIST2 achieves the shortest completion times and highest success rates across all configurations. As illustrated in Figure 12, we observe several key findings: 1) without stereo vision for teleoperation, users tend to grasp higher than the actual object location, significantly increasing grasp failure rates; 2) without the neck module, users cannot perceive objects beyond the fixed field of view, making teleoperation extremely challenging; 3) when using third-person view with VR pass-through (i.e., w/o Egocentric View), the expert can collect data remarkably fast (10 episodes in 43 seconds), but this is only possible because the expert stands directly beside the robot, which is infeasible for long-horizon mobile manipulation tasks which require remote control via egocentric vision.
 Kick-T Robot View
 WB-Dex Robot View
 Fig. 13: Visualization of training demonstrations (egocentric robot view and whole-body joint positions) for WB-Dex and Kick-T tasks.
@@ -257,7 +257,7 @@ There are several key challenges that must be addressed before we can realistica
 Standardizing humanoid hardware. There is currently a wide range of humanoid platforms available
 
 
-TWIST2 Neck 001 TWIST2 Neck 002 TWIST2 Neck 003
+ TWIST2 Neck 001 TWIST2 Neck 002 TWIST2 Neck 003
 Fig. 15: We have manufactured 3 TWIST2 Necks, indicating that TWIST2 Neck is easy to assemble and can be democratized for research purposes.
 for research—such as the Unitree G1/R1 and Booster T1/K1—which makes collected data difficult to reuse due to cross-embodiment discrepancies. Recently, the Unitree G1 has emerged as a popular choice because it offers a strong balance between performance and cost. At this stage, we advocate for standardizing humanoid hardware usage before attempting to scale data collection. In our work, we adopt the Unitree G1 platform and highlight that egocentric vision is crucial for capturing human-level manipulation data. We therefore introduce a low-cost neck add-on for the G1 that enables an egocentric camera setup and delivers roughly 80% of core human functionality.
 Democratizing humanoid data collection. High-quality humanoid datasets have traditionally relied on motion-capture systems, limiting data collection to MoCap studios and specialized equipment. We demonstrate a portable and costefficient alternative that preserves rich human manipulation capabilities rather than only enabling whole-body movement. Sharing humanoid data. We believe that open humanoid datasets should serve as a foundation for future research. To that end, we publicly release all collected humanoid data on HuggingFace, and provide visualizations at https://twistdata.github.io , with the goal of making our dataset directly reusable and easily extendable by the community.
@@ -285,7 +285,7 @@ REFERENCES
 [25] PICO Immersive Pte. Ltd., “PICO Motion Tracker,” https://www. picoxr.com/global/products/pico-motion-tracker, 2023.
 
 
-[26] Z. Zhao, L. Yu, K. Jing, and N. Yang, “Xrobotoolkit: A cross-platform framework for robot teleoperation,” arXiv preprint arXiv:2508.00097, 2025. [27] “Vive tracker (3.0),” https://www.vive.com/us/accessory/tracker3/, 2025. [28] B. Dynamics and T. R. Team, “Large behavior models and atlas find new footing,” https://bostondynamics.com/blog/ large-behavior-models-atlas-find-new-footing/, Aug. 2025, accessed: 2025-09-08. [29] J. P. Araujo, Y. Ze, P. Xu, J. Wu, and C. K. Liu, “Retargeting matters: General motion retargeting for humanoid motion tracking,” arXiv preprint arXiv:2510.02252, 2025.
+ [26] Z. Zhao, L. Yu, K. Jing, and N. Yang, “Xrobotoolkit: A cross-platform framework for robot teleoperation,” arXiv preprint arXiv:2508.00097, 2025. [27] “Vive tracker (3.0),” https://www.vive.com/us/accessory/tracker3/, 2025. [28] B. Dynamics and T. R. Team, “Large behavior models and atlas find new footing,” https://bostondynamics.com/blog/ large-behavior-models-atlas-find-new-footing/, Aug. 2025, accessed: 2025-09-08. [29] J. P. Araujo, Y. Ze, P. Xu, J. Wu, and C. K. Liu, “Retargeting matters: General motion retargeting for humanoid motion tracking,” arXiv preprint arXiv:2510.02252, 2025.
 [30] Z. Chen, M. Ji, X. Cheng, X. Peng, X. B. Peng, and X. Wang, “Gmt: General motion tracking for humanoid whole-body control,” arXiv:2506.14770, 2025.
 [31] Y. Ze, J. P. Arau ́jo, J. Wu, and C. K. Liu, “Gmr: General motion retargeting,” https://github.com/YanjieZe/GMR, 2025, gitHub repository. [32] N. Mahmood, N. Ghorbani, N. F. Troje, G. Pons-Moll, and M. J. Black, “Amass: Archive of motion capture as surface shapes,” in Proceedings of the IEEE/CVF international conference on computer vision, 2019, pp. 5442–5451. [33] J. Li, J. Wu, and C. K. Liu, “Object motion guided human motion synthesis,” ACM Transactions on Graphics (TOG), vol. 42, no. 6, pp. 1–11, 2023. [34] Redis contributors, “redis/redis: The redis in-memory data structure store,” 2025, accessed: 2025-09-09. [Online]. Available: https: //github.com/redis/redis [35] C. Chi, S. Feng, Y. Du, Z. Xu, E. Cousineau, B. Burchfiel, and S. Song, “Diffusion policy: Visuomotor policy learning via action diffusion,” in Proceedings of Robotics: Science and Systems (RSS), 2023.
 [36] Y. Ze, G. Zhang, K. Zhang, C. Hu, M. Wang, and H. Xu, “3d diffusion policy: Generalizable visuomotor policy learning via simple 3d representations,” arXiv preprint arXiv:2403.03954, 2024.
