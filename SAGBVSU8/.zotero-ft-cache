@@ -1,0 +1,485 @@
+Data-driven Reachability Verification with Probabilistic Guarantees under Koopman
+Spectral Uncertainty ⋆
+Jianqiang Ding ∗ Shankar A. Deka ∗
+∗ Department of Electrical Engineering, Aalto University, Finland. (e-mail: {jianqiang.ding, shankar.deka}@aalto.fi).
+Abstract: Providing rigorous reachability guarantees for unknown complex systems is a crucial and challenging task. In this paper, we present a novel data-driven framework that addresses this challenge by leveraging Koopman operator theory. Instead of operating in the state space, the proposed method encodes model uncertainty from finite data directly into Koopman spectral representation with quantifiable error bounds. Leveraging this spectral information, we systematically determine time intervals within which trajectories from the initial set are guaranteed, with a prescribed probability, to reach the target set. This enables the rigorous reachability verification without explicit computation of reachable sets, thereby offering a significant advantage in scalability and applicability. We finally validate the effectiveness of the proposed framework through case studies on representative dynamical systems.
+Keywords: Data-driven control theory, Reachability analysis, Formal Verification, Koopman Operator, Nonlinear Systems
+1. INTRODUCTION
+With the increasing integration of complex autonomous systems, such as autonomous vehicles, robotics, and smart grids, into safety-critical scenarios, guaranteeing their operational safety and reliability has become a paramount challenge in modern control engineering. Fundamentally, verifying whether a dynamical system adheres to such specifications can be formulated and analyzed as a problem of reachability verification. For instance, collision avoidance is equivalent to verifying that the system’s state trajectory will never reach an unsafe state set representing obstacles. Similarly, task completion corresponds to guaranteeing that the system state will eventually reach a target set with expected behaviors.
+Historically, the problem of reachability verification has been extensively studied under the assumption that an exact model of the dynamical system is available. Prominent approaches in this direction include set-propagation methods using zonotopes, such as work by Alanwar et al. (2023) and their variants; backward reachability analysis based on Hamilton-Jacobi-Isaacs (HJI) equations as explored by Herbert et al. (2019); and verification via the construction of barrier certificates through Sum-of-Squares (SOS) optimization techniques introduced by Prajna and Rantzer (2007). Despite their theoretical soundness, the prerequisite of a precisely known model is often a prohibitive bottleneck in practice. For many real-world systems, deriving a model from first principles is either infeasible due to unknown physical mechanisms, or yields a high-fidelity model that is computationally intractable for formal analysis.
+⋆ We acknowledge the financial support of the Finnish Ministry of Education and Culture through the Intelligent Work Machines Doctoral Education Pilot Program (IWM VN/3137/2024-OKM-4).
+This fundamental gap between model-based theory and the realities of complex engineering systems has spurred a paradigm shift to data-driven approaches, which aim to infer system properties directly from observed data, bypassing the identification of an explicit model.
+Recent advancements in data-driven reachability analysis have established a diverse landscape of methodologies. For instance, scenario optimization approaches as demonstrated in Devonport and Arcak (2020b); Kashani et al. (2024) formulate the determination of reachable set as a chance-constrained optimization problem, which yields explicit probabilistic guarantees but often at the cost of high sample complexity. Another distinct techniques in this domain is to employ surrogate models, particularly using tools like gaussian process in Devonport and Arcak (2020a) or conformal prediction in Tebjou et al. (2023), to compute a reachable set that contains the true trajectories with statistical guarantees. In contrast, methods that aim for deterministic guarantees, such as those using Zonotopes in Alanwar et al. (2021), focus on constructing over-approximation of the true reachable set but are typically conservative for verification. While emerging techniques using Neural PDE solvers like DeepReach from Bansal and Tomlin (2020) promise high scalability, their assurances currently remain largely empirical. However, these approaches are fundamentally linked by the common principle of embedding data-driven uncertainty into the geometric representation of the reachable set, thereby inheriting the limitations of set-based computations. Even when inferring the dynamical model from finite noise-free data, the intrinsic uncertainty presents a critical problem in the field that remains largely open: how can we, under model uncertainty inherent in finite data, rigorously verify the reachability of the underlying dynamical system in
+arXiv:2511.23322v1 [eess.SY] 28 Nov 2025
+
+
+general settings, such as between non-convex sets or over long, potentially infinite, time horizons?
+To address this challenge, this paper introduce a novel data-driven reachability verification framework based on the Koopman spectrum. Diverging from conventional approaches that pursue a set-based framework to geometrically verify reachability in the state space, our algorithm adopts a fundamentally different paradigm inspired by the method in Ding and Deka (2024). Specifically, we encode the uncertainty of the underlying dynamics, as captured from data, into Koopman spectral information with error bounds. Leveraging this spectral representation, we verify the reachability specification by computing the probability of the existence of a non-empty time interval, during which trajectories starting from the given initial set can reach the target set.
+2. PRELIMINARIES
+Notations: We use R and C to denote the set of real and complex numbers, respectively. Rn denotes the n−dimensional real space. The space of all k−times continuously differentiable functions on domain X is denoted by Ck(X). The notation spec(M ) denotes the spectrum of a matrix M ∈ Cn×n. Re(·) and Im(·) denote the real and imaginary parts of an argument, respectively. |· | is used to denote the absolute value of a real or complex number and likewise ∠· denotes the phase angle of a complex scalar.
+In this paper, we consider continuous-time dynamical systems of the form
+d
+dt x(t) = f (x(t)) (1)
+where f : X → Rn is an unknown continuously differentiable map and x(t) ∈ Rn denotes the state in the compact set X ∈ Rn at time t ≥ 0. The flow map st : X → X
+of system (1) is given by st(x) = x + R t
+0 f (x(τ ))dτ , for all
+t ≥ 0 and x ∈ X. Throughout this paper, the explicit form of dynamical system (1) is considered to be unknown. Instead, our analysis is based on the following assumptions.
+Assumption 1. We are given a finite dataset D = {xk, yk}N
+k=1 consisting of N snapshot pairs collected from
+trajectories of the system (1), where each pair (xk, yk) satisfies yk = s∆t(xk) for a fixed time step ∆t > 0. Assumption 2. We assume the amount of data and function dictionary are sufficiently rich such that the Koopman eigenvalues λ associated with the principal eigenfunctions under consideration are assumed to be known precisely or estimated with negligible error 1 .
+Under Assumptions 1 and 2, we are interested in the problem formulated as follows.
+Problem 1. (Data-driven Reachability Verification) Consider a dynamical system (1) known only through the dataset D. Given an initial set X0 ⊂ X and a target set XF ⊂ X, reachability verification aims to determine whether there exists some time t ≥ 0 and x0 ∈ X0 such that st(x0) ∈ XF .
+In the following, we first review the necessary fundamentals of Koopman operator theory and its principal
+1 Please refer to subsection 2.3 for further discussion.
+eigenpairs. We then show how reach-time bounds derived from the Koopman eigenpairs can be used for reachability verification. Finally, we examine the error bounds on datadriven approximation of Koopman eigenpairs.
+2.1 Koopman operator and principal eigenpairs
+Let F be a Banach space of scalar-valued functions φ(x) : X → C. The Koopman operator Ut : F → F corresponding to the system (1) is defined as [Utφ](x) = φ(st(x)), where φ(x) ∈ F denotes an observable function. Furthermore, Definition 1. (Koopman Eigenvalues and Eigenfunctions) An observable function φ(x) ∈ F is said to be an eigenfunction of the Koopman operator corresponding to the eigenvalue λ if
+[Utφ](x) = eλtφ(x), t ≥ 0. (2)
+With the Koopman generator, Kf , equation (2) can be written as
+Kf φ = ∂φ
+∂x f (x) = λφ(x) (3)
+In addition to being defined for all t ∈ [0, ∞) and x ∈ X, the Koopman spectrum can be generalized to finite time and the subset of state space as open and subdomain eigenfunctions. Furthermore, we define the set of principal eigenpairs as the minimal generator G of the set given by
+E=
+(m X
+i=1
+niλi,
+m
+Y
+i=1
+φni
+i
+!
+(λi, φi) ∈ G, ni ∈ N
+)
+.
+where E is the semigroup of eigenpairs (λ, φ).
+Remark 1. The concept of principal eigenfunctions, introduced in Mohr and Mezi ́c (2016) and further studied in Kvalheim and Revzen (2021), yields a countably infinite set of eigenfunctions. To form a richer basis, this notion is extended to ‘primary eigenfunctions’, as introduced in Bollt (2021), by allowing real-valued exponents. In this paper, we adopt this more general primary eigenfunction definition for reachability verification.
+2.2 Time-to-reach bounds using the Koopman spectrum
+Given any function g : X → C and sets V, W ⊂ X, we define the following notations for convenience,
+g(V ) =. sup
+x∈V
+|g(x)|, g(V ) =. inf
+x∈V |g(x)|
+Lg(W, V ) =. log g(V )
+g(W ) , Ag(W, V ) =. ∠g(V ) − ∠g(W ).
+We recall the following results from Ding and Deka (2024) for reachability verification with reach-time bounds.
+Theorem 1. Let Imag(λ, ψ) be the time-to-reach bounds with magnitudes of non-trivial eigenpair (λ, ψ) ∈ E defined
+over the set X, where ψ = Qn
+i=1 ψαi
+i and λ = Pn
+i=1 αiλi
+with αi ≥ 0 and principal eigenpairs (λi, ψi) ∈ G. Then, we have the over-approximation Iˆmag(λ, ψ) such that
+(a) For Re (λ) > 0, Imag(λ, ψ) ⊆ Iˆmag(λ, ψ) .=
+Pn
+i=1 αiLψi (XF , X0)
+−
+Pn
+i=1 αi Re (λi) ,
+Pn
+i=1 αiLψi (X0, XF )
+Pn
+i=1 αi Re (λi)
+
+
+(b) For Re (λ) < 0, Imag(λ, ψ) ⊆ Iˆmag(λ, ψ) .=
+Pn
+i=1 αiLψi (X0, XF )
+Pn
+i=1 αi Re (λi) ,
+Pn
+i=1 αiLψi (XF , X0)
+−
+Pn
+i=1 αi Re (λi) . Theorem 2. Let Iphase(λ, ψ) be the collection of timeto-reach bounds with phases of complex (and non-trivial)
+eigenpair (λ, ψ) ∈ E, parameterized by ψ = Qn
+i=1 ψαi
+i
+and λ = Pn
+i=1 αiλi, where αi ≥ 0, we have the over
+approximation Iˆphase(λ, ψ) such that
+(a) For Im (λ) > 0, and some m ∈ Z,
+Iˆphase(λ, ψ) ⊆
+" Pn
+i=1 αiAψi (X0, XF ) + 2mπ
+Pn
+i=1 αi Im (λi) ,
+Pn
+i=1 −αiAψi (XF , X0) + 2mπ
+Pn
+i=1 αi Im (λi)
+#
+=. Iˆphase(λ, ψ)
+(b) For Im (λ) < 0, and some m ∈ Z,
+Iˆphase(λ, ψ) ⊆
+" Pn
+i=1 αiAψi (XF , X0) + 2mπ
+−
+Pn
+i=1 αi Im (λi) ,
+Pn
+i=1 αiAψi (X0, XF ) + 2mπ
+Pn
+i=1 αi Im (λi)
+#
+=. Iˆphase(λ, ψ).
+Let Iˆ(λ, ψ) .= Iˆmag(λ, ψ) ∩ Iˆphase(λ, ψ) denote the computed reach-time bounds, a necessary condition for reachability verification is then given by the following corollary. Corollary 1. For the dynamical system (1), a necessary condition for a target set XF ⊂ X to be reachable from an initial set X0 ⊂ X is that the intersection of all intervals Iˆ(λ, ψ) is non-empty. In other words,
+{st(x0) | x0 ∈ X0}
+\
+XF ̸= ∅ for some t > 0
+=⇒
+\
+(λ,ψ)∈E
+Iˆ(λ, ψ) ̸= ∅.
+Remark 2. Theorem 1 and 2 establish that an overapproximation of the exact reach-time bounds can be obtained when the exact bounds of the principal eigenfunctions’ values are available on X0 and XF . The Corollary 1 presents the necessary condition for reachability with Iˆ(λ, ψ).
+2.3 Error bounds on approximating Koopman spectral properties
+The data-driven approximation of Koopman spectral properties is fundamentally rooted in the approximation of the Koopman operator itself. Spurred by the evolution from Dynamic Mode Decomposition (DMD) by Schmid (2010) to Extended DMD (EDMD) by Williams et al. (2015), and other variants like kernel EDMD as seen in Williams et al. (2014); Klus et al. (2020), the study of this topic is undergoing a significant maturation, progressively shifting from exploratory algorithms to a comprehensive framework grounded in rigorous error analysis. Seminal work by Korda and Mezi ́c (2018) proved the convergence of EDMD to the true operator in the finite-data limit. Probabilistic bounds with convergence rates for i.i.d. and ergodic sampling, respectively, were established in Philipp et al. (2023). Moving beyond the uniform bounds, the L∞ error bounds for kEDMD were derived in K ̈ohne et al.
+(2025) by reformulating the problem through interpolation theory. However, an accurate operator approximation does not guarantee accurate spectral properties, a challenge primarily attributed to spectral pollution. A critical development to address this challenge is Residual DMD (ResDMD) from Colbrook et al. (2023); Colbrook and Townsend (2024). By approximating the resolvent operator, this method provides the framework with rigorous guarantees for computing the spectrum without spectral pollution, and offer a computable metric to evaluate the residual for each eigenpair. A key result, Theorem 4.1 in Colbrook and Townsend (2024), establishes that the computed eigenvalues converge to the true spectrum as the amount of data and the dictionary size increase. The theoretical origins of spectral pollution were further elucidated in Kostic et al. (2023) by the concept of metric distortion, which reveals that spectral error is amplified by a geometric factor related to the chosen function space. For systems with local analytical structure, high-precision methods such as Analytical EDMD in Mauroy and Mezic (2024) and JetDMD in Ishikawa et al. (2024) have been developed, leveraging Taylor or jet-based expansions to achieve strong convergence guarantees for the eigenfunctions. These theoretical advancements establish that, under suitable assumptions on data and the choice of basis functions, the error of a data-driven Koopman eigenpair approximation can be rigorously bounded. To formalize our results under spectral uncertainty, we define the error between a computed eigenvalue λ ̃ and its true counterpart λ to be bounded by a constant δλ 2 ≥ 0, such that
+|λ ̃ − λ| ≤ δλ (4)
+and correspondingly, the eigenfunction approximation error in the space F to be bounded by a constant δψ ≥ 0,
+∥ε(x)ψ(x) − ψ(x)∥F ≤ δψ (5)
+where ε(x) represents the local relative error of ψ(x) to its approximation ψ ̃(x) after optimal scaling alignment .
+3. DATA-DRIVEN REACHABILITY VERIFICATION UNDER SPECTRAL UNCERTAINTY
+In this section, we present the main technical contribution of this paper by deriving rigorous formal guarantees for reachability verification with uncertain principal Koopman eigenpairs. To achieve this, our derivation accounts for both the uncertainty of Koopman eigenpairs arising from finite data, and the sampling uncertainty introduced when estimating their extrema over sets from finite samples. In the following analysis, we quantify the impact of these two fundamental sources of uncertainty, and construct the probabilistic guarantee on the reach-time bounds.
+We begin by examining the inaccurate Koopman eigenpairs arising from the model uncertainty. Given an uncertain Koopman eigenpair (λ ̃, ψ ̃) satisfying the bounds as
+defined in (4) and (5), the quantities Lψ ̃ and Aψ ̃ can be bounded as follows,
+Lemma 1. Suppose the inaccurate eigenfunction ψ ̃(x) = ε(x)ψ(x) satisfying a multiplicative error model as defined in (5), then for any compact sets V, W ∈ X, we have Lψ ̃
+2 In our case, δλ = 0 by the Assumption 2.
+
+
+and Aψ ̃ computed from the inaccurate ψ ̃(x) can be bounded such that,
+Lψ(W, V ) − Lε(V, W ) ≤ Lψ ̃(W, V )
+≤ Lψ(W, V ) + Lε(W, V ) (6)
+Aψ(W, V ) − Aε(V, W ) ≤ Aψ ̃(W, V )
+≤ Aψ(W, V ) + Aε(W, V ) (7)
+Proof. Given ψ ̃(x) as defined in (5) that implies log |ψ( ̃x)| = log |ψ(x)| + log |ε(x)|, we have,
+Lψ ̃(W, V ) = sup
+x∈V
+log |ψ(x)| + log |ε(x)|
+− inf
+x∈W log |ψ(x)| + log |ε(x)|
+≤ log|ψ(V )| + log|ε(V )| − log|ψ(V )| + log|ε(V )|
+= Lψ(W, V ) + Lε(W, V ).
+The remaining bounds in (6) and (7) can be established in an analogous manner.
+The flexibility of the time-to-reach framework in handling general set geometries, such as nonconvex or even disconnected sets, essentially stems from its reliance only on eigenfunction extrema on sets, which can be estimated via sampling. Next, we proceed with the analysis of the impact of sampling uncertainty on the verification framework. Under the general assumption of i.i.d sampling as presented in Lemma 3, the error of these empirical estimates can be bounded with probability as follows.
+Lemma 2. Let L ̃ψ(W, V ) and A ̃ψ(W, V ) be the empirical estimates of Lψ and Aψ, respectively, which are computed from N i.i.d. samples drawn from the compact sets W, V ∈ X. For any given error tolerance ε > 0 and confidence level δ ∈ (0, 1), there exists a sufficiently large number of N ∈ N such that the following inequalities hold with a joint probability of at least 1 − δ:
+Lψ(W, V ) − ε ≤L ̃ψ(W, V ) ≤ Lψ(W, V ), (8)
+Aψ(W, V ) − ε ≤A ̃ψ(W, V ) ≤ Aψ(W, V ). (9)
+Proof. By the definition of the supremum and infimum, the empirical estimates from samples drawn from a set S must satisfy,
+lo ̃g|ψ(S)| ≤ log|ψ(S)|, lo ̃g|ψ(S)| ≥ log|ψ(S)|.
+Then we have,
+L ̃ψ(W, V ) = lo ̃g|ψ(V )| − lo ̃g|ψ(W )|
+≤ log|ψ(V )| − log|ψ(W )| = Lψ(W, V ).
+By Lemma 3, for any failure probability σ ∈ (0, 1) and error tolerance ε > 0, we can choose a number of samples N large enough such that, with a probability of at least 1 − σ, the following error bounds hold for ψ(x),
+lo ̃g|ψ(V )| ≥ log|ψ(V )| − ε
+2 , lo ̃g|ψ(W )| ≤ log|ψ(W )| + ε
+2.
+(10)
+Let σ = δ
+4 and applying the union bound, we ensure
+that both inequalities hold simultaneously with a joint probability of at least 1 − δ
+2 . Substitute these bounds into
+the definition of L ̃ψ(W, V ) and we have,
+L ̃ψ(W, V ) = lo ̃g|ψ(V )| − lo ̃g|ψ(W )|
+≥ (log|ψ(V )| − ε
+2 ) − (lo ̃g|ψ(W )| + ε
+2)
+= Lψ(W, V ) − ε.
+Combining the data-conditioned deterministic upper bound and the probabilistically derived lower bound yields the result for L ̃ψ(W, V ) for any compact sets W, V ∈ X. Following similar procedure we have an identical argument holds for A ̃ψ(W, V ). Since both conclusions are derived under the same joint event, the given inequalities hold simultaneously with probability at least 1 − δ.
+With the individual impact of model uncertainty and sampling uncertainty formally bounded by Lemma 1 and Lemma 2, we formalize our main result in the following theorem.
+Theorem 3. Let I ̃(λ, ψ) be the empirical estimate of Iˆ(λ, ψ) with inaccurate principal eigenpairs {(λi, ψi)}m
+i=1,
+and suppose the data sample are i.i.d. Given any error tolerance ε > 0 and a probabilistic confidence level δ ∈ (0, 1), there exists a sufficiently large number N ∈ N such that,
+P
+n
+dH (Iˆ(λ, ψ), I ̃(λ, ψ)) ≤ ∆
+o
+≥ 1 − δ. (11)
+where dH denotes the Hausdorff distance, and the total error bound ∆ is given by
+∆ =. max ε + ∆L
+| Re (λi)|min
+, ε + ∆A
+| Im (λi)|min
+(12)
+Here, ∆L
+.= maxi∈{1,··· ,m}{∆L,i} where each ∆L,i represents the worst-case model error from ψi, given by ∆L,i =
+{|Lεi (X0, XF )|, |Lεi (XF , X0)|}, and ∆A is defined analogously for the phase.
+Proof. Let Ei be the joint event that the conclusions of both Lemma 1 and Lemma 2 hold for principal eigenfunc
+tion ψi, and E =. ∩m
+i=1Ei be the joint event where the conditions hold for all m principal eigenpairs simultaneously. Under the event Ei, we have
+|L ̃ψ ̃i − Lψi | ≤ |L ̃ψ ̃i − Lψ ̃i | + |Lψ ̃i − Lψi |
+≤ ε + max{|Lεi (X0, XF )|, |Lεi (XF , X0)|} = ε + ∆L,i (13)
+Propagating these worst-case errors on magnitudes through the derivation in Theorem 1 yields a bound on the Hausdorff distance conditional on E such that,
+dH (Iˆ(λ, ψ), I ̃(λ, ψ)) = max{
+Pn
+i=1 αi|L ̃ψ ̃i − Lψi |
+Pn
+i=1 αi| Re (λi)| , ∀αi ≥ 0}
+≤ max{
+Pn
+i=1 αi(ε + ∆L,i)
+Pn
+i=1 αi| Re (λi)| , ∀αi ≥ 0}
+≤ max{
+Pn
+i=1 αi(ε + ∆L)
+Pn
+i=1 αi| Re (λi)|min
+, ∀αi ≥ 0}
+≤ ε + ∆L
+| Re (λi)|min
+. (14)
+Combining the analogous bound with phase, we have,
+dH (Iˆ(λ, ψ), I ̃(λ, ψ)) ≤ ∆. (15)
+Since event E is only a sufficient condition to guarantee the bounded Hausdorff distance, thus
+
+
+P
+n
+dH (I ̃(λ, ψ), Iˆ(λ, ψ)) ≤ ∆
+o
+≥P
+m
+\
+i=1
+Ei
+!
+=1−P
+m
+[
+i=1
+Ec
+i
+!
+≥1−
+m
+X
+i=1
+P(E c
+i ). (16)
+By Lemma 3, we can choose N ∈ N large enough such that P(E c
+i) ≤ δ
+m . Substituting this into the equation (16) gives
+P
+n
+dH (I ̃(λ, ψ), Iˆ(λ, ψ)) ≤ ∆
+o
+≥ 1−δ, which completes the
+proof.
+Remark 3. The error bound in Theorem 3 is inherently conservative as it results from a worst-case analysis of model uncertainty encoded within the obtained eigenfunction approximations, and the bound can be loose in practice if the approximation quality varies significantly across the domain.
+4. EXPERIMENTS
+In this section, we present several numerical experiments to validate our framework and demonstrate its efficacy. The experiments are designed to systematically showcase the framework’s validity, analyze its convergence properties, and highlights its key advantages over conventional set-based approaches. Across all examples, the Koopman eigenpairs are learned from data using the ResDMD algorithm developed by Colbrook et al. (2023) with polynomial basis functions. The required eigenfunction extrema over sets are approximated via Monte Carlo sampling, and a high-fidelity ground truth is established using dense sampling for rigorous comparison. Example 1. (System with known eigenfunctions) We first consider a two-dimensional nonlinear system given by
+x ̇ 1
+x ̇ 2 = [∇Ψ(x)]−1 −1 0
+0 2.5 Ψ(x),
+with analytical principal eigenfunctions are denoted as Ψ(x) = [ψ1(x), ψ2(x)]T with ψ1(x) = x21 + 2x2 + x32,
+ψ2(x) = x1 +sin (x2)+x31, and the corresponding eigenvalues are λ1 = −1 and λ2 = 2.5 at the unstable equilibrium (0, 0).
+(a) ψˆ1(x) vs ψ1(x). (b) ψˆ2(x) vs ψ2(x).
+Fig. 1. Comparison of the true principal eigenfunctions ψ1(x) and ψ2(x) (translucent surfaces) with the evaluation (black dots) of corresponding approximations ψˆ1(x) and ψˆ2(x) at randomly sampled points.
+Given the dataset of 1000 trajectories start from initial points uniformly sampled within the domain [−0.5, 2.5] × [−1.5, 1.5], with each point simulated for 10 steps with a time step of ∆t = 0.05, we employ the ResDMD algorithm to learn approximate principal Koopman eigenfunctions ψ ̃1(x) and ψ ̃2(x). The pointwise error distribution of these approximations are shown in Fig. 1, confirming that the obtained Koopman principal eigenpairs are sufficiently accurate over the domain of interest.
+The task here is to verify reachability from an initial set X0 = {x ∈ R2|h0.05,1.15,1,2,0.05 ≤ −0.1} to a target set XF = {x ∈ R2|h1.85,−0.75,5,8,0.1 ≤ −0.7}, where
+hxc
+1 ,xc
+2,a,b,s = −(1 − x1−xc
+1
+3 + a( x2−xc
+2
+s )5 + b( x1−xc
+1
+s )3) ·
+e−(( x1−xc
+1
+s )2+( x2−xc
+2
+s )2). Based on the obtained principal eigenfunctions, and the empirical estimates of their respective extrema over the given sets, our method estimates the reach-time bound as I ̃ = [0.70, 0.97]. Fig. 2 confirms the validity of this estimate.
+Fig. 2. Reachable set computed with approximated principal eigenpairs from X0 for the estimated reach-time
+bound I ̃ = [0.70, 0.97] (orange), with full reachable set within [0, 0.97] (gray) for reference.
+To empirically validate the probabilistic guarantees established in Theorem 3, we conduct a Monte Carlo simulation of 2000 trials. In each trial, all principal eigenpairs are learned from new randomly generated trajectories, and the corresponding extrema are estimated from fresh sets of random samples. For comparison, we compute the ground truth reach-time bound with the constructed analytical principal eigenfunctions and uniformly dense sampling over sets. Fig. 1 shows the distribution of the Hausdorff distances between the empirical estimated reach-time bounds with the computed ground truth. The resulting histogram exhibits a distinct shape resembling a normal distribution, which provides compelling evidence that the Hausdorff distance is a well-behaved random variable, thereby demonstrating that for any reasonable risk level δ ∈ (0, 1), a corresponding bound on the Hausdorff distance as presented in Theorem 3 exists.
+Next, we investigate the convergence of our framework with respect to the quality of the data-driven inputs. Example 2. (Duffing’s oscillator) Given the nonlinear dynamics
+
+
+Fig. 3. Distribution of Hausdorff distances over 2000 random settings.
+x ̇ 1
+x ̇ 2 = x2
+−0.5x2 − x1(x21 − 1) ,
+with stable equilibrium points at (±1, 0) and a saddle equilibrium point at (0, 0). For reachability verification, we consider an initial sex X0 = [1.0, 1.1] × [1.0, 1.1] and a target set XF = [0.6, 0.7] × [0.2, 0.3]. A high-fidelity baseline reach-time bound I = [3.57, 4.15] is established by computing the evaluations of the true principal eigenfunctions via the path-integral method from Deka et al. (2023), as validated in Fig. 4. The convergence analysis involves systematically varying the quality of the datadriven inputs, where we employ polynomial basis functions of varying degrees for eigenfunction approximation, and adjust the number of Monte Carlo samples for extrema estimation. Fig. 5 illustrates the resulting Hausdorff distance between the computed reach-time intervals under varying settings and the established baseline with logarithmic axes.
+Fig. 4. Reachable set computed with approximated principal eigenpairs from X0 for the estimated reach-time
+bound I ̃ = [3.57, 4.15] (orange), with full reachable set within [0, 4.15] (gray) for reference.
+As shown in Fig. 5, the empirical Hausdorff distance from 6555 Monte Carlo trials remains strictly below the estimated upper bound with Theorem 3, and using more samples tends to yield smaller distances. Notably, in some cases, eigenfunction approximations using polynomials of degree 8 outperforms those of degrees 10, 12 and 14. This occurs because the ResDMD reflects the average consistency of obtained eigenpair with trajectory data,
+Fig. 5. Convergence analysis of the reach-time error from 6555 Monte Carlo trials under varying settings. Point size indicating the sample numbers of {50, 5000} for extrema estimation over given sets.
+instead of the local approximation accuracy. This finding empirically underscores a critical insight from our analysis in Theorem 3, that is, the estimation of the reach-time bounds from data is highly sensitive to the worst-case pointwise error, which can be formally captured by the L∞−norm.
+Finally, to contextualize our contribution, we compare our method against a representative Koopman-based reachability analysis approach developed by Bak et al. (2025) that relies on set-propagation technique. Example 3. (Roessler attractor) Consider the dynamic governed by the equations as follows,
+"x ̇ 1 x ̇ 2 x ̇ 3
+#
+=
+" −x2 − x3 x1 + 0.2x2
+0.2 + x3(x1 − 5.7)
+#
+.
+We formulate the task to verify no trajectories starting from the initial set X0 = [−0.5, 0.5] × [−9.0, −8.0] × [−0.5, 0.5] can reach the target set XF = 10.5, 11] × [−4.4, −3.9] × [−0.6, −0.1] within a given time horizon [0, 1]. The competitor method lifts the 3-dimensional state into a 73-dimensional observable space, computes the reachable set of the resulting linear system using Polynomial Zonotope, we project the computed reachable set back to the original state space for reachability verification. As depicted in Fig. 6, the set-propagation method yields an over-approximated reachable set that intersects with the target set, thus failing to verify the unreachability specification, leaving the result inconclusive. In contrast, our framework leverages the principal Koopman eigenpairs learned from trajectory data to bypass the conservative and expensive geometric operations, and our estimated reach-time bound in this case is empty with high probability. This conclusion is validated by the simulated trajectories as shown in Fig. 6.
+5. CONCLUSIONS
+In this paper, we introduced a novel data-driven framework for reachability verification for unknown dynamical systems based on the Koopman spectrum. Our main contribution is propagating model uncertainty from data into a formal probabilistic guarantee on the time-to-reach bounds. Key future works include incorporating the uncertainty of the Koopman eigenvalues into the analysis, and extending the framework to control synthesis for safetycritical systems.
+
+
+Fig. 6. Reachability verification of the Roessler attractor system.
+REFERENCES
+Alanwar, A., Koch, A., Allg ̈ower, F., and Johansson, K.H. (2021). Data-driven reachability analysis using matrix zonotopes. In Learning for Dynamics and Control, 163175. PMLR. Alanwar, A., Koch, A., Allg ̈ower, F., and Johansson, K.H. (2023). Data-driven reachability analysis from noisy data. IEEE Transactions on Automatic Control, 68(5), 3054–3069. Bak, S., Bogomolov, S., Hencey, B., Kochdumper, N., Lew, E., and Potomkin, K. (2025). Reachability of koopman linearized systems using explicit kernel approximation and polynomial zonotope refinement. Formal Methods in System Design, 1–27.
+Bansal, S. and Tomlin, C. (2020). Deepreach: A deep learning approach to high-dimensional reachability,”nov. arXiv preprint arXiv:2011.02082.
+Bollt, E.M. (2021). Geometric considerations of a good dictionary for koopman analysis of dynamical systems: Cardinality,“primary eigenfunction,” and efficient representation. Communications in Nonlinear Science and Numerical Simulation, 100, 105833.
+Colbrook, M.J., Ayton, L.J., and Sz ̋oke, M. (2023). Residual dynamic mode decomposition: robust and verified koopmanism. Journal of Fluid Mechanics, 955, A21.
+Colbrook, M.J. and Townsend, A. (2024). Rigorous datadriven computation of spectral properties of koopman operators for dynamical systems. Communications on Pure and Applied Mathematics, 77(1), 221–283.
+Deka, S.A., Narayanan, S.S., and Vaidya, U. (2023). Pathintegral formula for computing koopman eigenfunctions. In 2023 62nd IEEE Conference on Decision and Control (CDC), 6641–6646. IEEE. Devonport, A. and Arcak, M. (2020a). Data-driven reachable set computation using adaptive gaussian process classification and monte carlo methods. In 2020 American control conference (ACC), 2629–2634. IEEE.
+Devonport, A. and Arcak, M. (2020b). Estimating reachable sets with scenario optimization. In Learning for dynamics and control, 75–84. PMLR.
+Ding, J. and Deka, S.A. (2024). Time-to-reach bounds for verification of dynamical systems using the koopman spectrum. arXiv preprint arXiv:2411.05554.
+Herbert, S.L., Bansal, S., Ghosh, S., and Tomlin, C.J. (2019). Reachability-based safety guarantees using efficient initializations. In 2019 IEEE 58th Conference on Decision and Control (CDC), 4810–4816. IEEE.
+Ishikawa, I., Hashimoto, Y., Ikeda, M., and Kawahara, Y. (2024). Koopman operators with intrinsic observables in rigged reproducing kernel hilbert spaces. arXiv preprint arXiv:2403.02524.
+Kashani, A., Strong, A.K., Bridgeman, L.J., and Danielson, C. (2024). Probabilistic data-driven invariance for constrained control of nonlinear systems. IEEE Control Systems Letters.
+Klus, S., Nu ̈ske, F., and Hamzi, B. (2020). Kernelbased approximation of the koopman generator and schr ̈odinger operator. Entropy, 22(7), 722. K ̈ohne, F., Philipp, F.M., Schaller, M., Schiela, A., and Worthmann, K. (2025). -error bounds for approximations of the koopman operator by kernel extended dynamic mode decomposition. SIAM journal on applied dynamical systems, 24(1), 501–529.
+Korda, M. and Mezi ́c, I. (2018). Linear predictors for nonlinear dynamical systems: Koopman operator meets model predictive control. Automatica, 93, 149–160. Kostic, V., Lounici, K., Novelli, P., and Pontil, M. (2023). Sharp spectral rates for koopman operator learning. Advances in Neural Information Processing Systems, 36, 32328–32339. Kvalheim, M.D. and Revzen, S. (2021). Existence and uniqueness of global Koopman eigenfunctions for stable fixed points and periodic orbits. Physica D: Nonlinear Phenomena, 425, 132959. Mauroy, A. and Mezic, I. (2024). Analytic extended dynamic mode decomposition. arXiv preprint arXiv:2405.15945.
+Mohr, R. and Mezi ́c, I. (2016). Koopman principle eigenfunctions and linearization of diffeomorphisms. arXiv preprint arXiv:1611.01209.
+Philipp, F., Schaller, M., Worthmann, K., Peitz, S., and Nueske, F. (2023). Error bounds for kernel-based approximations of the koopman operator. arXiv preprint arXiv:2301.08637.
+Prajna, S. and Rantzer, A. (2007). Convex programs for temporal verification of nonlinear dynamical systems. SIAM Journal on Control and Optimization, 46(3), 9991021. Schmid, P.J. (2010). Dynamic mode decomposition of numerical and experimental data. Journal of fluid mechanics, 656, 5–28.
+Tebjou, A., Frehse, G., et al. (2023). Data-driven reachability using christoffel functions and conformal prediction. In Conformal and Probabilistic Prediction with Applications, 194–213. PMLR.
+
+
+Williams, M.O., Kevrekidis, I.G., and Rowley, C.W. (2015). A data–driven approximation of the koopman operator: Extending dynamic mode decomposition. Journal of Nonlinear Science, 25(6), 1307–1346.
+Williams, M.O., Rowley, C.W., and Kevrekidis, I.G. (2014). A kernel-based approach to data-driven koopman spectral analysis. arXiv preprint arXiv:1411.2260.
+Appendix A. PROOF OF THEOREM 1
+Proof. Let x0 be some point in X0 such that sT (x0) ∈ XF
+for some T > 0. By definition, ψ(sT (x0)) = eλT ψ(x0), which implies |ψ(sT (x0))| = eRe (λ)T |ψ(x0)|. We note that ψ(XF ) ≤ |ψ(sT (x0))| ≤ ψ(XF ) and likewise, ψ(X0) ≤
+|ψ(x0)| ≤ ψ(X0). These inequalities lead to
+eRe (λ)T ψ(X0) ≤ ψ(XF ) and ψ(XF ) ≤ eRe (λ)T ψ(X0).
+Taking natural logarithm on both sides and rearranging the terms leads to the constraint,
+Re (λ)T ∈ − Lψ(XF , X0) , Lψ(X0, XF ) . (A.1)
+Since logarithm is a monotonically increasing function, swapping the order of log and sup, then for any set S ⊆ X, we have log supx∈S |ψ(x)| = supx∈S log |ψ(x)| =
+supx∈S
+Pn
+i=1 αi log |ψi(x)|. Applying triangular inequality,
+the last term is bounded by Pn
+i=1 αi supx∈S log |ψi(x)| =
+Pn
+i=1 αi log supx∈S |ψi(x)|. In other words,
+log ψ(S) ≤
+n
+X
+i=1
+αi log ψi(S). (A.2)
+Similarly, we can show that
+log ψ(S) ≥
+n
+X
+i=1
+αi log ψi(S). (A.3)
+Substituting (A.2) and (A.3) into (A.1) yields the relation for Re (λ) > 0:
+−1
+Re (λ) Lψ(XF , X0) = 1
+Re (λ) log ψ(XF )
+ψ(X0)
+≥
+Pn
+i=1 αi log ψi(XF )
+ψi (X0 ) Pn
+i=1 αi Re (λi) =
+Pn
+i=1 αiLψi (XF , X0)
+−
+Pn
+i=1 αi Re (λi) , and
+1
+Re (λ) Lψ(X0, XF ) = 1
+Re (λ) log ψ(XF )
+ψ(X0)
+≤
+Pn
+i=1 αi log ψi(XF )
+ψi (X0 ) Pn
+i=1 αi Re (λi) =
+Pn
+i=1 αiLψi (X0, XF )
+Pn
+i=1 αi Re (λi) .
+In the same way, for the case of Re (λ) < 0, we have
+−1
+| Re (λ)| Lψ(X0, XF ) ≥
+Pn
+i=1 αi log ψi(X0)
+ψi(XF )
+−
+Pn
+i=1 αi Re (λi) , and
+1
+| Re (λ)| Lψ(XF , X0) ≤
+Pn
+i=1 αi log ψi(X0)
+ψi(XF )
+−
+Pn
+i=1 αi Re (λi) .
+This completes our proof.
+Appendix B. PROOF OF THEOREM 2
+Proof. For any x ∈ X0 and t ≥ 0, we have
+ψ(st(x)) = eλtψ(x) = |ψ(x)|eRe (λ)tej Im (λ)t+j∠ψ(x)
+=⇒ ∠ψ(st(x)) = ∠ψ(x) + Im (λ)t − 2mπ
+for some m ∈ Z. Now, if ∃T > 0 such that sT (x) ∈ XF , then we have ∠ψ(XF ) ≥ ∠ψ(sT (x)) = ∠ψ(x) + Im (λ)T − 2mπ, which greater than or equal to ∠ψ(X0) + Im (λ)T −
+2mπ. Rearranging terms, we get Im (λ)T ≤ ∠ψ(XF ) − ∠ψ(X0) + 2mπ. Similarly, ∠ψ(XF ) ≤ ∠ψ(sT (x)) = ∠ψ(x) + Im (λ)T − 2mπ, which is less than or equal to ∠ψ(X0) + Im (λ)T − 2mπ. This leads to Im (λ)T ≥ ∠ψ(XF ) − ∠ψ(X0) + 2mπ, and the constraint on T as follows,
+Im (λ)T ∈ − Aψ(XF , X0) , Aψ(X0, XF ) + 2mπ (B.1)
+Additionally, since ∠ Qn
+i=1 ψαi
+i = Pn
+i=1 αi∠ψi + 2kπ for
+some k ∈ Z. For any set S ⊆ X, this gives us
+∠ψ(S) = sup
+x∈S
+∠ψ(x) = sup
+x∈S
+n
+X
+i=1
+αi∠ψi(x) + 2kπ ≤
+triangular
+inequality
+n
+X
+i=1
+sup
+x∈S
+αi∠ψi(x) + 2kπ =
+n
+X
+i=1
+αi∠ψi(S) + 2kπ,
+and similarly ∠ψ(S) ≥
+triangular
+inequality
+n
+X
+i=1
+αi∠ψi(S) + 2kπ.
+Therefore,
+Aψ(X0, XF ) ≤
+n
+X
+i=1
+αi∠ψi(XF ) −
+n
+X
+i=1
+αi∠ψi(X0) and
+−Aψ(XF , X0) ≥
+n
+X
+i=1
+αi∠ψi(XF ) −
+n
+X
+i=1
+αi∠ψi(X0)
+The proof is then concluded by substituting the above inequalities into (B.1) for the two cases, Im (λ) < 0 and Im (λ) > 0, from which the desired result follows.
+Appendix C. LEMMA ON EXTREMUM ESTIMATION
+Consider h : S → R to be a bounded function on a compact set S. Let extS(h) be an extremum of h (supremum or infimum), and e ̃xtS(h) denotes the corresponding empirical estimate from N i.i.d samples. We refer ε−optimal region as {x ∈ S|h(S) − h(x) ≤ ε} for the supremum, and {x ∈ S|h(x) − h(S) ≤ ε} for the infimum. A standard result regarding the probabilistic bound on the error of an empirical extremum can derived as follows,
+Lemma 3. For any desired tolerance ε > 0 and risk level σ ∈ (0, 1), there is a number N0 = ⌈ log(σ)
+log(1−Pε) ⌉ ∈ N such
+that, for any N ≥ N0, we have
+P |e ̃xtS(h) − extS(h)| ≤ ε ≥ 1 − σ,
+where Pε is the probability measure of the corresponding ε−optimal set.
+Proof. An estimation error greater than ε occurs if and only if all N i.i.d samples fall outside the ε−optimal region. Bounding this failure probability by σ requires (1 − Pε)N ≤ σ, which yields that N ≥ ⌈ log(σ)
+log(1−Pε) ⌉.

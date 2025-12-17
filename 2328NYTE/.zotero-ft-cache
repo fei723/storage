@@ -1,0 +1,820 @@
+THIS PAPER HAS BEEN ACCEPTED FOR PUBLICATION BY IEEE TRANSACTIONS ON CONTROL SYSTEMS TECHNOLOGY 1
+Robust Predictive Motion Planning by Learning
+Obstacle Uncertainty
+Jian Zhou, Yulong Gao, Ola Johansson, Bjo ̈rn Olofsson, and Erik Frisk
+Abstract—Safe motion planning for robotic systems in dynamic environments is nontrivial in the presence of uncertain obstacles, where estimation of obstacle uncertainties is crucial in predicting future motions of dynamic obstacles. The worst-case characterization gives a conservative uncertainty prediction and may result in infeasible motion planning for the ego robotic system. In this paper, an efficient, robust, and safe motion-planning algorithm is developed by learning the obstacle uncertainties online. More specifically, the unknown yet intended control set of obstacles is efficiently computed by solving a linear programming problem. The learned control set is used to compute forward reachable sets of obstacles that are less conservative than the worst-case prediction. Based on the forward prediction, a robust model predictive controller is designed to compute a safe reference trajectory for the ego robotic system that remains outside the reachable sets of obstacles over the prediction horizon. The method is applied to a car-like mobile robot in both simulations and hardware experiments to demonstrate its effectiveness.
+Index Terms—Robust motion planning, predictive control, uncertainty quantification, safe autonomy.
+I. INTRODUCTION
+S
+AFE motion planning is an important research topic in control and robotics [1], [2]. Dynamic and uncertain environments make it challenging to perform efficient, safe and robust planning for a robotic system. One crucial source of uncertainty from the environment is obstacle uncertainty, which refers to the uncertain future motion of dynamic obstacles [3]. This uncertainty can be exemplified by unknown decision-making of human-driven vehicles, which typically acts as uncertainties to autonomous vehicles [4]. Predicting obstacle uncertainties plays a key role in predicting future motions of dynamic obstacles [5]. Although the worst-case realization of uncertainties in theory ensures safety of the ego robotic system, it results in overly conservative solutions or even infeasibility of the motion-planning problem [4], [6], [7]. To reduce the conservativeness from the worstcase uncertainty characterization, this paper develops a safe
+This research was supported by the Strategic Research Area at Link ̈opingLund in Information Technology (ELLIIT). (corresponding author: Yulong Gao).
+Jian Zhou, Ola Johansson, and Erik Frisk are with the Division of Vehicular Systems, Department of Electrical Engineering, Link ̈oping University, SE581 83 Linko ̈ping, Sweden. Email: {jian.zhou, ola.johansson, erik.frisk}@liu.se.
+Yulong Gao is with the Department of Electrical and Electronic Engineering, Imperial College London, United Kingdom. Email: yulong.gao@imperial.ac.uk.
+Bj ̈orn Olofsson is with the Department of Automatic Control, Lund University, SE-221 00 Lund, Sweden, and also with the Division of Vehicular Systems, Department of Electrical Engineering, Link ̈oping University, SE-581 83 Linko ̈ping, Sweden. Email: bjorn.olofsson@control.lth.se.
+(a)
+(b)
+(c)
+Fig. 1. Reach-avoid scenario where the ego vehicle (EV) aims at planning a safe trajectory in the presence of an uncertain surrounding vehicle (SV). (a) Deterministic approach: no consideration of motion uncertainty of the obstacle, therefore the planning is unsafe. (b) Worst-case robust approach: considering the worst-case motion uncertainty of the obstacle yields an infeasible problem. (c) The proposed approach: reducing the conservatism and planning a feasible reference trajectory.
+motion-planning algorithm that learns the obstacle uncertainties using real-time observations of the obstacles. The motivation can be highlighted by the reach-avoid scenario in Fig. 1, where an autonomous ego vehicle (EV) navigates to reach the target while avoiding a surrounding vehicle (SV), e.g., a human-driven vehicle, in the driveable area. It is assumed that there is no direct communication between the two vehicles. Since the intended trajectory of the SV is unknown to the EV, the key point is how to predict the motion of the SV. A simple way for the prediction is by propagating a constant velocity model. Despite the computational advantage, the predicted trajectory of the SV may in this way have a deviation from its intended trajectory, as shown in Fig. 1(a). Thus, such predictions could be insufficient for the EV to perform safe motion planning. Alternatively, assuming that the EV knows the SV’s dynamics and (possibly overestimated) admissible control set, it is reasonable to predict the maximal
+arXiv:2403.06222v2 [cs.RO] 20 Jan 2025
+
+
+THIS PAPER HAS BEEN ACCEPTED FOR PUBLICATION BY IEEE TRANSACTIONS ON CONTROL SYSTEMS TECHNOLOGY 2
+forward occupancy that contains all trajectory realizations of the SV1. Although uncertainties of the SV are incorporated in the prediction, the overly conservative forward occupancy may make the motion-planning problem infeasible, as illustrated in Fig. 1(b). Therefore, the primary objective of this paper is to refine the robust prediction method to reduce its conservativeness while maintaining safety. This involves understanding the intended control set of the SV, which, though typically unknown, can be learned from data sampled by observations of SV. By computing the forward occupancy of the SV based on learning its intended control set, the EV can plan a trajectory that is both safe and feasible, as shown in Fig. 1(c). To realize the objective, this paper considers the motion planning of a general ego robotic system in the presence of dynamic surrounding obstacles with control strategies unknown to the ego system. A new efficient way is proposed to learn the decision-making support, i.e., the set of intended control actions of each obstacle, using observations of obstacles. Thus, the use of this set enables a better motion prediction, in the sense of less conservative than the worst-case prediction. The main contributions of this paper are: (a) A novel approach is proposed to learn the unknown yet intended control set of obstacles without making any assumptions about the distribution of control actions of the obstacles and without the need for training with prior data. The set is efficiently computed by solving a linear programming (LP) problem. (b) Using the online learned set, a robust predictive motion planner is developed for motion planning of the ego system subject to collision avoidance with uncertain surrounding obstacles in dynamic environments. The method can perform resilient motion planning in the absence of prior knowledge regarding obstacle uncertainties. (c) The performance of the proposed motion-planning method is validated through both simulations and hardware experiments in several benchmark traffic scenarios. Outline: This paper is organized as follows: Section II places this research in the context of related work in the literature. Section III formalizes the general research problem. Section IV specifies the method for learning the control set of obstacles. Section V designs the robust MPC for safe motion planning based on uncertainty prediction. Sections VI and VII show the performance of the method in both simulations and hardware experiments, and Section VIII concludes the paper.
+II. RELATED WORK
+This section reviews the most related research from two perspectives: (1) Uncertainty prediction of dynamic systems, and (2) uncertainty-aware motion planning in time-varying environments.
+A. Uncertainty Prediction
+The robust approach for predicting uncertainties of a dynamic system is by formulating a sequence of sets over the
+1Forward occupancy represents the set of positions a system can reach over a specific horizon, defining a region that could be occupied based on the system’s control capabilities.
+horizon to cover the worst-case uncertainty realizations. This is typically achieved by forward reachability analysis [8], [9]. For example, [2] characterized the forward reachable sets (FRSs) of the ego robotic system considering the worst-case disturbances for safety guarantees in robust motion planning. In [10], the FRSs were predicted for both an autonomous ego vehicle and a surrounding vehicle based on the maximal disturbance set for safety verification. Focusing on uncertainty predictions of other traffic participants, the later work in [11] and [12] combined the worst-case FRSs with the road networks and the interactions with the autonomous ego vehicle, respectively, in practical driving scenarios. An alternative yet more conservative approach to the forward reachability analysis is computing the minimal robust positive invariant (MRPI) set for the ego system under the maximal disturbances, and relevant works can be found in [13], [14], and [15]. A main problem of robust methods is that the worstcase assumptions can lead to unnecessary conservatism in the prediction. To mitigate this problem, the non-conservative methods, which formulate the set of uncertainties as a subset of the worst-case set, have been developed. For instance, [16] and [17] formulated the probabilistic reachable set of other vehicles in traffic by assuming the decision-making process of surrounding vehicles, which is influenced by the road geometry, as a Markov chain. If sufficient prior knowledge of obstacle uncertainties is available, e.g., a large amount of training data, the probabilistic prediction can be performed by machine learning models like neural ordinary differential equations [18]. The training data can also be utilized to formulate the empirical reachable set that contains the αlikely observed trajectories of a system [19]. In addition, with particular assumptions on the distribution of obstacles, a confidence-aware prediction that formulated an obstacle occupancy with a degree of prediction confidence/risk was designed in [20] and [4], where the former assumed that the control action of an obstacle satisfies a Boltzmann distribution, and the later assumed that the leading vehicle in the automated overtaking scenario respects a supermartingale. Apart from the probabilistic prediction, learning the true disturbance set of a dynamic system was also investigated to reduce the conservativeness, as presented in [21] that learned the disturbance set of an ego helicopter using residuals, and [22] that learned the disturbance set of an ego vehicle using a rigid tube.
+B. Uncertain-Aware Motion Planning
+Based on the prediction results, the motion-planning problems in uncertain and dynamic environments can be solved using various well-established methods [23]. Among them, model predictive control (MPC) stands out because of the straightforward inclusion of differential constraints of the system and safety constraints with uncertain obstacles and the environment [24]. Combined with different uncertaintyprediction methods, the MPC-based planners include robust MPC, stochastic MPC, and scenario MPC [25]. For example, in [3] and [26], the robust MPC was used to generate the safe reference trajectory for an autonomous vehicle subject to the worst-case obstacle occupancy. In contrast, the stochastic MPC, as presented in [27] and [28], considers collision
+
+
+THIS PAPER HAS BEEN ACCEPTED FOR PUBLICATION BY IEEE TRANSACTIONS ON CONTROL SYSTEMS TECHNOLOGY 3
+avoidance with obstacle occupancy with a probability based on the assumptions on the uncertainty distribution of the obstacle. The scenario MPC can also achieve similar probabilistic constraints, where the constraints are transformed into deterministic forms using finite samples of uncertainties [29]. In addition to these methods, there have been combinations of them, like the robust scenario MPC that optimizes policies concerning multi-mode obstacle-uncertainty predictions [30], and the scenario stochastic MPC to also handle multi-modal obstacle uncertainties with known distributions [31].
+III. PROBLEM STATEMENT
+This section first defines the general notations used in the paper, then introduces models of the ego system and dynamic surrounding obstacles and finally formulates the robust motion-planning problem to be solved.
+A. Notations
+Rn is the n-dimensional real number vector space, Rn+
+is the n-dimensional non-negative vector space, Nn is the n-dimensional natural number vector space, and Nn+ is the
+n-dimensional positive integer vector space. [0, 1]n means an n-dimensional vector with each element between [0, 1]. In indicates an n × n identity matrix. Matrices of appropriate dimension with all elements equal to 1 and 0 are denoted by 1 and 0, respectively. An interval of integers is denoted by Iba = {a, a + 1, · · · , b}. For two sets A and B, A ⊕ B = {x + y | x ∈ A, y ∈ B}. For a set Γ ⊂ Rna+nb , the set projection is defined as A = Proja(Γ) =
+{a ∈ Rna : ∃b ∈ Rnb , (a, b) ∈ Γ}. For the MPC iteration, the current time step is indicated by t. A prediction of a variable x at time step t + i over the prediction horizon is represented as xi|t, where i = 1, . . . , N , and N is the prediction horizon. The sampling interval is represented as T . The cardinality of a set A is represented by |A|. The weighted inner product of a vector x is denoted by ||x||2
+A = x⊤Ax.
+B. Modeling of Ego System and Surrounding Obstacles
+The ego system’s dynamics are described by a discrete-time control system
+xe
+t+1 = f (xe
+t , ue
+t ), (1)
+where xte ∈ Xe ⊆ Rne
+x is the state and ute ∈ Ue ⊆ Rne
+u is the control input at time step t. Here, the superscript e indicates the ego system. The sets Xe and Ue are the state set and admissible control set, respectively. Consider an environment with multiple surrounding obstacles, where the motion of the center of geometry of each obstacle is modeled by a linear time-varying (LTV) system
+xs
+t+1 = As
+t xs
+t + Bs
+t us
+t , (2)
+where Ats and Bts are the system matrices at time step t, which are determined according to specific kinematic or dynamic
+equations of the obstacle. The vector xts ∈ Rns
+x is the state
+and uts ∈ Rns
+u is the input at time step t. The superscript s indicates the s-th obstacle and the index set of all involved obstacles is denoted by a finite set S.
+As illustrated in the motivating example in Section I, the control capability of the obstacles is distinguished by two different control sets. For the s-th obstacle, the admissible control set Us refers to the set of control inputs determined by the physical limitations in the worst case, while the intended control set U ̃ ts ⊆ Us refers to the set that covers the control inputs that would be used by the obstacle from step t over a planning horizon. It is assumed that Us is known, or can be overly estimated, by the ego system, while U ̃ ts is unknown.
+The sets U ̃ ts and Us can be illustrated by the following example. The maximal acceleration of a vehicle at the limit of friction could be ±8 m/s2. In practice, because of the capacity of the power system or caution of the driver, the vehicle may only generate accelerations within ±2 m/s2. In this case, the admissible control set is Us = [−8, 8] m/s2, while the intended control set is U ̃ ts = [−2, 2] m/s2, ∀t ∈ N. Example III.1 will present the models of the ego system and surrounding obstacles in a specific scenario to illustrate the general forms in (1) and (2).
+Remark III.1. The LTV model (2) is used for two main reasons. (1) Since the true dynamics of the obstacle are unknown, a linear model can easily be derived to approximate the motion characteristics of the obstacle. It benefits the computation of forward reachable sets when predicting the motion of obstacles. (2) The linear model also facilitates the estimation of the control inputs of obstacles for the proposed method, while this can be challenging or computationally expensive for nonlinear models.
+Example III.1. Vehicle models in the reach-avoid problem: Consider the reach-avoid example in Fig. 1 throughout the paper, the EV in Fig. 1 is modeled by a nonlinear single-track kinematic model [28],
+p ̇e
+x = vecos (φe + βe) , (3a)
+p ̇e
+y = vesin (φe + βe) , (3b)
+φ ̇ e = ve
+lr
+sin (βe) , (3c)
+v ̇e = ae, (3d)
+a ̇ e = ηe, (3e)
+βe = arctan lr
+lf + lr
+tan(δe) , (3f)
+where (pex, pey) is the coordinate of the center of geometry of
+the vehicle in the ground coordinate system. The variable φe is the yaw angle, βe is the angle of the velocity of the center of geometry with the longitudinal axis of the vehicle, ve, ae, and ηe mean the longitudinal speed, acceleration, and jerk, in the vehicle frame, respectively, δe is the front tire angle, and parameters lf and lr are the distances from the center of geometry to the front axle and rear axle, respectively. The model takes ae and ηe as inputs and the other variables as states. This continuous-time model can be approximated to a discrete-time model in (1) using a sampling interval T with different discretization methods [32]. The actual model of the SV in Fig. 1 is unknown. From the perspective of the EV, the motion of the center of geometry of
+
+
+THIS PAPER HAS BEEN ACCEPTED FOR PUBLICATION BY IEEE TRANSACTIONS ON CONTROL SYSTEMS TECHNOLOGY 4
+the SV is modeled by a linear time-invariant model
+xs
+t+1 = Asxs
+t + Bsus
+t , (4)
+where
+xs
+t = [ps
+x,t vs
+x,t ps
+y,t vs
+y,t]⊤, us
+t = [as
+x,t as
+y,t]⊤,
+As =
+
+  
+1T 0 0 0100 0 0 1T 0001
+
+  
+, Bs =
+
+  
+T 2/2 0 T0 0 T 2/2 0T
+
+  
+,
+and the variables psx,t, vsx,t, asx,t mean the longitudinal position, velocity, and acceleration at time step t, respectively, in the ground coordinate system. Variables psy,t, vys,t, and
+asy,t mean the lateral position, velocity, and acceleration at time step t, respectively, in the ground coordinate system. The control input satisfies uts ∈ U ̃ ts ⊆ Us, where the details will be given in case studies in Section VI.
+C. Research Problem
+The goal of the ego system is to plan an optimal and safe reference trajectory to fulfill desired specifications in the presence of uncertain surrounding obstacles. The planned reference trajectory is anticipated to be less conservative than that of the worst-case realization, yet robust against the obstacles’ uncertain motions. Toward this goal, this paper has to solve three sub-problems: (i) learning the unknown intended control set U ̃ ts of each obstacle, i.e., computing a set to approximate
+U ̃ ts; (ii) predicting the forward occupancy of each obstacle based on the obstacle model (2) and the learned intended control set of the obstacle; (iii) planning an optimal reference trajectory that enables the ego system to avoid collision with the occupancy of obstacles and satisfy differential and admissible constraints on the ego system model (1). The first two sub-problems are addressed in Section IV, and the motionplanning method is presented in Section V.
+IV. LEARNING OBSTACLE UNCERTAINTY
+This section describes how to learn the intended control set U ̃ ts of a general surrounding obstacle by a sampling-based approach, and how to predict the forward occupancy for the obstacle based on learning the set U ̃ ts.
+A. Learning Intended Control Set U ̃ ts
+Assumption IV.1. The system (2) does not have redundant actuators, and at the current time step t, the state xts can be measured or estimated by the ego system.
+This implies that the matrix Bts−1 of model (2) has full column rank, such that at the current time step t, the ego system can find unique solution when solving for uts−1, i.e., the control input of (2) at the previous time step t−1, from the expression Bts−1uts−1 = xts − Ats−1xts−1. For example, the solution uts−1
+in (4) is uts−1 = [(vsx,t − vsx,t−1)/T (vys,t − vys,t−1)/T ]⊤. Since the intended control set is a hidden variable, an approach is to infer the hidden information using past observations [33]. To this end, based on Assumption IV.1, we define the information
+set Its available to the ego system at time step t, which consists of the collected inputs of the s-th obstacle until time step t. The information set is updated as
+Is
+t = {us
+k : k ∈ It−1
+0 }. (5)
+The set Its ⊆ U ̃ ts contains observed control actions of obstacle s, and the process of generating the control actions by the obstacle is unknown to the ego system. Here, it is modeled as a random process such that the elements of the set Its can be regarded as samples generated with unknown distributions from the intended control set of the obstacle. Next, the process of learning the unknown set U ̃ ts using the information set Its
+and the known admissible control set Us will be demonstrated. The following assumption is made before proceeding.
+Assumption IV.2. For any obstacle s, the admissible control set Us is a convex and compact polytope that contains the origin in its interior, denoted by
+Us =
+n
+u ∈ Rns
+u : Hsu ≤ 1
+o
+, Hs ∈ Rns
+v ×ns
+u.
+In order to learn the unknown set U ̃ ts ⊆ Us, a subset of Us is parameterized in the form of
+Us(v, ρ, θ) = f (Hs, θ) ⊕ {(1 − ρ)v}, (6a)
+f (Hs, θ) =
+n
+u ∈ Rns
+u : Hsu ≤ θ
+o
+, (6b)
+where v ∈ Us, ρ ∈ [0, 1], and θ ∈ [0, 1]ns
+v are design parameters. It is shown in Lemma IV.1 that such parameterization under Assumption IV.2 constructs a subset of Us.
+Lemma IV.1. For any v ∈ Us, θ ∈ [0, 1]ns
+v , and ρ ∈ [0, 1], if θ ≤ ρ1, then Us(v, ρ, θ) ⊆ Us.
+Proof. The explicit form of (6a)–(6b) can be written as
+Us(v, ρ, θ) =
+n
+u ∈ Rns
+u : Hsu ≤ θ + (1 − ρ)Hsv
+o
+.
+It follows that θ+(1−ρ)Hsv ≤ θ+(1−ρ)1 ≤ 1. Therefore, Us(v, ρ, θ) ⊆ Us.
+By parameterizing the set Us(v, ρ, θ) using (6a)–(6b) and leveraging its properties shown in Lemma IV.1, it is possible to find the optimal parameters ρ⋆, v⋆, and θ⋆ that minimize the volume of set Us(v, ρ, θ), while containing the historical information set Its. This optimal set, which is denoted by Uˆ ts, serves as the optimal approximation of the intended control set at time step t. The optimal parameters v⋆, ρ⋆, and θ⋆ can be obtained by solving the following problem:
+minimize
+v,ρ,θ 1⊤θ + ρ
+subject to Hsus − (1 − ρ)Hsv ≤ θ, ∀us ∈ Is
+t,
+Hsv ≤ 1,
+ρ ∈ [0, 1], θ ∈ [0, 1]ns
+v , θ ≤ ρ1,
+(7)
+where the cost function minimizes the volume of set Us(v, ρ, θ) by minimizing summation of the vector θ and its upper bound ρ. The first constraint of (7) implies that Its ⊆ Us(v, ρ, θ), i.e., the information set Its is fully contained
+within the parameterized set Us(v, ρ, θ). The second and third constraints are required by Lemma IV.1. The problem (7) is
+
+
+THIS PAPER HAS BEEN ACCEPTED FOR PUBLICATION BY IEEE TRANSACTIONS ON CONTROL SYSTEMS TECHNOLOGY 5
+non-convex as a result of the product of decision variables v and ρ. The following proposition shows that (7) is equivalent to a linear programming (LP) problem.
+Proposition IV.1. Define an LP problem as
+minimize
+y,ρ,θ 1⊤θ + ρ
+subject to Hsus − Hsy ≤ θ, ∀us ∈ Is
+t,
+Hsy ≤ (1 − ρ)1,
+ρ ∈ [0, 1], θ ∈ [0, 1]ns
+v , θ ≤ ρ1.
+(8)
+Denote the optimal solution of (8) by (y⋆, ρ⋆, θ⋆). Then, the optimal solution of (8) gives an optimal estimation of the unknown intended control set as
+Uˆ s
+t = f (Hs, θ⋆) ⊕ y⋆, (9)
+where f (Hs, θ⋆) is defined as in (6b). The set Uˆ ts obtained in (9) is equivalent to the set obtained by solving (7).
+Proof. For (7) with 0 ≤ ρ < 1, it is equivalent to (8) with 0 ≤ ρ < 1. This equivalence arises from substituting the variable y in (8) with (1 − ρ)v. When ρ = 1, (7) transforms into:
+minimize
+ρ,θ 1⊤θ + ρ
+subject to Hsus ≤ θ, ∀us ∈ Is
+t,
+ρ = 1, θ ∈ [0, 1]ns
+v,
+(10)
+where in (10), the constraint Hsv ≤ 1 from (7) is removed as it is redundant. On the other hand, the equivalent form of (8) with ρ = 1 is given by:
+minimize
+y,ρ,θ 1⊤θ + ρ
+subject to Hsus − Hsy ≤ θ, ∀us ∈ Is
+t,
+Hsy ≤ 0,
+ρ = 1, θ ∈ [0, 1]ns
+v.
+(11)
+The following shows that the constraint Hsy ≤ 0 in (11) is satisfied if and only if y = 0. Since the origin is an interior of the set Us, suppose Hsy ≤ 0 and y ̸= 0 hold. This means ∀ε ∈ R+ such that Hs(εy) ≤ 0 ≤ 1, this further implies that εy ∈ Us, where εy is the terminal of a line segment starting from the origin. However, since the set Us is bounded, increasing the value of ε will eventually cause εy to exceed the limit of Us. Therefore, there does not exist any y ̸= 0 satisfying Hsy ≤ 0, and the only feasible solution of the variable y in (11) is y = 0. This confirms that (10) and (11) are equivalent with ρ = 1. Hence, we conclude that (7) and (8) are equivalent, and the optimal quantified set Uˆ ts is given in the form of (9).
+The sets Us, U ̃ ts, and Uˆ ts are illustrated in Fig. 2, which
+reflects that the set Uˆ ts depends on the shape of Us and the
+information set Its, and does not relate to the volume of Us.
+Remark IV.1. Formulation (8) is a standard randomized program [34]. It is shown in [22, Theorem 3] that if U ̃ ts is time-invariant, the sequence of control actions are independent and identically distributed, and |Its| is large enough, then with
+high confidence, the set Uˆ ts is a good approximation of the
+Fig. 2. Learning the set U ̃ts by solving LP (8).
+true intended set U ̃ ts. While these assumptions are stringent
+in practice, the results highlight that the robustness of Uˆ ts is
+enhanced with a larger information set Its.
+B. Computing Uˆ ts with Low Complexity
+Note that the computational complexity of the LP (8) for computing Uˆ ts is polynomial in |Its| if Its is increasing with time. This means the complexity of (8) increases with each time step. To address this problem, two ways are proposed to manage the online computational complexity.
+1) Moving-Horizon Approach: The first way is to control the size of Its in a moving-horizon manner. That is, given a
+horizon L ∈ N+, the set Its is updated as
+Is
+t = {us
+k : k ∈ It−1
+t−L−1}
+with an initialization |I0s| = L. In this way, (8) is accompanied by L scenario constraints. 2) Online Recursion: A second way is to perform an online recursive computation of Uˆ ts based on Uˆ ts−1 and uts−1. This is achieved by solving the following problem
+minimize
+v,ρ,θ 1⊤θ + ρ
+subject to us
+t−1 ∈ Us(v, ρ, θ),
+Uˆ s
+t−1 ⊆ Us(v, ρ, θ),
+v ∈ Us,
+ρ ∈ [0, 1], θ ∈ [0, 1]ns
+v , θ ≤ ρ1.
+(12)
+The optimal solution (v⋆, ρ⋆, θ⋆) of (12) enables update of Uˆ ts, which is the minimum set in the form of (6a) that covers
+the previous obtained set Uˆ ts−1 and the latest information
+sample uts−1. Following the proof of Proposition IV.1, with y = v(1−ρ), the optimal solution of the following LP provides the optimal estimation of the set U ̃ ts in the form of (9):
+minimize
+y,ρ,θ 1⊤θ + ρ
+subject to Hsus
+t−1 − Hsy ≤ θ,
+Hsy⋆
+pre + θ⋆
+pre ≤ Hsy + θ,
+Hsy ≤ (1 − ρ)1,
+ρ ∈ [0, 1], θ ∈ [0, 1]ns
+v , θ ≤ ρ1,
+(13)
+where yp⋆re and θp⋆re are the optimal solution of (13) at time step t − 1, i.e., Uˆ ts−1 = f (Hs, θp⋆re) ⊕ yp⋆re. The formulation (13) is computationally efficient as the number of constraints does not change with |Its|, and it includes all samples in the
+
+
+THIS PAPER HAS BEEN ACCEPTED FOR PUBLICATION BY IEEE TRANSACTIONS ON CONTROL SYSTEMS TECHNOLOGY 6
+TABLE I COMPUTATION TIME OF DIFFERENT METHODS FOR LEARNING THE SET
+Methods Formulation (8) Formulation (13) Moving Horizon Rigid Tube Convex Hull
+Learn Set Reach. Pred. Learn Set Reach. Pred. Learn Set Reach. Pred. Learn Set Reach. Pred. Learn Set Reach. Pred. Vertices
+50 Samples, Us as a square 8.70 ms 36.3 ms 1.80 ms 34.8 ms 5.09 ms 32.4 ms 1.45 ms 32.0 ms 0.766 ms 1138 ms 18
+50 Samples, Us as a hexagon 12.7 ms 498 ms 2.38 ms 544 ms 6.84 ms 500 ms 1.47 ms 531 ms 0.867 ms 2477 ms 22 500 Samples, Us as a square 40.1 ms 38.4 ms 1.61 ms 35.8 ms 4.92 ms 34.8 ms 1.34 ms 34.2 ms 0.770 ms 23476 ms 42 500 Samples, Us as a hexagon 101 ms 514 ms 2.19 ms 560 ms 6.97 ms 568 ms 1.35 ms 555 ms 0.737 ms 12043 ms 34
+set Its. The online recursion (13) is initialized with Uˆ s0, which
+is obtained by solving (8) with an initial information set I0s. The set can be formulated as a small, yet nonempty, set with artificial samples. The characteristics of the moving-horizon approach and online recursion approach will be demonstrated by a set of numerical examples in Section IV-D.
+C. Forward Reachability Analysis Based on Uˆ ts
+Given Uˆ ts obtained in Section IV-B, and the system described as in (2), forward reachability can be used to predict the obstacle occupancy. Denote by Oˆs
+i|t the occupancy of the center of geometry of obstacle s predicted i steps ahead of the current time step t. The set Oˆs
+i|t can be computed as [4]
+Oˆs
+i|t = Projposition(Rˆ s
+i|t), (14a)
+Rˆ s
+i+1|t = As
+t+iRˆ s
+i|t ⊕ Bs
+t+iUˆ s
+t , (14b)
+Rˆ s
+0|t = {xs
+t } , (14c)
+where Rˆs
+i|t is the forward reachable set at time step t+i based
+on the set Uˆ ts, xts is the measured state of the obstacle at time
+step t, Projposition(Rˆ s
+i|t) denotes the set of positions projected from the reachable set.
+D. Performance Evaluation
+This subsection evaluates different methods for learning the intended control set of an obstacle system, and the accuracy of the resultant forward reachability analysis.
+1) Comparison Between Different Methods for Learning the Intended Control Set: The performance of the online recursion (13) and the moving-horizon (MH) method for learning the intended control set of the obstacle is compared with the original formulation (8), a rigid tube (RT) method [22], and a method that directly learns the set as a convex hull of the samples in the information set Its (the convex hull is computed using the Python package pytope [35]). Assume that the intended control set of the obstacle is learned by observing the longitudinal and lateral accelerations in the ground coordinate system. The results for learning the sets with different numbers of samples are shown in Fig. 3, where the admissible control set Us is overly estimated as a square (4 vertices) and a regular hexagon (6 vertices), respectively. Furthermore, Table I compares the computation time for learning the set and reachability prediction based on the learned set as in (14). The analyses through Fig. 3 and Table I reflect that formulation (13) closely aligns with the original formulation
+-0.3 -0.2 -0.1 0 0.1 0.2 0.3 Long. Acc. [m=s2]
+-0.3
+-0.2
+-0.1
+0
+0.1
+0.2
+0.3
+Lateral Acc. [m=s2]
+Sample MH Method Form. (8)
+Form. (13) RT Method Convex Hull
+(a)
+-0.3 -0.2 -0.1 0 0.1 0.2 0.3 Long. Acc. [m=s2]
+-0.3
+-0.2
+-0.1
+0
+0.1
+0.2
+0.3
+Lateral Acc. [m=s2]
+(b)
+-0.3 -0.2 -0.1 0 0.1 0.2 0.3 Long. Acc. [m=s2]
+-0.3
+-0.2
+-0.1
+0
+0.1
+0.2
+0.3
+Lateral Acc. [m=s2]
+(c)
+-0.3 -0.2 -0.1 0 0.1 0.2 0.3 Long. Acc. [m=s2]
+-0.3
+-0.2
+-0.1
+0
+0.1
+0.2
+0.3
+Lateral Acc. [m=s2]
+(d)
+50 500 Number of Samples [-]
+0.1
+0.15
+0.2
+Set Volume [-]
+(e)
+Fig. 3. The learned intended control sets by formulation (8), formulation (13), the moving-horizon (MH) method, and the rigid tube (RT) method (for the MH method L = 30 ). (a) The number of samples is 50, Us is a square. (b) The number of samples is 500, Us is a square. (c) The number of samples is 50, Us is a regular hexagon. (d) The number of samples is 500, Us is a regular hexagon. (e) The set volume with colors according to Fig. 3(a). The dashed lines indicate the results with Us as a regular hexagon, and solid lines indicate the results with Us as a square.
+(8), yet requires less computation time. Compared to the RT method, the learned set by (13) is less conservative. The set obtained by the MH method is smaller than that by (13). Notably, Fig. 3 shows that the set expands when the number of samples increases, while Table I shows that the computation time of (13) and the MH method remains in the same order. The convex hull-based approach can more tightly contain the samples. However, it has a more complex geometry than the learned set obtained by other approaches, such that it renders a
+
+
+THIS PAPER HAS BEEN ACCEPTED FOR PUBLICATION BY IEEE TRANSACTIONS ON CONTROL SYSTEMS TECHNOLOGY 7
+0 10 20 30 40 50 60 70 80 90 100 Time Step (Number of Online Samples) [{]
+0
+0.05
+0.1
+0.15
+0.2
+Set Volume [-]
+0
+0.2
+0.4
+0.6
+jjutsjj [m=s2]
+Form. (13) MH Mild Control Aggressive Control
+Fig. 4. Control actions of the system and volume of the learned set.
+more complicated prediction of reachability. In addition, since the geometry of the convex hull is not deterministic, this is not beneficial for constructing the collision-avoidance constraint in the motion planner (see Example V.1). In comparison, other approaches can determine the geometry of the learned set by defining the shape of Us, such that the forward reachability prediction is more efficient. One additional observation from Table I is that the shape of Us can affect the computational efficiency of the reachability prediction. A more complex Us has more degrees of freedom, while also increasing the computation time of reachability prediction. This implies a tradeoff between accuracy and efficiency should be considered in practical applications when defining the admissible set Us.
+2) Responsiveness Analysis: This subsection analyzes the responsiveness of the online recursion formulation (13) and the MH approach in learning the control set of an obstacle as in Section IV-D1. In the setup, the obstacle performs mild actions before time step t = 50, and from time step t = 51 it shifts to executing more aggressive maneuvers. The volume of the learned set with the discrete time steps, as well as the 2-norm of the sampled control action (||uts||), are presented in Fig. 4. In addition, the learned control sets at different time steps are shown in Fig. 5. Note that the index of the time step in Fig. 4 is equal to the number of online samples as the method obtains one sample at every time step. It is seen in Fig. 4 that after the system starts to take aggressive control actions from t = 51, the learned control sets by (13) and the MH approach can both rapidly respond to the change, the delay between the set volume and the change of the control style is just 1 step. Fig. 5 shows how the learned sets by two approaches start from a minor initial set and grows when more samples are obtained. The set expands notably from t = 50 to t = 54 as a few aggressive control actions are sampled. At the end of sampling t = 100, the set obtained by (13) contains both the mild and aggressive control actions, while the set obtained by the MH approach only contains the aggressive control actions. This shows that (13) predicts the motion of the obstacle based on all observed control actions of the obstacle system, while the MH approach captures the timevarying intent of the obstacle by discarding past information. 3) Reachability Analysis: This section evaluates the results of reachability analysis through (14) based on the learned control set Uˆ ts. The actual obstacle dynamics are in this case modeled by a nonlinear kinematic single-track vehicle model as in (3), where the control inputs are generated from an unknown input set with an unknown distribution. The accelerations in the global coordinate system are extracted through historical trajectories to learn its intended control set
+-0.1 0 0.1 0.2 0.3 0.4 0.5 Long. Acc. [m=s2]
+-0.15
+-0.1
+-0.05
+0
+0.05
+0.1
+0.15
+0.2
+0.25
+0.3
+Lateral Acc. [m=s2]
+Initial Set Learned Set (t = 50) Learned Set (t = 54) Learned Set (t = 100)
+(a)
+-0.1 0 0.1 0.2 0.3 0.4 0.5 Long. Acc. [m=s2]
+-0.15
+-0.1
+-0.05
+0
+0.05
+0.1
+0.15
+0.2
+0.25
+0.3
+Lateral Acc. [m=s2]
+Initial Set Learned Set (t = 50) Learned Set (t = 54) Learned Set (t = 100)
+(b)
+Fig. 5. Learned control sets at different time steps (at t = 50 the mild control behavior ends, and at t = 100 the sampling ends). (a) With the online recursion formulation (13). (b) With the MH approach.
+0 2 4 6 8 10 12 14 16 18 20 X [m]
+-2
+0
+2
+Y [m]
+Occ. by Form. (13) Traj. Samples by Nonlinear Vehicle Model
+(a)
+0 2 4 6 8 10 12 14 16 18 20 X [m]
+-2
+0
+2
+Y [m]
+Occ. by MH approach Traj. Samples by Nonlinear Vehicle Model
+(b)
+Fig. 6. Predicted occupancy of the linear model (4) by the proposed method based on the trajectory samples of a nonlinear vehicle model. (a) By the online recursion formulation (13). (b) By the moving-horizon (MH) approach.
+by (13) and the MH approach, respectively. Then it uses (14) to predict the occupancy over a horizon, where the dynamics of the system are modeled by a second-order integrator as in (4). It is seen in Fig. 6 that the predicted occupancy using a linear model can well cover the trajectory samples generated by the nonlinear kinematic model, which indicates that the linear model-based prediction by the proposed method is a good local approximation of the nonlinear vehicle model with the choosen prediction horizon. Since the occupancy set in Fig. 6 can not completely cover the trajectory samples, it implies that the proposed method, in theory, does not guarantee safety in motion planning, but instead recovers approximately safe behavior by relying on past data to predict future obstacle dynamics. However, the empirical results in Section VI indicate that the proposed method still exhibits a high safety performance as a result of implementing the motion planner in a receding horizon manner. Note that the range of the occupancy in Fig. 6 depends on the maneuvers of the observed obstacle. If the control actions of the obstacle are generated from a larger input set, the predicted occupancy set will expand accordingly. To conclude, even though the nonlinear model of the obstacle and the linear second-order
+
+
+THIS PAPER HAS BEEN ACCEPTED FOR PUBLICATION BY IEEE TRANSACTIONS ON CONTROL SYSTEMS TECHNOLOGY 8
+integrator model used for predicting the occupancy in (14) are quite different, the proposed method still offers the desired accuracy in predicting the occupancy. In addition, compared with a similar method, our proposed method has advantages in calculation time. Among the related work in Section II-A, the reachability analysis based on solving mixed-integer linear programming (MILP) problem [19] exhibits the most similar characteristics to the proposed method as it does not require the distribution of behaviors and model information of the obstacle. The MILP-based method can get similar occupancy as in Fig. 6 by tuning the confidence level [19, Fig. 4]. For the same horizon, the average computation time by the proposed method is 0.0340 s for formulation (13) and 0.0432 s for the MH approach, with 100 trajectories, and 0.0361 s for formulation (13) and 0.0451 s for the MH approach, with 500 trajectories. For the MILP-based method, as presented in [19, Table I], the average computation time with 100 trajectories and 500 trajectories is 0.0322 s and 0.1352 s. This reflects that the proposed method is more computationally efficient compared with the MILPbased approach, and the computation time remains unaffected by the number of sampled trajectories.
+Remark IV.2. Assumption IV.1 ensures the existence of a unique solution of the control input uts−1 in (2) to form a
+non-empty information set Its. Given a non-empty set Its, the convex optimization problem for determining the control set Uˆ ts, either by (8) or (13), is feasible since the informa
+tion set Its is always contained within the admissible set
+Us. In addition, state-measurement uncertainties inherently contribute to uncertainties of uts−1. The set Uˆ ts learned with
+small uncertainties in uts−1 would still be expected to center
+around the set learned with the true uts−1 values. When these
+uncertainties are prominent, improving the accuracy of Uˆ ts would depend on a more precise tracking system.
+Remark IV.3. For the double-integrator model (4), if the obstacle is observed with a constant velocity, then the estimated control input uts−1 is always 0. In this case, the information set is a singleton, and the proposed motionprediction method corresponds to a constant velocity model. The proposed method is designed to capture what has been observed from the obstacle. In particular, if the obstacle only moves with a constant velocity, the method is supposed to reflect that behavior. However, as soon as the obstacle changes the driving behavior, the method can adapt to this change with one time step, as indicated in Figs. 4–5. The information set transitions from a singleton to a non-singleton when a non-zero control input from the obstacle is estimated, thereby improving the robustness of the prediction over the constant velocity model.
+V. ROBUST MOTION-PLANNING STRATEGY
+This section formulates the robust MPC for safe motion planning of the ego system, based on the predicted obstacle occupancy Oˆs
+i|t defined in (14a). During the online motionplanning process, at each time step t, the ego system updates
+the set Uˆ ts and the predicted occupancy Oˆs
+i|t, and then solves the following optimal control problem (OCP)
+minimize
+ue
+i−1|t
+V xe
+i|t, ue
+i−1|t, r (15a)
+subject to xe
+i|t = f (xe
+i−1|t, ue
+i−1|t), (15b)
+xe
+i|t ∈ Xe, (15c)
+ue
+i−1|t ∈ Ue, (15d)
+dis(pe
+i|t, Oˆs
+i|t) > ds
+min, ∀s ∈ S, (15e)
+where i = 1, . . . , N . In the cost function (15a), r denotes the reference state. The cost function V (·) is defined for measuring the performance of the motion planning. The constraints (15b)–(15d) concerning the ego system have been introduced in (1). The constraint (15e) refers to the safety requirement on the distance between the ego system and obstacle s, where dis(·) is a distance measure between pe
+i|t the position of center of geometry of the ego system and the obstacle’s occupancy Oˆs
+i|t [36]. It means at time step t + i in the prediction horizon,
+the distance between pe
+i|t and Oˆs
+i|t should be larger than the
+minimum safety distance ds
+min. Note that pe
+i|t and Oˆs
+i|t predict the motion of the center of geometry of the ego and obstacle systems, such that the actual shape factors of them should be considered in designing ds
+min. In addition, a large occupancy
+Oˆs
+i|t may cause infeasibility of the motion-planning problem as a result of the limited driving area. This can be handled by introducing a slack variable to (15e) to enhance the feasibility, and this will be enforced in Example V.1 with the explicit and equivalent expressions of constraint (15e). The motion planning of the ego system is performed by solving the OCP (15) at every time step t to obtain the optimal control sequence {ue,⋆
+i−1|t}N
+i=1, which is applied to steer the model (15b) to generate the reference trajectory for a lowerlevel controller at the current time step.
+Example V.1. MPC formulation of the reach-avoid problem: Consider the models of EV and SV in Example III.1. Based on the occupancy Oˆs
+i|t of the SV, the EV model (3), and formulation (15), the OCP in this case is designed as
+minimize
+ue
+i−1|t, λs
+i , εs
+i
+N
+X
+i=1
+||δe
+i−1|t||2
+Q1 + ||ηe
+i−1|t||2
+Q2 +
+||EN |t ||2
+Q3 +
+N
+X
+i=1
+||εs
+i ||2
+Q4 (16a)
+subject to xe
+i|t = f (xe
+i−1|t, ue
+i−1|t), (16b)
+U≤
+h
+ve
+i|t ae
+i|t δe
+i−1|t
+i⊤
+≤ U, (16c)
+pe
+i|t ∈ D, (16d)
+(H s
+i|tpe
+i|t − hs
+i|t)⊤λs
+i ≥ ds
+min − εs
+i , (16e)
+||(H s
+i|t)⊤λs
+i ||2 = 1, (16f)
+λs
+i ∈ Rnh
++ , 0 ≤ εs
+i ≤ ds
+min, (16g)
+where Q1,· · · ,Q4 are weighting matrices, (16b) is the discrete approximation of the continuous model (3) using a fourthorder Runge-Kutta method with the sampling interval T ,
+ue
+i−1|t = [δe
+i−1|t ηe
+i−1|t] is the control input of model (3), and
+
+
+THIS PAPER HAS BEEN ACCEPTED FOR PUBLICATION BY IEEE TRANSACTIONS ON CONTROL SYSTEMS TECHNOLOGY 9
+TABLE II GENERAL PARAMETERS IN SIMULATIONS
+Symbol Value Symbol Value
+lf , lr 0.08 m, 0.08 m T 0.25 s le, we 0.26 m, 0.25 m ls, ws 0.36 m, 0.23 m N 10 Q1, Q2 1, 1 Q3 diag([1 5 5 2]) Q4 300 U [−1.5 − 0.5 − 0.3]⊤ U [1.5 0.5 0.3]⊤
+⋆ The units in U and U are m/s, m/s2, and rad, respectively.
+xe
+i−1|t is the state of model (3). Parameters U and U mean the lower and upper bounds on the velocity, acceleration, and front tire angle of the EV. Constraint (16d) limits the position of the center of geometry of the EV, pe
+i|t = [pe
+x,i|t pe
+y,i|t]⊤,
+within the driveable area D. Constraints (16e)–(16g) are an equivalent reformulation of the collision-avoidance constraint (15e) with additional decision variable λs
+i and slack variable
+εs
+i [36, Section III-B]. In practical applications, the variable
+εs
+i should be penalized with a high weight to make sure that the hard collision-avoidance constraint is violated only in extreme cases. The parameter nh is the number of edges of the set Oˆs
+i|t,
+and the matrix Hs
+i|t and the vector hs
+i|t are given by
+Oˆs
+i|t =
+n
+x ∈ Rnp : Hs
+i|tx ≤ hs
+i|t
+o
+.
+Define le and we as the length and width of the EV, ls and ws as the length and width of the SV. The safety distance ds
+min
+in (16e) is designed as
+ds
+min = p(le/2)2 + (we/2)2 + p(ls/2)2 + (ws/2)2. (17)
+Given vf , xf , yf , and φf as the predefined reference velocity, longitudinal and lateral positions, and heading angle of the EV, the terminal error vector EN|t in (16a) is defined as
+EN|t = [ve
+N|t − vf xe
+N|t − xf ye
+N|t − yf φe
+N|t − φf ]. (18)
+The formulation (17) is designed to achieve a trade-off between the geometric accuracy in the description of the SV and the computational efficiency of the method. For higher geometric accuracy, it is necessary to predict the reachability with consideration of the orientation of the SV. However, integrating the orientation into the obstacle occupancy will make the obstacle occupancy significantly more complex. This also implies that more decision variables or constraints are needed to formulate the collision-avoidance constraints in the motion planner (see [36, Section IV] and [37, Section IV.A]). To this end, (17) is applied to approximate the geometry of the SV. Although this approach may introduce possible conservatism, the potential feasibility issues are addressed in practical applications by using soft constraints as in (16e).
+VI. SIMULATIONS OF REACH-AVOID MOTION PLANNING
+This section presents simulation results for reach-avoid planning as shown in Fig. 1, where the EV and SV are specified as a car-like mobile robot in this case. The implementations can be found in our published code2. The mission of
+2 https://github.com/JianZhou1212/robust-mpc-motion-planning-by-learning-obstacle-uncertainties
+02468 X [m]
+0
+2
+4
+6
+8
+Y [m]
+EV Ini. State
+EV Ref. State
+SV Ini. State
+SV Ref. State
+EV (DMPC) EV (RMPC)
+EV (Proposed) SV
+Fig. 7. Comparison of the planned paths of EV by different approaches in the reach-avoid scenario. The initial state of the EV is (0.2 m, 0.2 m, 0 rad, 0 m/s, 0 m/s2), the reference is (7 m, 5.5 m, 0 rad, 0 m/s). The initial state of the SV is (6.25 m, 1.2 m, −1/4π rad, 0 m/s), and the reference state is (1 m, 6.75 m, π rad, 0 m/s).
+the EV is to follow a predefined reference state while avoiding collision with the SV and borders of the driveable area. It is assumed that the SV holds a higher priority, requiring the EV to actively take measures to avoid collisions. The controller of the SV is simulated by a nonlinear MPC to track its reference target, where the reference target and the model and controller parameters are unknown to the EV. The SV takes control input from an unknown set to plan a reference trajectory to reach its reference target. The SV’s dynamics are not available to the EV, from the perspective of the EV, the SV is modeled by the linear model (4). In the numerical studies, the computation of the occupancy of the SV firstly requires formulating an admissible control set Us according to Assumption IV.2. Since the simulation runs for just 55 time steps, the size of the information set Its is not overly big. Therefore, the online recursion (13) is more suitable for learning the unknown intended control set of SV in this case. This is initialized by an initial information set I0s that contains some artificial samples to construct a
+small but non-empty set Uˆ s0 by solving (8). This implies that the proposed method does not have any prior information on the uncertainties of the SV. Then, for t ∈ N+ the set ˆUts
+is obtained by solving (13) based on Uˆ ts−1 and uts−1, where
+Uˆ ts−1 is obtained at time step t − 1, and uts−1 contains the measured longitudinal and lateral accelerations of the SV in the ground coordinate system at time step t − 1. The learned set Uˆ ts is substituted into (14) to obtain Oˆs
+i|t, i.e., the predicted occupancy of the SV, for planning of the EV by solving (16). The proposed planner is compared with a robust MPC (RMPC) and a deterministic MPC (DMPC), where the RMPC and DMPC are implemented by replacing Uˆ ts in (14b) with Us and 0, respectively. For the DMPC, the obstacle system (4) is predicted with 0 input, such that the prediction is equivalent to a constant velocity model. The set addition and polytope com
+
+
+THIS PAPER HAS BEEN ACCEPTED FOR PUBLICATION BY IEEE TRANSACTIONS ON CONTROL SYSTEMS TECHNOLOGY 10
+TABLE III COMPARISON OF THE PERFORMANCE OF THREE PLANNERS IN STOCHASTIC SIMULATIONS
+Name Collision-free rate Complete rate Mean de,s
+min Min. de,s
+min Mean τ e,ref Max. τ e,ref Mean Jsum Max. Jsum
+N = 10 N = 8 N = 10 N = 8 N = 10 N = 8 N = 10 N = 8 N = 10 N = 8 N = 10 N = 8 N = 10 N = 8 N = 10 N = 8
+Proposed 100% 100% 100% 100% 0.105 m 0.081 m 0.057 m 0.039 m 8.75 s 10.5 s 8.75 s 10.5 s 2001 2576 2301 2837 RMPC 98.3% 100% 65.1% 80% 0.689 m 0.184 m 0.132 m 0.083 m 11.3 s 11.8 s 13.75 s 13.25 s 4496 3452 5961 4702 DMPC 40.3% 30.7% 100% 100% 0.020 m 0.019 m 0.010 m 0.010 m 8.75 s 10.5 s 8.75 s 10.5 s 1967 2553 1983 2680
+⋆ The complete rate, de,s
+min, τ e,ref , and Jsum are counted among the collision-free cases.
+⋆ A collision is counted if the distance between the EV and SV is less than or equal to 0.01 m during the simulation.
+TABLE IV COMPARISON OF COMPUTATIONAL PERFORMANCE OF THREE METHODS
+Methods Learn Set (13) Reach. Prediction (14) Optimization (16) Total
+N = 10 N = 8 N = 10 N = 8 N = 10 N = 8 N = 10 N = 8
+Proposed 1.24 ± 0.806 ms 1.23 ± 0.802 ms 48.7 ± 2.19 ms 28.0 ± 2.56 ms 48.4 ± 15.6 ms 42.5 ± 14.0 ms 98.5 ± 15.8 ms 72.0 ± 14.5 ms DMPC None None 5.87 ± 1.59 ms 4.90 ± 1.63 ms 50.7 ± 21.4 ms 44.9 ± 15.1 ms 56.7 ± 21.5 ms 49.8 ± 15.2 ms RMPC None None 48.8 ± 2.53 ms 27.9 ± 1.97 ms 62.4 ± 29.1 ms 42.9 ± 22.2 ms 111.3 ± 29.3 ms 70.9 ± 22.3 ms
+⋆ The results are presented with Mean ± One standard deviation.
+0 2 4 6 8 10 12 14 Time [s]
+0
+2
+4
+6
+8
+de;s [m]
+DMPC RMPC Proposed
+5 5.2 5.4 5.6
+0
+0.2
+0.4
+0.6
+(a)
+0 2 4 6 8 10 12 14 Time [s]
+0
+5
+10
+15
+20
+de;ref [-]
+DMPC RMPC Proposed Target
+(b)
+0 2 4 6 8 10 12 14 Time [s]
+0
+100
+200
+300
+400
+Cost [-]
+DMPC RMPC Proposed
+(c)
+Fig. 8. Comparison of de,s, de,ref , and the cost during the motion. (a) The polytope distance between EV and SV (de,s) during the motion (the minimum EV-SV distance with DMPC is 0.03 m, and that with the proposed method is 0.14 m). (b). The Euclidean distance between EV and its reference target (de,ref ) during the motion. (c). The cost function value.
+putations were implemented by the Python package pytope [35]. The optimization problems involved were solved by CasADi [38] and Ipopt [39] using the linear solver MA57 [40]. The simulations were performed on a standard laptop running Ubuntu 22.04 LTS and Python 3.10.12. Table II provides a summary of simulation parameters. The methods are first implemented in a single case to get insights into the performance of each planner. The comparison is based on the planned paths, the polytope distance between
+the EV and SV (de,s), the Euclidean distance between the EV and its reference state (de,ref ), which reflects the convergence speed to the reference, and the cost function value. The results are shown in Fig. 7 and Fig. 8, respectively. It is observed in Fig. 7 that the three methods perform differently in the same scenario as a result of different considerations of uncertainties. Further analysis from Fig. 8(a) shows that the minimum distance between EV and SV with DMPC is close to 0 m, and that with the proposed method is 0.14 m, which is sufficient in this case considering that the length of the EV is 0.26 m. In contrast, RMPC can generate the safest reference trajectory as it maintains a larger distance between EV and SV. However, the cost of pursuing robustness is that the EV needs a longer time and a larger cost to converge to the reference state, as shown in Figs. 8(b)–(c), while the DMPC and the proposed method converge faster with a smaller cost.
+The three methods are further compared through 300 Monte-Carlo simulations with a randomly sampled initial state for the SV, while other conditions are the same as in Fig. 7. The planners are implemented with the prediction horizons N = 10 and N = 8, respectively, and are compared by counting the collision-free rate of planning, where a collisionfree mission is fulfilled if the EV has no collision with either the SV or the driving-area boundary. Among all successful cases, the complete cases are counted, where a complete mission means that the Euclidean distance between the state of the EV and its reference state converges to less than or equal to 0.2 within a predefined time limitation (13.75 s in the simulation). For all completed cases with each planner, the minimum polytope distance between the EV and SV of each simulation (de,s
+min), the first time instant when the EV
+reaches the reference state (τ e,ref ), and the sum of the cost function value (Jsum) are compared. The results are presented in Table III. It is seen that only the proposed method achieves a collision-free rate of 100% for both prediction horizons. Note that the RMPC does not achieve 100% with N = 10 because the obstacle occupancy expands with the prediction horizon. This reduces the driveable space, i.e., the feasible region, for the EV in the limited area, thereby causing collisions with
+
+
+THIS PAPER HAS BEEN ACCEPTED FOR PUBLICATION BY IEEE TRANSACTIONS ON CONTROL SYSTEMS TECHNOLOGY 11
+the boundary in some cases. Among all collision-free cases, the proposed method and DMPC have a 100% complete rate, while the RMPC does not fulfill all the tasks. Analyzing the random variables de,s
+min, τ e,ref , and Jsum reveals that both the proposed method and DMPC guide the EV to the reference state at the same time instant, and the costs are close. However, the proposed method demonstrates superior safety compared to DMPC. On the other hand, RMPC ensures a large distance between the EV and SV in each simulation, but it takes more time and a larger cost to converge. For the proposed method, although the prediction horizons N = 10 and N = 8 both result in 100% collision-free rate and complete rate, the shorter horizon can cause a smaller minimum distance between the EV and SV, and a larger cost of the maneuver. The simulation results demonstrate that the proposed method performs successfully in the absence of prior knowledge, e.g., the unknown dynamics, unknown distribution of control actions, and uncertain intentions of the obstacle. Empirically, the results show that the proposed approach is safe in all considered instances, while simultaneously enhancing efficiency and feasibility and reducing the cost associated with motionplanning tasks compared with the RMPC. In contrast, when compared to the DMPC, it markedly increases safety without incurring additional costs or compromising the efficiency of executing the tasks.
+The computation time for each iteration of the proposed method, DMPC, and RMPC with different prediction horizons is summarized in Table IV. The results were recorded from 20 random simulations where each MPC algorithm was run 55 steps. It is seen in Table IV that DMPC is the most computationally efficient, while the prediction horizon has an obvious influence on the computational efficiency of the proposed method and RMPC. In addition, for the proposed approach, the majority of the computation load comes from predicting the forward reachable set (14) and solving the MPC problem (16). The computation time for solving (16) increases slightly with a longer prediction horizon, while the polytope-based computation of occupancy sets using (14) can be computationally expensive when the prediction horizon is long. Table III shows that the computation time is sufficient for running the planner at around 10 Hz in simulations, while it further indicates that a trade-off between the performance and the computational efficiency should be carefully considered when defining the prediction horizon in practical applications.
+Remark VI.1. The DMPC and RMPC are selected as the baseline methods for two primary reasons. First, in the studied reach-avoid problem, the DMPC excels in planning the most efficient reference trajectory when the motion-planning problem is feasible, while the RMPC is known for its guaranteed safety when the problem is feasible. The evaluations of the proposed method are demonstrated by comparing it with the efficiency-optimal method and the safety-optimal method, respectively. Second, similar to the proposed method, the DMPC and RMPC rely on a few assumptions on the traffic scenario. Other methods such as risk-aware optimal control [4], interaction and safety-aware MPC [25], and non-conservative stochastic MPC [24], [28], require certain assumptions on
+Fig. 9. The experiment scenarios of motion planning of an EV moving along a track with an SV.
+TABLE V EXPERIMENTAL PARAMETERS IN EACH SCENARIO
+Scenario Initial States Ref. V. of EV Ref. V. of SV
+Encounter EV: 2.50 m, 0 m, π/2 rad, 0 m/s
+SV: −2.50 m, 0 m, π/2 rad, 0 m/s 0.45 m/s 0.45 m/s
+Overtaking EV: 2.50 m, −0.40 m, π/2 rad, 0 m/s
+SV: 1.60 m, 2.50 m, π rad, 0 m/s 0.45 m/s 0.25 m/s
+Evasion EV: 1.50 m, 2.50 m, π rad, 0 m/s
+SV: 2.50 m, 0.90 m, π/2 rad, 0 m/s 0.35 m/s 0.70 m/s
+⋆ The initial states from left to right are longitudinal and lateral positions, heading angle, and velocity. ⋆ The reference velocity of the SV is unknown to the EV.
+-2 -1 0 1 2 X [m]
+1
+2
+3
+Y [m]
+EV SV
+(a)
+-2 -1 0 1 2 X [m]
+-3
+-2
+-1
+Y [m]
+EV SV
+(b)
+Fig. 10. Measured trajectories of EV and SV during the encounter scenario. (a) The first encounter (from 8.28 s to 15.42 s). (b) The second encounter (from 26.33 s to 33.92 s).
+uncertainty distributions of the SVs, which are not satisfied in our case studies. Therefore, DMPC and RMPC provide a fair comparison for assessing the proposed method’s performance.
+VII. HARDWARE EXPERIMENTS
+This section presents hardware-experiment results in scenarios different from those in Section VI to demonstrate the method’s applicability across different situations, as well as
+
+
+THIS PAPER HAS BEEN ACCEPTED FOR PUBLICATION BY IEEE TRANSACTIONS ON CONTROL SYSTEMS TECHNOLOGY 12
+0 0.4
+2
+0.2 0.4
+4
+Time [s]
+0.2
+6
+Lat:Acc:[m=s
+2]
+0
+Long:Acc:[m=s2]
+8
+0
+-0.2 -0.2 -0.4 -0.4
+-0.2 0 0.2 Long: Acc: [m=s2]
+-0.2
+0
+0.2
+Lat: Acc: [m=s2]
+(a)
+0 5 10 15 20 25 30 35 40 45 Time [s]
+0
+0.5
+V. [m/s]
+(b)
+Fig. 11. Information about SV during the encounter scenario. (a) The learned set Uˆts over time in the encounter experiment (the subfigure indicates the final
+set Uˆts). (b)The velocity of SV in the ground coordinate system.
+the real-time performance of the method in applications. The experiment videos are accessible online3.
+A. Scenario Description
+The experimental environment is illustrated in Fig. 9, where the EV and SV are represented by a hamster platform and a cascar platform, respectively. The size parameters of the EV and SV are the same as those in Table II. Both platforms are kinematically equivalent to a full-scale vehicle and have similar dynamic characteristics, including suspension and tire systems, as those of a regular vehicle. This makes them suitable platforms for testing the proposed method in realistic scenarios. In the experiments, the mission of the SV is to move along the center line of the track with a predefined reference velocity, and the objective of the EV is to track the center line of the track and a predefined reference velocity while ensuring collision avoidance with the SV. The SV holds a higher priority than the EV, such that the EV needs to apply the proposed method to replan the reference trajectory at every time step. The SV takes control inputs from an unknown control set U ̃ ts. The motion-planning performance of the EV is evaluated in three different scenarios:
+• Encounter: EV and SV move in opposite directions, with the EV avoiding collisions with the SV. • Overtaking: the faster rear EV surpasses a slower preceding SV. • Evasion: the slower preceding EV takes evasive action to avoid a collision with a faster rear SV.
+The design of the MPC planner follows the same approach as presented in Section VI, so details are omitted for
+3https://youtu.be/ulBvjGxYkIE
+conciseness. Note that to enhance the efficiency of solving the OCP problem, several adaptations are applied. First, the dimension of the EV model in (3) is reduced to 4 by taking the longitudinal acceleration and front tire angle as the inputs. Second, the prediction horizon is changed to N = 9.
+B. Experiment Results and Discussion
+In the experiments, the polytope computation and the optimization problem are solved by the same tools as in Section VI. The positioning of both EV and SV was performed by the Qualisys motion-capture system [41]. The estimation uncertainties of elements in the information set (5) arose from the state-measurement uncertainties of the SV. However, these measurement uncertainties were minor as a result of the high accuracy of the positioning system. The control inputs of the vehicles were computed on a laptop running Ubuntu 20.04 LTS operating system. The communications were established by the Robot Operating System (ROS Noetic). The reference paths of the EV and SV were followed by a pure-pursuit controller [42], and the reference velocities were followed by the embedded velocity-tracking controllers of the hamster platform and the cascar platform, respectively. The initial states and reference velocities of the EV and SV in each scenario are collected in Table V. The reference velocity for the hamster platform is designed following the specifications detailed in [43] and [44]. In the experiments, the SV was designed to execute nonsmooth trajectories by oscillating the front wheels to increase motion uncertainties for the EV. The set Uˆ ts was learned by estimating the accelerations of the SV in the ground coordinate system, and this does not require oscillation of the SV input. In the encounter scenario, the EV and SV will intersect twice. The trajectories of both vehicles during these encounters are depicted in Fig. 10. Fig. 11(a) visualizes the learned control set Uˆ ts of the SV over time, and Fig. 11(b) presents the velocity of the SV in the ground coordinate system. Following Fig. 11(a), Fig. 12 illustrates how the predicted occupancy of the SV over the prediction horizon, i.e., Oˆs
+i|t, evolves at
+the initial moments. Leveraging the occupancy Oˆs
+i|t, the EV plans its reference by solving problem (15). The occupancy Oˆs
+i|t, along with the planned reference path of the EV at key moments during the first encounter, are exhibited in Fig. 13. In the encounter experiments illustrated in Fig. 10, the EV successfully avoids a collision with the SV. Fig. 11(a) demonstrates that the set Uˆ ts expands over time as more information is obtained, ultimately converging after approximately 4 s. This observation aligns with the SV’s velocity, as seen in Fig. 11(b), which stabilizes after 4 s. Fig. 12 further illustrates the impact of the set Uˆ ts on the predicted occupancy Oˆs
+i|t, which increases at the initial moments and subsequently tends to stabilize when Uˆ ts ceases to expand. This reflects that in the online execution, the robustness of the method strengthens as the information set Its becomes richer. Finally, the results presented in Fig. 13 affirm that the EV can effectively plan collision-avoidance reference trajectories in the presence of the uncertain dynamic obstacle, and move back to the track when the obstacle no longer has the risk of collision.
+
+
+THIS PAPER HAS BEEN ACCEPTED FOR PUBLICATION BY IEEE TRANSACTIONS ON CONTROL SYSTEMS TECHNOLOGY 13
+-3 -2.8 -2.6 -2.4 -2.2 -2 X [m]
+-0.4
+-0.2
+0
+0.2
+0.4
+0.6
+0.8
+1
+1.2
+Y [m]
+Time 0.19 s
+-3 -2.8 -2.6 -2.4 -2.2 -2 X [m]
+-0.4
+-0.2
+0
+0.2
+0.4
+0.6
+0.8
+1
+1.2
+Y [m]
+Time 0.52 s
+-3 -2.8 -2.6 -2.4 -2.2 -2 X [m]
+-0.4
+-0.2
+0
+0.2
+0.4
+0.6
+0.8
+1
+1.2
+Y [m]
+Time 1.02 s
+-3 -2.8 -2.6 -2.4 -2.2 -2 X [m]
+-0.4
+-0.2
+0
+0.2
+0.4
+0.6
+0.8
+1
+1.2
+Y [m]
+Time 1.35 s
+-3 -2.8 -2.6 -2.4 -2.2 -2 X [m]
+-0.4
+-0.2
+0
+0.2
+0.4
+0.6
+0.8
+1
+1.2
+Y [m]
+Time 1.87 s
+Fig. 12. Visualization of the predicted occupancy Oˆs
+i|t at the initial moments in the encounter scenario.
+Time 8.8216 s
+EV SV
+Time 9.6824 s
+EV SV
+Time 10.8779 s
+EV SV
+Time 11.7732 s
+EV SV
+Fig. 13. Visualization of the predicted occupancy of the SV and the planned path of the EV at key moments during the encounter (left column), and the corresponding scenarios in the experiment (right column).
+The trajectories of the EV in the overtaking and evasion experiments are illustrated in Fig.14 and Fig.15, respectively. In both scenarios, the proposed method successfully addresses the
+-2 -1 0 1 2 X [m]
+1
+2
+3
+Y [m]
+EV SV
+Fig. 14. Measured trajectories of EV and SV during the overtaking experiment (from 9.56 s to 17.50 s).
+-3 -2 -1 0 1 X [m]
+1
+2
+3
+Y [m]
+EV SV
+Fig. 15. Measured trajectories of EV and SV during the evasion experiment (from 6.65 s to 11.27 s).
+motion-planning challenges. The corresponding learned sets Uˆ ts and the predicted occupancies Oˆs
+i|t, along with the planned collision-avoidance trajectories of the EV, exhibit qualitative similarities. In the presented experiments, the average execution time of the proposed method is 0.064 s, and the standard deviation is 0.014 s, with the motion planner executed 200 times in the encounter scenario. The computation time in the overtaking and evasion scenarios is comparably similar. Both the simulations and experiments demonstrate the method’s effectiveness in addressing environmental uncertainties and provide validation its real-time applicability. It is also crucial to note that in both Sections VI–VII, the SV is predicted by the double-integrator model (4) with the true dynamics completely unknown to the EV, this demonstrated the effectiveness of the method in the presence of unknown dynamics of obstacles.
+
+
+THIS PAPER HAS BEEN ACCEPTED FOR PUBLICATION BY IEEE TRANSACTIONS ON CONTROL SYSTEMS TECHNOLOGY 14
+C. Discussion on Applicability and Future Research
+The case studies used one SV to illustrate the implementation of the proposed method, while the proposed method can directly be applied to manage more obstacles. In addition, the method applies to more scenarios, like highway overtaking, merging, and roundabout driving scenarios. The method’s effectiveness has been evaluated in four additional scenarios, including a multiple obstacles scenario, a highspeed overtaking scenario, a cornered track scenario, and a roundabout traffic scenario. The results are presented as supplementary material in the video linked in Section VII-B. Furthermore, we remark that the proposed method does not have assumptions about the obstacle’s control strategy, this means the method also handles the case where the obstacle actively reacts to the maneuver of the EV. This has been verified in an oncoming traffic scenario as in [45, Section VI. A], where both the EV and obstacle successfully generate collision-free trajectories when they apply the same strategy. The results are also provided as supplementary material in the video. Note that in extreme high-speed high-curvature scenarios, the effectiveness of this method might be affected because of the unpredictable road geometry that can alter the intended trajectories of the obstacles. These factors are not included in this paper. Future research would focus on integrating with state-of-theart environment-aware motion-prediction methods, e.g., the map-informed approach [46], to address problems in more challenging high-speed high-curvature scenarios. Another research direction of great interest is integrating an interactionaware motion-prediction method, e.g., from a game theoretical perspective [47], with the proposed approach for proactive motion planning in multi-vehicle interaction scenarios.
+VIII. CONCLUSION
+This paper studied safe motion planning of autonomous robotic systems under obstacle uncertainties. An online learning-based method was proposed to learn the uncertain control set of the obstacles to compute the forward reachable sets, which were integrated into a robust MPC planner to obtain the optimal reference trajectory for the ego system. Simulations and hardware experiments with an application of the method to an autonomous driving system in different scenarios show that: (1) The method is safer than deterministic MPC and less conservative than worst-case robust MPC, while maintaining safety in uncertain traffic environments; (2) The method can perform safe motion planning in uncertain environments without prior knowledge of uncertainty information of the obstacles; (3) The method is applicable and real-time implementable in practical scenarios.
+ACKNOWLEDGMENTS
+The authors would like to acknowledge Prof. Lars Nielsen at Linko ̈ping University for discussions regarding the secondorder integrator and polytope-based collision-avoidance constraints. Dr. Theodor Westny at Linko ̈ping University is acknowledged for skillful assistance in the experiments.
+REFERENCES
+[1] J. Zhou, A. Balachandran, B. Olofsson, L. Nielsen, and E. Frisk, “Homotopic optimization for autonomous vehicle maneuvering,” in IEEE Intelligent Vehicles Symposium (IV), 2024, pp. 1–8.
+[2] H. Seo, D. Lee, C. Y. Son, I. Jang, C. J. Tomlin, and H. J. Kim, “Real-time robust receding horizon planning using Hamilton–Jacobi reachability analysis,” IEEE Transactions on Robotics, vol. 39, no. 1, pp. 90–109, 2023. [3] I. Batkovic, A. Gupta, M. Zanon, and P. Falcone, “Experimental validation of safe MPC for autonomous driving in uncertain environments,” IEEE Transactions on Control Systems Technology, vol. 31, no. 5, pp. 2027–2042, 2023. [4] Y. Gao, F. J. Jiang, L. Xie, and K. H. Johansson, “Risk-aware optimal control for automated overtaking with safety guarantees,” IEEE Transactions on Control Systems Technology, vol. 30, no. 4, pp. 1460–1472, 2022. [5] S. H. Nair, V. Govindarajan, T. Lin, C. Meissen, H. E. Tseng, and F. Borrelli, “Stochastic MPC with multi-modal predictions for traffic intersections,” in IEEE International Conference on Intelligent Transportation Systems (ITSC), 2022, pp. 635–640.
+[6] V. Fors, B. Olofsson, and E. Frisk, “Resilient branching MPC for multivehicle traffic scenarios using adversarial disturbance sequences,” IEEE Transactions on Intelligent Vehicles, vol. 7, no. 4, pp. 838–848, 2022. [7] A. Li, L. Sun, W. Zhan, M. Tomizuka, and M. Chen, “Prediction-based reachability for collision avoidance in autonomous driving,” in IEEE International Conference on Robotics and Automation (ICRA), 2021, pp. 7908–7914. [8] M. Chen and C. J. Tomlin, “Hamilton–Jacobi reachability: Some recent theoretical advances and applications in unmanned airspace management,” Annual Review of Control, Robotics, and Autonomous Systems, vol. 1, no. 1, pp. 333–358, 2018. [9]  ́A. Carrizosa-Rend ́on, V. Puig, and F. Nejjari, “Safe motion planner for autonomous driving based on lpv mpc and reachability analysis,” Control Engineering Practice, vol. 147, p. 105932, 2024. [10] M. Althoff and J. M. Dolan, “Online verification of automated road vehicles using reachability analysis,” IEEE Transactions on Robotics, vol. 30, no. 4, pp. 903–918, 2014. [11] M. Althoff and S. Magdici, “Set-based prediction of traffic participants on arbitrary road networks,” IEEE Transactions on Intelligent Vehicles, vol. 1, no. 2, pp. 187–202, 2016. [12] X. Wang and M. Althoff, “Safe reinforcement learning for automated vehicles via online reachability analysis,” IEEE Transactions on Intelligent Vehicles, 2024.
+[13] C. Danielson, K. Berntorp, A. Weiss, and S. Di Cairano, “Robust motion planning for uncertain systems with disturbances using the invariantset motion planner,” IEEE Transactions on Automatic Control, vol. 65, no. 10, pp. 4456–4463, 2020. [14] S. Dixit, U. Montanaro, M. Dianati, D. Oxtoby, T. Mizutani, A. Mouzakitis, and S. Fallah, “Trajectory planning for autonomous high-speed overtaking in structured environments using robust MPC,” IEEE Transactions on Intelligent Transportation Systems, vol. 21, no. 6, pp. 23102323, 2020. [15] M. Nezami, N. T. Nguyen, G. M ̈annel, H. S. Abbas, and G. Schildbach, “A safe control architecture based on robust model predictive control for autonomous driving,” in American Control Conference (ACC). IEEE, 2022, pp. 914–919. [16] M. Althoff, O. Stursberg, and M. Buss, “Model-based probabilistic collision detection in autonomous driving,” IEEE Transactions on Intelligent Transportation Systems, vol. 10, no. 2, pp. 299–310, 2009. [17] X. Wang, Z. Li, J. Alonso-Mora, and M. Wang, “Reachability-based confidence-aware probabilistic collision detection in highway driving,” Engineering, vol. 33, pp. 90–107, 2024. [18] T. Westny, J. Oskarsson, B. Olofsson, and E. Frisk, “MTP-GO: Graphbased probabilistic multi-agent trajectory prediction with neural ODEs,” IEEE Transactions on Intelligent Vehicles, vol. 8, no. 9, pp. 4223–4236, 2023. [19] K. Driggs-Campbell, R. Dong, and R. Bajcsy, “Robust, informative human-in-the-loop predictions via empirical reachable sets,” IEEE Transactions on Intelligent Vehicles, vol. 3, no. 3, pp. 300–309, 2018. [20] D. Fridovich-Keil, A. Bajcsy, J. F. Fisac, S. L. Herbert, S. Wang, A. D. Dragan, and C. J. Tomlin, “Confidence-aware motion prediction for real-time collision avoidance,” The International Journal of Robotics Research, vol. 39, no. 2-3, pp. 250–265, 2020. [21] J. H. Gillula and C. J. Tomlin, “Reducing conservativeness in safety guarantees by learning disturbances online: iterated guaranteed safe
+
+
+THIS PAPER HAS BEEN ACCEPTED FOR PUBLICATION BY IEEE TRANSACTIONS ON CONTROL SYSTEMS TECHNOLOGY 15
+online learning,” in Robotics: Science and Systems, vol. 8. MIT Press, 2013, p. 81. [22] Y. Gao, S. Yan, J. Zhou, M. Cannon, A. Abate, and K. H. Johansson, “Learning-based rigid tube model predictive control,” in 6th Annual Learning for Dynamics & Control Conference. PMLR, 2024, pp. 492503. [23] B. Paden, M. ˇCa ́p, S. Z. Yong, D. Yershov, and E. Frazzoli, “A survey of motion planning and control techniques for self-driving urban vehicles,” IEEE Transactions on Intelligent Vehicles, vol. 1, no. 1, pp. 33–55, 2016. [24] T. Benciolini, D. Wollherr, and M. Leibold, “Non-conservative trajectory planning for automated vehicles by estimating intentions of dynamic obstacles,” IEEE Transactions on Intelligent Vehicles, vol. 8, no. 3, pp. 2463–2481, 2023. [25] J. Zhou, B. Olofsson, and E. Frisk, “Interaction-aware motion planning for autonomous vehicles with multi-modal obstacle uncertainty predictions,” IEEE Transactions on Intelligent Vehicles, vol. 9, no. 1, pp. 13051319, 2024. [26] C. Pek and M. Althoff, “Fail-safe motion planning for online verification of autonomous vehicles using convex optimization,” IEEE Transactions on Robotics, vol. 37, no. 3, pp. 798–814, 2021. [27] S. H. Nair, E. H. Tseng, and F. Borrelli, “Collision avoidance for dynamic obstacles with uncertain predictions using model predictive control,” in IEEE Conference on Decision and Control (CDC), 2022, pp. 5267–5272. [28] T. Bru ̈digam, M. Olbrich, D. Wollherr, and M. Leibold, “Stochastic model predictive control with a safety guarantee for automated driving,” IEEE Transactions on Intelligent Vehicles, vol. 8, no. 1, pp. 22–36, 2023. [29] O. de Groot, B. Brito, L. Ferranti, D. Gavrila, and J. Alonso-Mora, “Scenario-based trajectory optimization in uncertain dynamic environments,” IEEE Robotics and Automation Letters, vol. 6, no. 3, pp. 53895396, 2021. [30] I. Batkovic, U. Rosolia, M. Zanon, and P. Falcone, “A robust scenario MPC approach for uncertain multi-modal obstacles,” IEEE Control Systems Letters, vol. 5, no. 3, pp. 947–952, 2021. [31] T. Bru ̈digam, J. Zhan, D. Wollherr, and M. Leibold, “Collision avoidance with stochastic model predictive control for systems with a twofold uncertainty structure,” in IEEE International Intelligent Transportation Systems Conference (ITSC), 2021, pp. 432–438.
+[32] U. M. Ascher and L. R. Petzold, Computer Methods for Ordinary Differential Equations and Differential-Algebraic Equations. SIAM, 1998. [33] H. Hu, D. Isele, S. Bae, and J. F. Fisac, “Active uncertainty reduction for safe and efficient interaction planning: A shielding-aware dual control approach,” The International Journal of Robotics Research, vol. 43, no. 9, pp. 1382–1408, 2024. [34] M. C. Campi and S. Garatti, “The exact feasibility of randomized solutions of uncertain convex programs,” SIAM Journal on Optimization, vol. 19, no. 3, pp. 1211–1230, 2008. [35] pytope·PyPI. Accessed: Aug. 10, 2022. [Online]. Available: {https: //pypi.org/project/pytope/} [36] X. Zhang, A. Liniger, and F. Borrelli, “Optimization-based collision avoidance,” IEEE Transactions on Control Systems Technology, vol. 29, no. 3, pp. 972–983, 2021. [37] J. Fan, N. Murgovski, and J. Liang, “Efficient optimization-based trajectory planning for unmanned systems in confined environments,” IEEE Transactions on Intelligent Transportation Systems, 2024.
+[38] J. A. Andersson, J. Gillis, G. Horn, J. B. Rawlings, and M. Diehl, “CasADi: A software framework for nonlinear optimization and optimal control,” Mathematical Programming Computation, vol. 11, no. 1, pp. 1–36, 2019. [39] A. W ̈achter and L. T. Biegler, “On the implementation of an interiorpoint filter line-search algorithm for large-scale nonlinear programming,” Mathematical Programming, vol. 106, no. 1, pp. 25–57, 2006. [40] “HSL. A collection of Fortran codes for large scale scientific computation,” Accessed: May. 5, 2021. [Online]. Available: https: //licences.stfc.ac.uk/product/coin-hsl [41] “Qualisys motion-capture systems,” h t t p s : / / w w w. q u a l i s y s . c o m /, accessed: Sep. 8, 2023.
+[42] R. C. Coulter et al., Implementation of the pure pursuit path tracking algorithm. Carnegie Mellon University, The Robotics Institute, 1992. [43] K. Berntorp, R. Bai, K. F. Erliksson, C. Danielson, A. Weiss, and S. Di Cairano, “Positive invariant sets for safe integrated vehicle motion planning and control,” IEEE Transactions on Intelligent Vehicles, vol. 5, no. 1, pp. 112–126, 2019. [44] K. Berntorp, T. Hoang, and S. Di Cairano, “Motion planning of autonomous road vehicles by particle filtering,” IEEE Transactions on Intelligent Vehicles, vol. 4, no. 2, pp. 197–210, 2019.
+[45] M. Liu, H. E. Tseng, D. Filev, A. Girard, and I. Kolmanovsky, “Safe and human-like autonomous driving: A predictor–corrector potential game approach,” IEEE Transactions on Control Systems Technology, vol. 32, no. 3, pp. 834–848, 2024. [46] M. Hallgarten, I. Kisa, M. Stoll, and A. Zell, “Stay on track: A frenet wrapper to overcome off-road trajectories in vehicle motion prediction,” in IEEE Intelligent Vehicles Symposium, 2024, pp. 795–802.
+[47] L. Peters, A. Bajcsy, C.-Y. Chiu, D. Fridovich-Keil, F. Laine, L. Ferranti, and J. Alonso-Mora, “Contingency games for multi-agent interaction,” IEEE Robotics and Automation Letters, vol. 9, no. 3, pp. 2208–2215, 2024.
+Jian Zhou received the B.E. degree in vehicle engineering from the Harbin Institute of Technology, China, in 2017, and the M.E. degree in vehicle engineering from Jilin University, China, in 2020. He is currently a Ph.D. student with the Department of Electrical Engineering, Linko ̈ping University, Sweden. His research interests are motion planning and control for autonomous vehicles and optimization with application to autonomous driving.
+Yulong Gao received the B.E. degree in Automation in 2013, the M.E. degree in Control Science and Engineering in 2016, both from Beijing Institute of Technology, and the joint Ph.D. degree in Electrical Engineering in 2021 from KTH Royal Institute of Technology and Nanyang Technological University. He was a Researcher at KTH from 2021 to 2022 and a postdoctoral researcher at Oxford from 2022 to 2023. He is a Lecturer (Assistant Professor) at the Department of Electrical and Electronic Engineering, Imperial College London, from 2024. His research interests include formal verification and control, machine learning, and applications to safety-critical systems.
+Ola Johansson received the B.Sc degree in Electrical Engineering in 2020 and the M.Sc degree in Systems Control and Robotics in 2022, both from KTH Royal Institute of Technology, Sweden. He is currently a Research Engineer at the Department of Electrical Engineering, Linko ̈ping University, Sweden. His research includes positioning, motion planning, and control of drones and robotic systems.
+Bj ̈orn Olofsson received the M.Sc. degree in Engineering Physics in 2010 and the Ph.D. degree in Automatic Control in 2015, both from Lund University, Sweden. He is currently an Associate Professor at the Department of Automatic Control, Lund University, Sweden, and also affiliated with the Department of Electrical Engineering, Linko ̈ping University, Sweden. His research includes motion control for robots and vehicles, optimal control, system identification, and statistical sensor fusion.
+Erik Frisk was born in Stockholm, Sweden, in 1971. He received the Ph.D. degree in Electrical Engineering in 2001 from Linko ̈ping University, Sweden. He is currently a Professor with the Department of Electrical Engineering, Linko ̈ping University, Sweden. His main research interests are optimization techniques for autonomous vehicles in complex traffic scenarios and model and data-driven fault diagnostics and prognostics.
