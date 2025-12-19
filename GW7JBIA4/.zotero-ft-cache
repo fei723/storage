@@ -1,0 +1,720 @@
+Kinodynamic Trajectory Optimization and Control for Car-Like Robots
+Christoph Ro ̈smann, Frank Hoffmann and Torsten Bertram
+IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS), Vancouver, BC, Canada, 2017
+“©c 2017 IEEE. Personal use of this material is permitted. Permission from IEEE must be obtained for all other uses, in
+any current or future media, including reprinting/republishing this material for advertising or promotional purposes, creating
+new collective works, for resale or redistribution to servers or lists, or reuse of any copyrighted component of this work in
+other works.”
+
+
+Kinodynamic Trajectory Optimization and Control for Car-Like Robots
+Christoph R ̈osmann1, Frank Hoffmann1 and Torsten Bertram1
+Abstract— This paper presents a novel generic formulation of Timed-Elastic-Bands for efficient online motion planning of carlike robots. The planning problem is defined in terms of a finitedimensional and sparse optimization problem subject to the robots kinodynamic constraints and obstacle avoidance. Control actions are implicitly included in the optimized trajectory. Reliable navigation in dynamic environments is accomplished by augmenting the inner optimization loop with state feedback. The predictive control scheme is real-time capable and responds to obstacles within the robot’s perceptual field. Navigation in large and complex environments is achieved in a pure pursuit fashion by requesting intermediate goals from a global planner. Requirements on the initial global path are fairly mild, compliance with the robot kinematics is not required. A comparative analysis with Reeds and Shepp curves and investigation of prototypical car maneuvers illustrate the advantages of the approach.
+I. INTRODUCTION
+In the context of mobile robot navigation trajectory plan
+ning and control constitutes a fundamental task in applica
+tions such as service robotics and autonomous transportation
+systems. Online planning is preferred over offline solutions
+since the former integrate planning with state feedback
+and respond to dynamic environments and perturbations at
+runtime. The elastic band (EB) approach is well known
+for online path deformation [1]. Predefined internal forces
+contract the path while external forces maintain a separation
+from obstacles. However, conventional path planning does
+not explicitly incorporate temporal and (kino-)dynamic con
+straints. An extension of the EB approach to online deforma
+tion of trajectories rather than paths is presented in [2]. Dis
+crete trajectory waypoints are repelled from obstacles. Their
+connectedness w.r.t. a dynamic motion model is restored
+afterward. Delsart et al. combine both stages into a single
+operation [3]. However, online trajectory optimization based
+approaches are often limited by the computational burden
+to converge to a feasible and optimal solution under real
+time constraints. Sampling-based approaches, such as the
+dynamic window approach (DWA) [4], address this issue of
+computational efficiency. Simulated trajectories are sampled
+and repeatedly scored from a velocity search space restricted
+by a set of feasible velocities w.r.t. the remaining distance to
+the goal, the velocity and separation from obstacles. Lau et
+al. [5] optimize trajectories represented by splines according
+to kinodynamic constraints of the robot.
+Most planners only consider non-holonomic constraints
+of a differential-drive robot, which however does not cap
+ture the minimum turning radius of a car-like robot. An
+1Faculty of Electrical Engineering & Information Technology, Institute of
+Control Theory and Systems Engineering, TU Dortmund, 44227 Dortmund,
+Germany {forename.surename}@tu-dortmund.de
+overview about feedback control techniques is provided
+in [6]. Lamiraux et al. present a path deformation based on
+potential gradients [7]. The approach rests upon smooth path
+representations and velocity limits are not covered explicitly.
+This substantially constrains its direct application to parking
+maneuvers. Vendittelli et al. provide collision free paths for
+point-shaped robots based on the well-known Reeds and
+Shepp (RS) curves [8]. RS curves provide analytic solutions
+of the minimum-time optimal control problem w.r.t. the
+kinematic model [9]. Also, the classical EB has been adopted
+to car-like robots [10]. Hereby, consecutive path points on
+which internal and external forces act, are connected by
+RS curves. Furthermore, Be ́zier polynomials are utilized for
+smoother transitions. However, the deformation is not subject
+to arbitrary velocity and acceleration limits so that time
+scaling is required to determine a feasible albeit non-optimal
+trajectory. Gu et al. [11] present a multi-stage planning
+approach that utilizes an optimization-free EB to generate
+paths followed by a speed planning stage. In the context
+of direct trajectory optimization, the DWA is extended to
+support car-like robots in [12] as it restricts the search
+space of rotational velocities to the set of feasible solutions.
+However, the assumption of constant velocities in prediction
+prohibits motion reversals required to navigate in confined
+spaces. A non-realtime-capable, but complete optimal control
+formulation that considers kinodynamic constraints and trav
+eling time is presented in [13]. Other approaches rest upon
+search based strategies, e.g. using cell decomposition in [14]
+or by applying smoothing filters to well-known (global)
+rapidly exploring random trees [15].
+The Timed-Elastic-Band (TEB) approach provides a real
+time capable online trajectory planner for differential-drive
+robots [16], [17]. It is inspired by the idea of the EB method
+but reformulates planning of trajectory and controls as a
+sparse optimization problem. The TEB mimics a predictive
+controller and efficiently optimizes the trajectory w.r.t. (kino
+)dynamic constraints while explicitly incorporating temporal
+information to achieve a time-optimal solution.
+This contribution presents a novel and more generic for
+mulation of the original TEB approach which is among
+others the support of motion reversals and generic obsta
+cle representations. Furthermore, it is extended to generate
+trajectories and control actions for car-like robots during run
+time. The TEB is intended as a local planner in a hierarchical
+navigation architecture. The TEB planning horizon coincides
+with the robots perceptual range, the remote path based on
+a static map is entrusted to the global planner. The TEB
+approach is available as open-source C++ code and integrated
+into ROS [18] and provides the first local planner for the
+
+
+navigation stack in ROS that supports car-like robots.
+The paper is organized as follows: Section II details the
+kinematic model and reformulates the TEB approach for car
+like robots. Section III presents simulations and experiments.
+It shows that the TEB solution coincides with RS curves in
+the obstacle-free case. It analyzes parallel parking scenarios
+of a car like robot. Section IV summarizes the results.
+II. THEORETICAL BACKGROUND
+A. Kinematic Model of a Car-Like Robot
+This section recapitulates the kinematic model of a car
+like robot shown in Fig. 1a w.r.t. the world frame (xw, yw).
+The car exhibits the planar motion of a rigid body in which
+s = [x, y, β]T ∈ R2 × S1 denotes the current vehicle
+configuration. The base frame is located at the center of the
+rear axle and its x-axis is aligned with the main axis of the
+robot. The steering angle is limited to φ ∈ (−φmax, φmax)
+with φmax ∈ (0, π
+2 ). The term v ∈ R denotes the signed
+translational velocity w.r.t. the robot’s x-axis. The motion of
+the two rear wheels and their translational velocities vr ∈ R
+and vl ∈ R are decoupled by a differential gear such that
+v = 0.5(vl + vr). L ∈ R+ denotes the wheelbase in terms
+of distance between front and rear axles.
+The motion of the car-like robot is described by nonlinear
+ordinary differential equations [9]:
+s ̇(t) =
+
+
+x ̇ (t) y ̇(t) β ̇ (t)
+
+=
+
+
+v(t) cos (β(t)) v(t) sin (β(t)) v(t)
+L tan (φ(t))
+
+ . (1)
+The robot pose at time t is denoted by s(t) and u(t) =
+[v(t), φ(t)]T defines the control. ss denotes the initial state
+at time t = 0 s. We assume that the robot motor controllers
+accurately track the commanded reference speed and steering
+angle. Notice, that the model does not consider robot dynam
+ics in terms of forces, torques, and inertia of the car. The
+actual feasible turning radius at high speeds might be lower
+than the geometric minimum turning radius. Nevertheless,
+the kino-dynamic model accounts for bounds on velocities
+as well as accelerations.
+The optimal control input sequence u∗(t) that mini
+mizes an objective function while it adheres to the car’s
+kinematic (1) is retrieved by means of a (direct) optimal
+control framework. The underlying optimization problem
+is discretized and minimized either w.r.t. the controls only
+(sequential approach) or w.r.t. to both configurations and
+controls (simultaneous approach). Although the latter formu
+lation leads to a larger solution vector it achieves in general
+better convergence due to the local and sparse structure of
+the optimization problem.
+The control input u(t) is directly inferred from the tra
+jectory s(t) respectively its temporal derivative according to
+the inverse of (1):
+u(t) =
+[v(t) φ(t)
+]
+=
+[ γ(·)√x ̇ 2(t) + y ̇2(t)
+tan−1 (
+Lv−1 (t)β ̇ (t)
+)
+]
+. (2)
+Function γ(·) retains the direction of velocity and is de
+scribed in section II-B.1. In case of v(t) = 0 in (2), φ(t)
+s
+x
+yL
+φ
+ρ
+vr
+vl
+β
+xw
+yw
+(a)
+Rk
+dk
+yk xk
+sk
+θk,k
+yk+1
+xk+1
+sk+1 θk,k+1
+ρk
+∆βk
+(b)
+Fig. 1: Geometry of the car-like robot and poses.
+is merely the last known valid steering angle or a constant
+reference. The closed form solution for u(t) defines the
+optimization problem in terms of robot configurations only.
+This reduces the dimensions of the solution vector while it
+maintains the sparse structure of the original simultaneous
+formulation. The elimination of u(t) allows a purely geo
+metric formulation of the condition imposed on consecutive
+states for car-like kinematics in (1).
+According to (1), the robot performs straight line motions
+in case β ̇(t) = 0 respectively φ(t) = 0. For a constant
+steering angle φ, the robot describes a circular path with
+radius ρ = L/ tan (φ). The maximum steering angle φmax
+causes a minimum turning radius ρmin of the robot. Let
+(sk)k=1,2,...,n denote a sequence of discretized robot con
+figurations sampled from s(t) by applying constant control
+inputs uk between two consecutive time instances k.
+Straight line and circular motions require two consecutive
+poses sk and sk+1 to be located on a common arc of constant
+curvature. Let θk,k denote the angle between configuration
+sk and the direction dk = [xk+1 − xk, yk+1 − yk, 0]T at
+time k (refer to Fig. 1b). Similarly, θk,k+1 defines the angle
+between dk and configuration sk+1 at time k +1. A common
+arc of constant curvature is obtained if and only if θk,k and
+θk,k+1 are equal:
+θk,k = θk,k+1, (3)
+hk(sk+1, sk) =
+(
+
+
+cos(βk) sin(βk) 0
+
++
+
+
+cos(βk+1) sin(βk+1) 0
+
+
+)
+× dk = 0.
+(4)
+Constraint (4) is compliant with the robot turning in place
+(dk = 0). An auxiliary condition accounts for the minimum
+turning radius φmax. According to Fig. 1b, the arc length Rk
+is defined by Rk = ρk∆βk with turning radius ρk. For non
+holonomic robots, the angle ∆βk ∈ S1 equals the change
+of robot orientation in the transition between sk and sk+1
+and hence is computed according to ∆βk = βk+1 − βk.
+Changes of orientation are mapped to the interval (−π, π].
+The turning radius ρk is described by the trigonometry of
+circular segments:
+ρk = ‖dk‖2
+∣ ∣
+∣2 sin
+( ∆βk 2
+)∣ ∣ ∣
+∆βk 1
+≈ ‖dk‖2
+|∆βk| . (5)
+The robot motion has to comply with (4) and ρk ≥ ρmin.
+
+
+B. Timed-Elastic-Band (TEB) Optimization Problem
+This section introduces the TEB optimization formulation.
+The overall objective is to steer the car-like robot from a
+start ss to a desired goal configuration sf in minimum time.
+The underlying optimization problem is defined in terms
+of a finite-dimensional parameter vector composed of the
+discretized sequence of n robot configurations (sk)k=1,2,...,n
+from section II-A. The TEB approach incorporates tempo
+ral information directly into the optimization problem and
+thus accounts for the minimization of transition time under
+kinodynamic constraints. Let (∆Tk)k=1,2,...,n−1 denote a
+sequence of strictly positive time intervals ∆Tk ∈ R+. Each
+∆Tk describes the time required to transit from sk to sk+1.
+The set of parameters subject to optimization is defined by:
+B := {s1, ∆T1, s2, ∆T2, . . . , sn−1, ∆Tn−1, sn} (6)
+The TEB optimization problem is formulated as a nonlinear
+program:
+mBin
+n−1
+∑
+k=1
+∆Tk2 (NLP)
+subject to
+s1 = sc, sn = sf , 0 ≤ ∆Tk ≤ ∆Tmax,
+hk(sk+1, sk) = 0, r ̃k(sk+1, sk) ≥ 0,
+ok(sk) ≥ 0,
+νk(sk+1, sk, ∆Tk) ≥ 0, (k = 1, 2, . . . , n − 1)
+αk(sk+2, sk+1, sk, ∆Tk+1, ∆Tk) ≥ 0,(k = 2, 3, . . . , n − 2)
+α1(s2, s1, ∆T1) ≥ 0, αn(sn, sn−1, ∆Tn−1) ≥ 0.
+Initial and final configurations, s1 and sn, are tied with
+the current robot state sc obtained from robot localization
+and goal state sf . The strictly positive time interval ∆T is
+bounded from above to ∆Tmax to accomplish an appropriate
+discretization of the continuous time motion in terms of
+the discrete model provided in section II-A. Minimizing
+∑
+k ∆Tk2 tends to obtain uniform time intervals (proof fol
+lows by Lagrange multiplier method). The equality constraint
+hk(·) satisfies the kinematics equation (4) while inequality
+r ̃k(·) imposes a minimum turning radius with r ̃k(·) =
+rk − ρmin. The approximation of the turning radius for small
+angles in (5) is valid in case of small ∆Tmax. Notice, that for
+∆βk → 0 the arc length Rk tends to infinity. This case is
+considered separately in the particular solver implementation.
+In the constraint approximation from section II-C, r ̃k(·) is
+set to 0 for ∆βk = 0 without violating C1 differentiability.
+The remaining equality and inequality constraints reflect
+kino-dynamic bounds and clearance from obstacles.
+1) Limited Velocity and Acceleration: According to sec
+tion II-A, the translational velocity of configuration sk at
+discrete time step k is denoted as vk. The robot covers
+a distance Rk in between sk to sk+1 given by (5) and
+Rk = ρk∆βk. Therefore, its velocity vk is defined by:
+vk = ρk∆βk
+∆Tk
+γ(sk, sk+1) ∆βk 1
+≈ ‖dk‖2
+∆Tk
+γ(sk, sk+1). (7)
+γ(·) denotes the sign of the robot velocity. Since the motion
+of the robot is restricted to sequential linear and circular
+movements, the projection of the orientation vector qk =
+[cos βk, sin βk, 0]T onto the distance vector dk results in
+γ(sk, sk+1) = sign(〈qk, dk〉) ≈ κ〈qk, dk〉
+1 + |κ〈qk, dk〉| (8)
+with scalar product operator 〈·, ·〉. A sigmoidal approxima
+tion of (8) with γ(·) ∈ [−1, 1] is employed as most of
+the common optimization algorithms are not suited for non
+continuous functions. Parameter κ ∈ R+ denotes a scaling
+factor that defines the slope (e.g. κ = 102). Both terms
+cause incorrect velocities at 〈qk, dk〉 = 0 or 〈qk, dk〉 ≈ 0
+respectively. Figuratively, this situation occurs if pose sk+1
+is orthogonal to pose sk. However, such a configuration
+is not within the feasible set given by constraint (4) and
+for the special case in which the position parts of both
+poses coincide it is dk = 0 =⇒ vk = 0. Both the
+actual and the Euclidean distance approximation of the arc
+segment in (7) are applicable. In the remainder, only the
+latter, approximative description is investigated.
+The angular velocity ωk = ∆βk
+∆Tk of configuration sk is
+inherently bounded to |ωk| ≤ ωmax with ωmax = vmaxρm−i1n.
+Limits ±vmax and ±ωmax are enforced by inequality con
+straint νk(sk+1, sk, ∆Tk) = [vmax − |vk|, ωmax − |ωk|]T.
+Similarly, translational accelerations ak are limited to
+±amax. In particular, ak is defined by finite differences:
+ak = 2(vk+1 − vk)
+∆Tk + ∆Tk+1
+. (9)
+For the sake of clarity, sk+2, sk+1 and sk are substituted
+by their related velocities (7). The resulting inequality is
+αk(sk+2, sk+1, sk, ∆Tk+1, ∆Tk) = amax − |ak|. Special
+cases occur at k = 1 and k = n − 1 for which v1 and
+vn−1 are substituted by the desired start and final velocities
+(vs, ωs) and (vf , ωf ) respectively.
+2) Clearance from obstacles: The robot trajectory is sup
+posed to reach the goal without any collision with obstacles.
+An obstacle is modeled as a simply-connected region in R2
+and is denoted as O. In the presence of R obstacles Ol, l =
+1, 2, . . . , R, the subscript l is added. The distance between
+configuration sk and the obstacle perimeter is quantified in
+a continuous metric space, e.g. the Euclidean metric. Let
+δ(sk, O) : R2×S1×O → R describes the minimal Euclidean
+distance between obstacle O and pose sk. A minimum
+separation δmin between all obstacles and configuration sk
+is defined by the inequality constraint:
+ok(sk) =[δ(sk, O1), δ(sk, O2), . . . , δ(sk, OR)]T
+− [δmin, δmin, . . . , δmin]T. (10)
+The obstacle set O is updated online to account for dynamic
+environments. Additionally, prediction models for dynamic
+obstacles might be included in ok(·).
+C. Approximative Least-Squares Optimization
+Solving nonlinear programs with hard constraints is com
+putational expensive. Therefore, improving the efficiency of
+fast online solvers has been a focus of research in nonlinear
+optimization over the last decade. The TEB approach rests
+
+
+upon unconstrained optimization techniques since they are
+well studied and mature implementations in open-source
+packages are widely available. The exact nonlinear program (NLP) is transformed into an
+approximative nonlinear squared optimization problem that is
+solved efficiently as the solver approximates the Hessian by
+first order derivatives while it exploits the sparsity pattern of
+the problem. Constraints are incorporated into the objective
+function as additional penalty terms. In the following the
+arguments of constraints are omitted for better readability.
+The equality constraint h is expressed in terms of a quadratic
+penalty with a scalar weight σh and identity I by:
+φ(hk, σh) = σhhkT Ihk = σh‖hk‖22. (11)
+Inequalities are approximated by weighted one-sided
+quadratic penalties:
+χ(νk, σν ) = σν ‖ min{0, νk}‖22. (12)
+The min-operator is applied row-wise. Additional inequali
+ties αk and ok are approximated in a similar fashion. Initial
+and final constraint, ss and sf respectively, are eliminated by
+substitution and are therefore not subject to the optimization.
+The overall unconstrained optimization problem with objec
+tive function V ̃ (B) that approximates (NLP) is given by:
+B∗ = arg min
+B\{s1 ,sn }
+V ̃ (B), (13)
+V ̃ (B) =
+n−1
+∑
+k=1
+[∆Tk2 + φ(hk, σh) + χ(r ̃k, σr) + χ(νk, σν )+
++ χ(ok, σo) + χ(αk, σα)] + χ(αn, σα). (14)
+B∗ denotes the optimal solution vector. The theory of
+quadratic penalties [19] states that B∗ only coincides with
+the actual minimizer of the nonlinear program (NLP) in
+case all weights tend towards infinity σ → ∞. Unfortunately,
+large weights introduce ill-conditioning of the problem such
+that the underlying solver does not converge properly due
+to inadequate step sizes. The TEB approach abandons the
+true minimizer in favor of a suboptimal but computation
+ally more efficiently obtainable solution with user defined
+weights. For small to medium sized cluttered environments
+within the robots local field of perception our experiments
+reveals that unit weights of 1 provide a reasonable point
+of departure, except for the weight σh associated with the
+equality constraint of the non-holonomic kinematics which
+is a few orders of magnitude larger (≈ 1000). For solving (14), the TEB approach utilizes the Levenberg
+Marquardt (LM) method due to its proper balance between
+robustness and efficiency. The graph optimization framework
+g2o [20] implements a highly efficient sparse variant of LM
+that solves (13). Since terms of (NLP) depend only on a
+small subset of parameters, the underlying Hessian is sparse
+and banded.
+D. Closed-loop Predictive Control
+The TEB approach defines a predictive control strategy in
+order to account for disturbances, map, and model uncertain
+ties and dynamic environments that guides the robot from its
+current pose sc towards a goal pose sf .
+Problem (NLP) is solved repeatedly at a rate faster than
+the robot control cycle rate. At each sampling instance, the
+control action u1 is inferred from the optimized trajectory
+B∗ by applying (2) and finite differences (e.g. refer to (7)).
+The overall algorithm is given by:
+1: procedure TIMEDELASTICBAND(B, sc, sf , O)
+2: Initialize or update trajectory
+3: for all Iterations 1 to Iteb do
+4: Adjust length n
+5: Update obstacle constraints from set O
+6: B∗ ← SOLVENLP(B) . solve (NLP) 7: Check feasibility
+8: u1∗ ← Map B∗ to u1∗ . obtain [v1, φ1]T with (2)
+return (sub-) optimal u1∗
+The initial solution B is obtained from a sparse set of
+collision free linear path segments generated by a global
+coarse planner. The initial band is composed of robot states
+sk located on the coarse path equidistant in space and time. Obviously, the initialization strategy effects which the
+convergence to competing local optimal solutions and is
+discussed in the analysis section. The set B∗ is fed back
+in subsequent sampling intervals to warm-start consecutive
+optimizations. Since the proposed optimization problem min
+imizes transition time towards a fixed final configuration, the
+strategy operates with a shrinking horizon. An outer optimization loop with Iteb iterations maintains
+the length respectively resolution of the current trajectory. The number of configurations n is updated depending on
+the temporal discretizations ∆Tk:
+• If ∆Tk < ∆Tref − ∆Thyst ∧ n > nmin, remove sk.
+• If ∆Tk > ∆Tref + ∆Thyst ∧ n < nmax, insert new
+configuration between sk and sk+1.
+∆Tref ∈ (0, ∆Tmax] denotes the desired temporal resolution
+and ∆Thyst introduces a hysteresis to avoid oscillations. The
+number of samples is further limited to nmin ≤ n ≤ nmax.
+Novel configurations are inserted by linear interpolation
+between successor and predecessor pose. The adaption of the length of the horizon for such a
+shrinking horizon problem offers the major advantage of
+decoupling path length and overall transition time: The
+number of poses as well as the number of motion reversals
+that are required to satisfy (4) is unknown and changes with
+dynamic obstacles. Insertion and deletion of states at runtime
+allows the overall path length to contract or extend, while the
+deformed trajectory still complies with the imposed temporal
+discretization. Under some preliminaries, predictive controllers with final
+equality constraints, such as sn = sf , can be shown to
+enforce stability as long as the subsequent solutions of the
+underlying optimization problem are feasible. However, a
+stability analysis is beyond the scope of this paper. We
+assume the feasibility of the (approximative) optimization
+problem which is sufficient for the investigated scenarios.
+On the other hand, there are obstacle scenarios for which
+
+
+−2 0 2
+−2
+0
+2
+x [m]
+y [m]
+TEB Reeds-Shepp Curves
+−2 0 2 x [m]
+Fig. 2: TEB trajectories and RS curves for different goal
+configurations, left: βf = 0 rad, right: βf = π rad
+no solution exist in terms of satisfying all constraints. Hence
+feasibility is confirmed by an external collision check at each
+sampling interval before applying the motion command.
+III. ANALYSIS AND EXPERIMENTS
+This section compares the trajectories generated by the
+TEB approach in the absence of obstacles with the optimal
+analytical solution in terms of Reeds and Shepp curves. It
+investigates the TEB for car like robots in typical parallel
+parking scenarios. Simulations are performed in C++ (PC:
+3,4 GHz Intel i7 CPU).
+A. Comparison with Reeds and Shepp Curves
+Reeds- and Shepp (RS) curves describe the complete set
+of paths of a car like robot with kinematics (1) from start to
+goal in the absence of obstacles [9]. Under limited controls
+v(t) ∈ {−1, 1} and φ(t) ∈ (−φmax, φmax) the shortest path
+corresponds to the minimum time solution and provides our
+reference in the following analysis. Since RS curves do not
+consider dynamics, no TEB acceleration constraints in (NLP)
+are imposed. The minimum turning radius is set to ρmin =
+1.0 m. The desired temporal reference is ∆Tref = 0.2 s. Outer
+loop iterations (Iteb) of the TEB planner in section II-D are
+repeated upon convergence. For the solution of (13) five
+iterations of Levenberg-Marquardt are performed with the
+g2o-framework. Fig. 2 illustrates the planned trajectories for
+a fixed start ss = 0 and multiple goal poses. The TEB
+waypoints are initialized along the straight line connecting
+the start and goal pose with no a-priori reversal of driving
+direction. In eight of twelve cases, the path obtained from
+the TEB approach coincides with the optimal RS curve. In
+the remaining cases, the LM solver converges to a local
+minimum closest to the initial solution. The four trajectories
+are symmetric to the RS curve and are of equal length
+and transition time. In the general case of environments
+with obstacles global optimality of the trajectory can not
+be guaranteed as the initial path is locally optimized. The following analysis investigates the trajectory resolu
+tion, traveled distance and computational effort w.r.t. to the
+lower bound on the turning radius ρmin. The robot reverses
+its orientation in a cuspidal motion from ss = [2, 0, 0]T to
+sf = [−2, 0, π]T. The initial TEB is composed of merely
+n = 5 equidistant waypoints along a straight line from start
+to goal. Table I reports the traveled distances (path lengths)
+and computation time upon convergence to the optimal RS
+curve. During optimization, the number of TEB waypoints
+n increases to comply with the spatio-temporal resolution.
+Even for a path length of 25 m and more than 100 waypoints
+the LM solver converges within less than 40 ms.
+B. Parking Scenarios
+In addition to velocity bounds the maximum acceleration
+of the robot is limited amax = 1.5 m/s2. The obstacle
+constraint in (10) inflates the Euclidean distance between
+the rectangular car footprint (length: 0.6 m, width: 0.2 m,
+L = 0.4 m) and polygon obstacles with δmin = 0.1 m.
+Fig. 3 depicts parallel parking scenario with one or two
+obstacles and initial biases for forward and reverse parking.
+In case of a bias for reverse parking 3b and 3d, the initial path
+(dashed lines) is composed of a straight forward segment
+that extends beyond the gap succeeded by a back up along
+a straight line. In case of two obstacles, the TEB converges
+to distinct local optimal trajectories for either forward 3a or
+reverse parking 3b. Fig. 4 illustrates velocity and steering
+angle profile for trajectories 3a and 3b. The time optimal
+solution exhibits maximum acceleration between the velocity
+bounds vmax = 1 m/s and −vmax and extremal steering
+angle φmax = atan−1(L/ρmin) = 0.38 rad. The forward
+maneuver 3d is slightly faster than the more common reverse
+parking option but becomes infeasible for curb-side parking
+as the car veers beyond the curb to the right. In the case of
+a single obstacle, forward parking 3c is faster and even the
+initial trajectory biased towards reverse parking 3d converges
+to the same global time optimal maneuver. If reverse parking
+is strictly preferred, the global planner should impose an
+intermediate way-point behind the gap. For comparison, the
+paths resulting from the EB approach for car-like robots [10]
+are depicted in Fig. 3. EB paths in 3a and 3b collide with
+obstacles. The approach requires internal bubbles to have a
+radius of at least √2ρ which substantially limits their usage
+for parking maneuvers. Nevertheless, their minimum size is
+reduced here, resulting in colliding RS curves. EB paths
+in 3c and 3d are collision-free but not optimized w.r.t.
+acceleration limits. Hence, time-scaling leads to non-time
+optimal trajectories.
+C. Experimental Results
+Fig. 5 illustrates the TEB planner on a Lego EV3 car-like
+robot. Intermediate goals are obtained from a global planner
+within a perceptual range of 1 m and hence the environment
+TABLE I: Trajectories between ss = [2, 0, 0]T to sf =
+[−2, 0, π]T for different minimal turning radii
+ρmin [m] n Length [m] / RS Length [m] CPU Time [ms]
+0.75 27 4.86 / 4.85 2.6
+1.75 28 5.98 / 5.99 5.9
+3.00 49 9.42 / 9.41 21.5
+4.25 75 13.35 / 13.33 25.8
+6.75 102 21.55 / 21.17 28.1
+8.00 104 24.96 / 25.10 35.4
+
+
+0 0.5 1 1.5 2
+−1
+−0.5
+0
+0.5
+1
+0s
+1s 2s
+3s
+x [m]
+y [m]
+(a)
+0 0.5 1 1.5
+0s
+1s
+2s
+3s
+x [m]
+(b)
+0 0.5 1 1.5
+0s
+1s
+2s
+x [m]
+(c)
+0 0.5 1 1.5
+0s
+1s
+2s
+x [m]
+(d)
+Fig. 3: Parking trajectories with the initial paths (dashed lines) and obstacles (gray), forward (a), backward (b) two obstacles,
+(c) forward, (d) backward single obstacle. Time stamps are highlighted with black circles. Paths of EB approach [10] are
+shown with dotted lines (non-time-optimal since acceleration limits are not explicitly incorporated, infeasible in (a) and (b)).
+−1
+−00..0155
+v(t) [ sm ]
+Maneuver Fig. 3a Maneuver Fig. 3b
+01234
+−0.4
+−000...2240
+t [s]
+φ(t) [rad]
+Fig. 4: Velocity and steering angle profile
+−2 −1.5 −1 −0.5 0
+−2
+−1
+0
+0s
+5s
+10s
+15s
+20s 25s
+x [m]
+y [m]
+−1 −0.5 0
+−2
+−1.5
+−1
+0s 5s
+10s
+15s
+20s
+x [m] Fig. 5: TEB motion control of Lego EV3 Robot
+changes online from a planning point of view. Localization is
+performed with a motion capture system. Both collision-free
+closed-loop trajectories guide the robot towards the goal pose
+despite substantial backlash in steering and model mismatch
+of the kinematics. In Fig. 5 (right) the TEB reconfigures its
+initial path at approx. 10 s as it becomes aware of the obstacle
+on the right only as it enters the robots perceptual range1
+(width: 0.2 m, length: 0.28 m, φmax = 0.6 rad, L = 0.19 m,
+vmax = 0.15 m/s).
+IV. CONCLUSIONS
+The generic TEB approach for local trajectory planning
+and control offers substantial advantages for navigation of
+car-like robots namely computationally efficiency, unsuper
+vised emergence of motion reversals and minimal require
+ments on the global planner. TEB reliably and efficiently
+generates feasible minimum-time trajectories that constitute
+not necessarily a global but in any case local optimum.
+1Video available online: https://youtu.be/3FNPSld6Lrg
+REFERENCES
+[1] S. Quinlan, Real-Time Modification of Collision-Free Paths. Stanford,
+CA, USA: Stanford University, 1995.
+[2] H. Kurniawati and T. Fraichard, “From path to trajectory deformation,”
+in IEEE-RSJ Int. Conf. on Intelligent Robots and Systems, 2007.
+[3] V. Delsart and T. Fraichard, “Reactive Trajectory Deformation to
+Navigate Dynamic Environments,” in European Robotics Symposium,
+Czech Republic, 2008.
+[4] D. Fox, W. Burgard, and S. Thrun, “The dynamic window approach to
+collision avoidance,” IEEE Robotics & Automation Magazine, vol. 4,
+no. 1, pp. 23–33, March 1997.
+[5] B. Lau, C. Sprunk, and W. Burgard, “Kinodynamic motion planning
+for mobile robots using splines,” in IEEE/RSJ Intl. Conf. on Intelligent
+Robots and Systems, USA, 2009, pp. 2427–2433.
+[6] A. D. Luca, G. Oriolo, and C. Samson, Feedback control of a
+nonholonomic car-like robot. Springer, 1998, pp. 171–253.
+[7] F. Lamiraux, D. Bonnafous, and O. Lefebvre, “Reactive path deforma
+tion for nonholonomic mobile robots,” IEEE Transactions on Robotics,
+vol. 20, no. 6, pp. 967–977, 2004.
+[8] M. Vendittelli, J. P. Laumond, and C. Nissoux, “Obstacle distance
+for car-like robots,” IEEE Transactions on Robotics and Automation,
+vol. 15, no. 4, pp. 678–691, 1999.
+[9] S. LaValle, Planning Algorithms. Cambridge University Press, 2006.
+[10] M. Khatib, H. Jaouni, R. Chatila, and J. P. Laumond, “Dynamic path
+modification for car-like nonholonomic mobile robots,” in Intl. Conf
+on Robotics and Automation, vol. 4, 1997, pp. 2920–2925.
+[11] T. Gu, J. Atwood, C. Dong, J. M. Dolan, and J.-W. Lee, “Tunable and
+stable real-time trajectory planning for urban autonomous driving,”
+in IEEE International Conference on Intelligent Robots and Systems,
+2015, pp. 250–256.
+[12] K. Rebai, O. Azouaoui, M. Benmami, and A. Larabi, “Car-like robot
+navigation at high speed,” in IEEE Intl. Conf. on Robotics and
+Biomimetics, 2007, pp. 2053–2057.
+[13] S. Gulati, “A framework for characterization and planning of safe,
+comfortable, and customizable motion of assistive mobile robots.”
+Ph.D. dissertation, 2011.
+[14] N. Ghita and M. Kloetzer, “Trajectory planning for a car-like robot by
+environment abstraction,” Robotics and Autonomous Systems, vol. 60,
+no. 4, pp. 609–619, 2012.
+[15] W. Xu and J. M. Dolan, “A real-time motion planner with trajectory
+optimization for autonomous vehicles,” in Proceedings of the Intl.
+Conf. on Robotics and Automation, 2012, pp. 2061–2067.
+[16] C. R ̈osmann, W. Feiten, T. Wo ̈sch, F. Hoffmann, and T. Bertram, “Tra
+jectory modification considering dynamic constraints of autonomous
+robots,” in 7th German Conference on Robotics, 2012, pp. 74–79.
+[17] C. Ro ̈smann, F. Hoffmann, and T. Bertram, “Planning of multiple robot
+trajectories in distinctive topologies,” in IEEE European Conference
+on Mobile Robots, 2015, pp. 1–6.
+[18] C. Ro ̈smann, “teb local planner ROS Package [Online],” 2015.
+[Online]. Available: http://wiki.ros.org/teb local planner
+[19] J. Nocedal and S. J. Wright, Numerical optimization, ser. Springer
+series in operations research. New York: Springer, 1999.
+[20] R. Ku ̈mmerle, G. Grisetti, H. Strasdat, K. Konolige, and W. Burgard,
+“G2o: A general framework for graph optimization,” in IEEE Intl.
+Conf. on Robotics and Automation (ICRA), 2011, pp. 3607–3613.
