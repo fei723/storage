@@ -1,0 +1,208 @@
+Multi-modal Semantic SLAM for Complex Dynamic Environments
+Han Wang*, Jing Ying Ko* and Lihua Xie, Fellow, IEEE
+Abstract— Simultaneous Localization and Mapping (SLAM) is one of the most essential techniques in many real-world robotic applications. The assumption of static environments is common in most SLAM algorithms, which however, is not the case for most applications. Recent work on semantic SLAM aims to understand the objects in an environment and distinguish dynamic information from a scene context by performing image-based segmentation. However, the segmentation results are often imperfect or incomplete, which can subsequently reduce the quality of mapping and the accuracy of localization. In this paper, we present a robust multi-modal semantic framework to solve the SLAM problem in complex and highly dynamic environments. We propose to learn a more powerful object feature representation and deploy the mechanism of looking and thinking twice to the backbone network, which leads to a better recognition result to our baseline instance segmentation model. Moreover, both geometric-only clustering and visual semantic information are combined to reduce the effect of segmentation error due to small-scale objects, occlusion and motion blur. Thorough experiments have been conducted to evaluate the performance of the proposed method. The results show that our method can precisely identify dynamic objects under recognition imperfection and motion blur. Moreover, the proposed SLAM framework is able to efficiently build a static dense map at a processing rate of more than 10 Hz, which can be implemented in many practical applications. Both training data and the proposed method is open sourced1.
+I. INTRODUCTION
+Simultaneous Localization and Mapping (SLAM) is one of the most significant capabilities in many robot applications such as self-driving cars, unmanned aerial vehicles, etc. Over the past few decades, SLAM algorithms have been extensively studied in both Visual SLAM such as ORBSLAM [1] and LiDAR-based SLAM such as LOAM [2] and LeGO-LOAM [3]. Unfortunately, many existing SLAM algorithms assume the environment to be static, and cannot handle dynamic environments well. The localization is often achieved via visual or geometric features such as feature points, lines and planes without including semantic information to represent the surrounding environment, which can only work well under static environments. However, the realworld is generally complex and dynamic. In the presence of moving objects, pose estimation might suffer from drifting, which may cause the system failure if there are wrong
+*Jing Ying Ko and Han Wang contribute equally to this paper and are considered as jointly first authors. The research is supported by the National Research Foundation, Singapore under its Medium Sized Center for Advanced Robotics Technology Innovation. Jing Ying Ko, Han Wang and Lihua Xie are with the School of Electrical and Electronic Engineering, Nanyang Technological University, 50 Nanyang Avenue, Singapore 639798. e-mail: {hwang027, E170043}@e.ntu.edu.sg; elhxie@ntu.edu.sg 1https://github.com/wh200720041/MMS_SLAM
+LiDAR Input Point Cloud
+Peception Node
+Clustering Result
+Projected Segmentation Result
+Dynamic Point Static Point
+Filter ing & SL AM Node
+Input Image Mask Image
+Semantic Category
+Semantic Mask
+Segmentation Node
+Mapping
+Fig. 1: System overview of the proposed multi-modal semantic SLAM. Compared to traditional semantic SLAM, we propose to use multi-modal method to improve the efficiency and accuracy of the existing SLAM methods in the complex and dynamic environment. Our method significantly reduces the localization drifts caused by dynamic objects and performs dense semantic mapping in real time.
+correspondences or insufficient matching features [4]. The presence of dynamic objects can greatly degrade the accuracy of localization and the reliability of the mapping during the SLAM process.
+Advancements in deep learning have enabled the developments of various instance segmentation networks based on 2D images [5]–[6]. Most existing semantic SLAMs leverage the success of deep learning-based image segmentation, e.g., dynamic-SLAM [7] and DS-SLAM [8]. However, the segmentation results are not ideal under dynamic environments. Various factors such as small-scale objects, objects under occlusion and motion blur contribute to challenges in 2D instance segmentation. For example, the object is partially recognized under motion blur or when it is near to the border of the image. These can degrade the accuracy of localization and the reliability of the mapping. Some recent works target to perform deep learning on 3D point clouds to achieve semantic recognition [9]–[10]. However, 3D point cloud instance segmentation does not perform as well as its 2D
+arXiv:2205.04300v2 [cs.RO] 14 May 2022
+
+
+ counterpart due to its smaller scale of training data and high computational cost. There are several reasons: 1) 3D point cloud instance segmentation such as PointGroup takes a long computation time (491ms) [11]; 2) it is much less efficient to label a point cloud since the geometric information is not as straightforward as the visual information; 3) it is inevitable to change the viewpoint in order to label a point cloud [12], which increases the labeling time.
+In this paper, we propose a robust and computationally efficient multi-modal semantic SLAM framework to tackle the limitation of existing SLAM methods in dynamic environments. We modify the existing backbone network to learn a more powerful object feature representation and deploy the mechanism of looking and thinking twice to the backbone network, which leads to a better recognition result to our baseline instance segmentation model. Moreover, we combine the geometric-only clustering and visual semantic information to reduce the effect of motion blur. Eventually the multi-modal semantic recognition is integrated into the SLAM framework which is able to provide real-time localization in different dynamic environments. The experiment results show that the segmentation errors due to misclassification, small-scale object and occlusion can be well-solved with our proposed method. The main contributions of this paper are summarized as follows:
+• We propose a robust and fast multi-modal semantic SLAM framework that targets to solve the SLAM problem in complex and dynamic environments. Specifically, we combine the geometric-only clustering and visual semantic information to reduce the effect of segmentation error due to small-scale objects, occlusion and motion blur. • We propose to learn a more powerful object feature representation and deploy the mechanism of looking and thinking twice to the backbone network, which leads to a better recognition result to our baseline instance segmentation model. • A thorough evaluation on the proposed method is presented. The results show that our method is able to provide reliable localization and a semantic dense map.
+The rest of the paper is organized as follows: Section II presents an overview of the related works regarding the three main SLAM methods in dynamic environments. Section III describes the details of the proposed SLAM framework. Section IV provides quantitative and qualitative experimental results in dynamic environments. Section V concludes this paper.
+II. RELATED WORK
+In this section, we present the existing works that address SLAM problems in dynamic environments. The existing dynamic SLAM can be categorized into three main methods: feature consistency verification method, deep learning-based method and multi-modal-based method.
+A. Feature Consistency Verification
+Dai et al. [13] presents a segmentation method using the correlation between points to distinguish moving objects from the stationary scene, which has a low computational requirement. Lee et al. [14] introduces a real-time depth edge-based RGB-D SLAM system to deal with a dynamic environment. Static weighting method is proposed to measure the likelihood of the edge point being part of the static environment and is further used for the registration of the frame-to-keyframe point cloud. These methods generally can achieve real-time implementation without increasing the computational complexity. Additionally, they need no prior knowledge about the dynamic objects. However, they are unable to continuously track potential dynamic objects, e.g., a person that stops at a location temporarily between moves is considered as a static object in their work.
+B. Deep Learning-Based Dynamic SLAM
+Deep learning-based dynamic SLAM usually performs better than feature consistency verification as it provides conceptual knowledge of the surrounding environment to perform the SLAM tasks. Xun et al. [15] proposes a featurebased visual SLAM algorithm based on ORB-SLAM2, where a front-end semantic segmentation network is introduced to filter out dynamic feature points and subsequently fine-tune the camera pose estimation, thus making the tracking algorithm more robust. Reference [16] combines a semantic segmentation network with a moving consistency check method to reduce the impact of dynamic objects and generate a dense semantic octree map. A visual SLAM system proposed by [17] develops a dynamic object detector with multi-view geometry and background inpainting, which aims to estimate a static map and reuses it in long term applications. However, Mask R-CNN is considered as computationally intensive; as a result, the whole framework can only be performed offline.
+Deep learning-based LiDAR SLAM in dynamic environments are relatively less popular than visual SLAM. Reference [18] integrates semantic information by using a fully convolutional neural network to embed these labels into a dense surfel-based map representation. However, the adopted segmentation network is based on 3D point clouds, which is less effective as compared to 2D segmentation networks. Reference [19] develops a laser-inertial odometry and mapping method which consists of four sequential modules to perform a real-time and robust pose estimation for large scale high-way environments. Reference [20] presents a dynamic objects-free LOAM system by overlapping segmented images into LiDAR scans. Although deep learning-based methods can effectively alleviate the impact of dynamic objects on the SLAM performance, they are normally difficult to operate in real-time due to the implementation of deeplearning neural networks which possess high computational complexity.
+
+
+ LiDAR
+Camera
+Dynamic Object Info
+Point Cloud
+Image
+Geometric Clustring
+Semantic Fusion
+Motion Blur Compensation
+Segmentation &
+Classfication
+Data Acquisition
+Data Labelling
+Model Generalization
+Data Training
+Convolutional Neural Network
+Feature Extraction
+Data Association
+Key Frame
+Selection Feature Map
+Update
+Static Map Construction
+Pose Estimation
+Iterative Estima
+Dynamic Mapping
+Map Optimization
+Global Map
+Fusion Visualization
+(b) M ulti-modal Fusion M odule
+(a) I nstance Segmentation M odule
+(c) L ocalization M odule
+(d) Global Optimization & M apping M odule
+Localization Output
+3D Map Output
+Fig. 2: Flow chart of the proposed method. Our system consists of four modules: (a) semantic fusion module; (b) semantic learning module; (c) localization module; (d) global optimization and mapping module.
+C. Multi-modal-based Dynamic SLAM
+Multi-modal approaches are also explored to deal with dynamic environments. Reference [21] introduces a multimodal sensor-based semantic mapping algorithm to improve the semantic 3D map in large-scale as well as in featureless environments. Although this work is similar to our proposed method, it incurs higher computational cost as compared to our proposed method. A LiDAR-camera SLAM system [22] is presented by applying a sparse subspace clustering-based motion segmentation method to build a static map in dynamic environments. Reference [23] incorporates the information of a monocular camera and a laser range finder to remove the feature outliers related to dynamic objects. However, both reference [22] and [23] can only work well in low dynamic environments.
+III. METHODOLOGY
+In this section, the proposed method will be discussed in detail. Fig. 2 illustrates an overview of our framework. It is mainly composed of four modules, namely instance segmentation module, multi-modal fusion module, localization module and global optimization & mapping module. Instance segmentation module uses a real-time instance segmentation network to extract the semantic information of all potential dynamic objects that are present in an RGB image. The convolution neural network is trained offline and is later implemented online to achieve real-time performance. Concurrently, the multi-modal fusion module transfers relevant semantic data to LiDAR through sensor fusion and subsequently uses the multi-modal information to further strengthen the segmentation results. The static information is used in the localization module to find the robot pose, while both static information and dynamic information are utilized in the global optimization and mapping module to build a 3D dense semantic map.
+A. Instance Segmentation & Semantic Learning
+A recent 2D instance segmentation framework [24] is employed in our work due to its ability to outperform
+other state-of-the-art instance segmentation models, both in segmentation accuracy and inference speed. Given an input image I, our adopted instance segmentation network predicts a set of {Ci, M i}n
+i=1, where Ci is a class label and M i is a binary mask, n is the number of instances in the image. The image is spatially separated into N × N grid cells. If the center of an object falls into a grid cell, that grid cell is responsible for predicting the semantic category Cij and semantic mask M ij of the object in category branch Bc and mask branch P m respectively:
+Bc(I, θc) : I → {Cij ∈ Rλ | i, j = 0, 1, ..., N }, (1a)
+P m(I, θm) : I → {M ij ∈ Rφ | i, j = 0, 1, ..., N }, (1b)
+where θc and θm are the parameters of category branch Bc and mask branch P m respectively. λ is the number of classes. φ is the total number of grid cells. The category branch and mask branch are implemented with a Fully Connected Network (FCN). Cij has a total of λ elements. Each element of Cij indicates the class probability for each object instance at grid cell (i, j). In parallel with the category branch, M ij has a total of N 2 elements [24]. Each positive grid cell (i, j) will generate the corresponding instance mask in kth element, where kth = i · N + j. Since our proposed SLAM system is intentionally designed for real-world robotics applications, computational cost for performing instance segmentation is our primary concern. Therefore, we use a light-weight version of SOLOv2 with lower accuracy to achieve realtime instance segmentation. To improve the segmentation accuracy, several methods have been implemented to build a more effective and robust feature representation discriminator in the backbone network. Firstly, we modify our backbone architecture from the original Feature Pyramid Network (FPN) to Recursive Feature Pyramid Network (RFP) [25]. Theoretically, RFP instills the idea of looking twice or more by integrating additional feedback from FPN into bottom-up backbone layers. This recursively strengthens the existing FPN and provides increasingly stronger feature representations. By offsetting richer information with small
+
+
+ Or iginal
+SOL O v2
+SOL Ov2 with
+DetectoRS
+(1a)
+(1b)
+(2a)
+(2b) (3b)
+(3a)
+Fig. 3: Comparison of the original SOLOv2 with the proposed method. Our segmentation results achieve higher accuracy: In (1b), our method can preserve a more detailed mask for the rider on a motorcycle compared to the SOLOv2 result in (1a); In (2b), we can handle the occluded object while it is not detected in (2a); In (3b), our method can accurately predict the mask for a handbag compared to (3a).
+receptive field in the lower-level feature maps, we are able to improve the segmentation performance on small objects. Meanwhile, the ability of RFP to adaptively strengthen and suppress neuron activation enables the instance segmentation network to handle occluded objects more efficiently. On the other hand, we replace the convolutional layers in the backbone architecture with Switchable Atrous Convolution (SAC). SAC operates as a soft switch function, which is used to collect the outputs of convolutional computation with different atrous rates. Therefore, we are able to learn the optimal coefficient from SAC and can adaptively select the size of receptive field. This allows SOLOv2 to efficiently extract important spatial information. The outputs are pixel-wise instance masks for each dynamic object, as well as their corresponding bounding box and class type. To better integrate the dynamic information to the SLAM algorithm, the output binary mask is transformed into a single image containing all pixel-wise instance masks in the scene. The pixel with the mask falling onto it is considered as “dynamic state” and otherwise is considered as “static state”. The binary mask is then applied to the semantic fusion module to generate a 3D dynamic mask.
+B. Multi-Modal Fusion
+1) Motion Blur Compensation: The instance segmentation has achieved good performance on the public dataset such as the COCO dataset and the Object365 dataset [24][26]. However, in practice the target may be partially recognized or incomplete due to the motion blur on moving objects, resulting in ambiguous boundaries of a moving object. Moreover, motion blur effect is further enlarged when projecting the 2D pixel-wise semantic mask for a dynamic object to 3D semantic label, leading to point misalignment and inconsistency of feature point extraction. In the experiments, we find that the ambitious boundaries of
+dynamic targets will degrade the localization accuracy and produce noise when performing a mapping task. Therefore, we firstly implement morphological dilation to convolute the 2D pixel-wise mask image with a structuring element, for gradually expanding the boundaries of regions for the dynamic objects. The morphological dilation result marks the ambiguous boundaries around the dynamic objects. We take the both dynamic objects and their boundaries as the dynamic information, which will be further refined in the multi-modal fusion section.
+2) Geometric Clustering & Semantic Fusion: Compensation via connectivity analysis on Euclidean space [27] is also implemented in our work. Instance segmentation network has excellent recognition capability in most practical situations, however motion blur limits the segmentation performance due to ambiguous pixels between regions, leading to undesirable segmentation error. Therefore, we combine both point cloud clustering results and segmentation results to better refine the dynamic objects. In particular, we perform the connectivity analysis on the geometry information and merge with vision-based segmentation results.
+A raw LiDAR scan often contains tens of thousands of points. To increase the efficiency of our work, 3D point cloud is firstly downsized to reduce the scale of data and used as the input for point cloud clustering. Then the instance segmentation results are projected to the point cloud coordinate to label each point. The point cloud cluster will be considered as a dynamic cluster when most points (90%) are dynamic labelled points. The static point will be re-labeled to the dynamic tag when it is close to a dynamic point cluster. And the dynamic point will be re-labelled when there is no dynamic points cluster nearby.
+
+
+ C. Localization & Pose Estimation
+1) Feature Extraction: After applying multi-modal dynamic segmentation, the point cloud is divided into a dynamic point cloud PD and a static point cloud PS . The static point cloud is subsequently used for the localization and mapping module based on our previous work [28]. Compared to the existing SLAM approach such as LOAM [2], the proposed framework in [28] is able to support realtime performance at 30 Hz which is a few times faster. It is also resistant to illumination variation compared to visual SLAMs such as ORB-SLAM [1] and VINS-MONO [29]. For each static point pk ∈ PS , we can search for its nearby static points set Sk by radius search in Euclidean space. Let |S| be the cardinality of a set S, the local smoothness is thus defined by:
+σk = 1
+|Sk| ·
+∑
+pi ∈Sk
+(||pk|| − ||pi||). (2)
+The edge features are defined by the points with large σk and the planar features are defined by the points with small σk .
+2) Data Association: The final robot pose is calculated by minimizing the point-to-edge and point-to-plane distance. For an edge feature point pE ∈ PE , it can be transformed into local map coordinate by pˆE = T·pE , where T ∈ SE(3) is the current pose. We can search for 2 nearest edge features p1
+E and p2
+E from the local edge feature map and the pointto-edge residual is defined by [28]:
+fE (pˆE ) = ||(pˆE − p1
+E ) × (pˆE − p2
+E )|| ||p1
+E − p2
+E || , (3)
+where symbol × is the cross product. Similarly, given a planar feature point pL ∈ PL and its transformed point pˆL = T · pL, we can search for 3 nearest points p1
+L, p2
+L, and
+p3
+L from the local planar map. The point-to-plane residual is defined by:
+fL(pˆL) = (pˆL − p1
+L)T · (p1
+L − p2
+L) × (p1
+L − p3
+L) ||(p1
+L − p2
+L) × (p1
+L − p3
+L)|| . (4)
+3) Pose Estimation: The final robot pose is calculated by minimizing the sum of point-to-plane and point-to-edge residuals:
+T∗ = arg mTin
+∑
+pE ∈PE
+fE (pˆE ) +
+∑
+pL ∈PL
+fL(pˆL). (5)
+This non-linear optimization problem can be solved by the Gauss-Newton method and we can derive an optimal robot pose based on the static information.
+4) Feature Map Update & Key Frame Selection: Once the optimal pose is derived, the features are updated to the local edge map and local plane map respectively, which will be used for the data association on the next frame. Note that to build and update a global dense map is often very computational costly. Hence, the global static map is updated based on the keyframe. A key frame is selected when the translational change of the robot pose is greater than a predefined translation threshold, or the rotational change of the robot pose is greater than a predefined rotation threshold.
+(a) (b) (c) (d) (e)
+(f)
+Fig. 4: Different types of AGVs used in our warehouse environment: (a) the grabbing AGV with a robot arm; (b) folklift AGV; (c) scanning AGV; (d) the Pioneer robot; (e) the transportation AGV with conveyor belt; (f) warehouse environment;
+D. Global Map Building
+The semantic map is separated into a static map and a dynamic map. Note that the visual information given previously is also used to construct the colored dense static map. Specifically, the visual information can be achieved by re-projecting 3D points into the image plane. After each update, the map is down-sampled by using a 3D voxelized grid approach [30] in order to prevent memory overflow. The dynamic map is built by PD and it is used to reveal the dynamic objects. The dynamic information can be used for high-level tasks such as motion planning.
+IV. EXPERIMENT EVALUATION
+In this section, experimental results will be presented to demonstrate the effectiveness of our proposed method. First, our experimental setup will be discussed in detail. Second, we elaborate how we acquire the data of potential moving objects in a warehouse environment. Third, we evaluate the segmentation performance on our adopted instance segmentation model. Subsequently, we explain how we perform the dense mapping and dynamic tracking. Lastly, we evaluate the performance of our proposed method regarding the localization drifts under dynamic environments.
+A. Experimental Setup
+For our experimental setup, the Robot Operating System (ROS) is utilized as the interface for the integration of the semantic learning module and the SLAM algorithm, as shown in Fig. 1. Intel RealSense LiDAR camera L515 is used to capture RGB and point cloud at a fixed frame rate. All the experiments are performed on a computer with an Intel i7 CPU and an Nvidia GeForce RTX 2080 Ti GPU.
+
+
+ (a) (b)
+Fig. 5: Static map creation and final semantic mapping result: (a) static map built by the proposed SLAM framework; (b) final semantic mapping result. The instance segmentation is shown on the left. Human operators are labeled by red bounding boxes and AGVs are labeled by green bounding boxes.
+B. Data Acquisition
+Humans are often considered as dynamic objects in many scenarios such as autonomous driving and smart warehouse logistics. Therefore we choose 5,000 human images from the COCO dataset. In the experiment, the proposed method is evaluated in the warehouse environment as shown in Fig. 4. Other than considering humans as dynamic objects, an advanced factory requires human-to-robot and robot-torobot collaboration, so that the Automated Guided Vehicles (AGVs) are also potential dynamic objects. Hence a total of 3,000 AGV images are collected to train the instance segmentation network and some of the AGVs are shown in Fig. 4. In order to solve the small dataset problem, we implement the copy-paste augmentation method proposed by [31] to enhance the generalization ability of the network and directly improve the robustness of the network. To be specific, this method generates new images through applying random scale jittering on two random training datasets and randomly chooses a subset of object instances from one image to paste onto the other image.
+C. Evaluation on Instance Segmentation Performance
+In this part, we will evaluate the segmentation performance on the COCO dataset with regards to the segmentation loss and mean Average Precision (mAP). The purpose of this evaluation is to compare our adopted instance segmentation network, SOLOv2, with the proposed method. The results are illustrated in Table I. Our adopted instance segmenta
+Model Segmentation Mean Inference
+Loss AP (%) Time (ms)
+SOLOv2 0.52 38.8 54.0 SOLOv2 + RFP 0.36 41.2 64.0 SOLOv2 + SAC 0.39 39.8 59.0 SOLOv2+DetectoRS(Ours) 0.29 43.4 71.0
+TABLE I: Performance comparison of instance segmentation.
+tion network, SOLOv2 is built based on the MMDetection 2.0 [32], an open-source object detection toolbox based on PyTorch. We trained SOLOv2 on the COCO dataset which consists of 81 classes. We choose ResNet-50 as our backbone architecture since this configuration satisfies our requirements for the real-world robotics applications. Instead of training the network from scratch, we make use of the parameters of ResNet-50 that are pre-trained on ImageNet. For fair comparison, all the models are trained under the same configurations, they are trained with the synchronized stochastic gradient descent with a total of 8 images per minibatch for 36 epochs.
+For SOLOv2 with Recursive Feature Pyramid (RFP), we modify our backbone architecture from Feature Pyramid Network (FPN) to RFP network. In this experiment, we only set the number of stages to be 2, allowing SOLOv2 to look at the image twice. As illustrated in Table I, implementation of RFP network brings a significant improvement on the segmentation performance. On the other hand, we replace all 3x3 convolutional layers in the backbone network with Switchable Atrous Convolution (SAC), which increases the segmentation accuracy by 2.3%. By implementing both SAC and RFP network to SOLOv2, the segmentation performance is further improved by 5.9% with only 17ms increase in inference time. Overall, SOLOv2 learns to look at the image twice with adaptive receptive fields, therefore it is able to highlight important semantic information for the instance segmentation network. The segmentation result is further visualized in Fig. 3.
+Methods ATDE MTDE
+(cm) (cm)
+W/O Semantic Recognition 4.834 1.877 Vision-based Semantic Recognition 1.273 0.667 Multi-Modal Recognition (Ours) 0.875 0.502
+TABLE II: Ablation study of localization drifts under dynamic environments.
+
+
+ -3 -2 -1 0 1 2 3
+-3
+-2
+-1
+0
+1
+2
+3
+w/o filtering proposed Ground Truth
+Fig. 6: Localization comparison in a dynamic environment. The ground truth, the original localization result without filtering and the localization result with our proposed multimodal semantic filtering are plotted in red, green and orange respectively.
+D. Dense Mapping and Dynamic Tracking
+To evaluate the performance of our multi-modal semantic SLAM in dynamic environments, the proposed method is implemented on warehouse AGVs which are shown in Fig. 4. In a smart manufacturing factory, both human operators and different types of AGVs (e.g., folklift AGVs, transportation AGVs and robot-arm equipped AGVs) are supposed to work in a collaborative manner. Therefore, the capability of each AGV to localize itself under moving human operators and other AGVs is the essential technology towards industry 4.0. In many warehouse environments, the rest of objects such as operating machines or tables can be taken as a static environment. Hence we only consider humans and AGVs as dynamic objects in order to reduce the computational cost. In the experiment, an AGV is manually controlled to move around and build the warehouse environment map simultaneously, while the human operators are walking frequently in the warehouse. The localization result is shown in Fig. 6, where we compare the results of ground truth, the proposed SLAM method and original SLAM without our filtering approach. It can be seen that when the dynamic object appears (in blue), the proposed multi-modal semantic SLAM is more robust and stable than traditional SLAM. The mapping results are shown in Fig. 5. The proposed method is able to efficiently identify the potential dynamic objects and separate them from the static map. Although the human operators are walking frequently in front of the robot, they are totally removed from the static map. All potential dynamic objects are enclosed by bounding boxes and are added into a final semantic map to visualize the status of each object in real time, where the moving human is colored in red and the AGVs are colored in green. Our method is able to identify and locate multiple targets in the complex dynamic environment.
+(a)
+(b)
+(c)
+(d)
+Fig. 7: Ablation study of localization drifts. (a) original image view; (b) the visual semantic recognition result based on the proposed method; (c) Localization drifts observed due to the moving objects. The localization drifts are highlighted in red circle.
+E. Ablation Study of Localization Drifts
+To further evaluate the performance of localization under dynamic profiles, we compare the localization drifts of different dynamic filtering approaches. Firstly, we keep the robot still and let a human operator walk frequently in front of the robot. The localization drifts are recorded in order to evaluate the performance under dynamic objects. Specifically, we calculate the Average Translational Drifts Error (ATDE) and Maximum Translational Drifts Error (MTDE) to verify the localization, where the ATDE is the average translational error of each frame and MTDE is the maximum translational drift caused by the walking human. The results are shown in Table II. We firstly remove the semantic recognition module from SLAM and evaluate the performance. Then we use the visual semantic recognition (SOLOv2) to remove the dynamic information. The results are compared with the proposed semantic multi-modal SLAM. It can be seen that, compared to the original SLAM, the proposed method significantly reduces the localization drift. Compared to vision-only-based filtering methods, the proposed multimodal semantic SLAM is more stable and accurate under the presence of dynamic objects.
+V. CONCLUSION
+In this paper, we have presented a semantic multi-modal framework to tackle the SLAM problem in dynamic environments, which is able to effectively reduce the impact of dynamic objects in complex dynamic environments. Our approach aims to provide a modular pipeline to allow realworld applications in dynamic environments. Meanwhile, a 3D dense stationary map is constructed with the removal of dynamic information. To verify the effectiveness of the proposed method in a dynamic complex environment, our method is evaluated on warehouse AGVs used for smart manufacturing. The results show that our proposed method can significantly improve the existing semantic SLAM algorithm in terms of robustness and accuracy.
+
+
+ REFERENCES
+[1] R. Mur-Artal and J. D. Tard ́os, “Orb-slam 2: An open-source slam system for monocular, stereo, and rgb-d cameras,” IEEE Transactions on Robotics, vol. 33, no. 5, pp. 1255–1262, 2017. [2] J. Zhang and S. Singh, “Loam: Lidar odometry and mapping in realtime.” in Robotics: Science and Systems, vol. 2, no. 9, 2014.
+[3] T. Shan and B. Englot, “Lego-loam: Lightweight and groundoptimized lidar odometry and mapping on variable terrain,” in 2018 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS). IEEE, 2018, pp. 4758–4765. [4] W. Tan, H. Liu, Z. Dong, G. Zhang, and H. Bao, “Robust monocular slam in dynamic environments,” IEEE International Symposium on Mixed and Augmented Reality, vol. 1, pp. 209–218, 2013.
+[5] K. He, G. Gkioxari, P. Doll ́ar, and R. Girshick, “Mask r-cnn,” IEEE International Conference on Computer Vision, 2017.
+[6] D. Bolya, Z. Chong, F. Xiao, and Y. J. Lee, “Yolact: Real-time instance segmentation,” IEEE International Conference on Computer Vision, 2019. [7] L. Xiao, J. Wang, X. Qiu, Z. Rong, and X. Zou, “Dynamic-slam: Semantic monocular visual localization and mapping based on deep learning in dynamic environment,” Robotics and Autonomous Systems, vol. 117, pp. 1–16, 2019. [8] C. Yu, Z. Liu, X.-J. Liu, F. Xie, Y. Yang, Q. Wei, and Q. Fei, “Dsslam: A semantic visual slam towards dynamic environments,” in 2018 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS). IEEE, 2018, pp. 1168–1174. [9] L. Han, T. Zheng, L. Xu, and L. Fang, “Occuseg: Occupancy-aware 3d instance segmentation,” IEEE International Conference on Computer Vision and Pattern Recognition, 2020.
+[10] J. Li, H. Zhao, S. Shi, S. Liu, C.-W. Fu, and J. Jia, “Pointgroup: Dualset point grouping for 3d instance segmentation,” IEEE International Conference on Computer Vision and Pattern Recognition, 2020.
+[11] L. Jiang, H. Zhao, S. Shi, S. Liu, C.-W. Fu, and J. Jia, “Pointgroup: Dual-set point grouping for 3d instance segmentation,” in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, 2020, pp. 4867–4876. [12] J. Behley, M. Garbade, A. Milioto, J. Quenzel, S. Behnke, C. Stachniss, and J. Gall, “SemanticKITTI: A Dataset for Semantic Scene Understanding of LiDAR Sequences,” in Proc. of the IEEE/CVF International Conf. on Computer Vision (ICCV), 2019.
+[13] W. Dai, Y. Zhang, P. Li, Z. Fang, and S. Schere, “Rgb-d slam in dynamic environments using point correlations,” IEEE Transactions on Pattern Analysis and Machine Intelligence, vol. 1, no. 1, 2020. [14] S. Li and D. Lee, “Rgb-d slam in dynamic environments using static point weighting,” IEEE Robotics and Automation Letters), vol. 2, no. 4, pp. 2262–2270, 2017. [15] Y. Xun and C. Song, “Sad-slam: A visual slam based on semantic and depth information,” IEEE International Conference on Intelligent Robots and Systems, 2021.
+[16] C. Yu, Z. Liu, X.-J. Liu, F. Xie, Y. Yang, Q. Wei, and Q. Fei, “Dsslam: A semantic visual slam towards dynamic environments,” IEEE International Conference on Intelligent Robots and Systems, pp. 11681174, 2018.
+[17] B. Bescos, J. M. Fa ́cil, J. Civera, and J. Neira, “Dynaslam: Tracking, mapping, and inpainting in dynamic scenes,” IEEE Robotics and Automation Letters, vol. 3, no. 4, pp. 4076–4083, 2018. [18] X. Chen, A. Milioto, E. Palazzolo, P. Gigu`ere, and C. Stachniss, “Suma++: Efficient lidar-based semantic slam,” IEEE International Conference on Intelligent Robots and Systems, 2019.
+[19] S. Zhao, Z. Fang, H. Li, and S. Scherer, “A robust laser-inertial odometry and mapping method for large-scale highway environments,” IEEE International Conference on Intelligent Robots and Systems, 2019. [20] R. Jian, W. Su, R. Li, S. Zhang, J. Wei, B. Li, and R. Huang, “A semantic segmentation based lidar slam system towards dynamic environments,” IEEE International Conference on Intelligent Robotics and Applications, pp. 582–590, 2019. [21] J. Jeong, T. S. Yoon, and P. J. Bae, “Towards a meaningful 3d map using a 3d lidar and a camera,” Sensors, vol. 18, no. 8, 2018. [22] C. Jiang, D. P. Paudel, Y. Fougerolle, D. Fofi, and C. Demonceaux, “Static-map and dynamic object reconstruction in outdoor scenes using 3-d motion segmentation,” IEEE Robotics and Automation Letters, vol. 1, no. 1, pp. 324–331, 2016. [23] X. Zhang, A. B. Rad, and Y.-K. Wong, “Sensor fusion of monocular cameras and laser range finders for line-based simultaneous localization and mapping (slam) tasks in autonomous mobile robots,” Sensors, vol. 12, pp. 429–452, 2012. [24] X. Wang, R. Zhang, K. Tao, L. Lei, and C. Shen, “Solov2: Dynamic and fast instance segmentation,” IEEE Computer Vision and Pattern Recognition, 2020.
+[25] S. Qiao, L.-C. Chen, and A. Yuille, “Detectors: Detecting objects with recursive feature pyramid and switchable atrous convolution,” IEEE Computer Vision and Pattern Recognition, 2020.
+[26] G. Ghiasi, Y. Cui, A. Srinivas, R. Qian, T.-Y. Lin, E. D. Cubuk, Q. V. Le, and B. Zoph, “Simple copy-paste is a strong data augmentation method for instance segmentation,” in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, 2021, pp. 2918–2928. [27] R. B. Rusu, “Semantic 3d object maps for everyday manipulation in human living environments,” KI-K ̈unstliche Intelligenz, vol. 24, no. 4, pp. 345–348, 2010. [28] H. Wang, C. Wang, and L. Xie, “Lightweight 3-d localization and mapping for solid-state lidar,” IEEE Robotics and Automation Letters, 2020. [29] T. Qin, P. Li, and S. Shen, “Vins-mono: A robust and versatile monocular visual-inertial state estimator,” IEEE Transactions on Robotics, vol. 34, no. 4, pp. 1004–1020, 2018. [30] R. B. Rusu and S. Cousins, “3d is here: Point cloud library (pcl),” in 2011 IEEE international conference on robotics and automation. IEEE, 2011, pp. 1–4. [31] G. Ghiasi, C. Yin, A. Srinivas, R. Qian, T.-Y. Lin, E. D.Cubuk, Q. V. Le, and B. Zoph, “Simple copy-paste is a strong data augmentation method for instance segmentation,” IEEE Computer Vision and Pattern Recognition, 2020.
+[32] K. Chen, J. Wang, J. Pang, Y. Cao, Y. Xiong, X. Li, S. Sun, W. Feng, Z. Liu, J. Xu, Z. Zhang, D. Cheng, C. Zhu, T. Cheng, Q. Zhao, B. Li, X. Lu, R. Zhu, Y. Wu, J. Dai, W. Jingdong, J. Shi, W. Ouyang, C. C. Loy, and D. Lin, “Mmdetection: Open mmlab detection toolbox and benchmark,” IEEE Computer Vision and Pattern Recognition, 2019.
