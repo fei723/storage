@@ -18,7 +18,7 @@ We introduce a new paradigm, Random Sample Consensus (RANSAC),for fitting a mode
 Communications June 1981 of Volume 24 the ACM Number 6
 
 
-Fig. 1. Failure of Least Squares (and the "Throwing Out The Worst Residual" Heuristic), to Deal with an Erroneous Data Point.
+ Fig. 1. Failure of Least Squares (and the "Throwing Out The Worst Residual" Heuristic), to Deal with an Erroneous Data Point.
 PROBLEM: Given the set of seven (x,y) pairs shown in the plot, find a best fit line, assuming that no valid datum deviates from this line by more than 0.8 units.
 5
 4
@@ -67,7 +67,7 @@ ITERATION 4 RESIDUALS
 June 1981 Volume 24 Number 6
 
 
-cause the above heuristic to fail (for example, see Figure 1). It is our contention that averaging is not an appropriate technique to apply to an unverified data set. In the following section we introduce the RANSAC paradigm, which is capable of smoothing data that contain a significant percentage of gross errors. This paradigm is particularly applicable to scene analysis because local feature detectors, which often make mistakes, are the source of the data provided to the interpretation algorithms. Local feature detectors make two types of errors--classification errors and measurement errors. Classification errors occur when a feature detector incorrectly identifies a portion of an image as an occurrence of a feature. Measurement errors occur when the feature detector correctly identifies the feature, but slightly miscalculates one of its parameters (e.g., its image location). Measurement errors generally follow a normal distribution, and therefore the smoothing assumption is applicable to them. Classification errors, however, are gross errors, having a significantly larger effect than measurement errors, and do not average out. In the final sections of this paper the application of RANSAC tO the location determination problem is discussed:
+ cause the above heuristic to fail (for example, see Figure 1). It is our contention that averaging is not an appropriate technique to apply to an unverified data set. In the following section we introduce the RANSAC paradigm, which is capable of smoothing data that contain a significant percentage of gross errors. This paradigm is particularly applicable to scene analysis because local feature detectors, which often make mistakes, are the source of the data provided to the interpretation algorithms. Local feature detectors make two types of errors--classification errors and measurement errors. Classification errors occur when a feature detector incorrectly identifies a portion of an image as an occurrence of a feature. Measurement errors occur when the feature detector correctly identifies the feature, but slightly miscalculates one of its parameters (e.g., its image location). Measurement errors generally follow a normal distribution, and therefore the smoothing assumption is applicable to them. Classification errors, however, are gross errors, having a significantly larger effect than measurement errors, and do not average out. In the final sections of this paper the application of RANSAC tO the location determination problem is discussed:
 Given a set of "landmarks" ("control points"), whose locations are known in some coordinate frame, determine the location (relative to the coordinate frame of the landmarks) of that point in space from which an image of the landmarks was obtained.
 In response to a RANSAC requirement, some new results are derived on the minimum number of landmarks needed to obtain a solution, and then algorithms are presented for computing these minimum-landmark solutions in closed form. (Conventional techniques are iterative and require a good initial guess to assure convergence.) These results form the basis for an automatic system that can solve the LDP under severe viewing and analysis conditions. In particular, the system performs properly even if a significant number of landmarks are incorrectly located due to low visibility, terrain changes, or image analysis errors. Implementation details and experimental results are presented to complete our description of the LDP application.
 II. Random Sample Consensus
@@ -82,7 +82,7 @@ The deviation of a datum from a model is a function of the error associated with
 383 Communications June 1981 of Volume 24 the ACM Number 6
 
 
-relatively small compared to the size of a gross error. Thus, a single error tolerance for all data is often sufficient.
+ relatively small compared to the size of a gross error. Thus, a single error tolerance for all data is often sufficient.
 B. The Maximum Number of Attempts to Find a Consensus Set
 The decision to stop selecting new subsets of P can be based upon the expected number of trials k required to select a subset of n good data points. Let w be the probability that any selected data point is within the error tolerance of the model. Then we have:
 E(k) = b + 2"(1 - b)*b + 3"(1 - b)2*b
@@ -126,7 +126,7 @@ The threshold t, an unspecified parameter in the formal statement o f the RANSAC
 C o m m u n i c a t i o n s June 1981 of Volume 24 the ACM Number 6
 
 
-to determine the number of points required to produce a desired precision [ 10].
+ to determine the number of points required to produce a desired precision [ 10].
 D. Example
 Let us apply RANSAC to the example described in Figure 1. A value of w (the probability that any selected data point is within the error tolerance of the model) equal to 0.85 is consistent with the data, and a tolerance (to establish datum/model compatibility) of 0.8 units was supplied as part of the problem statement. The RANSAC-supplied model will be accepted without external smoothing of the final consensus set; thus, we would like to obtain a consensus set that contains all seven data points. Since one of these points is a gross error, it is obvious that we will not find a consensus set of the desired size, and so we will terminate with the largest set we are able to find. The theory presented earlier indicates that if we take two data points at a time, compute the line through them and measure the deviations of the remaining points from this line, we should expect to find a suitable consensus set within two or three trials; however, because of the limited amount of data, we might be willing to try all 21 ~combinations to find the largest consensus set. In either case, we easily find the consensus set containing the six valid data points and the line that they imply.
 III. The Location Determination Problem (LDP)
@@ -145,7 +145,7 @@ In order to apply the RANSACparadigm, we wish to determine the smallest value of
 Communications June 1981 of Volume 24 the ACM Number 6
 
 
-Fig. 3. Geometryof the P2P Problem.
+ Fig. 3. Geometryof the P2P Problem.
 CP
 Fig. 4. Geometryof the P3P Problem(L is the Center of Perspective).
 t
@@ -176,7 +176,7 @@ of Volume24
 the ACM Number 6
 
 
-Fig. 5. An Example Showing Four Distinct Solutions to a P3P Problem.
+ Fig. 5. An Example Showing Four Distinct Solutions to a P3P Problem.
 L
 L~
 1
@@ -203,7 +203,7 @@ Therefore, L'A can be either 1 or 4. Figure 5(a) illustrates the L'A = 4 case an
 387 Communications June 1981 of Volume 24 the ACM Number 6
 
 
-Fig. 6. An Example of a P4P Problem with Two Solutions.
+ Fig. 6. An Example of a P4P Problem with Two Solutions.
 LI0 0 144
 ' 'T ) a ZAXIS
 C(- 10'-1 2 ' / 0 / ) / ~ " - ~ L I . . _ . _ - ~ A(0,12~
@@ -235,7 +235,7 @@ of Volume24
 the ACM Number 6
 
 
-be shown that, at most, 17 of the unknowns are independent). Given the transformation matrix T, we can construct an additional (synthetic) control point lying in a common plane with three of the given control points and compute its location in the image plane; the technique described in Appendix B can now be used to find a unique solution.
+ be shown that, at most, 17 of the unknowns are independent). Given the transformation matrix T, we can construct an additional (synthetic) control point lying in a common plane with three of the given control points and compute its location in the image plane; the technique described in Appendix B can now be used to find a unique solution.
 IV. Implementation Details and Experimental Results
 A. The RANSAc/LD Algorithm The RANSAC/LD algorithm accepts as input the following data:
 (l) A list L of m 6-tuples--each 6-tuple containing the 3-D spatial coordinates of a control point, its corresponding 2-D image plane coordinates, and an optional number giving the expected error (in pixels) of the given location in the image plane.
@@ -265,7 +265,7 @@ C. A Location Determination Problem Example of a Least Squares Pruning Error The
 Communications June 1981 of Volume 24 the ACM Number 6
 
 
-correspondences were normally distributed about their actual locations with a standard deviation of one pixel. The heuristic to prune gross errors was the following:
+ correspondences were normally distributed about their actual locations with a standard deviation of one pixel. The heuristic to prune gross errors was the following:
 * Use all of the correspondences to instantiate a model. * On the basis of that model, delete the correspondence that has the largest deviation from its predicted image location. * Instantiate a new model without that correspondence. * If the new model implies a normalized error for the deleted correspondence that is larger than three standard deviations, assume that it is a gross error, leave it out, and continue deleting correspondences. Otherwise, assume that it is a good correspondence and return the model that included it as the solution to the problem.
 This heuristic successfully deleted two of the gross errors; but after deleting a third, it decided that the new model did not imply a significantly large error, so it returned a solution based upon 18 correspondences, three of which were gross errors. When RANSAC was applied to this problem, it located the correct solution on the second triple of selected points. The final consensus set contained all of the good correspondences and none of the gross errors.
 D. 50 Synthetic Location Determination Problems
@@ -283,7 +283,7 @@ In this paper we have introduced a new paradigm, R a n d o m Sample Consensus (R
 390 Communications June 1981 of Volume 24 the ACM Number 6
 
 
-In the section on the LDP problem (and associated appendices) we have completely characterized the P3P problem and provided a closed-form solution. We have shown that multiple physically real solutions can exist for the P4P and P5P problems, but also demonstrated that a unique solution is assured when four of the control points reside on a common plane (solution techniques are provided for each of these cases). The issue of determining the maximum number of solutions possible for the P4P and P5P problems remains open, but we have shown that a unique solution exists for the P6P problem when the control points are in general position.
+ In the section on the LDP problem (and associated appendices) we have completely characterized the P3P problem and provided a closed-form solution. We have shown that multiple physically real solutions can exist for the P4P and P5P problems, but also demonstrated that a unique solution is assured when four of the control points reside on a common plane (solution techniques are provided for each of these cases). The issue of determining the maximum number of solutions possible for the P4P and P5P problems remains open, but we have shown that a unique solution exists for the P6P problem when the control points are in general position.
 Appendix A. An Analytic Solution for the Perspective3-Point Problem
 The main body of this paper established that P3P problems can have as many as four solutions. In this appendix a closed form expression for obtaining these solutions is derived. Our approach involves three steps: (1) Find the lengths of the legs of the ("perspective") tetrahedron given the base (defined by the three control points) and the face angles of the opposing trihedral angle (the three angles to the three pairs of control points as viewed from the CP); (2) Locate the CP with respect to the 3-D reference frame in which, the control points were originally specified; (3) Compute the orientation of the image plane with respect to the reference frame.
 I. A Solution for the Perspective Tetrahedron (see Figure 4) Given the lengths of the three sides of the base of a tetrahedron (Rab, Rac, Rbc), and given the corresponding face angles of the opposing trihedral angle (Oab, Oac, Obc), find the lengths of the three remaining sides of the tetrahedron (a, b, c). A solution to the above problem can be obtained by simultaneously solving the system of equations:
@@ -323,7 +323,7 @@ G1 = 4*(Kl*K2 + K1 - K2)*K2*(I - KI)* cos(Sab) + 4*KI*[(KI*K2 - K1
 391 Communications June 1981 of Volume 24 the ACM Number 6
 
 
-+ K2)* cos(Oac)* cos(Obc) (A22) + 2*Kl*K2* cos(Oab)* (cos(Oac)2)],
+ + K2)* cos(Oac)* cos(Obc) (A22) + 2*Kl*K2* cos(Oab)* (cos(Oac)2)],
 GO = ( K I * K 2 + K1 - K2) 2 - 4*(K12)*K2 * (A23) (cos(Oac)2).
 Roots of Eq. (A18) can be found in closed form [5], or by iterative techniques [4]. F o r each positive real root of Eq. (A18), we determine a single positive real value for each of the sides a and b. From Eq. (A6) we have
 Rab (A24)
@@ -365,7 +365,7 @@ Given the three-dimensional locations of the three control points of a perspecti
 of Volume 24 the ACM Number 6
 
 
-C2
+ C2
 Fig. 8. Geometry for an Iterative Solution to the P3P Problem. Fig. 9 Computing the 3-D Location of the Center o f the Perspective (L).
 Lk
 82 ~ ~ \ ~ 3
@@ -389,7 +389,7 @@ GIVEN: A correspondence between four points lying in a plane in 3-D space (calle
 Communications June 1981 of Volume 24 the ACM Number 6
 
 
-Fig. 10. Geometry of the P4P Problem (With all Control Points Lying in a Common Plane).
+ Fig. 10. Geometry of the P4P Problem (With all Control Points Lying in a Common Plane).
 " ~ l ~ VANISHING LINE [VLO]
 Y OBJECT PLANE
 f
@@ -446,7 +446,7 @@ If [ VL1], as determined in (b), has the coordinates [0, 0, k], then the image a
 Communications June 1981 of Volume 24 the ACM Number 6
 
 
-information using similar triangles and Euclidean geometry.
+ information using similar triangles and Euclidean geometry.
 4. Computing the Collineation Matrix T Let
 IlSl Y1 l[I [Q] = IIx 2 Y2 1 II = [[Q1]', [Q2]', [Q3]'], IIx3 Y3 111
 IIx t y l III [e] = Ilx2y2 ill = [[eli', [P2]', [P3]'], IIx3 y3 1 II

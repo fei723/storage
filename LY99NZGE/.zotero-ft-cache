@@ -14,7 +14,7 @@ YOLOv11’s innovative design incorporates advanced feature extraction technique
 arXiv:2410.17725v1 [cs.CV] 23 Oct 2024
 
 
-R.KHANAM ET AL.: YOLOV11: AN OVERVIEW OF THE KEY ARCHITECTURAL ENHANCEMENTS - OCTOBER 24, 2024
+ R.KHANAM ET AL.: YOLOV11: AN OVERVIEW OF THE KEY ARCHITECTURAL ENHANCEMENTS - OCTOBER 24, 2024
 vision (CV) tasks, from object detection to classification. Furthermore, YOLOv11 achieves remarkable gains in processing speed, substantially enhancing real-time performance capabilities.
 In the following sections, this paper will provide a comprehensive analysis of YOLOv11’s architecture, exploring its key components and innovations. We will examine the evolution of YOLO models, leading up to the development of YOLOv11. The study will delve into the model’s expanded capabilities across various CV tasks, including object detection, instance segmentation, pose estimation, and oriented object detection. We will also review YOLOv11’s performance improvements in terms of accuracy and computational efficiency compared to its predecessors, with a particular focus on its versatility across different model sizes. Finally, we will discuss the potential impact of YOLOv11 on real-time CV applications and its position within the broader landscape of object detection technologies.
 2 Evolution of YOLO models
@@ -51,7 +51,7 @@ YOLOv11 distinguishes itself through its enhanced adaptability, supporting an ex
 2
 
 
-R.KHANAM ET AL.: YOLOV11: AN OVERVIEW OF THE KEY ARCHITECTURAL ENHANCEMENTS - OCTOBER 24, 2024
+ R.KHANAM ET AL.: YOLOV11: AN OVERVIEW OF THE KEY ARCHITECTURAL ENHANCEMENTS - OCTOBER 24, 2024
 model’s applicability in various domains. YOLOv11’s design focuses on balancing power and practicality, aiming to address specific challenges across various industries with increased accuracy and efficiency.
 This latest model demonstrates the ongoing evolution of real-time object detection technology, pushing the boundaries of what’s possible in CV applications. Its versatility and performance improvements position YOLOv11 as a significant advancement in the field, potentially opening new avenues for real-world implementation across diverse sectors.
 4 Architectural footprint of Yolov11
@@ -68,7 +68,7 @@ YOLO11 retains the Spatial Pyramid Pooling - Fast (SPPF) block from previous ver
 3
 
 
-R.KHANAM ET AL.: YOLOV11: AN OVERVIEW OF THE KEY ARCHITECTURAL ENHANCEMENTS - OCTOBER 24, 2024
+ R.KHANAM ET AL.: YOLOV11: AN OVERVIEW OF THE KEY ARCHITECTURAL ENHANCEMENTS - OCTOBER 24, 2024
 spatial attention in the feature maps. This spatial attention mechanism allows the model to focus more effectively on important regions within the image. By pooling features spatially, the C2PSA block enables YOLO11 to concentrate on specific areas of interest, potentially improving detection accuracy for objects of varying sizes and positions.
 4.2 Neck
 The neck combines features at different scales and transmits them to the head for prediction. This process typically involves upsampling and concatenation of feature maps from different levels, enabling the model to capture multi-scale information effectively.
@@ -93,7 +93,7 @@ The head of YOLOv11 includes several CBS (Convolution-BatchNorm-Silu) [19] layer
 4
 
 
-R.KHANAM ET AL.: YOLOV11: AN OVERVIEW OF THE KEY ARCHITECTURAL ENHANCEMENTS - OCTOBER 24, 2024
+ R.KHANAM ET AL.: YOLOV11: AN OVERVIEW OF THE KEY ARCHITECTURAL ENHANCEMENTS - OCTOBER 24, 2024
 • Utilizing the Sigmoid Linear Unit (SiLU) activation function for non-linearity, which improves model performance.
 CBS blocks serve as foundational components in both feature extraction and the detection process, ensuring that the refined feature maps are passed to the subsequent layers for bounding box and classification predictions.
 4.3.3 Final Convolutional Layers and Detect Layer
@@ -115,7 +115,7 @@ YOLOv11 represents a significant advancement in object detection technology, bui
 5
 
 
-R.KHANAM ET AL.: YOLOV11: AN OVERVIEW OF THE KEY ARCHITECTURAL ENHANCEMENTS - OCTOBER 24, 2024
+ R.KHANAM ET AL.: YOLOV11: AN OVERVIEW OF THE KEY ARCHITECTURAL ENHANCEMENTS - OCTOBER 24, 2024
 Table 2: YOLOv11 Model Variants and Tasks
 Model Variants Task Inference Validation Training Export YOLOv11 yolo11-nano yolo11-small yolo11-medium yolo11large yolo11-xlarge
 Detection ✓ ✓ ✓ ✓
@@ -141,7 +141,7 @@ A particularly noteworthy observation is the performance leap in the low-latency
 6
 
 
-R.KHANAM ET AL.: YOLOV11: AN OVERVIEW OF THE KEY ARCHITECTURAL ENHANCEMENTS - OCTOBER 24, 2024
+ R.KHANAM ET AL.: YOLOV11: AN OVERVIEW OF THE KEY ARCHITECTURAL ENHANCEMENTS - OCTOBER 24, 2024
 Figure 2: Benchmarking YOLOv11 Against Previous Versions [23]
 7 Discussion
 YOLO11 marks a significant leap forward in object detection technology, building upon its predecessors while introducing innovative enhancements. This latest iteration demonstrates remarkable versatility and efficiency across various CV tasks.
@@ -154,7 +154,7 @@ YOLO11 marks a significant leap forward in object detection technology, building
 7
 
 
-R.KHANAM ET AL.: YOLOV11: AN OVERVIEW OF THE KEY ARCHITECTURAL ENHANCEMENTS - OCTOBER 24, 2024
+ R.KHANAM ET AL.: YOLOV11: AN OVERVIEW OF THE KEY ARCHITECTURAL ENHANCEMENTS - OCTOBER 24, 2024
 8 Conclusion
 YOLOv11 represents a significant advancement in the field of CV, offering a compelling combination of enhanced performance and versatility. This latest iteration of the YOLO architecture demonstrates marked improvements in accuracy and processing speed, while simultaneously reducing the number of parameters required. Such optimizations make YOLOv11 particularly well-suited for a wide range of applications, from edge computing to cloud-based analysis.
 The model’s adaptability across various tasks, including object detection, instance segmentation, and pose estimation, positions it as a valuable tool for diverse industries such as emotion detection [26], healthcare [27] and various other industries [17]. Its seamless integration capabilities and improved efficiency make it an attractive option for businesses seeking to implement or upgrade their CV systems. In summary, YOLOv11’s blend of enhanced feature extraction, optimized performance, and broad task support establishes it as a formidable solution for addressing complex visual recognition challenges in both research and practical applications.
@@ -181,7 +181,7 @@ References
 8
 
 
-R.KHANAM ET AL.: YOLOV11: AN OVERVIEW OF THE KEY ARCHITECTURAL ENHANCEMENTS - OCTOBER 24, 2024
+ R.KHANAM ET AL.: YOLOV11: AN OVERVIEW OF THE KEY ARCHITECTURAL ENHANCEMENTS - OCTOBER 24, 2024
 [20] Ultralytics. Instance segmentation and tracking, 2024. Accessed: 2024-10-21.
 [21] Ultralytics Abirami Vina. Ultralytics yolo11 has arrived: Redefine what’s possible in ai, 2024. Accessed: 2024-10-21.
 [22] Viso.AI Gaudenz Boesch. Yolov11: A new iteration of “you only look once. https://viso.ai/ computer-vision/yolov11/, 2024. Accessed: 2024-10-21.

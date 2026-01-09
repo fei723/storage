@@ -24,7 +24,7 @@ Manuscript received 26 Apr. 2000; revised 25 Aug. 2000; accepted 7 Sept. 2000. R
 Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 10,2025 at 13:37:02 UTC from IEEE Xplore. Restrictions apply.
 
 
-where s is an arbitrary scale factor, ÖR; tÜ, called the extrinsic parameters is the rotation and translation which relates the world coordinate system to the camera coordinate system, and A is called the camera intrinsic matrix, with Öu0; v0Ü the coordinates of the principal point, and the scale factors in image u and v axes, and the parameter describing the skew of the two image axes.
+ where s is an arbitrary scale factor, ÖR; tÜ, called the extrinsic parameters is the rotation and translation which relates the world coordinate system to the camera coordinate system, and A is called the camera intrinsic matrix, with Öu0; v0Ü the coordinates of the principal point, and the scale factors in image u and v axes, and the parameter describing the skew of the two image axes.
 We use the abbreviation AˇT for ÖAˇ1ÜT or ÖAT Üˇ1.
 2.2 Homography between the Model Plane and Its Image Without loss of generality, we assume the model plane is on Z à 0 of the world coordinate system. Let's denote the ith column of the rotation matrix R by ri. From (1), we have
 s
@@ -129,7 +129,7 @@ IEEE TRANSACTIONS ON PATTERN ANALYSIS AND MACHINE INTELLIGENCE, VOL. 22, NO. 11,
 Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 10,2025 at 13:37:02 UTC from IEEE Xplore. Restrictions apply.
 
 
-If n images of the model plane are observed, by stacking n such equations as (8), we have
+ If n images of the model plane are observed, by stacking n such equations as (8), we have
 Vb à 0; Ö9Ü
 where V is a 2n 6 matrix. If n 3, we will have in general a unique solution b defined up to a scale factor. If n à 2, we can impose the skewless constraint à 0, i.e., â0; 1; 0; 0; 0; 0äb à 0, which is added as an additional equation to (9). (If n à 1, we can only solve two camera intrinsic parameters, e.g., and , assuming u0 and v0 are known (e.g., at the image center) and à 0, and that is indeed what we did in [19] for head pose determination based on the fact that eyes and mouth are reasonably coplanar. In fact, Tsai [23] already mentions that focal length from one plane is possible, but incorrectly says that aspect ratio is not.) The solution to (9) is well-known as the eigenvector of VT V associated with the smallest eigenvalue (equivalently, the right singular vector of V associated with the smallest singular value). Once b is estimated, we can compute all camera intrinsic parameters as follows. The matrix B, as described in Section 3.1, is estimated up to a scale factor, i.e., B à AˇT A with an arbitrary scale. Without difficulty, we can uniquely extract the intrinsic parameters from matrix B.
 v0 à ÖB12B13 ˇ B11B23Ü=ÖB11B22 ˇ B212Ü
@@ -165,7 +165,7 @@ In this paper, we have developed a flexible new technique to easily calibrate a 
 Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 10,2025 at 13:37:02 UTC from IEEE Xplore. Restrictions apply.
 
 
-pattern. The motion does not need to be known, but should not be a pure translation. When the number of orientations is only two, one should avoid positioning the planar pattern parallel to the image plane. The pattern could be anything, as long as we know the metric on the plane. For example, we can print a pattern with a laser printer and attach the paper to a reasonable planar surface such as a hard book cover. We can even use a book with known size because the four corners are enough to estimate the plane homographies. Radial lens distortion is modeled. The proposed procedure consists of a closed-form solution, followed by a nonlinear refinement based on a maximum-likelihood criterion. Both computer simulation and real data have been used to test the proposed technique and very good results have been obtained. Compared with classical techniques which use expensive equipment such as
+ pattern. The motion does not need to be known, but should not be a pure translation. When the number of orientations is only two, one should avoid positioning the planar pattern parallel to the image plane. The pattern could be anything, as long as we know the metric on the plane. For example, we can print a pattern with a laser printer and attach the paper to a reasonable planar surface such as a hard book cover. We can even use a book with known size because the four corners are enough to estimate the plane homographies. Radial lens distortion is modeled. The proposed procedure consists of a closed-form solution, followed by a nonlinear refinement based on a maximum-likelihood criterion. Both computer simulation and real data have been used to test the proposed technique and very good results have been obtained. Compared with classical techniques which use expensive equipment such as
 two or three orthogonal planes, the proposed technique gains considerable flexibility.
 APPENDIX
 ESTIMATING HOMOGRAPHY BETWEEN THE MODEL PLANE AND ITS IMAGE
@@ -175,7 +175,7 @@ Fig. 1. Two sets of images taken at different distances to the calibration patte
 Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 10,2025 at 13:37:02 UTC from IEEE Xplore. Restrictions apply.
 
 
-X
+ X
 i
 Ömi ˇ m^ iÜT ˇ1
 mi Ömi ˇ ^miÜ;
