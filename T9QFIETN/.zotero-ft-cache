@@ -8,7 +8,7 @@ Fig. 1. The paths followed by two agents that have opposite preferred velocities
 proposed. However, often these approaches deal with obstacles that are assumed to move passively through the environment without perception of their surroundings. In a multi-agent setting, this assumption does not hold as the agents do perceive each other, and actively adapt their motions accordingly. When each of the agents does not take into account that the other agents also have the decisionmaking ability to avoid collisions, the resulting motion is prone to contain undesirable and unrealistic oscillations. Although this problem has been identified by several prior works (see, e.g., [2], [1], [9]), no good solution is known for safe and oscillation-free navigation among multiple agents in large, cluttered environments. Main Results: In this paper, we introduce a new concept for local reactive collision avoidance called the Reciprocal Velocity Obstacle, which implicitly assumes that the other agents make a similar collision-avoidance reasoning. Under this assumption, our framework is guaranteed to generate safe and oscillation-free motions. Our method is an extension of the Velocity Obstacle concept, introduced by Fiorini and Shiller in [3], which is a generally applicable, well-defined, and simple technique that has been widely used for safe navigation among moving obstacles (see, e.g., [16], [9], [5]). Our approach inherits all of its appealing properties, but we introduce an important new capability to resolve the common oscillation problem in multi-agent navigation. The only information each agent is required to have about the other agents is their current position and velocity, and their exact shape (which can be acquired by sensors). We assume that the agents and the obstacles are translating objects in the 2-D plane (e.g. discs or polygons). This assumption is applicable to most applications with mobile agents, whose orientation can be inferred from the heading of each agent’s motion. We show the potential of the Reciprocal Velocity Obstacle approach by applying it to scenarios in which hundreds of similar agents navigate independently in a complex environment. Our experiments show that smooth and realistic motions are generated even when the agents form very dense,
 
 
-packed groups. Moreover, real-time performance can be achieved in such challenging scenarios, and the approach is especially well suitable for parallelization, as an independent computation is performed for each agent. Organization: The rest of this paper is organized as follows. We give a brief overview of prior work in Section II. In Section III, we review the concept of Velocity Obstacles and show that it generates oscillations when it is used for multi-agent navigation. In Section IV, we present our new concept, the Reciprocal Velocity Obstacle and show that it generates safe and oscillation-free motions. In Section V, we describe how we use this method for navigating many agents in several challenging environments containing both static and moving obstacles. We demonstrate the realtime performance of our approach on several benchmarks in Section VI and conclude in Section VII.
+ packed groups. Moreover, real-time performance can be achieved in such challenging scenarios, and the approach is especially well suitable for parallelization, as an independent computation is performed for each agent. Organization: The rest of this paper is organized as follows. We give a brief overview of prior work in Section II. In Section III, we review the concept of Velocity Obstacles and show that it generates oscillations when it is used for multi-agent navigation. In Section IV, we present our new concept, the Reciprocal Velocity Obstacle and show that it generates safe and oscillation-free motions. In Section V, we describe how we use this method for navigating many agents in several challenging environments containing both static and moving obstacles. We demonstrate the realtime performance of our approach on several benchmarks in Section VI and conclude in Section VII.
 II. PRIOR WORK
 In this section, we give a brief overview of prior work on multi-agent navigation and planning. Besides the Velocity Obstacle approach [3], [16], many other methods have been proposed for collision-avoidance, navigation, and planning among moving obstacles [4], [7], [8], [14], [23], [21], [20], [24]. However, most of the existing work do not take into account that the obstacles’ motion may be affected by the presence of the agent. Some approaches consider the moving obstacles to be static and replan when it appears that they have moved. Such approaches are generally not able to plan safe paths among obstacles moving at high speeds. There is also an extensive amount of literature on multiagent navigation, in which each agent navigates individually among the other agents, which are considered as obstacles, e.g. [13], [19], [17], [6], [12]. Most of these techniques have focused on crowd simulation. Also in these cases, the other agents are assumed to be either passively moving obstacles or static obstacles. A number of approaches (roughly) follow the Velocity Obstacle concept to avoid other agents [2], [10]. We distinguish decoupled multi-agent navigation from centralized multi-agent planning here. In multi-agent planning, the composite configuration space of the agents is considered, and a path is centrally planned in this space (see, e.g., [11], [15], [18]). These works focus on different aspects of the problem (e.g., finding optimal coordinations) and are mostly not suited for on-line real-time application. Only few attempts have been made to incorporate the reactive behavior of other entities into the navigation. Kluge and Prassler [9] proposed Recursive Velocity Obstacles. The idea is that the first agent chooses a velocity based on the expected behavior of the second agent, which in turn is acquired based on the expected behavior of the first agent, and so on, up to some level of recursion. However, this approach may not be able to address the oscillation problem well. In fact, the velocities chosen oscillate between odd and even levels of recursion and may not converge. Abe and Matsuo [1] proposed the Common Velocity Obstacle, which is defined in the 4-dimensional space of all combinations of velocities of two agents. It addresses the oscillation issue, but
 Fig. 2. The Velocity Obstacle V OA
@@ -30,7 +30,7 @@ This means that if vA ∈ V OA
 B(vB), A and B will collide at some point in time. If vA is outside the velocity obstacle of B, both objects will never collide. If vA is on the boundary of the velocity obstacle, it will touch B at some moment in
 
 
-Fig. 3. The velocity obstacle (grey), and left and right half-planes (striped) outside the velocity obstacle. The symbols that apply to the velocities in each of the regions with respect to the velocity obstacle are shown.
+ Fig. 3. The velocity obstacle (grey), and left and right half-planes (striped) outside the velocity obstacle. The symbols that apply to the velocities in each of the regions with respect to the velocity obstacle are shown.
 time. The velocity obstacle is a cone with its apex at vB, as can be seen in Fig. 2. The concept of Velocity Obstacles can be used for navigation among moving obstacles as follows. In each planning cycle, the agent chooses a velocity that lies outside any of the velocity obstacles induced by the moving obstacles. If among the free velocities, the velocity chosen is most directed towards the agent’s goal position, the agent will safely navigate towards its goal (see, e.g. [3], [5]).
 B. Velocity Obstacles: Properties
 Here, we deduce some elementary properties and notations of velocity obstacles that we will use in this paper:
@@ -104,7 +104,7 @@ translated such that its apex lies at vA+vB
 1Note that these oscillations are fundamentally different from “reciprocal dances”, which occur when there is no agreement among the agents about which side to pass each other on.
 
 
-Fig. 4. The Reciprocal Velocity Obstacle RV OA
+ Fig. 4. The Reciprocal Velocity Obstacle RV OA
 B (vB , vA) of agent B
 to agent A.
 B. Guarantees
@@ -221,7 +221,7 @@ B (vB ) and inside V OB
 A (vA).
 
 
-Fig. 5. The Generalized Reciprocal Velocity Obstacle RV OA
+ Fig. 5. The Generalized Reciprocal Velocity Obstacle RV OA
 B (vB ,
 vA, αA
 B ) of agent B to agent A for various values of αA
@@ -290,7 +290,7 @@ i − v′
 i‖,
 
 
-for some factor wi, where wi can vary among the agents to reflect differences in aggressiveness and sluggishness. The expected time to collision tci(v′
+ for some factor wi, where wi can vary among the agents to reflect differences in aggressiveness and sluggishness. The expected time to collision tci(v′
 i) can easily be calcu
 lated. For the original velocity obstacle V OA
 B(vB), the time
@@ -318,7 +318,7 @@ Fig. 10. Eleven agents cross a street on which a car is driving in the Moving Ob
 We performed our experiments on a Intel Core2 Duo 1.66 GHz with 1GByte of memory. For the first benchmark, Circle, we started with an experiment containing 12 agents to show the difference between the original Velocity Obstacle approach and our Reciprocal Velocity Obstacle approach. All of the agents are discs with equal radii, have the same preferred and maximum speeds, and do not have constraints on the acceleration. In both experiments, all parameters are equal. The traces of the agents are shown in Fig. 7 for both methods. As can be seen clearly from the figures, the original Velocity Obstacle approach generates chaotic and oscillatory motions. In contrast, the motions generated by our method are smooth and straight-forward. Also, there were no collisions among agents. Next, we varied the number of agents in the Circle benchmark to see how our approach scales when the number of agents grows (see Fig. 8 and the accompanying video for the experiment with 250 agents). In this case, we used a circular neighbor region around each agent. We chose the radius of this region such that the navigation of the agents is still safe (which was 8 times the agent radius). The results are given in Fig. 11. Clearly, the amount of time needed to generate one frame (i.e., process one cycle in the simulation) scales linearly with the number of agents. Only the neighbor selecting routine has a quadratic nature, but this step is negligible in the total running time. The graph also shows that even for 1000 agents, we are able to generate more than 10 frames per second. We chose the time step ∆t to be 0.25 seconds in this experiment, so these results are obtained in real-time
 
 
-Fig. 8. The Circle scenario for 250 agents. Each agent moves to the diametrically opposite position on the circle (the zoom level varies between stills).
+ Fig. 8. The Circle scenario for 250 agents. Each agent moves to the diametrically opposite position on the circle (the zoom level varies between stills).
 Fig. 9. Four groups in opposite corners of the environment exchange positions in the Narrow Passage scenario (the zoom level varies between stills).
 frame rates. We note that the running time of our method scales linearly with the value of parameter N , the number of velocities sampled for each agent in each frame. We fixed this value at 250 in our experiments. We believe that smarter sampling can further improve the performance. Furthermore, since we perform an independent computation for each agent, the approach is fully parallelizable. We took advantage of this feature and used two processors for performing the experiments.
 To see how our approach performs in presence of narrow passages generated by static obstacles, we performed the experiment in the Narrow Passage benchmark. The agents from the different groups will meet inside the narrow passage with opposite goal directions. Even though the passage becomes very crowded (see Fig. 9), eventually all agents reach their goals safely. We note that if the static obstacles would form a U-shaped obstacle, the agents may get stuck in there when using our method. To overcome this, the
@@ -327,7 +327,7 @@ Finally, we show in the Moving Obstacle benchmark that our approach easily deals
 Videos of these and other scenarios can be found at http://gamma.cs.unc.edu/RVO.
 
 
-0
+ 0
 10
 20
 30

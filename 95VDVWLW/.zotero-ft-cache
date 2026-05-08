@@ -18,7 +18,7 @@ Abstract
 arXiv:2203.17270v2 [cs.CV] 13 Jul 2022
 
 
-1 Introduction
+ 1 Introduction
 Perception in 3D space is critical for various applications such as autonomous driving, robotics, etc. Despite the remarkable progress of LiDAR-based methods [43, 20, 54, 50, 8], camera-based approaches [45, 32, 47, 30] have attracted extensive attention in recent years. Apart from the low cost for deployment, cameras own the desirable advantages to detect long-range distance objects and identify vision-based road elements (e.g., traffic lights, stoplines), compared to LiDAR-based counterparts.
 Visual perception of the surrounding scene in autonomous driving is expected to predict the 3D bounding boxes or the semantic maps from 2D cues given by multiple cameras. The most straightforward solution is based on the monocular frameworks [45, 44, 31, 35, 3] and cross-camera post-processing. The downside of this framework is that it processes different views separately and cannot capture information across cameras, leading to low performance and efficiency [32, 47].
 As an alternative to the monocular frameworks, a more unified framework is extracting holistic representations from multi-camera images. The bird’s-eye-view (BEV) is a commonly used representation of the surrounding scene since it clearly presents the location and scale of objects and is suitable for various autonomous driving tasks, such as perception and planning [29]. Although previous map segmentation methods demonstrate BEV’s effectiveness [32, 18, 29], BEV-based approaches have not shown significant advantages over other paradigm in 3D object detections [47, 31, 34]. The underlying reason is that the 3D object detection task requires strong BEV features to support accurate 3D bounding box prediction, but generating BEV from the 2D planes is ill-posed. A popular BEV framework that generates BEV features is based on depth information [46, 32, 34], but this paradigm is sensitive to the accuracy of depth values or the depth distributions. The detection performance of BEV-based methods is thus subject to compounding errors [47], and inaccurate BEV features can seriously hurt the final performance. Therefore, we are motivated to design a BEV generating method that does not rely on depth information and can learn BEV features adaptively rather than strictly rely on 3D prior. Transformer, which uses an attention mechanism to aggregate valuable features dynamically, meets our demands conceptually.
@@ -29,7 +29,7 @@ Our main contributions are as follows:
 2
 
 
-• We designed learnable BEV queries along with a spatial cross-attention layer and a temporal self-attention layer to lookup spatial features from cross cameras and temporal features from history BEV, respectively, and then aggregate them into unified BEV features.
+ • We designed learnable BEV queries along with a spatial cross-attention layer and a temporal self-attention layer to lookup spatial features from cross cameras and temporal features from history BEV, respectively, and then aggregate them into unified BEV features.
 • We evaluate the proposed BEVFormer on multiple challenging benchmarks, including nuScenes [4] and Waymo [40]. Our BEVFormer consistently achieves improved performance compared to the prior arts. For example, under a comparable parameters and computation overhead, BEVFormer achieves 56.9% NDS on nuScenes test set, outperforming previous best detection method DETR3D [47] by 9.0 points (56.9% vs. 47.9%). For the map segmentation task, we also achieve the state-ofthe-art performance, more than 5.0 points higher than Lift-Splat [32] on the most challenging lane segmentation. We hope this straightforward and strong framework can serve as a new baseline for following 3D perception tasks.
 2 Related Work
 2.1 Transformer-based 2D perception
@@ -54,7 +54,7 @@ Actually, generating BEV features from multi-camera features is more extensively
 3
 
 
-Feed Forward
+ Feed Forward
 Add & Norm
 Add & Norm
 Spatial Cross-Attention
@@ -88,7 +88,7 @@ feature of the i-th view, Nview is the total number of camera views. At the same
 4
 
 
-3.2 BEV Queries
+ 3.2 BEV Queries
 We predefine a group of grid-shaped learnable parameters Q ∈ RH×W×C as the queries of BEVFormer, where H, W are the spatial shape of the BEV plane. To be specific, the query Qp ∈ R1×C located at p = (x, y) of Q is responsible for the corresponding grid cell region in the BEV plane. Each grid cell in the BEV plane corresponds to a real-world size of s meters. The center of BEV features corresponds to the position of the ego car by default. Following common practices [14], we add learnable positional embedding to BEV queries Q before inputting them to BEVFormer.
 3.3 Spatial Cross-Attention
 Due to the large input scale of multi-camera 3D perception (containing Nview camera views), the computational cost of vanilla multi-head attention [42] is extremely high. Therefore, we develop the spatial cross-attention based on deformable attention [56], which is a resource-efficient attention layer where each BEV query Qp only interacts with its regions of interest across camera views. However, deformable attention is originally designed for 2D perception, so some adjustments are required for 3D scenes.
@@ -124,7 +124,7 @@ In addition to spatial information, temporal information is also crucial for the
 5
 
 
-Given the BEV queries Q at current timestamp t and history BEV features Bt−1 preserved at timestamp t−1, we first align Bt−1 to Q according to ego-motion to make the features at the same grid correspond to the same real-world location. Here, we denote the aligned history BEV features Bt−1 as Bt′−1. However, from times t − 1 to t, movable objects travel in the real world with various offsets. It is challenging to construct the precise association of the same objects between the BEV features of different times. Therefore, we model this temporal connection between features through the temporal self-attention (TSA) layer, which can be written as follows:
+ Given the BEV queries Q at current timestamp t and history BEV features Bt−1 preserved at timestamp t−1, we first align Bt−1 to Q according to ego-motion to make the features at the same grid correspond to the same real-world location. Here, we denote the aligned history BEV features Bt−1 as Bt′−1. However, from times t − 1 to t, movable objects travel in the real world with various offsets. It is challenging to construct the precise association of the same objects between the BEV features of different times. Therefore, we model this temporal connection between features through the temporal self-attention (TSA) layer, which can be written as follows:
 TSA(Qp, {Q, B′
 t−1}) =
 ∑
@@ -143,7 +143,7 @@ Inference Phase. During the inference phase, we evaluate each frame of the video
 6
 
 
-4 Experiments
+ 4 Experiments
 4.1 Datasets
 We conduct experiments on two challenging public autonomous driving datasets, namely nuScenes dataset [4] and Waymo open dataset [40].
 The nuScenes dataset [4] contains 1000 scenes of roughly 20s duration each, and the key samples are annotated at 2Hz. Each sample consists of RGB images from 6 cameras and has 360° horizontal FOV. For the detection task, there are 1.4M annotated 3D bounding boxes from 10 categories. We follow the settings in [32] to perform BEV segmentation task. This dataset also provides the official evaluation metrics for the detection task. The mean average precision (mAP) of nuScenes is computed using the center distance on the ground plane rather than the 3D Intersection over Union (IoU) to match the predicted results and ground truth. The nuScenes metrics also contain 5 types of true positive metrics (TP metrics), including ATE, ASE, AOE, AVE, and AAE for measuring translation, scale, orientation, velocity, and attribute errors, respectively. The nuScenes also defines a nuScenes detection score (NDS) as NDS = 1
@@ -160,7 +160,7 @@ We train our model on the detection task with the detection head only for fairly
 7
 
 
-Table 1: 3D detection results on nuScenes test set. ∗ notes that VoVNet-99 (V2-99) [21] was pre-trained on the depth estimation task with extra data [31]. “BEVFormer-S” does not leverage temporal information in the BEV encoder. “L” and “C” indicate LiDAR and Camera, respectively.
+ Table 1: 3D detection results on nuScenes test set. ∗ notes that VoVNet-99 (V2-99) [21] was pre-trained on the depth estimation task with extra data [31]. “BEVFormer-S” does not leverage temporal information in the BEV encoder. “L” and “C” indicate LiDAR and Camera, respectively.
 Method Modality Backbone NDS↑ mAP↑ mATE↓ mASE↓ mAOE↓ mAVE↓ mAAE↓
 SSN [55] L - 0.569 0.463 - - - - CenterPoint-Voxel [52] L - 0.655 0.580 - - - - PointPainting [43] L&C - 0.581 0.464 0.388 0.271 0.496 0.247 0.111
 FCOS3D [45] C R101 0.428 0.358 0.690 0.249 0.452 1.434 0.124 PGD [44] C R101 0.448 0.386 0.626 0.245 0.451 1.509 0.127 BEVFormer-S C R101 0.462 0.409 0.650 0.261 0.439 0.925 0.147 BEVFormer C R101 0.535 0.445 0.631 0.257 0.405 0.435 0.143
@@ -176,7 +176,7 @@ We train our model with both detection and segmentation heads to verify the lear
 8
 
 
-Table 3: 3D detection results on Waymo val set under Waymo evaluation metric and nuScenes evaluation metric. “L1” and “L2” refer “LEVEL_1” and “LEVEL_2” difficulties of Waymo [40]. *: Only use the front camera and only consider object labels in the front camera’s field of view (50.4°). †: We compute the NDS score by setting ATE and AAE to be 1. “L” and “C” indicate LiDAR and Camera, respectively.
+ Table 3: 3D detection results on Waymo val set under Waymo evaluation metric and nuScenes evaluation metric. “L1” and “L2” refer “LEVEL_1” and “LEVEL_2” difficulties of Waymo [40]. *: Only use the front camera and only consider object labels in the front camera’s field of view (50.4°). †: We compute the NDS score by setting ATE and AAE to be 1. “L” and “C” indicate LiDAR and Camera, respectively.
 Method Modality
 Waymo Metrics Nuscenes Metrics
 IoU=0.5 IoU=0.7 NDS†↑ AP↑ ATE↓ ASE↓ AOE↓
@@ -196,7 +196,7 @@ Effectiveness of Spatial Cross-Attention. To verify the effect of spatial cross-
 9
 
 
-Table 5: The detection results of different methods with various BEV encoders on nuScenes val set. “Memory” is the consumed GPU memory during training. *: We use VPN [30] and LiftSplat [32] to replace BEV encoder of our model for comparison. †: We train BEVFormer-S using global attention in spatial cross-attention, and the model is trained with fp16 weights. In addition, we only adopt single-scale features from the backbone and set the spatial shape of BEV queries to be 100×100 to save memory. ‡: We degrade the interaction targets of deformable attention from the local region to the reference points only by removing the predicted offsets and weights.
+ Table 5: The detection results of different methods with various BEV encoders on nuScenes val set. “Memory” is the consumed GPU memory during training. *: We use VPN [30] and LiftSplat [32] to replace BEV encoder of our model for comparison. †: We train BEVFormer-S using global attention in spatial cross-attention, and the model is trained with fp16 weights. In addition, we only adopt single-scale features from the backbone and set the spatial shape of BEV queries to be 100×100 to save memory. ‡: We degrade the interaction targets of deformable attention from the local region to the reference points only by removing the predicted offsets and weights.
 Method Attention NDS↑ mAP↑ mATE↓ mAOE↓ #Param. FLOPs Memory
 VPN∗ [30] - 0.334 0.252 0.926 0.598 111.2M 924.5G ∼20G List-Splat∗ [32] - 0.397 0.348 0.784 0.537 74.0M 1087.7G ∼20G
 BEVFormer-S† Global 0.404 0.325 0.837 0.442 62.1M 1245.1G ∼36G BEVFormer-S‡ Points 0.423 0.351 0.753 0.442 68.1M 1264.3G ∼20G BEVFormer-S Local 0.448 0.375 0.725 0.391 68.7M 1303.5G ∼20G
@@ -260,7 +260,7 @@ Effectiveness of Temporal Self-Attention. From Tab. 1 and Tab. 4, we can observe
 10
 
 
-Table 6: Latency and performance of different model configurations on nuScenes val set. The latency is measured on a V100 GPU, and the backbone is R101-DCN. The input image shape is 900×1600. “MS” notes multi-scale view features.
+ Table 6: Latency and performance of different model configurations on nuScenes val set. The latency is measured on a V100 GPU, and the backbone is R101-DCN. The input image shape is 900×1600. “MS” notes multi-scale view features.
 Method Scale of BEVFormer Latency (ms) FPS NDS↑ mAP↑
 MS BEV #Layer Backbone BEVFormer Head
 BEVFormer 3 200×200 6 391 130 19 1.7 0.517 0.416
@@ -282,7 +282,7 @@ Limitations. At present, the camera-based methods still have a particular gap wi
 11
 
 
-Broader impacts. BEVFormer demonstrates that using spatiotemporal information from the multicamera input can significantly improve the performance of visual perception models. The advantages demonstrated by BEVFormer, such as more accurate velocity estimation and higher recall on lowvisible objects, are essential for constructing a better and safer autonomous driving system and beyond. We believe BEVFormer is just a baseline of the following more powerful visual perception methods, and vision-based perception systems still have tremendous potential to be explored.
+ Broader impacts. BEVFormer demonstrates that using spatiotemporal information from the multicamera input can significantly improve the performance of visual perception models. The advantages demonstrated by BEVFormer, such as more accurate velocity estimation and higher recall on lowvisible objects, are essential for constructing a better and safer autonomous driving system and beyond. We believe BEVFormer is just a baseline of the following more powerful visual perception methods, and vision-based perception systems still have tremendous potential to be explored.
 References
 [1] Brazil, G., Liu, X.: M3d-rpn: Monocular 3d region proposal network for object detection. In: Proceedings of the IEEE/CVF International Conference on Computer Vision. pp. 9287–9296 (2019)
 [2] Brazil, G., Pons-Moll, G., Liu, X., Schiele, B.: Kinematic 3d object detection in monocular video. In: European Conference on Computer Vision. pp. 135–152. Springer (2020)
@@ -304,7 +304,7 @@ References
 12
 
 
-[18] Hu, A., Murez, Z., Mohan, N., Dudas, S., Hawke, J., Badrinarayanan, V., Cipolla, R., Kendall, A.: Fiery: Future instance prediction in bird’s-eye view from surround monocular cameras. In: Proceedings of the IEEE/CVF International Conference on Computer Vision. pp. 15273–15282 (2021)
+ [18] Hu, A., Murez, Z., Mohan, N., Dudas, S., Hawke, J., Badrinarayanan, V., Cipolla, R., Kendall, A.: Fiery: Future instance prediction in bird’s-eye view from surround monocular cameras. In: Proceedings of the IEEE/CVF International Conference on Computer Vision. pp. 15273–15282 (2021)
 [19] Kang, K., Ouyang, W., Li, H., Wang, X.: Object detection from video tubelets with convolutional neural networks. In: Proceedings of the IEEE conference on computer vision and pattern recognition. pp. 817–825 (2016)
 [20] Lang, A.H., Vora, S., Caesar, H., Zhou, L., Yang, J., Beijbom, O.: Pointpillars: Fast encoders for object detection from point clouds. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 12697–12705 (2019)
 [21] Lee, Y., Hwang, J.w., Lee, S., Bae, Y., Park, J.: An energy and gpu-computation efficient backbone network for real-time object detection. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition Workshops. pp. 0–0 (2019)
@@ -326,7 +326,7 @@ References
 13
 
 
-[37] Rukhovich, D., Vorontsova, A., Konushin, A.: Imvoxelnet: Image to voxels projection for monocular and multi-view general-purpose 3d object detection. In: Proceedings of the IEEE/CVF Winter Conference on Applications of Computer Vision. pp. 2397–2406 (2022)
+ [37] Rukhovich, D., Vorontsova, A., Konushin, A.: Imvoxelnet: Image to voxels projection for monocular and multi-view general-purpose 3d object detection. In: Proceedings of the IEEE/CVF Winter Conference on Applications of Computer Vision. pp. 2397–2406 (2022)
 [38] Saha, A., Maldonado, O.M., Russell, C., Bowden, R.: Translating images into maps. arXiv preprint arXiv:2110.00966 (2021)
 [39] Simonelli, A., Bulo, S.R., Porzi, L., Lopez-Antequera, M., Kontschieder, P.: Disentangling monocular 3d object detection. In: Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV) (October 2019)
 [40] Sun, P., Kretzschmar, H., Dotiwalla, X., Chouard, A., Patnaik, V., Tsui, P., Guo, J., Zhou, Y., Chai, Y., Caine, B., et al.: Scalability in perception for autonomous driving: Waymo open dataset. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition. pp. 2446–2454 (2020)
@@ -348,12 +348,12 @@ References
 14
 
 
-[56] Zhu, X., Su, W., Lu, L., Li, B., Wang, X., Dai, J.: Deformable detr: Deformable transformers for end-to-end object detection. In: International Conference on Learning Representations (2020)
+ [56] Zhu, X., Su, W., Lu, L., Li, B., Wang, X., Dai, J.: Deformable detr: Deformable transformers for end-to-end object detection. In: International Conference on Learning Representations (2020)
 [57] Zhu, X., Xiong, Y., Dai, J., Yuan, L., Wei, Y.: Deep feature flow for video recognition. In: Proceedings of the IEEE conference on computer vision and pattern recognition. pp. 2349–2358 (2017)
 15
 
 
-Appendix
+ Appendix
 A Implementation Details
 In this section, we provide more implementation details of the proposed method and experiments.
 A.1 Traning Strategy
@@ -391,7 +391,7 @@ Global Attention. Besides deformable attention [56], our spatial cross-attention
 16
 
 
-0.517 0.511
+ 0.517 0.511
 0.494
 0.471
 0.443
@@ -424,7 +424,7 @@ Effect of the frame number during training. Tab. 7 shows the effect of the frame
 17
 
 
-Table 7: NDS of models on nuScenes val set using different frame numbers during training. “#Frame” denotes the frame number during training.
+ Table 7: NDS of models on nuScenes val set using different frame numbers during training. “#Frame” denotes the frame number during training.
 #Frame NDS↑ mAP↑ mAVE↓
 1 0.448 0.375 0.802 2 0.490 0.388 0.467 3 0.510 0.410 0.423 4 0.517 0.416 0.394 5 0.517 0.412 0.387
 Table 8: Ablation Experiments on nuScenes val set. “A.” indicates aligning history BEV features with ego-motion. “R.” indicates randomly sampling 4 frames from 5 continuous frames. “B.” indicates using both BEV queries and history BEV features to predict offsets and weights.
@@ -437,7 +437,7 @@ As shown in Fig. 7, we compare BEVFormer with BEVFormer-S. With temporal informa
 18
 
 
-BEVFormer-S BEVFormer BEVFormer-S BEVFormer
+ BEVFormer-S BEVFormer BEVFormer-S BEVFormer
 CAM_FRONT_LEFT CAM_FRONT CAM_FRONT_RIGHT
 CAM_BACK_LEFT CAM_BACK CAM_BACK_RIGHT
 LIDAR_TOP (BEVFormer)
@@ -458,7 +458,7 @@ Figure 8: Visualization results of both object detection and map segmentation ta
 19
 
 
-Ground Truth Prediction Ground Truth Prediction
+ Ground Truth Prediction Ground Truth Prediction
 Ground Truth Prediction
 Figure 9: Visualization results of the map segmentation task. We show vehicle, road, ped crossing and lane segmentation in blue, orange, cyan, and green, respectively.
 20

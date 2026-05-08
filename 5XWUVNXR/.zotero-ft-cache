@@ -47,7 +47,7 @@ Keywords Multi-objecttracking,Infraredobject,ByteTrack,Kalmanfilter,Longshort-te
 ,
 
 
-,。 、
+ ,。 、
 。,
 , ,,
 , [1]。
@@ -147,7 +147,7 @@ CenterTrack ,
 , : ByteTrack
 
 
-。Yang [18]
+ 。Yang [18]
 , 、、3
 ,,
 。Xie [19] YOLOv4 KCF
@@ -216,7 +216,7 @@ Tremain , IOU ,
 178 ComputerScience Vol.50,No.9,Sep.2023
 
 
-3
+ 3
 Fig.3 Secondassociation
 Tre-remain,
 , Tlost 。 Tlost ,
@@ -300,7 +300,7 @@ Adam
 , : ByteTrack
 
 
-4.4 AFLink
+ 4.4 AFLink
 ,
 ,
 。
@@ -380,7 +380,7 @@ FM(↓) ( )
 180 ComputerScience Vol.50,No.9,Sep.2023
 
 
-3
+ 3
 Table3 Componentablationresults
 NSA ECC LSTM AFLink GSI MOTA/% IDF1/%
 - - - - - 76.9 85.7
@@ -459,7 +459,7 @@ ID , ,
 , : ByteTrack
 
 
-(a)Sort 2
+ (a)Sort 2
 (b)DeepSort 2
 (c) 2
 10 3 2
@@ -518,7 +518,7 @@ CVFInter-nationalConferenceonComputerVision.2021:2809
 182 ComputerScience Vol.50,No.9,Sep.2023
 
 
-forrobustmulti-persontracking[C]∥ProceedingsoftheIEEE
+ forrobustmulti-persontracking[C]∥ProceedingsoftheIEEE
 ConferenceonComputerVisionandPatternRecognition.2008:
 1-8.
 [6] DU Y H,SONG Y,YANG B,etal.StrongSORT:MakeDeep

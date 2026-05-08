@@ -23,7 +23,7 @@ Besides providing a comprehensive code, our main contribution in terms of method
 arXiv:2002.00878v2 [cs.RO] 11 Mar 2020
 
 
-Fig. 1: The cylinder is a parallelizable manifold. We can define vector fields V1, V2 that form a basis of the tangent
+ Fig. 1: The cylinder is a parallelizable manifold. We can define vector fields V1, V2 that form a basis of the tangent
 space at any point.
 the Levi-Civita connection but mastering differential geometry is difficult. [7,13,20,21] are reserved for SO(3) and SE(3), while [23] is reserved for Lie groups and requires more knowledge of Lie theory than the present paper.
 In Section II, we introduce a user-friendly approach to UKF on parallelizable manifolds. Section III applies the approach in the particular case where the manifold is a Lie group and recovers [22], but without requiring much knowledge of Lie groups. Section IV describes the open sourced framework. We then show in Section V the method may actually be extended to numerous manifolds encountered in robotics. The conclusion section discusses theoretical issues and provides clarifications related to Kalman filtering on manifolds.
@@ -49,7 +49,7 @@ where e1 = (1, 0, 0)T , e2 = (0, 1, 0)T , and e3 = (0, 0, 1)T .
 It should be noted, though, that not all manifolds fall in this category. However, we will see in Section V how this issue can be addressed over-parameterizing the state.
 
 
-B. Uncertainty Representation on Parallelizable Manifolds
+ B. Uncertainty Representation on Parallelizable Manifolds
 Our goal is to estimate the state χ ∈ M given all the sensor measurements. As sensors are flawed, it is impossible to exactly reconstruct χ. Instead, a filter maintains a “belief” about the state, that is, its statistical distribution given
 past sensors’ readings. The Kalman filter in Rd typically maintains a Gaussian belief such that χ ∼ N ( ˆχ, P) , which
 may be re-written in the form:
@@ -84,7 +84,7 @@ p(χ|y) ≈ φ(χˆ +, ξ+), (6)
 where ξ+ ∼ N (0, P+), and find parameters ˆχ+ and P+.
 
 
-Algorithm 1: Bayesian updating on parallelizable manifolds with prior (4) and observation (5)
+ Algorithm 1: Bayesian updating on parallelizable manifolds with prior (4) and observation (5)
 Input: χˆ , P, y, R;
 // set sigma points
 1 ξj = col(√(λ + d)P)j, j = 1, . . . , d,
@@ -123,7 +123,7 @@ case where M is not a vector space, it may be geometrically interpreted as sayin
 direction ξ ̄ + ξ+ approximately consists in moving from ˆχ along ξ ̄ and then from the obtained point on M along ξ+.
 
 
-D. Unscented Kalman Filtering on Parallelizable Manifolds
+ D. Unscented Kalman Filtering on Parallelizable Manifolds
 Consider the dynamics
 χn = f (χn−1, ωn, wn) , (12)
 where the state χn lives in a parallelizable manifold M, ωn is a known input variable and wn ∼ N (0, Qn) is a
@@ -162,7 +162,7 @@ group. In (4) we may choose φ( ˆχ, ξ) := ˆχ exp(ξ∧), which corresponds 
 we exactly recover the latter expression.
 
 
-Algorithm 2: UKF on parallelizable manifolds
+ Algorithm 2: UKF on parallelizable manifolds
 Input: χˆ n−1, Pn−1, ωn, Qn, yn, Rn, α;
 Propagation
 // propagate mean state 1 χˆ n = f ( ˆχn−1, ωn, 0);
@@ -219,7 +219,7 @@ parameters besides the state assumed to live in the group G, such as sensor bias
 φ ( ˆχ, ξ) = (exp (ξ1) ˆχ1, ˆχ2 + ξ2) (19)
 
 
-or if left multiplications are privilegiated φ ( ˆχ, ξ) = (χˆ 1 exp (ξ1) , ˆχ2 + ξ2). This way, as many additional quantities
+ or if left multiplications are privilegiated φ ( ˆχ, ξ) = (χˆ 1 exp (ξ1) , ˆχ2 + ξ2). This way, as many additional quantities
 as desired may be estimated along the same lines.
 Remark 1: When G = SE(3) for example, it is tempting to let G′ = SO(3) and to treat SE(3) as SO(3) × R3
 along the lines of mixed systems. However, in robotics contexts, it has been largely argued the Lie group structure of SE(3) to treat poses is more relevant than SO(3)×R3, as accounting for the coupling between orientation and position
@@ -247,7 +247,7 @@ instead. This defines two alternative retractions. See e.g. implementation for c
 other filters, notably the one based on the naive structure of Example 5.
 
 
-Snippet 1: how to devise an UKF on manifolds
+ Snippet 1: how to devise an UKF on manifolds
 ukf = ukfm.UKF( f=model.f, # propagation model h=model.h, # observation model phi=user.phi, # retraction phi_inv=user.phi_inv, # inverse retraction Q=model.Q, # process cov. R=model.R, # observation cov. alpha=user.alpha # sigma point param. state0=state0, # initial state P0=P0) # initial covariance
 Snippet 2: setting φ, φ−1 for χ := (Rot ∈ SO(3), v, p)
 def phi(state, xi): return STATE( Rot=state.Rot.dot(SO3.exp(xi[0:3])), v=state.v + xi[3:6] p=state.p + xi[6:9])
@@ -265,7 +265,7 @@ In the code, we implement the frameworks on relevant vanilla robotics examples w
 We finally enhance code framework, documentation and examples with filter performance comparisons: for each
 
 
-0 5 10 15 20 25 30
+ 0 5 10 15 20 25 30
 0
 0.5
 1
@@ -298,7 +298,7 @@ Example 8: We provide a (novel) script which simulates a point of a pendulum wit
 subspaces of Rn called the Grassmann manifold are then straightforward.
 
 
-Fig. 3: We see covering the 2-sphere with 3 parallelizable patches (in between polar circles, and beyond each) inevitably induces discontinuities that may degrade filtering performances. This is a consequence of the theorem that states it is not possible to “comb a hairy ball”, see [53].
+ Fig. 3: We see covering the 2-sphere with 3 parallelizable patches (in between polar circles, and beyond each) inevitably induces discontinuities that may degrade filtering performances. This is a consequence of the theorem that states it is not possible to “comb a hairy ball”, see [53].
 The dynamics can be lifted into SO(3) by writing xn via a rotation matrix Rn, that is, we posit xn = RnL with
 L ∈ R3. In terms of Rn, dynamics (20) may be lifted letting Rn+1 = ΩnRn as then RnL satisfies (20) indeed.
 Similarly, the output in terms of Rn writes yn = HRnL + vn =  ̃h(Rn) + vn. Having transposed the problem into
@@ -322,7 +322,7 @@ P+ is supposed to encode dispersion at χˆ +! This means it is up to the user t
 transported over M from ˆχ to ˆχ+, as early noticed in [7], see also [8]. The route we have followed herein consists
 
 
-in focusing on parallelizable manifolds where a global coordinate system of tangent spaces exists, and readily provides a transport operation over M.
+ in focusing on parallelizable manifolds where a global coordinate system of tangent spaces exists, and readily provides a transport operation over M.
 However, there are multiple choices for the parallel transport operation. In [7,8] the authors advocate using the Levi-Civita connection for parallel transport, which depends on the chosen metric, and argue its virtue is that it is torsion free. In the context of state estimation on Lie groups, though, the transport operations that lead to the best performances are not torsion free, see [1]. In cases where it is unclear to the user which transport operation (in our case parallelization+retraction) shall be best, we suggest using our code for quick benchmarking, as done in Figure 2. Indeed, the group structures SE2(3) versus SO(3) × R6 actually boil down to particular choices of parallelization
 (hence transport), and the filter based on SE2(3) outperforms the other.
 REFERENCES
@@ -368,7 +368,7 @@ Robots and Systems (IROS), pp. 2485–2491, IEEE/RSJ, 2017.
 Science of Information (F. Nielsen and F. Barbaresco, eds.), vol. 10589, pp. 318–328, Cham: Springer International Publishing, 2017.
 
 
-[24] J. Sola`, J. Deray, and D. Atchuthan, “A Micro Lie theory for State Estimation in Robotics,” arXiv:1812.01537 [cs], Dec. 2018.
+ [24] J. Sola`, J. Deray, and D. Atchuthan, “A Micro Lie theory for State Estimation in Robotics,” arXiv:1812.01537 [cs], Dec. 2018.
 [25] Y. Wang and G. Chirikjian, “Error Propagation on the Euclidean Group with Applications to Manipulator Kinematics,” Transactions on
 Robotics, vol. 22, no. 4, pp. 591–602, 2006.
 [26] W. Park, Y. Liu, Y. Zhou, M. Moses, and G. S. Chirikjian, “Kinematic State Estimation and Motion Planning for Dtochastic Nonholonomic
@@ -425,11 +425,11 @@ IEEE, 2019.
 vol. 85, no. 7, pp. 521–524, 1978.
 
 
-[54] X. Pennec, “Intrinsic statistics on riemannian manifolds: Basic tools for geometric measurements,” Journal of Mathematical Imaging
+ [54] X. Pennec, “Intrinsic statistics on riemannian manifolds: Basic tools for geometric measurements,” Journal of Mathematical Imaging
 and Vision, vol. 25, no. 1, p. 127, 2006.
 
 
-A Code for Unscented Kalman Filtering on
+ A Code for Unscented Kalman Filtering on
 Manifolds (UKF-M)
 Martin BROSSARD†, Axel BARRAU∗ and Silv`ere BONNABEL†
 †MINES ParisTech, PSL Research University, Centre for Robotics, 60 Boulevard Saint-Michel, 75006, Paris, France
@@ -530,7 +530,7 @@ form a basis of the tangent space at χ.
 arXiv:2002.00878v2 [cs.RO] 11 Mar 2020
 
 
-Fig. 1: The cylinder is a parallelizable manifold. We can
+ Fig. 1: The cylinder is a parallelizable manifold. We can
 define vector fields V1, V2 that form a basis of the tangent
 space at any point.
 Example 1: The cylinder {(x, y, z) ∈ R3 | x2 + y2 = 1}
@@ -629,7 +629,7 @@ sigma points through the measurement function
 yj = h (φ(χˆ , (ξj)) , j = 1, . . . , 2d. (7)
 
 
-Algorithm 1: Bayesian updating on parallelizable
+ Algorithm 1: Bayesian updating on parallelizable
 manifolds with prior (4) and observation (5)
 Input: ˆχ, P, y, R;
 // set sigma points
@@ -738,7 +738,7 @@ Lie algebra. Then, to any vector ξ ∈ Rd, one may associate
 an element denoted by ξ∧ of the Lie algebra g. Let the
 
 
-Algorithm 2: UKF on parallelizable manifolds
+ Algorithm 2: UKF on parallelizable manifolds
 Input: ˆχn−1, Pn−1, ωn, Qn, yn, Rn, α;
 Propagation
 // propagate mean state
@@ -869,7 +869,7 @@ trices Qn, Rn and weights (λ, wm, and wj)
 through α. Noise covariance values are commonly
 
 
-Snippet 1: how to devise an UKF on manifolds
+ Snippet 1: how to devise an UKF on manifolds
 ukf = ukfm.UKF( f=model.f, # propagation model h=model.h, # observation model phi=user.phi, # retraction phi_inv=user.phi_inv, # inverse retraction Q=model.Q, # process cov. R=model.R, # observation cov. alpha=user.alpha # sigma point param. state0=state0, # initial state P0=P0) # initial covariance
 Snippet 2: setting φ, φ−1 for χ := (Rot ∈ SO(3), v, p)
 def phi(state, xi): return STATE( Rot=state.Rot.dot(SO3.exp(xi[0:3])), v=state.v + xi[3:6] p=state.p + xi[6:9])
@@ -957,7 +957,7 @@ orthonormal vectors of Rn, and hence to the set of p-dimensional subspaces
 of Rn called the Grassmann manifold are then straightforward.
 
 
-0 5 10 15 20 25 30
+ 0 5 10 15 20 25 30
 0
 0.5
 1
@@ -1058,7 +1058,7 @@ Review of Control, Robotics, and Autonomous Systems, vol. 1, no. 1,
 pp. 237–257, 2018.
 
 
-[2] S. Julier and J. Uhlmann, “Unscented Filtering and Nonlinear Es
+ [2] S. Julier and J. Uhlmann, “Unscented Filtering and Nonlinear Es
 timation,” Proceedings of the IEEE, vol. 92, no. 3, pp. 401–422,
 2004.
 [3] S. Julier and J. Uhlmann, “A New Extension of the Kalman Filter
@@ -1197,7 +1197,7 @@ Estimation Using an Invariant Unscented Kalman Filter,” in AIAA
 Guidance, Navigation, and Control (GNC) Conference, 2013.
 
 
-[45] J.-P. Condomines, C. Seren, and G. Hattenberger, “Pi-Invariant Un
+ [45] J.-P. Condomines, C. Seren, and G. Hattenberger, “Pi-Invariant Un
 scented Kalman Filter for Sensor Fusion,” in Conference on Decision
 and Control, pp. 1035–1040, IEEE, 2014.
 [46] P.-A. Absil, R. Mahony, and R. Sepulchre, Optimization Algorithms

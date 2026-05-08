@@ -11,7 +11,7 @@ https://github.com/nvidia-cosmos/cosmos-transfer2.5. We hope these open resource
 arXiv:2511.00062v1 [cs.CV] 28 Oct 2025
 
 
-World Simulation with Video Foundation Models for Physical AI
+ World Simulation with Video Foundation Models for Physical AI
 Contents
 1 Introduction 3
 2 Data 3 2.1 Video Curation Pipeline . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 4 2.2 Domain Specific Data . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 6 2.2.1 Robotics . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 6 2.2.2 Autonomous Driving . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 7 2.2.3 Smart Spaces . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 7 2.2.4 Human Dynamics . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 7 2.2.5 Physics . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 8
@@ -25,7 +25,7 @@ A Contributors and Acknowledgments 37 A.1 Contributors . . . . . . . . . . . . .
 2
 
 
-World Simulation with Video Foundation Models for Physical AI
+ World Simulation with Video Foundation Models for Physical AI
 1. Introduction
 Physical AI systems—embodied agents equipped with sensors and actuators—assist humans in carrying out physical tasks by interacting with the environment: their actuators act on the world in response to sensory inputs. Training such systems directly in the real world, however, is often slow, costly, and risky. This is particularly true in the early stages, when system imperfections may lead to unsafe actions that damage either the agent, the environment, or both. A world simulator that can generate high-quality, diverse visual environments based on the actions of a Physical AI agent can serve as a safe proxy for the physical world. Such simulators enable agents to acquire perception and control skills entirely in silicon before deployment in the real world (NVIDIA, 2025). In this paper, we introduce [Cosmos-Predict2.5], our latest world foundation model based on flow matching that significantly enhances simulation fidelity across diverse Physical AI domains.
 [Cosmos-Predict2.5] leapfrogs the diffusion video world model in [Cosmos-Predict1] (NVIDIA, 2025) via three key improvements. First, we strengthen the data filtering pipeline to produce higher-quality pre-training datasets and manually curate specialized post-training data tailored for Physical AI. Second, we simplify the model architecture and combine Text2World, Image2World, and Video2World capabilities into a single model. Third, we improve the training recipe, leveraging model merging and a novel reinforcement learning algorithm for post-training, and replace the T5 text encoder used in [Cosmos-Predict1] with [Cosmos-Reason1] (NVIDIA, 2025), a modern decoder-only VLM architecture specialized for Physical AI, providing richer text representations and enabling finer-grained control over world generation. Through extensive experiments, we demonstrate that [Cosmos-Predict2.5] delivers substantial gains over [Cosmos-Predict1] in both output quality and prompt alignment.
@@ -37,7 +37,7 @@ We improve upon the data pipeline in NVIDIA (2025) in two aspects. First, we upg
 3
 
 
-World Simulation with Video Foundation Models for Physical AI
+ World Simulation with Video Foundation Models for Physical AI
 Table 1: List of released models with their corresponding capabilities and inputs.
 Model Name Capability Input
 Cosmos-Predict2.5 base
@@ -55,7 +55,7 @@ This multi-stage filtering pipeline comprises several key components, each servi
 4
 
 
-World Simulation with Video Foundation Models for Physical AI
+ World Simulation with Video Foundation Models for Physical AI
 Real-World Domains
 Driving Object
 Manipulation
@@ -90,7 +90,7 @@ At the same time, the underlying infrastructure has been upgraded to handle peta
 5
 
 
-World Simulation with Video Foundation Models for Physical AI
+ World Simulation with Video Foundation Models for Physical AI
 control during inference, which reduces redundant computation while preserving semantic fidelity. Beyond ingestion and processing, the infrastructure integrates with a Delta Lake–based lakehouse (Databricks, 2019) for large-scale SQL analytics and Milvus (Zilliz, 2019), an open-source vector database for embedding-based search, enabling advanced semantic video-content similarity search and caption-level text embedding retrieval. Together, these analytical capabilities not only improve current training efficiency but also lay the foundation for large-scale dataset exploration, retrieval-augmented training, and fine-grained knowledge mining.
 In contrast to the pipeline in [Cosmos-Predict1], the [Cosmos-Predict2.5] pipeline scales to a much larger volume, processing 35 million hours of raw video compared to 20 million hours, and producing over 6 billion clips from which 200 million high-quality clips are retained. At the same time, it achieves improved data quality control through a far stricter multi-stage filtering pipeline, which reduces survival from 30% of clips to only 4%. This pipeline systematically removes motion artifacts, distortions, overlay text, semantic artifacts, and other undesirable issues, with a final high-precision pass by a vision-language model. The pipeline further introduces finer content granularity by segmenting clips into shorter temporal windows, generating captions at multiple levels of detail, and structuring the dataset through semantic deduplication and sharding, resulting in richer and more precise supervision signals. These advances are supported by a more robust and scalable infrastructure, designed for petabyte-scale processing, flexible resource allocation, and advanced analytics. Together, these advances yield a dataset that is larger, cleaner, and semantically richer, underpinned by scalable infrastructure that facilitates enhanced pre-training efficiency and improved downstream generalization across diverse Physical AI domains.
 2.2. Domain Specific Data
@@ -105,7 +105,7 @@ We design dataset-aware caption prompts that enforce task-centric, grounded desc
 6
 
 
-World Simulation with Video Foundation Models for Physical AI
+ World Simulation with Video Foundation Models for Physical AI
 chronologically with explicit motion types (e.g., linear, rotational), involved parts (arm, wrist, gripper), camera motion, and fine-grained object attributes. To improve caption accuracy and reduce hallucination, we inject available dataset-specific metadata into the prompt. For example, we include task description with humanlabeled success ratings for GR00T, step-level instructions for Bridge, initial scene description for AgiBot, and unified camera perspectives across multiple dataset sources.
 2.2.2. Autonomous Driving
 We built a proprietary dataset consisting of approximately 3.1M 20-second surround-view video clips collected using NVIDIA’s internal driving platform. Each clip includes recordings from seven synchronized cameras: front-wide, front-tele, left, right, rear, rear-left, and rear-right.
@@ -120,7 +120,7 @@ We curated a human-dynamics video dataset by retaining clips of at least 5 secon
 7
 
 
-World Simulation with Video Foundation Models for Physical AI
+ World Simulation with Video Foundation Models for Physical AI
 2.2.5. Physics
 We curate a dataset that aims at improving the physical plausibility of generated videos by systematically emphasizing real-world dynamics. To achieve this, we first define a taxonomy of visually observable physical phenomena spanning core domains such as classical mechanics and fluid mechanics. This taxonomy provides a principled framework for identifying and categorizing key behaviors and interactions—such as shattering glass, colliding rolling balls, or flowing water. Using this structure, we curate a diverse set of videos that foreground the dynamic properties of these phenomena. In addition, we design tailored captioning prompts that guide the VLM to generate accurate, detailed descriptions of both the underlying physical processes and the associated object interactions. Together, these elements produce a dataset that is systematically organized and tightly aligned with the goal of advancing physically grounded video generation.
 3. Method
@@ -141,7 +141,7 @@ where β is a shift hyper-parameter. This transformation reweights the distribut
 8
 
 
-World Simulation with Video Foundation Models for Physical AI
+ World Simulation with Video Foundation Models for Physical AI
 Table 3: Configuration details of [Cosmos-Predict2.5] models.
 Configuration Cosmos-Predict2.5-2B Cosmos-Predict2.5-14B
 Number of Layers 32 36 Model Dimension 2,048 5,120 FFN Hidden Dimension 8,192 20,480 AdaLN-LoRA Dimension 256 256 Number of Attention Heads 16 40 Head Dimension 128 128 MLP Activation GELU Positional Embedding 3D RoPE
@@ -155,7 +155,7 @@ For both Image2World and Video2World, we employ a frame-replacement strategy, wh
 9
 
 
-World Simulation with Video Foundation Models for Physical AI
+ World Simulation with Video Foundation Models for Physical AI
 LayerNorm Scale + Shift Self-Attention Gate
 LayerNorm Scale + Shift Cross-Attention Gate
 LayerNorm Scale + Shift Feed-forward Gate
@@ -193,7 +193,7 @@ We describe the multi-stage pretraining procedure in Tab. 4. Training begins wit
 10
 
 
-World Simulation with Video Foundation Models for Physical AI
+ World Simulation with Video Foundation Models for Physical AI
 Table 4: Stages of progressive pretraining and their specifications.
 Task Resolution Number of Frames
 Text2Image 256p (320×192) 1 Text2Image | Video2World 256p (320×192) 1 | 93 Text2Image | Video2World 480p (832×480) 1 | 93 Text2Image | Video2World 720p (1280×704) 1 | 93 Text2Image | Video2World | Text2World 720p (1280×704) 1 | 93 | 93
@@ -211,7 +211,7 @@ To evaluate these models, we construct a domain-specific test set for each categ
 11
 
 
-World Simulation with Video Foundation Models for Physical AI
+ World Simulation with Video Foundation Models for Physical AI
 Figure 3: Domain-specific SFT training improves the performance of the pretrained model on each domain.
 Object Permanance High Motion Complex Scene Driving Robotic Manipulation
 0
@@ -265,7 +265,7 @@ Interestingly, we find that simple grid search over hyperparameters consistently
 12
 
 
-World Simulation with Video Foundation Models for Physical AI
+ World Simulation with Video Foundation Models for Physical AI
 Figure 5: Human voting shows that RL can effectively improve the quality of the generated videos.
 Pretrained + RL Merged + RL
 0
@@ -291,7 +291,7 @@ The inference of diffusion-based world generation can be substantially accelerat
 13
 
 
-World Simulation with Video Foundation Models for Physical AI
+ World Simulation with Video Foundation Models for Physical AI
 Table 6: Rewards of [Cosmos-Predict2.5-2B], before and after reinforcement learning on VideoAlign, for Text2World and Image2World settings.
 Text2World Image2World
 Model
@@ -315,7 +315,7 @@ Selective Activation Checkpointing. To balance memory usage with computational e
 14
 
 
-World Simulation with Video Foundation Models for Physical AI
+ World Simulation with Video Foundation Models for Physical AI
 Table 8: Distillation results on PAI-Bench-Predict-Image2World benchmark.
 Model Domain Score Quality Score Overall Score
 Cosmos-Predict2.5-2B [teacher] 0.840 0.779 0.810 Cosmos-Predict2.5-2B [distilled] 0.842 0.790 0.816
@@ -333,7 +333,7 @@ Human Evaluation. Alongside automated metrics, we include human evaluation to ca
 15
 
 
-World Simulation with Video Foundation Models for Physical AI
+ World Simulation with Video Foundation Models for Physical AI
 Table 10: Results on PAI-Bench-Predict-Text2World Benchmark.
 Model Domain Score Quality Score Overall Score
 Cosmos-Predict2.5-2B [pre-train] 0.782 0.720 0.751 Cosmos-Predict2.5-2B [post-train] 0.804 0.732 0.768
@@ -367,7 +367,7 @@ Similarily, Fig. 7 shows that our post-trained 14B is preferred more often than 
 16
 
 
-World Simulation with Video Foundation Models for Physical AI
+ World Simulation with Video Foundation Models for Physical AI
 Figure 7: Across a diverse set of prompts, post-trained [Cosmos-Predict2.5-14B] is preferred more often than Wan 2.1 14B, and achieves on par performance to Wan 2.2 27B-A14B, despite having only half the parameter count.
 v.s. Wan 2.1 14B v.s. Wan 2.2 27B-A14B
 0
@@ -395,7 +395,7 @@ In terms of architecture, [Cosmos-Transfer2.5-2B] follows the general design of 
 17
 
 
-World Simulation with Video Foundation Models for Physical AI
+ World Simulation with Video Foundation Models for Physical AI
 Input frame Predicted frames
 Figure 8: [Cosmos-Predict2.5-2B] post-trained prediction samples on the PAI-Bench dataset.
 2025), but with a key modification. Whereas [Cosmos-Transfer1-7B] inserts four control blocks sequentially at the start of the main branch, [Cosmos-Transfer2.5-2B] distributes its four control blocks more evenly by inserting one after every seven blocks in the main branch. This design preserves the total number of control blocks while integrating conditioning information more gradually throughout the network. For additional architectural details, please refer to [Cosmos-Transfer1](NVIDIA, 2025).
@@ -405,7 +405,7 @@ Each control branch corresponding to a modality is trained independently for 100
 18
 
 
-World Simulation with Video Foundation Models for Physical AI
+ World Simulation with Video Foundation Models for Physical AI
 Table 12: Quantitative evaluation on transfer models for various configurations. We compare single control models (each conditioned on a single modality) and multi-modal variants that use spatially uniform weights. For the multi-modal cases, “Uniform Weights” denotes the full model that integrates all four control modalities (each weighted at 0.25). Best results are in bold; second-best are underlined.
 Model
 Blur Alignment
@@ -434,7 +434,7 @@ As shown in the table, [Cosmos-Transfer2.5-2B] outperforms [Cosmos-Transfer1-7B]
 19
 
 
-World Simulation with Video Foundation Models for Physical AI
+ World Simulation with Video Foundation Models for Physical AI
 3 6 9 12 15 18 Chunk Index
 0.75
 0.80
@@ -491,7 +491,7 @@ where i = 1, . . . , T denotes the chunk index, DOVER[i] is the Dover score (Wu 
 20
 
 
-World Simulation with Video Foundation Models for Physical AI
+ World Simulation with Video Foundation Models for Physical AI
 that the RNDS curve always starts at (1, 1), making it easy to compare degradation trends across models. The averaged RNDS is then obtained by averaging curves over all evaluation videos.
 As shown in Fig. 10, the RNDS curves reveal that [Cosmos-Transfer2.5-2B] exhibits far less reduction in RNDS over time compared to [Cosmos-Transfer1-7B]. This indicates that our smaller model accumulates fewer errors, demonstrates less hallucination, and maintains higher fidelity over long video sequences.
 6.2. Cosmos-Transfer2.5 for Robot Policy Learning
@@ -507,7 +507,7 @@ In total, we collect 100 human teleoperation demonstrations of this task. Using 
 21
 
 
-World Simulation with Video Foundation Models for Physical AI
+ World Simulation with Video Foundation Models for Physical AI
 Figure 11: Real-Robot Teleoperation Samples. Two episodes of image observations captured from the egocentric camera during demonstration collection. We keep the object instances and scene fixed and only change the objects’ (apple and bowl) poses.
 6.2.2. Data Augmentation Strategy
 We use [Cosmos-Transfer2.5-2B] to generate diverse and realistic visually augmented videos that expand the training set, improving the diffusion policy’s ability to generalize to test-time variations. Our augmentation strategy applies global edge control across the entire image, while restricting blur control to robot pixels. To isolate the robot in each frame, we combine Grounding DINO and SAMv2 (Liu et al., 2023; Ravi et al., 2024; Ren et al., 2024) for detection and pixel-level segmentation. We set the edge threshold to medium, the blur threshold to very low, and the classifier-free guidance scale to 3, while keeping all other parameters at their default values.
@@ -520,7 +520,7 @@ In Fig. 12 (bottom two rows), we present a few examples of diverse and realistic
 22
 
 
-World Simulation with Video Foundation Models for Physical AI
+ World Simulation with Video Foundation Models for Physical AI
 Base
 Mangosteen
 Beige Table Orange Bowl
@@ -537,7 +537,7 @@ We perform real-robot experiments under varied test-time object and environment 
 23
 
 
-World Simulation with Video Foundation Models for Physical AI
+ World Simulation with Video Foundation Models for Physical AI
 (9) a challenging combination of the first three modifications. Notably, while the first five variations may fall within the range of our diverse prompt augmentations, the subsequent three represent clear out-of-distribution shifts, and the final composite condition poses an especially challenging test. See Fig. 13 (leftmost column) for an overview of all ten test settings.
 Table 13: Real-Robot Quantitative Evaluation. We test the base, baseline, and proposed (a policy trained with [Cosmos-Transfer2.5-2B] augmented observations) on 10 test scenarios.
 Base Mangosteen Orange Bowl Beige Table Black Table Light On Distractors Black Cabinet Open Drawers Combo Total
@@ -555,7 +555,7 @@ To generate multiple 720p views, we re-purpose the latent temporal dimension by 
 24
 
 
-World Simulation with Video Foundation Models for Physical AI
+ World Simulation with Video Foundation Models for Physical AI
 Each view is encoded (and decoded) independently by the tokenizer. Once encoded, we concatenate in the latent channel dimension a compact per-view learnt embedding (of size 7) before passing it through the DiT network. We apply 3D-factorized Rotary Position Embeddings (RoPE) and cross-attention with text embeddings, following the same design as in [Cosmos-Predict2.5-2B]. Although we concatenate the views in the latent temporal dimension, we construct the RoPE embeddings separately per view. Each view can also be conditioned by one or more frames, and in the case of [Cosmos-Transfer2.5-2B/auto/multiview], each view can additionally be controlled by a separate control signal, as shown in Fig. 14.
 Table 14: Evaluation of visual metrics of on generated multi-view videos from RDS-HQ-HL dataset (Ren et al., 2025). We use FVD StyleGAN, FVD I3D, and FID for visual quality (Skorokhodov et al., 2021) and TSE and CSE (Sampson, 1982) for multi-view consistency.
 Model FVD StyleGAN ↓ FVD I3D ↓ FID ↓ TSE ↓ CSE ↓
@@ -574,7 +574,7 @@ To train the control net, we use the RDS-HQ dataset (Ren et al., 2025), which co
 25
 
 
-World Simulation with Video Foundation Models for Physical AI
+ World Simulation with Video Foundation Models for Physical AI
 3D vector map and actors. The red frustum represents the front wide camera on the ego-vehicle, which has just exited the intersection.
 Figure 14: Generated multi-view frames from [Cosmos-Transfer2.5-2B/auto/multiview]. The multi-view 720p control videos for driving simulation consist of HD map elements like lanes, road markings, poles, traffic signals, traffic lights (with state), all of which can represent complex road topologies (including overpasses) as well as actors represented as cuboids. Each cuboid is color-coded based on a coarse class ontology (e.g., truck, vehicle, pedestrian), and is also shaded to differentiate between the front and back.
 6.3.3. Experiments and Results
@@ -582,14 +582,14 @@ We train [Cosmos-Predict2.5-2B/auto/multiview] for 2 epochs on the 1.5m clip dat
 26
 
 
-World Simulation with Video Foundation Models for Physical AI
+ World Simulation with Video Foundation Models for Physical AI
 (1) (2)
 Control Transfer2.5-2B/drive/mv Transfer1-7B-Sample-AV
 Figure 15: Comparative controlled generations between [Cosmos-Transfer1-7B-Sample-AV] and [CosmosTransfer2.5-2B/auto/multiview]. In example (1), we can observe that [Cosmos-Transfer1-7B-Sample-AV] hallucinates a distorted black car behind the silver vehicle, which is described neither in the text prompt nor in the control video. We can also observe the lack of alignment to the control signal when generating the parked vehicles behind the grassy mounds. In example (2), we can observe that [Cosmos-Transfer1-7B-Sample-AV] renders the vehicle in the central lane driving on the wrong side of the street with an incorrect orientation, as well as a truck instead of a pedestrian close to the sidewalk. All these inconsistencies are resolved in [Cosmos-Transfer2.5-2B/auto/multiview].
 27
 
 
-World Simulation with Video Foundation Models for Physical AI
+ World Simulation with Video Foundation Models for Physical AI
 [Cosmos-Transfer2.5-2B/auto/multiview], we subsample the video and control inputs to 10FPS.
 For evaluation, we use a 1000 multi-view clip dataset in RQS-HQ (Ren et al., 2025), with HD map, as well as human-labeled lanes and cuboids. These clips are disjoint from the prior two datasets used in training. As shown in Tab. 14, we observe a significant boost (up to 2.3x) in FVD/FID scores while remaining competitive in temporal and cross-camera Sampson error.
 To test adherence to the control signals, we measure the detection performance of 3D-cuboid and lane detection models on generated videos, and compare these with the ground truth labels. Following the protocol described in (Ren et al., 2025), we use a monocular 3D lane detector, LATR (Luo et al., 2023), for evaluating 3D lane detection tasks, and a temporal 3D object detector, BEVFormer (Li et al., 2022), for evaluating 3D cuboid detection tasks. As shown in Tab. 15, we observe a substantial improvement (up to 60%) in detection metrics compared to Transfer1-7B-Sample-AV (NVIDIA, 2025). See Fig. 15 for visual comparisons of [Cosmos-Transfer7B-AV-Sample] versus [Cosmos-Transfer2.5-2B/auto/multiview].
@@ -605,7 +605,7 @@ Training Datasets. We train our model on the following datasets:
 28
 
 
-World Simulation with Video Foundation Models for Physical AI
+ World Simulation with Video Foundation Models for Physical AI
 Head View
 (Input)
 Frames
@@ -639,7 +639,7 @@ Figure 16: [Cosmos-Transfer2.5-2B/robot/multiview-agibot] generates temporally s
 29
 
 
-World Simulation with Video Foundation Models for Physical AI
+ World Simulation with Video Foundation Models for Physical AI
 Input
 Rotate Right
 Arc Left
@@ -665,7 +665,7 @@ Figure 17: [Cosmos-Transfer2.5-2B/robot/multiview] synthesizes synchronized vide
 30
 
 
-World Simulation with Video Foundation Models for Physical AI
+ World Simulation with Video Foundation Models for Physical AI
 • SynCamVideo (Bai et al., 2025): A complementary synthetic dataset containing 34,000 episodes similar in content to MultiCamVideo but with fixed novel camera viewpoints, enabling evaluation under static multi-view settings.
 Experiments. We adopt [Cosmos-Predict2.5-2B] as the backbone model and further post-train two variants as follows. Both variants generate outputs at 720p resolution. To address out-of-memory issues during training and inference, we employ context parallelism across multiple GPUs.
 • [Cosmos-Transfer2.5-2B/robot/multiview-agibot]: Fine-tuned on the Agibot dataset. Given a headview robotic manipulation video as input, it synthesizes synchronized videos from the left and right gripper perspectives, as illustrated in Fig. 16. • [Cosmos-Transfer2.5-2B/robot/multiview]: Fine-tuned on MultiCamVideo and SynCamVideo datasets. Conditioned on a third-view video, it generates two synchronized videos under basic camera transformations, such as left/right rotations, left/right arcs, zoom in/out, azimuth shifts, elevation changes, and distance variations, while allowing for dynamic focal length adjustments, as shown in Fig. 17.
@@ -677,7 +677,7 @@ Beyond [Cosmos-Transfer2.5-2B/robot/multiview], we further develop [Cosmos-Predi
 31
 
 
-World Simulation with Video Foundation Models for Physical AI
+ World Simulation with Video Foundation Models for Physical AI
 Table 17: Multi-Camera Video Generation Evaluation. We evaluate both our model and the baseline on 80 in-the-wild robotic manipulation videos across 16 diverse camera trajectories. Best is bolded.
 Camera Accuracy View Synchronization
 Model TransErr ↓ RotErr (rad) ↓ Sampson Error (px) ↓
@@ -706,7 +706,7 @@ We post-train [Cosmos-Predict2.5-14B] and evaluate its performance on the synthe
 32
 
 
-World Simulation with Video Foundation Models for Physical AI
+ World Simulation with Video Foundation Models for Physical AI
 of generalization—object, behavior, and environment—and employs automated evaluation with vision-language models such as Qwen-VL-2.5 (Bai et al., 2025) and GPT-4o (Hurst et al., 2024). The benchmark specifically measures whether the generated videos accurately follow task instructions involving unseen objects, novel behaviors, or new environments.
 From Tab. 18, we found that the resulting post-trained model, [Cosmos-Predict2.5-14B/robot/gr00tdream-gr1], achieved the highest instruction-following scores on the GR1 humanoid robot dataset (Jang et al., 2025). It outperformed competing models including Hunyuan (Kong et al., 2024), CogVideoX (Yang et al., 2024), and WAN 2.1 (Wan et al., 2025), particularly in object and environment generalization. These results highlight [Cosmos-Predict2.5-14B]’s adaptability through post-training and its ability to generate contextually accurate robot videos that faithfully realize natural language instructions.
 Table 18: DreamGen Bench Statistics and Results. GPT represents the evaluation from GPT4o, and Qwen represents the evaluation from Qwen2.5VL. All the models are SFT models. The best is bold and the second best is underlined. [Cosmos-Predict2-14B/robot/gr00tdream-gr1] is an earlier version of [Cosmos-Predict], which did not use [Cosmos-Reason1] for text embedding.
@@ -727,7 +727,7 @@ To evaluate the quality of video generation, we randomly sample 100 episodes fro
 33
 
 
-World Simulation with Video Foundation Models for Physical AI
+ World Simulation with Video Foundation Models for Physical AI
 Input frame Predicted frames
 Cosmos-Predict2.5-2B/robot/action-cond
 Cosmos-Predict1-7B-Video2World-Sample-ActionCond
@@ -747,7 +747,7 @@ We further investigate various methods for incorporating action conditioning. In
 34
 
 
-World Simulation with Video Foundation Models for Physical AI
+ World Simulation with Video Foundation Models for Physical AI
 7. Related Work
 World Models. Recent years have seen growing interest in world models that learn to predict future states from current observations and potential actions, enabling more efficient decision-making and planning (Ha and Schmidhuber, 2018). Research in this area has evolved into two primary paradigms for modeling world dynamics. The first focuses on learning predictive models in abstract, latent representation spaces (Ha and Schmidhuber, 2018; Hafner et al., 2019; Assran et al., 2025; Chen et al., 2025). These approaches aim to compress high-dimensional sensory inputs into compact, learned state representations that preserve the essential structure of the environment, thereby enabling efficient and tractable planning. In contrast, the second paradigm, the one we adopt, centers on modeling world dynamics directly in pixel space through high-fidelity video prediction as a video generative model (OpenAI, 2024; NVIDIA, 2025; Ball et al., 2025). These models simulate future observations frame-by-frame and can be extended to incorporate various control signals, such as camera pose, action sequences, and spatially dense inputs like a world scenario map. This retains rich, high-fidelity information, making our models effective synthetic data generators for downstream policy learning, while also remaining flexible enough to be extended to support diverse control signals. In addition to these two dominant approaches, a third, emerging direction explores native 3D and 4D representations of world states, using either neural scene representations or physically grounded simulators (Singer et al., 2023; Watson et al., 2024; Zhao et al., 2024; Liu et al., 2025; Li et al., 2025; Nasiriany et al., 2024). These models aim to provide a more structured and geometric-aware understanding of the environment.
 Video Generative Models. Video generative models represent a rapidly advancing frontier in generative AI. In recent years, several powerful closed-source systems—such as Sora (OpenAI, 2024), Kling (KuaiShou, 2024), (Runway, 2024), Hailuo (MiniMax, 2024), MovieGen (Polyak et al., 2024), Seedance (Gao et al., 2025), Veo (DeepMind, 2025), and Waver (Zhang et al., 2025)—have demonstrated remarkable progress in general-purpose video generation. Despite their impressive capabilities, the proprietary nature of these models poses a significant barrier to research and downstream applications. The lack of access to model weights and training code prevents the broader community from fine-tuning, extending, or adapting these models for specialized use cases such as autonomous driving and robotics. In contrast, the emergence of open-source video generation models, including Wan (Wan et al., 2025), LTX (HaCohen et al., 2024), and Hunyuan (Kong et al., 2024), has fostered greater transparency and accessibility. These models enable reproducible research and community-driven innovation. However, most remain optimized for general-purpose content creation and often fall short in domains requiring precise, fine-grained control over object dynamics, interactions, and physical consistency—capabilities essential for advancing physical AI. [Cosmos-Predict1] (NVIDIA, 2025) represents the first open-source video generative model explicitly tailored for physical AI applications. In this work, we further enhance its capabilities by training it on a high-quality, domain-specific dataset curated for the complexities of physical reasoning. Additionally, we integrate a text encoder based on [Cosmos-Reason1] (NVIDIA, 2025), our vision-language foundation model designed specifically for physical AI tasks. This integration significantly improves the model’s ability to generate physically plausible and controllable video sequences conditioned on natural language descriptions.
@@ -755,14 +755,14 @@ Foundation World Model for Physical AI. Most existing world models, whether clos
 35
 
 
-World Simulation with Video Foundation Models for Physical AI
+ World Simulation with Video Foundation Models for Physical AI
 2025; Bjorck et al., 2025) and development of autonomous driving systems (Ren et al., 2025; Fu et al., 2025). In this work, we demonstrated the enhanced capabilities of [Cosmos-Predict2.5] for VLA model training, robot policy training/validation, autonomous driving simulation, and robotic manipulation. [Cosmos-Transfer2.5] also improved upon its predecessors for long-horizon video translations and closed-loop simulation. We hope the open-source of [Cosmos-Predict2.5] and [Cosmos-Transfer2.5] can continue facilitating development and innovation within the Physical AI community.
 8. Conclusion
 We presented [Cosmos-Predict2.5] and [Cosmos-Transfer2.5], the latest Cosmos video world foundation models for Physical AI. Leveraging large-scale curated video datasets, flow-matching training, improved text embedding, domain-specific post-training, and reinforcement learning, our models achieve leading results on Physical AI benchmarks. Beyond benchmarks, we demonstrated their effectiveness in robotics and autonomous driving, where high-fidelity synthetic video is essential. By releasing models and code, we aim to establish Cosmos as a world foundation model platform for a simulation-first ecosystem that advances Physical AI and bridges the gap between simulation and real-world deployment.
 36
 
 
-World Simulation with Video Foundation Models for Physical AI
+ World Simulation with Video Foundation Models for Physical AI
 A. Contributors and Acknowledgments
 A.1. Contributors
 Arslan Ali Junjie Bai Maciej Bala Yogesh Balaji Aaron Blakeman Tiffany Cai Jiaxin Cao Tianshi Cao Elizabeth Cha Yu-Wei Chao Prithvijit Chattopadhyay Mike Chen Yongxin Chen Yu Chen Shuai Cheng Yin Cui Jenna Diamond Yifan Ding Jiaojiao Fan Linxi Fan Liang Feng Francesco Ferroni
@@ -777,7 +777,7 @@ Chris Schultz Alexander Schwarz Gautham Sholingar Mateusz Sieniawski Rajat Vikra
 37
 
 
-World Simulation with Video Foundation Models for Physical AI
+ World Simulation with Video Foundation Models for Physical AI
 References
 [1] Mido Assran, Adrien Bardes, David Fan, Quentin Garrido, Russell Howes, Matthew Muckley, Ammar Rizvi, Claire Roberts, Koustuv Sinha, Artem Zholus, et al. V-jepa 2: Self-supervised video models enable understanding, prediction and planning. arXiv preprint arXiv:2506.09985, 2025. 35
 [2] Yuval Atzmon, Maciej Bala, Yogesh Balaji, Tiffany Cai, Yin Cui, Jiaojiao Fan, Yunhao Ge, Siddharth Gururani, Jacob Huffman, Ronald Isaac, et al. Edify image: High-quality image generation with pixel space laplacian diffusion models. arXiv preprint arXiv:2411.07126, 2024. 8
@@ -798,7 +798,7 @@ fine-tuning and minimal perplexity degradation. https://www.reddit.com/r/LocalLL
 38
 
 
-World Simulation with Video Foundation Models for Physical AI
+ World Simulation with Video Foundation Models for Physical AI
 [15] Ting Chen. On the importance of noise scheduling for diffusion models. arXiv preprint arXiv:2301.10972, 2023. 8
 [16] Cheng Chi, Siyuan Feng, Yilun Du, Zhenjia Xu, Eric Cousineau, Benjamin CM Burchfiel, and Shuran Song. Diffusion policy: Visuomotor policy learning via action diffusion. In RSS, 2023. 21
 [17] Databricks. Delta lake: Open-source storage framework that enables building lakehouses. https: //delta.io/, 2019. Open-source project, Delta Lake. 6
@@ -819,7 +819,7 @@ fine-tuning and minimal perplexity degradation. https://www.reddit.com/r/LocalLL
 39
 
 
-World Simulation with Video Foundation Models for Physical AI
+ World Simulation with Video Foundation Models for Physical AI
 [32] Emiel Hoogeboom, Jonathan Heek, and Tim Salimans. simple diffusion: End-to-end diffusion for high resolution images. In ICML, 2023. 8
 [33] Jiahui Huang, Qunjie Zhou, Hesam Rabeti, Aleksandr Korovko, Huan Ling, Xuanchi Ren, Tianchang Shen, Jun Gao, Dmitry Slepichev, Chen-Hsuan Lin, et al. Vipe: Video pose engine for 3d geometric perception. arXiv preprint arXiv:2508.10934, 2025. 31
 [34] Wei-Chih Hung, Vincent Casser, Henrik Kretzschmar, Jyh-Jing Hwang, and Dragomir Anguelov. Let3d-ap: Longitudinal error tolerant 3d average precision for camera-only 3d detection, 2024. URL
@@ -840,7 +840,7 @@ transformers, 2022. URL https://arxiv.org/abs/2203.17270. 28
 40
 
 
-World Simulation with Video Foundation Models for Physical AI
+ World Simulation with Video Foundation Models for Physical AI
 [47] Jie Liu, Gongye Liu, Jiajun Liang, Ziyang Yuan, Xiaokun Liu, Mingwu Zheng, Xiele Wu, Qiulin Wang, Wenyu Qin, Menghan Xia, et al. Improving video generation with human feedback. arXiv preprint arXiv:2501.13918, 2025. 13
 [48] Jinxiu Liu, Shaoheng Lin, Yinxiao Li, and Ming-Hsuan Yang. Dynamicscaler: Seamless and scalable video generation for panoramic scenes. In CVPR, 2025. 35
 [49] Shilong Liu, Zhaoyang Zeng, Tianhe Ren, Feng Li, Hao Zhang, Jie Yang, Chunyuan Li, Jianwei Yang, Hang Su, Jun Zhu, et al. Grounding dino: Marrying dino with grounded pre-training for open-set object detection. arXiv preprint arXiv:2303.05499, 2023. 22
@@ -861,7 +861,7 @@ transformers, 2022. URL https://arxiv.org/abs/2203.17270. 28
 41
 
 
-World Simulation with Video Foundation Models for Physical AI
+ World Simulation with Video Foundation Models for Physical AI
 [64] Allen Z. Ren, Justin Lidard, Lars Lien Ankile, Anthony Simeonov, Pulkit Agrawal, Anirudha Majumdar, Benjamin Burchfiel, Hongkai Dai, and Max Simchowitz. Diffusion policy policy optimization. In ICLR, 2025. 21
 [65] Tianhe Ren, Shilong Liu, Ailing Zeng, Jing Lin, Kunchang Li, He Cao, Jiayu Chen, Xinyu Huang, Yukang Chen, Feng Yan, et al. Grounded sam: Assembling open-world models for diverse visual tasks. arXiv preprint arXiv:2401.14159, 2024. 22
 [66] Xuanchi Ren, Yifan Lu, Tianshi Cao, Ruiyuan Gao, Shengyu Huang, Amirmojtaba Sabour, Tianchang Shen, Tobias Pfaff, Jay Zhangjie Wu, Runjian Chen, et al. Cosmos-drive-dreams: Scalable synthetic driving data generation with world foundation models. arXiv preprint arXiv:2506.09042, 2025. 3, 25, 28, 36
@@ -881,7 +881,7 @@ transformers, 2022. URL https://arxiv.org/abs/2203.17270. 28
 42
 
 
-World Simulation with Video Foundation Models for Physical AI
+ World Simulation with Video Foundation Models for Physical AI
 [78] Team Wan, Ang Wang, Baole Ai, Bin Wen, Chaojie Mao, Chen-Wei Xie, Di Chen, Feiwu Yu, Haiming Zhao, Jianxiao Yang, et al. Wan: Open and advanced large-scale video generative models. arXiv preprint arXiv:2503.20314, 2025. 9, 33, 35
 [79] Andrew Z Wang, Songwei Ge, Tero Karras, Ming-Yu Liu, and Yogesh Balaji. A comprehensive study of decoder-only llms for text-to-image generation. In CVPR, 2025. 9
 [80] Boyang Wang, Xuweiyi Chen, Matheus Gadelha, and Zezhou Cheng. Frame in-n-out: Unbounded controllable image-to-video generation. arXiv preprint arXiv:2505.21491, 2025. 35
@@ -900,7 +900,7 @@ transformers, 2022. URL https://arxiv.org/abs/2203.17270. 28
 43
 
 
-World Simulation with Video Foundation Models for Physical AI
+ World Simulation with Video Foundation Models for Physical AI
 [93] Yifu Zhang, Hao Yang, Yuqi Zhang, Yifei Hu, Fengda Zhu, Chuang Lin, Xiaofeng Mei, Yi Jiang, Zehuan Yuan, and Bingyue Peng. Waver: Wave your way to lifelike video generation. arXiv preprint arXiv:2508.15761, 2025. 35
 [94] Yuyang Zhao, Chung-Ching Lin, Kevin Lin, Zhiwen Yan, Linjie Li, Zhengyuan Yang, Jianfeng Wang, Gim Hee Lee, and Lijuan Wang. Genxd: Generating any 3d and 4d scenes. arXiv preprint arXiv:2411.02319, 2024. 35
 [95] Zecheng Zhao, Selena Song, Tong Chen, Zhi Chen, Shazia Sadiq, and Yadan Luo. Are synthetic videos useful? a benchmark for retrieval-centric evaluation of synthetic videos. arXiv preprint arXiv:2507.02316, 2025. 35

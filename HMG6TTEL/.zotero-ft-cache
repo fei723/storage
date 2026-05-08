@@ -18,7 +18,7 @@ rithm used for maneuvering model tracking is the multi-model method. Representat
 https://doi.org/10.1016/j.ast.2025.110244 Received 10 August 2024; Received in revised form 1 April 2025; Accepted 22 April 2025
 
 
-Aerospace Science and Technology 162 (2025) 110244
+ Aerospace Science and Technology 162 (2025) 110244
 2
 F. Yang, J. Zhong, Y. Luo et al.
 algorithm: to find a new way to describe most maneuvering motion models. Consequently, we brought random variables into the target state transition matrix to build a random motion model. Because of the unfixed value of random variables, the random motion model can match as many other different motion models as possible. Then Random coefficient matrix Kalman Filter (RKF) [17] was used to estimate the target state. Compared with traditional algorithms, the new algorithm proposed in this paper is much less dependent on the target motion model. When the target is maneuvering, its performance is stable and the error is always at a lower level. When the model is correct, the traditional accurate model algorithm has the best tracking performance, and the new algorithm has basically the same performance as the traditional accurate model algorithm. But when the model set of the traditional method cannot cover the maneuvering model, the traditional algorithm performs poorly and the error diverges. In order to balance the accuracy and stability of target tracking, we propose a random interacting multiple model algorithm, which integrates the random model into the classic IMM algorithm. When the target motion state is included in the model set of the IRIMM algorithm, the algorithm assigns a high probability to the accurate model to ensure tracking accuracy. When the target motion state is not in the basic model set, the algorithm assigns a high probability to the random model to ensure stability. This method improves the error tolerance of the IMM algorithm to the model and further enhances the tracking accuracy of the random single model algorithm. Numerical examples show that regardless of how the target maneuvers, the performance of IRIMM is stable and the error converges. The rest of this paper is organized as follows. Section 2 introduces random motion model and the rationale. In Section 3, we derive the linear minimum variance recursive state estimator based on random motion model, it performs well compared with the traditional single or multiple model. The combination of IMM and the random motion model, which is called IRIMM, is shown in Section 4, it combines the IMM precision and the robustness of the random motion model. Finally, Section 5 provides conclusion and prospect.
@@ -85,7 +85,7 @@ Pk+1∣k+1 = (I − Kk+1Hk+1
 ) Pk+1∣k, (16)
 
 
-Aerospace Science and Technology 162 (2025) 110244
+ Aerospace Science and Technology 162 (2025) 110244
 3
 F. Yang, J. Zhong, Y. Luo et al.
 where
@@ -243,7 +243,7 @@ Now we compare the performance of the traditional single model F2 (30) with the 
 traditional model is KF and the filter used for the random motion model
 
 
-Aerospace Science and Technology 162 (2025) 110244
+ Aerospace Science and Technology 162 (2025) 110244
 4
 F. Yang, J. Zhong, Y. Luo et al.
 Fig. 1. Target trajectory (ω = π
@@ -271,7 +271,7 @@ exactly, so we keep F1 and F2 and change the coefficient ω in F3 from
 the target motion. The process noise variances of KF and RKF are same as the noise variances of the motion models corresponding to the target trajectory. In this result (Fig. 4), when the model set is correct, both the IMM and the random motion model perform stably, with errors being close. The random motion model produces slightly worse estimates than the IMM in some instances. However, when the model set does not match the target motion, the IMM error diverges, whereas the random motion model does not. It is evident that the random motion model sacrifices
 
 
-Aerospace Science and Technology 162 (2025) 110244
+ Aerospace Science and Technology 162 (2025) 110244
 5
 F. Yang, J. Zhong, Y. Luo et al.
 Fig. 5. The program flowchart of IRIMM.
@@ -391,7 +391,7 @@ xk+1 = Fkxk + νk, (42)
 yk = Hkxk + ωk, (43)
 
 
-Aerospace Science and Technology 162 (2025) 110244
+ Aerospace Science and Technology 162 (2025) 110244
 6
 F. Yang, J. Zhong, Y. Luo et al.
 where Fk = F (1)
@@ -486,7 +486,7 @@ Fig. 6. Comparison of IRIMM and IMM.
 To compare the differences between these two estimation methods, we consider an IMM with a random motion model (Eq. (3)) and a CV model (Eq. (29)). Unlike IRIMM, this method only introduces the random model into the model set but still applies the weighted averaging approach during the overall state estimation step. From Fig. 6, as in Section 3, when the model set is right, IMM performs well and stably, when the model set can not cover the maneuver mode, the tracking errors of IMM become unacceptable. However, IRIMM always perform well whether the target is during the CT phase or the last CA phase. It shows that the new algorithm IRIMM with random motion model is less reliant on the accuracy of the model set than IMM, but still maintains a good accuracy. Fig. 6 also shows that the IMM with the random motion model performs better than the IMM with the wrong model, which demonstrates the benefits brought by introducing the random motion model. But it still performs worse than IRIMM. This indicates that the integrated optimization approach of state estimation in IRIMM is superior to the weighted estimation method used in IMM. From Fig. 7, the overall performance of IRIMM is better than that of random motion model. When the real target motion model is added in the model set, the integrated random multiple model algorithm has higher accuracy than the single random motion model, particularly in the CV phase and CT phase. The performance of IRIMM and single random motion model are close during the CA phase, since the random motion model dominates in IRIMM when the target accelerates. Moreover, we show the model probabilities for each multiple model algorithm in Fig. 8. It should be noted that IMM with a random mo
 
 
-Aerospace Science and Technology 162 (2025) 110244
+ Aerospace Science and Technology 162 (2025) 110244
 7
 F. Yang, J. Zhong, Y. Luo et al.
 Fig. 7. Comparison of IRIMM and Random motion model.
@@ -497,7 +497,7 @@ In this paper, we proposed a novel maneuvering target tracking algorithm with ra
 Fig. 8. Model probabilities of each algorithm.
 
 
-Aerospace Science and Technology 162 (2025) 110244
+ Aerospace Science and Technology 162 (2025) 110244
 8
 F. Yang, J. Zhong, Y. Luo et al.
 tracking effect and stability when the model set is wrong. In the future, we will propose random motion models in different situations. Moreover, we will consider using the random model probability to identify the target maneuverability adaptively.

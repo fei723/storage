@@ -15,7 +15,7 @@ where xt ∈ Rn is the state process, ut ∈ Rq is a known deterministic input, 
 arXiv:2103.03520v1 [math.OC] 5 Mar 2021
 
 
-functions f (·) and g(·) are linear the problem has a well known solution which is given by the Kalman Filter. On the contrary, if the two functions, or one of these, are nonlinear we can use the EKF, which aims to find an approximate solution of the problem:
+ functions f (·) and g(·) are linear the problem has a well known solution which is given by the Kalman Filter. On the contrary, if the two functions, or one of these, are nonlinear we can use the EKF, which aims to find an approximate solution of the problem:
 argmin E [||xt+1 − gt(yt)||2|Yt−1
 ] (2)
 where Yt−1 = {ys, 0 ≤ s ≤ t − 1}. This filter adopts at each step a linearization of the nominal model (1) around the previous estimate. It is well known that the evolution of the estimates of the problem are:
@@ -100,7 +100,7 @@ where θt > 0 is the unique solution to γ(Pt+1, θt) = ct and
 It is worth noting that the filtering gain is different from the standard one because the variance of φ ̃t is different from the one of φt. Thus, the idea is to use this robust approach to find the gain in the linearized version of model in (1). This leads to the robust extended Kalman filter (REKF), reported in Algorithm 1. It is worth noting that the full procedure is similar to the EKF, except for the presence of Vt, which requires (at step 8) the computation of θt. The latter computation is done in a numerical way, since a closed form solution does not exist.
 
 
-Algorithm 1 Robust Extended Kalman filter at time t Input xˆt, Vt, ct, yt, ut Output xˆt|t, xˆt+1, Vt+1
+ Algorithm 1 Robust Extended Kalman filter at time t Input xˆt, Vt, ct, yt, ut Output xˆt|t, xˆt+1, Vt+1
 1: Ct = ∂h(x,ut)
 ∂x
 ∣ ∣
@@ -145,7 +145,7 @@ IV. EXPERIMENTAL RESULTS
 Firstly, we adopt the real-time hybrid simulation technology [34], which divides the test object into two parts: the physical substructure (i.e. TLD system) for which we would like to learn the model from the collected data; the numerical substructure which simulates the dynamics of a prescribed building. As shown in Fig. 1, after we input the earthquake signal under the structure, the relative displacement between the top of the structure and the TLD system can be transferred equivalently as the input of the shaking table so that we can measure the relative acceleration u for the bottom of the water tank via the accelerometer. Then the reactive force F of the water is considered as the output which is measured by the three-component force sensor. The setting of this test object can be seen in Fig. 2: it is composed by a water tank of dimensions 0.8 × 0.8 × 0.268 m3 (length × width × depth) placed above the shaking table. Moreover, the earthquake signals considered here are two classical seismic waves, namely the El Centro wave and the Hachinohe wave. Finally, the relative acceleration u and reactive force F signals gathered from this procedure were filtered in order to reduce the noise and then taken into account to build the datasets for learning the model parameters. These two signals, sampled with sampling time Ts = 0.001s, correspond respectively to the variables u and y introduced in Section III. The evaluation of the Algorithm 1 was performed in MATLAB. In order to evaluate the effectiveness of the proposed approach, the simulations were done using both the EKF and the REKF. The fixed model parameters are mt = 171.520 kg and ξ = 0.005, while the reference values of the objects of interest drawn from the Housner model are β = 0.612 and w = 5.489 rad/s. Both datasets were
 
 
-Water Tank
+ Water Tank
 Shaking table
 Load cell
 Reactive force (output data)
@@ -187,7 +187,7 @@ The results obtained from these initial states of the REKF parameters can be see
 Fig. 3: Estimation profiles of β and ω given the initial conditions close to the reference ones (i.e. corresponding to (19) and (21)) and input u measured from the El Centro wave.
 
 
-0 20 40 60 80 100
+ 0 20 40 60 80 100
 0.2
 0.25
 0.3
@@ -237,7 +237,7 @@ VI. ACKNOWLEDGMENTS
 This work is partially supported by NSFC under Grant Nos. 51978016. The authors would like to thank Prof. Zhenyun Tang at Beijing University of Technology for his support in the experimental platform and data collection.
 
 
-0 20 40 60 80 100
+ 0 20 40 60 80 100
 0.3
 0.35
 0.4

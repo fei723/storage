@@ -14,7 +14,7 @@ The accurate and realistic prediction of pedestrian trajectories in crowded envi
 arXiv:2511.09735v1 [cs.CV] 12 Nov 2025
 
 
-RPEE-HEADS
+ RPEE-HEADS
 insights [11, 12]. With advances in deep learning and its success in various human crowd analysis tasks [13, 14], deep learning algorithms have gained increasing attention for pedestrian trajectory prediction. These methods have demonstrated reliable performance in forecasting several seconds into the future (e.g., 4 s) [15, 16, 17]. Among the most widely used deep learning methods are Long Short-Term Memory networks (LSTM) [18] and Generative Adversarial Networks (GAN) [19]. Although these models effectively learn and predict movement sequences, they often treat each pedestrian’s path independently, overlooking the influence of nearby individuals. This limits their ability to produce accurate and realistic forecasts in crowded environments.
 To address this limitation, advanced models such as Social-LSTM [20] and Social-GAN [21] incorporate mechanisms that account for the influence of nearby movements using 2D trajectories of multiple pedestrians. Social-LSTM, for example, assigns an individual LSTM to each pedestrian and introduces a social pooling layer that aggregates the hidden states of neighbors within a local spatial grid. This design allows the model to adjust the predictions based on the motion of the surrounding individuals. To avoid confusion, the term “social” in these models does not denote genuine social interaction in a semantic sense, since 2D trajectory data alone cannot capture behaviors that depend on non-kinematic cues such as intentions, gaze, gestures, or verbal communication [22, 23].
 Although these advances improve the modeling of pedestrian motion, they often fall short in ensuring that the predicted trajectories remain physically realistic, particularly in dense crowds. A key limitation is that pedestrians are represented as single points, which neglects their physical dimensions and spatial occupancy in the environment, often leading to unrealistic collisions [12, 24]. Recently, a metric has been proposed to evaluate a model’s ability to generate collision-free paths between the bodies of pedestrians, representing each individual as a circular disk with a fixed radius of 0.2 m to approximate occupied space []. Building on this motivation, a new loss function for Social LSTM was introduced that not only minimizes displacement errors, but also explicitly learns collision avoidance [25]. While effective in low- and medium-density environments, this approach underperforms in highly dense and heterogeneous crowds.
@@ -31,7 +31,7 @@ In this category, models leverage the movements of nearby pedestrians to account
 2
 
 
-RPEE-HEADS
+ RPEE-HEADS
 Xue et al. [32] proposed a joint Location–Velocity Attention LSTM model for pedestrian trajectory prediction, where an attention mechanism learns to combine location and velocity cues to improve forecasting accuracy and generalization across scenes.
 More recent architectures, such as Social-BiGAT [33] and AgentFormer [34], employed attention-based frameworks—Social-BiGAT used a graph attention network for social interactions, while AgentFormer leveraged a transformer to jointly capture temporal and social dependencies. Advancements such as SocialFormer [35] and Knowledge-Aware Graph Transformer [36] extended attention-based frameworks by incorporating semantic interaction features and adaptive mechanisms to better capture complex relational dependencies.
 2.2 Generative-based Models
@@ -58,7 +58,7 @@ i ) | t = tobs+1, tobs+2, . . . , tpred}, (2)
 3
 
 
-RPEE-HEADS
+ RPEE-HEADS
 Outputs: Predicted Future Trajectories
 Inputs: Observed Trajectories Deep Learning
 Prediction Model
@@ -90,7 +90,7 @@ Social LSTM is a recurrent neural network architecture designed to predict the f
 4
 
 
-RPEE-HEADS
+ RPEE-HEADS
 Dynamic Occupied Space-based Loss Function
 Social LSTM
 Optimization
@@ -130,7 +130,7 @@ LDOS = ADE + λ × CP, (6)
 5
 
 
-RPEE-HEADS
+ RPEE-HEADS
 6 4 20 2 X (m)
 1
 2
@@ -174,7 +174,7 @@ The Dynamic Radius Estimation for Occupied Space module aims to provide a more a
 6
 
 
-RPEE-HEADS
+ RPEE-HEADS
 in various dense homogeneous and heterogeneous crowds. As a result, this module is responsible for estimating the
 average radius R ̄ of the occupied area of individuals within each prediction window, spanning from tobs+1 to tpred time steps.
 First, the set of colliding pedestrian pairs Ot at time step t is identified by computing the Euclidean distance dt
@@ -247,7 +247,7 @@ i are identified, this step aims to assign penalties to each collision distance.
 7
 
 
-RPEE-HEADS
+ RPEE-HEADS
 the collision in different scenarios. Specifically, for each collision detected between the primary pedestrian i and a pedestrian j at the time step t, the pairwise distance dt
 ij is normalized by dividing it by the collision threshold τ . Cet
 i is defined as:
@@ -313,7 +313,7 @@ COL(Yˆ ), (18)
 8
 
 
-RPEE-HEADS
+ RPEE-HEADS
 012345 x (m)
 2.5
 3.0
@@ -369,7 +369,7 @@ The data of the pedestrian trajectory extracted and utilized in the most relevan
 9
 
 
-RPEE-HEADS
+ RPEE-HEADS
 Figure 5: Top view of Lyon’s Festival of Lights 2022, with the trajectory tracking region highlighted in red. Figure from [44].
 pedestrian trajectories from recorded footage of the tracking region. The extracted pedestrian coordinates (x, y) over times are measured in meters.
 A total of 5,195 individual raw trajectories were collected, with an average duration of 12.38 s, a mean velocity of 0.62 m/s and an average density of 0.95 pedestrians/m2, with three time steps per second. The trajectory data captures unidirectional and bidirectional pedestrian flows and covers a wide range of densities, from 0.2 pedestrians/m2 to 2.2 pedestrians/m2. More details of the data can be found in Ref. [25].
@@ -394,7 +394,7 @@ The first 9 time steps (3 s) of each segment ai(t1), spanning from t1 to t1+8, f
 10
 
 
-RPEE-HEADS
+ RPEE-HEADS
 Training Valid
 ation
 Test
@@ -439,7 +439,7 @@ i). (24)
 11
 
 
-RPEE-HEADS
+ RPEE-HEADS
 Class(ai(t1)) =
 
   
@@ -461,7 +461,7 @@ The collision weight λ used in the loss functions of our model and the TTC-Soci
 12
 
 
-RPEE-HEADS
+ RPEE-HEADS
 Table 2: Performance evaluation across homogeneous density levels (lowD, mediumD, highD, and veryHD). ↓ indicates improvement in the corresponding metric compared to ADE-Social LSTM, while ↑ indicates a decline in performance.
 Model lowD mediumD highD veryHD
 Value Difference Value Difference Value Difference Value Difference
@@ -596,7 +596,7 @@ Figure 7: Impact of collision weight (λ) on models’ performance in terms of A
 13
 
 
-RPEE-HEADS
+ RPEE-HEADS
 In summary, the new model successfully reduces collisions and improves displacement accuracy across all homogeneous density levels.
 4.3.2 Evaluation on Heterogeneous Density Scenes
 To assess the performance of the proposed model under diverse pedestrian density conditions, it was trained and evaluated alongside ADE-Social LSTM and TTC-Social LSTM using the heterogeneous dataset (allD).
@@ -616,7 +616,7 @@ To achieve this purpose, we introduced a new baseline model called Static Occupi
 14
 
 
-RPEE-HEADS
+ RPEE-HEADS
 0.000 0.001 0.002 0.003 0.004 0.005
 Collision weight ( )
 0.1
@@ -681,7 +681,7 @@ Additionally, under the lowD and mediumD datasets, SOS-Social LSTM reduced the C
 15
 
 
-RPEE-HEADS
+ RPEE-HEADS
 conditions. Therefore, adapting the radius to reflect the realistic spacing of the crowd helps balance collision avoidance with displacement accuracy.
 In summary, incorporating a dynamic occupied space into the loss function enables the proposed model to adapt to varying crowd densities. This adaptive approach successfully reduces collisions and improves displacement accuracy across both homogeneous settings—from low to high density—and heterogeneous environments. In contrast, the static occupied space fails to minimize collisions and displacement errors simultaneously, especially in dense and heterogeneous scenes.
 4.4 Comparison with State-of-the-Art Approaches
@@ -708,7 +708,7 @@ This paper introduced a novel deep learning model designed to predict accurate, 
 16
 
 
-RPEE-HEADS
+ RPEE-HEADS
 five datasets derived from real pedestrian trajectories, including four homogeneous density levels (low, medium, high, and very high density) and one heterogeneous scenario. The experimental findings showed that the model successfully reduced the number of collision instances while improving the accuracy of the displacement across all datasets. Furthermore, it consistently outperformed five baselines and state-of-the-art models in terms of both collision rate and displacement errors in most experiments.
 While the proposed model effectively captures human–human interactions, it does not explicitly account for the influence of environmental constraints on pedestrian movement. To enhance its generalizability across varied environments, future work will focus on extending the model to learn human-environment interactions. This will enable the model to reflect real-world behavior in complex and structured spaces with more accuracy.
 Data and Code Availability
@@ -734,7 +734,7 @@ References
 17
 
 
-RPEE-HEADS
+ RPEE-HEADS
 [14] Ahmed Alia, Mohammed Maree, Mohcine Chraibi, and Armin Seyfried. A novel voronoi-based convolutional neural network framework for pushing person detection in crowd videos. Complex & Intelligent Systems, 10(4):5005–5031, 2024.
 [15] Bogdan Ilie Sighencea, Rare ,s Ion Stanciu, and Ca ̆ta ̆lin Daniel Ca ̆leanu. A review of deep learning-based methods for pedestrian trajectory prediction. Sensors, 21(22):7543, 2021.
 [16] Jing Yang, Yuehai Chen, Shaoyi Du, Badong Chen, and Jose C Principe. Ia-lstm: Interaction-aware lstm for pedestrian trajectory prediction. IEEE transactions on cybernetics, 54(7):3904–3917, 2024.
@@ -759,7 +759,7 @@ References
 18
 
 
-RPEE-HEADS
+ RPEE-HEADS
 [35] Meiyun Li, Yuhang Li, Zhihao Gao, Jiapei Wang, and Yangyang Li. Iaha: Intention-aware hybrid attention transformer for trajectory prediction. In CICTP 2024, pages 203–213. 2024.
 [36] Junyou Zhu, Chao Gao, Ze Yin, Xianghua Li, and Jürgen Kurths. Propagation structure-aware graph transformer for robust and interpretable fake news detection. In Proceedings of the 30th ACM SIGKDD Conference on Knowledge Discovery and Data Mining, pages 4652–4663, 2024.
 [37] Tim Salzmann, Boris Ivanovic, Punarjay Chakravarty, and Marco Pavone. Trajectron++: Dynamically-feasible trajectory forecasting with heterogeneous data. Conference on Robot Learning (CoRL), 155:620–645, 2020.

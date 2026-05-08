@@ -14,7 +14,7 @@ License: CC-BY 4.0, see https://creativecommons.org/licenses/by/4.0/.
 arXiv:2109.12081v1 [cs.LG] 24 Sep 2021
 
 
-Kreiss
+ Kreiss
 Figure 1: Illustration of a pedestrian interaction with the Deep Social Force model. In this interaction, pedestrian α feels a force F that is created by the gradient of the repulsive potential V that surrounds pedestrian β (illustrated by blue, dashed equipotential lines). From the predicted path of pedestrian α, an optimizer can modify the generic shape of V so that the prediction will match the true path.
 entiation with efficient BackProp (LeCun et al., 2012). The same automatic differentiation implementation is used to compute the gradients of these potentials.
 The ultimate goal is to use a more expressive model combined with a stochastic learning technique to infer model parameters from larger amounts of data. It will still be possible to plot these potentials and to interpret their shapes as before.
@@ -23,7 +23,7 @@ The software is available at https://github.com/svenkreiss/socialforce. All resu
 2
 
 
-Deep Social Force
+ Deep Social Force
 2. Related Work
 This paper focuses on predicting human navigation patterns in crowded scenes where human-space and more importantly human-human interactions are key to model. As briefly introduced in the previous section, there are two general streams of methods: interpretable low capacity ones and data-driven high capacity ones with low interpretability.
 Interpretable models. Most of interpretable models are based on hand-crafted energy potentials that require some domain expertise. Helbing and Molnar (Helbing and Molnar, 1995) have highly impacted the field by introducing a pedestrian motion model based on attractive and repulsive forces referred to as the Social Force model. This has been shown to achieve competitive results even on modern pedestrian datasets (Lerner et al., 2007b; Pellegrini et al., 2009). This method was used extensively to study panic behavior in dense crowds (Helbing et al., 2005; Helbing and Johansson, 2009; Helbing et al., 2000), applied in robotics (Luber et al., 2010) and activity understanding (Mehran et al., 2009; Yamaguchi et al., 2011; Pellegrini et al., 2010; Leal-Taixe et al., 2011; Leal-Taixe ́ et al., 2014; Choi and Savarese, 2012, 2014). Variants of the model have been proposed by extending it to a multi-class case (Robicquet et al., 2016) or by including rotational inertia (Farina et al., 2017). Using a dataset of dense crowds, Seer (Seer et al., 2012) have calibrated the Social Force parameters to produce a model with better predictive power. Recently, Chen (Chen et al., 2018) presented a nice review on all extensions of the Social Force model.
@@ -33,7 +33,7 @@ Non-interpretable high capacity models. High capacity models learn human-human a
 3
 
 
-Kreiss
+ Kreiss
 Figure 2: Corridor example. Pedestrians represented by filled circles walk towards a goal on the right and pedestrians represented by empty circles walk towards a goal on the left. The size of the circle represents the walking speed of a pedestrian as in Helbing and Molnar (1995). i Animation.
 3. Social Force Examples
 Several toy examples that demonstrate the properties of Social Force were introduced in the original paper (Helbing and Molnar, 1995). These examples are re-implemented here with modern software tools and open sourced.
@@ -45,7 +45,7 @@ The goal is to create a more expressive Social Force model, the Deep Social Forc
 4
 
 
-Deep Social Force
+ Deep Social Force
 Figure 3: Gate example. Pedestrians represented by filled circles walk towards a goal on the right and pedestrians represented by empty circles walk towards a goal on the left. Five pedestrians have already reached the left goal and four have reached the right goal. At this moment, a group of two pedestrians is passing towards the right. The size of the circle represents the walking speed of a pedestrian as in Helbing and Molnar (1995).
 of the model is adjustable by the number of hidden units used for the deep neural networks and can increase as more data becomes available in the future. We have shown in our own work how a Social Force model can help a robot navigate a crowded space (Chen et al., 2019). We have also observed the limits of the Social Force model where two robots that need to pass each other did not effectively negotiate the situation because they had no preference to pass each other on the right. The aim is to discover these intuitive behavioral patterns from data with this Deep Social Force model.
 The technical implementation requires two key ingredients. First, we use automatic differentiation in PyTorch (Paszke et al., 2017) to calculate the gradients of the interaction potentials to obtain the forces. Second, we want to avoid imposing assumptions on the potentials from their parametric form so we use non-parametric potentials in the form of neural networks.
@@ -53,7 +53,7 @@ Automatic Differentiation of Potentials. With traditional methods, the dimension
 5
 
 
-Kreiss
+ Kreiss
 Universal Potentials. Deep neural networks are universal function approximators (Cybenko, 1989; Hornik et al., 1989) in certain limits.
 A common parametric potential (Helbing and Molnar, 1995) for human-human interactions is a falling exponential:
 Vαβ(b) = V 0
@@ -80,7 +80,7 @@ Fusing force-based models with deep neural networks is novel and unconventional.
 6
 
 
-Deep Social Force
+ Deep Social Force
 (a) circle scenes (b) trajectory interactions
 Figure 4: In (a), five “circle scenes” are shown and one is highlighted in blue and orange. The primary pedestrian (blue) always moves from left to right on the x-axis. The other pedestrian (orange) crosses the scene at a random angle. Notebook. In (b), the coordinate frame is fixed to the primary pedestrian and the trajectories of the secondary pedestrian are plotted for many synthetic scenes. In this particular instance, the interaction potential is shaped like a distorted diamond. Notebook.
 Training / Calibration. The aim is to train deep neural networks – aka to calibrate the parameters of interaction potentials – with a method that scales to large datasets. The deep learning community uses stochastic optimization methods that operate on batches of data and never on the whole dataset at once. While traditional Social Force models are calibrated with second order methods (e.g. Yamaguchi et al. (2011); Seer et al. (2012)), we aim to use the first order Stochastic Gradient Descent (SGD) (Bottou, 2010). SGD can make use of the gradients that our differentiable simulation provides and allows to operate on small batches of data.
@@ -89,7 +89,7 @@ Automatic Differentiation of Potentials. With traditional methods, the dimension
 7
 
 
-Kreiss
+ Kreiss
 Figure 5: Fit of an MLP-based radial potential for human-human interaction to a single synthetic path of two pedestrians crossing and avoiding each other (left). The value V is shown (right) as a function of reduced distance b. Notebook.
 (a) Social Force (Helbing and Molnar, 1995) (b) Coordinate MLP with Fourier Features
 Figure 6: A 2D visualization of the standard interaction potential in the original Social Force model (Helbing and Molnar, 1995) is shown in (a). In (b), the result of an inference of a high-capacity MLP with about 10,000 parameters on a synthetic simulation that was generated with an asymmetric interaction potential is shown. Notebook.
@@ -99,14 +99,14 @@ Asymmetric 2D Potentials Above, the interaction potential in the one dimension o
 8
 
 
-Deep Social Force
+ Deep Social Force
 Figure 7: Filled circles represent pedestrians that move to the right and empty circles pedestrians that move to the left. Because of the asymmetry of the new potential, pedestrians prefer to stay on the right side of oncoming pedestrians which implies that all pedestrians prefer the right side of the corridor in their direction of movement. i Animation. The corridor example is based on a scenario in Helbing and Molnar (1995) which is reproduced for reference in Figure 2.
 the classical Social Force model. It is an exact ellipse where the pedestrian is at one of the focal points and the distance of the focal points of the ellipse is related to the velocity of the pedestrian. The variable b is the semi-minor axis of this ellipse. To move to 2D, parallel d‖ and perpendicular d⊥ distances are added to the set of input variables. However, I was not able to achieve any reasonable inference results with this configuration. Inspired by recent successes in neural rendering, I added a Fourier Feature layer (FF) (Tancik et al., 2020; Rahimi et al., 2007). The FF layer takes the three input variables and converts them to 192 Fourier Features. The FF layer itself does not contain any trainable parameters. The number of MLP parameters have nevertheless increased to about 10,000 due to the increased input space and deeper architecture. This 2D potential with its many parameters has a high capacity to model many interaction types. With the differentiable simulation and gradient back-propagation, we can optimize this large dimensional parameter space. On a simulation that was generated with an asymmetric potential, we can infer that asymmetry for this 2D MLP and obtain the potential that is shown in Figure 6b. We now have all ingredients to investigate implications from asymmetric potentials in the “corridor” scenario. Figure 7 shows a simulation of an asymmetric potential. It shows that asymmetric potentials impose a left-right bias and can model people avoiding each other on the right which ultimately leads to people preferring the right side of the corridor. In this simulation, from random initializations, after 40s all pedestrians have moved to the right in their walking direction as to avoid other pedestrians.
 Inference from real data. Figure 8 shows a real world scenario on the left. Infering an interaction potential from that scene is difficult. On the right side of this figure, I share the result of a first attempt. The MLP is initialized with a fit to synthetic data and then fine-tuned on the real world example from the “Crowd by Example” dataset (Lerner et al.,
 9
 
 
-Kreiss
+ Kreiss
 (a) (b)
 Figure 8: In (a), a scene from the “Crowd by Example” dataset (Lerner et al., 2007a) as provided in the TrajNet++ challenge (Kothari et al., 2021) is shown. In (b), a first attempt at infering the shape of a 1D MLP potential on this real world dataset is shown. The MLP is initialized with synthetic data and then fine-tuned on the real world scene. Notebook.
 2007a) as provided in the TrajNet++ challenge (Kothari et al., 2021). The optimization does not converge and does not work without the initialization from synthetic data. If one wanted to force an interpretation of this result, one would highlight the two distinct regimes below and above b = 1 m. For b < 1 m, the potential is repulsive as in the classical Social Force model. For b > 1 m, the potential is attractive. This type of behavior would have been impossible to discover with a functional constraint to a falling exponential as in the classical Social Force model (Helbing and Molnar, 1995). The reason for the attractive nature of the potential is likely due to the large number of social groups (groups of friends or classmates) in this dataset. The classical Social Force model actually does have a separate interaction term for the attractive forces but here this behavior is discovered from data.
@@ -116,7 +116,7 @@ Most of this paper has focused on toy problems. It is important to understand wh
 10
 
 
-Deep Social Force
+ Deep Social Force
 a sparsly populated open space on a university campus where motion is driven by other factors not represented in trajectory coordinates.
 Acknowledgments
 Sven Kreiss was hosted at the VITA lab at EPFL under Prof. Alexandre Alahi for the duration of this project. This work was funded by the SNSF Spark grant 190677.
@@ -135,7 +135,7 @@ Executable Books Community. Jupyter book. Feb 2020. doi: 10.5281/zenodo.4539666.
 11
 
 
-Kreiss
+ Kreiss
 George Cybenko. Approximation by superpositions of a sigmoidal function. Mathematics of Control, Signals and Systems, 2(4):303–314, 1989.
 Francesco Farina, Daniele Fontanelli, Andrea Garulli, Antonio Giannitrapani, and Domenico Prattichizzo. Walking ahead: The headed social force model. PloS one, 12(1): e0169734, 2017.
 Roger Fletcher. A new approach to variable metric algorithms. The computer journal, 13 (3):317–322, 1970.
@@ -154,7 +154,7 @@ Alon Lerner, Yiorgos Chrysanthou, and Dani Lischinski. Crowds by example. Comput
 12
 
 
-Deep Social Force
+ Deep Social Force
 Alon Lerner, Yiorgos Chrysanthou, and Dani Lischinski. Crowds by example. In Computer Graphics Forum, volume 26, pages 655–664. Wiley Online Library, 2007b.
 Matthias Luber, Johannes Andreas Stork, Gian Diego Tipaldi, and Kai Oliver Arras. People tracking with human motion predictions from social forces. In Robotics and Automation (ICRA), 2010 IEEE International Conference on, pages 464–469. IEEE, 2010.
 Ramin Mehran, Akira Oyama, and Mubarak Shah. Abnormal crowd behavior detection using social force model. In Computer Vision and Pattern Recognition, 2009. CVPR 2009. IEEE Conference on, pages 935–942. IEEE, 2009.
@@ -172,7 +172,7 @@ Meng Keat Christopher Tay and Christian Laugier. Modelling smooth paths using ga
 13
 
 
-Kreiss
+ Kreiss
 Adrien Treuille, Seth Cooper, and Zoran Popovi ́c. Continuum crowds. In ACM Transactions on Graphics (TOG), volume 25, pages 1160–1168. ACM, 2006.
 Jack M Wang, David J Fleet, and Aaron Hertzmann. Gaussian process dynamical models for human motion. Pattern Analysis and Machine Intelligence, IEEE Transactions on, 30(2):283–298, 2008.
 Kota Yamaguchi, Alexander C Berg, Luis E Ortiz, and Tamara L Berg. Who are you with and where are you going? In Computer Vision and Pattern Recognition (CVPR), 2011 IEEE Conference on, pages 1345–1352. IEEE, 2011.

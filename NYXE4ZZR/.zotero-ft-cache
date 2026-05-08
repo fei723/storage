@@ -11,7 +11,7 @@ This manuscript is an update on a manuscript that appeared at the 3rd Conference
 arXiv:1910.10897v2 [cs.LG] 14 Jun 2021
 
 
-capabilities in domains such as images [6] and speech [7], suggesting that this should be possible; however, we have yet to see such generalization to diverse tasks in reinforcement learning settings.
+ capabilities in domains such as images [6] and speech [7], suggesting that this should be possible; however, we have yet to see such generalization to diverse tasks in reinforcement learning settings.
 Recent works in meta-learning and multi-task reinforcement learning have shown promise for addressing this gap. Multi-task RL methods aim to learn a single policy that can solve multiple tasks more efficiently than learning the tasks individually, while meta-learning methods train on many tasks, and optimize for fast adaptation to a new task. While these methods have made progress, the development of both classes of approaches has been limited by the lack of established benchmarks and evaluation protocols that reflect realistic use cases. On one hand, multi-task RL methods have largely been evaluated on disjoint and overly diverse tasks such as the Atari suite [8], where there is little efficiency to be gained by learning across games [9]. On the other hand, meta-RL methods have been evaluated on very narrow task distributions. For example, one popular evaluation of metalearning involves choosing different running directions for simulated legged robots [10], which then enables fast adaptation to new directions. While these are technically distinct tasks, they are a far cry from the promise of a meta-learned model that can adapt to any new task within some domain. In order to study the capabilities of current multi-task and meta-reinforcement learning methods and make it feasible to design new algorithms that actually generalize and adapt quickly on meaningfully distinct tasks, we need evaluation protocols and task suites that are broad enough to enable this sort of generalization, while containing sufficient shared structure for generalization to be possible.
 The key contributions of this work are a suite of 50 diverse simulated manipulation tasks and an extensive empirical evaluation of how previous methods perform on sets of such distinct tasks. We contend that multi-task and meta reinforcement learning methods that aim to efficiently learn many tasks and quickly generalize to new tasks should be evaluated on distributions of tasks that are diverse and exhibit shared structure. To this end, we present a benchmark of simulated manipulation tasks with everyday objects, all of which are contained in a shared, table-top environment with a simulated Sawyer arm. By providing a large set of distinct tasks that share common environment and control structure, we believe that this benchmark will allow researchers to test the generalization capabilities of the current multi-task and meta RL methods, and help to identify new research avenues to improve the current approaches. Our empirical evaluation of existing methods on this benchmark reveals that, despite some impressive progress in multi-task and meta-reinforcement learning over the past few years, current methods are generally not able to learn diverse task sets, much less generalize successfully to entirely new tasks. We provide an evaluation protocol with evaluation modes of varying difficulty, and observe that current methods show varying amounts of success on these modes This opens the door for future developments in multi-task and meta reinforcement learning: instead of focusing on further increasing performance on current narrow task suites, we believe that it is essential for future work in these areas to focus on increasing the capabilities of algorithms to handle highly diverse task sets.
 By doing so, we can enable meaningful generalization across many tasks and achieve the full potential of meta-learning as a means of incorporating past experience to make it possible for robots to acquire new skills as quickly as people can.
@@ -21,7 +21,7 @@ Meta-reinforcement learning methods have been evaluated on a number of different
 2
 
 
-Figure 1: Meta-World contains 50 manipulation tasks, designed to be diverse yet carry shared structure that can be leveraged for efficient multi-task RL and transfer to new tasks via meta-RL. In the most difficult evaluation, the method must use experience from 45 training tasks (left) to quickly learn distinctly new test tasks (right). A larger view of the environments can be found on the next page.
+ Figure 1: Meta-World contains 50 manipulation tasks, designed to be diverse yet carry shared structure that can be leveraged for efficient multi-task RL and transfer to new tasks via meta-RL. In the most difficult evaluation, the method must use experience from 45 training tasks (left) to quickly learn distinctly new test tasks (right). A larger view of the environments can be found on the next page.
 learning to robotic manipulation problems, including both parameteric and non-parametric variation in tasks.
 There is a long history of robotics benchmarks [28, 29, 30], datasets [31, 32, 33, 34, 35, 36, 37], competitions [38] and standardized object sets [39, 40] that have played an important role in robotics research. Similarly, there exists a number of robotics simulation benchmarks including visual navigation [41, 42, 43, 44, 45], autonomous driving [46, 47, 48], grasping [49, 50, 51], single-task manipulation [52], among others. In this work, our aim is to continue this trend and provide a large suite of tasks that will allow researchers to study multi-task learning, meta-learning, and transfer in general. Further, unlike these prior simulation benchmarks, we particularly focus on providing a suite of many diverse manipulation tasks and a protocol for multi-task and meta RL evaluation.
 3 The Multi-Task and Meta-RL Problem Statements
@@ -35,7 +35,7 @@ various ways, e.g. using a one-hot task identification encoding z that is passed
 3
 
 
-rent state. There is no separate test set of tasks, and multi-task RL algorithms are typically evaluated on their average performance over the training tasks.
+ rent state. There is no separate test set of tasks, and multi-task RL algorithms are typically evaluated on their average performance over the training tasks.
 Meta-RL problem statement. Meta-reinforcement learning aims to leverage the set of training task to learn a policy π(a|s) that can quickly adapt to new test tasks that were not seen during training, where both training and test tasks are assumed to be drawn from the same task distribution p(T ). Typically, the training tasks are referred to as the meta-training set, to distinguish from the adaptation (training) phase performed on the (meta-) test tasks. During meta-training, the learning algorithm has access to M tasks {Ti}M
 i=1 that are drawn from the task distribution p(T ). At meta-test time, a new task Tj ∼ p(T ) is sampled that was not seen during meta-training, and the meta-trained policy must quickly adapt to this task to achieve the highest return with a small number of samples. A key premise in meta-RL is that a sufficiently powerful meta-RL method can meta-learn a model that effectively implements a highly efficient reinforcement learning procedure, which can then solve entirely new tasks very quickly – much more quickly than a conventional reinforcement learning algorithm learning from scratch. However, in order for this to happen, the meta-training distribution p(T ) must be sufficiently broad to encompass these new tasks. Unfortunately, most prior work in meta-RL evaluates on very narrow task distributions, with only one or two dimensions of parametric variation, such as the running direction for a simulated robot [10, 21, 22, 23].
 4 Meta-World
@@ -50,7 +50,7 @@ With such non-parametric variation, however, there is the danger that tasks will
 4
 
 
-wider coverage of the space of possible manipulation tasks. Without parametric variation, the model could for example memorize that any object at a particular location is a door, while any object at another location is a drawer. If the locations are not fixed, this kind of memorization is much less likely, and the model is forced to generalize more broadly. With enough tasks and variation within tasks, pairs of qualitatively-distinct tasks are more likely to overlap, serving as a catalyst for generalization. For example, closing a drawer and pushing a block can appear as nearly the same task for some initial and goal positions of each object.
+ wider coverage of the space of possible manipulation tasks. Without parametric variation, the model could for example memorize that any object at a particular location is a door, while any object at another location is a drawer. If the locations are not fixed, this kind of memorization is much less likely, and the model is forced to generalize more broadly. With enough tasks and variation within tasks, pairs of qualitatively-distinct tasks are more likely to overlap, serving as a catalyst for generalization. For example, closing a drawer and pushing a block can appear as nearly the same task for some initial and goal positions of each object.
 Note that this kind of parametric variation, which we introduce for each task, essentially represents the entirety of the task distribution for previous meta-RL evaluations [10, 22], which test on single tasks (e.g., running towards a goal) with parametric variability (e.g., variation in the goal position). Our full task distribution is therefore substantially broader, since it includes this parametric variability for each of the 50 tasks.
 To provide shared structure, the 50 environments require the same robotic arm to interact with different objects, with different shapes, joints, and connectivity. The tasks themselves require the robot to execute a combination of reaching, pushing, and grasping, depending on the task. By recombining these basic behavioral building blocks with a variety of objects with different shapes and articulation properties, we can create a wide range of manipulation tasks. For example, the open door task involves pushing or grasping an object with a revolute joint, while the open drawer task requires pushing or grasping an object with a sliding joint. More complex tasks require a combination of these building blocks, which must be executed in the right order. We visualize all of the tasks in Meta-World in Figure 1, and include a description of all tasks in Appendix A.
 All of the tasks are implemented in the MuJoCo physics engine [53], which enables fast simulation of physical contact. To make the interface simple and accessible, we base our suite on the Multiworld interface [54] and the OpenAI Gym environment interfaces [11], making additions and adaptations of the suite relatively easy for researchers already familiar with Gym.
@@ -60,7 +60,7 @@ Designing reward functions for Meta-World requires two major considerations. Fir
 5
 
 
-Figure 3: Visualization of three of our multi-task and meta-learning evaluation protocols, ranging from within task adaptation in ML1, to multi-task training across 10 distinct task families in MT10, to adapting to new tasks in ML10. Our most challenging evaluation mode ML45 is shown in Figure 1.
+ Figure 3: Visualization of three of our multi-task and meta-learning evaluation protocols, ranging from within task adaptation in ML1, to multi-task training across 10 distinct task families in MT10, to adapting to new tasks in ML10. Our most challenging evaluation mode ML45 is shown in Figure 1.
 4.3 Evaluation Protocol
 With the goal of providing a challenging benchmark to facilitate progress in multi-task RL and meta-RL, we design an evaluation protocol with varying levels of difficulty, ranging from the level of current goal-centric meta-RL benchmarks to a setting where methods must learn distinctly new, challenging manipulation tasks based on diverse experience across 45 tasks. We hence divide our evaluation into five categories, which we describe next. We then detail our evaluation criteria.
 Meta-Learning 1 (ML1): Few-shot adaptation to goal variation within one task. The simplest evaluation aims to verify that previous meta-RL algorithms can adapt to new object or goal configurations on only one type of task. ML1 uses single Meta-World Tasks, with the meta-training “tasks” corresponding to 50 random initial object and goal positions, and meta-testing on 50 heldout positions. This resembles the evaluations in prior works [10, 22]. We evaluate algorithms on three individual tasks from Meta-World: reaching, pushing, and pick and place, where the variation is over reaching position or goal object position. The goal positions are not provided in the observation, forcing meta-RL algorithms to adapt to the goal through trial-and-error.
@@ -70,7 +70,7 @@ Meta-Learning 10, Meta-Learning 45 (ML10, ML45): Few-shot adaptation to new test
 6
 
 
-out 5 tasks and meta-train policies on 10 and 45 tasks. We randomize object and goals positions and intentionally select training tasks with structural similarity to the test tasks. Task IDs are not provided as input, requiring a meta-RL algorithm to identify the tasks from experience.
+ out 5 tasks and meta-train policies on 10 and 45 tasks. We randomize object and goals positions and intentionally select training tasks with structural similarity to the test tasks. Task IDs are not provided as input, requiring a meta-RL algorithm to identify the tasks from experience.
 Success metrics. Since values of reward are not directly indicative how successful a policy is, we define an interpretable success metric for each task, which will be used as the evaluation criterion for all of the above evaluation settings. Since all of our tasks involve manipulating one or more objects into a goal configuration, this success metric is typically based on the distance between the task-relevant object and its final goal pose, i.e. ‖o − g‖2 < , where is a small distance threshold such as 5 cm. For the complete list of success metrics and thresholds for each task, see Appendix 12.
 5 Experimental Results and Analysis
 The first, most basic goal of our experiments is to verify that each of the 50 presented tasks are indeed solveable by existing single-task reinforcement learning algorithms. We provide this verification in Appendix B. Beyond verifying the individual tasks, the goals of our experiments are to study the following questions: (1) can existing state-of-the-art meta-learning algorithms quickly learn qualitatively new tasks when meta-trained on a sufficiently broad, yet structured task distribution, and (2) how do different multi-task and meta-learning algorithms compare in this setting? To answer these questions, we evaluate various multi-task and meta-learning algorithms on the Meta-World benchmark. We include the training curves of all evaluations in Figure 15 in the Appendix C. Videos of the tasks and evaluations, along with all source code, are on the project webpage3.
@@ -81,7 +81,7 @@ Finally, we study the ML10 and ML45 meta-learning benchmarks, which require lear
 7
 
 
-SuccessRate
+ SuccessRate
 reach-v2
 push-v2
 pick-place-v2
@@ -115,7 +115,7 @@ Figure 5: Performance of the tested MTRL algorithms on 10 seeds. MT-SAC performs
 8
 
 
-SuccessRate
+ SuccessRate
 Average
 peg-insert-side-v2
 reach-v2
@@ -143,7 +143,7 @@ Figure 6: Performance of the tested meta-RL algorithms on 10 seeds. RL2 shows th
 9
 
 
-0 20 40 60 80 100
+ 0 20 40 60 80 100
 Success Rate
 Average pick-place-wall-v2 dial-turn-v2 door-close-v2 shelf-place-v2 reach-wall-v2 push-back-v2 pick-out-of-hole-v2 push-wall-v2 push-v2 handle-pull-v2 soccer-v2 sweep-into-v2 pick-place-v2 button-press-v2 disassemble-v2 plate-slide-v2 box-close-v2 peg-unplug-side-v2 handle-press-side-v2 window-open-v2 coffee-button-v2 handle-press-v2 drawer-open-v2 peg-insert-side-v2 reach-v2 window-close-v2 handle-pull-side-v2 door-open-v2 lever-pull-v2 faucet-open-v2 button-press-topdown-v2 bin-picking-v2 door-lock-v2 button-press-wall-v2 plate-slide-side-v2 plate-slide-back-v2 assembly-v2 button-press-topdown-wall-v2 drawer-close-v2 faucet-close-v2 hammer-v2 coffee-push-v2 stick-push-v2 coffee-pull-v2 basketball-v2 plate-slide-back-side-v2 hand-insert-v2 door-unlock-v2 sweep-v2 stick-pull-v2
 Environment
@@ -153,7 +153,7 @@ Figure 7: Performance of the tested MTRL algorithms on 10 seeds. In MT-10, MT-SA
 10
 
 
-SuccessRate
+ SuccessRate
 Average basketball-v2 sweep-v2 shelf-place-v2 assembly-v2 faucet-close-v2 door-open-v2 pick-place-v2 pick-place-wall-v2 door-close-v2 faucet-open-v2 coffee-push-v2 plate-slide-v2 stick-push-v2 sweep-into-v2 hammer-v2 lever-pull-v2 peg-unplug-side-v2 handle-pull-v2 peg-insert-side-v2 reach-wall-v2 handle-press-side-v2 plate-slide-side-v2 coffee-button-v2 push-v2 handle-pull-side-v2 button-press-topdown-v2 pick-out-of-hole-v2 button-press-wall-v2 stick-pull-v2 handle-press-v2 reach-v2 dial-turn-v2 button-press-v2 drawer-close-v2 window-open-v2 plate-slide-back-v2 soccer-v2 coffee-pull-v2 push-wall-v2 plate-slide-back-side-v2 disassemble-v2 drawer-open-v2 push-back-v2 window-close-v2 button-press-topdown-wall-v2
 Train Environment
 RL2-PPO MAML-TRPO PEARL
@@ -166,7 +166,7 @@ Figure 8: Average of maximum success rate for ML-45. Note that, even on the chal
 11
 
 
-Methods MT10 MT50
+ Methods MT10 MT50
 Multi-task PPO 30.5% 35.4% Multi-task TRPO 31.3% 21.0% Task embeddings 20.9% 11.8% Multi-task SAC 68.3% 38.5%
 Methods
 ML10 ML45
@@ -182,7 +182,7 @@ Future extensions of the benchmark. While the presented benchmark is significant
 12
 
 
-or in the form of open-source contributions. To summarize, we believe that the proposed form of the task suite represents a significant step towards evaluating multi-task and meta-learning algorithms on diverse robotic manipulation problems that will pave the way for future research in these areas.
+ or in the form of open-source contributions. To summarize, we believe that the proposed form of the task suite represents a significant step towards evaluating multi-task and meta-learning algorithms on diverse robotic manipulation problems that will pave the way for future research in these areas.
 Acknowledgments
 We thank Suraj Nair for feedback on a draft of the paper. We thank K.R Zentner for her help in maintaining Meta-World. This research was supported in part by the National Science Foundation under IIS-1651843, IIS-1700697, and IIS-1700696, the Office of Naval Research, ARL DCIST CRA W911NF-17-2-0181, DARPA, Google, Amazon, and NVIDIA.
 References
@@ -197,7 +197,7 @@ References
 13
 
 
-[23] C. Fernando, J. Sygnowski, S. Osindero, J. Wang, T. Schaul, D. Teplyashin, P. Sprechmann, A. Pritzel, and A. Rusu. Meta-learning by the baldwin effect. In Proceedings of the Genetic and Evolutionary Computation Conference Companion, pages 1313–1320. ACM, 2018.
+ [23] C. Fernando, J. Sygnowski, S. Osindero, J. Wang, T. Schaul, D. Teplyashin, P. Sprechmann, A. Pritzel, and A. Rusu. Meta-learning by the baldwin effect. In Proceedings of the Genetic and Evolutionary Computation Conference Companion, pages 1313–1320. ACM, 2018.
 [24] S. Ritter, J. X. Wang, Z. Kurth-Nelson, S. M. Jayakumar, C. Blundell, R. Pascanu, and M. Botvinick. Been there, done that: Meta-learning with episodic recall. arXiv preprint arXiv:1805.09692, 2018.
 [25] A. Nichol, V. Pfau, C. Hesse, O. Klimov, and J. Schulman. Gotta learn fast: A new benchmark for generalization in rl. arXiv:1804.03720, 2018. [26] A. Nagabandi, I. Clavera, S. Liu, R. S. Fearing, P. Abbeel, S. Levine, and C. Finn. Learning to adapt in dynamic, real-world environments through meta-reinforcement learning. arXiv:1803.11347, 2018.
 [27] S. Sæmundsson, K. Hofmann, and M. P. Deisenroth. Meta reinforcement learning with latent variable gaussian processes. arXiv:1803.07551, 2018. [28] B. Calli, A. Walsman, A. Singh, S. Srinivasa, P. Abbeel, and A. M. Dollar. Benchmarking in manipulation research: The ycb object and model set and benchmarking protocols. arXiv:1502.03143, 2015.
@@ -211,7 +211,7 @@ References
 14
 
 
-[47] B. Wymann, E. Espie ́, C. Guionneau, C. Dimitrakakis, R. Coulom, and A. Sumner. Torcs, the open racing car simulator. Software available at http://torcs. sourceforge. net, 4(6), 2000.
+ [47] B. Wymann, E. Espie ́, C. Guionneau, C. Dimitrakakis, R. Coulom, and A. Sumner. Torcs, the open racing car simulator. Software available at http://torcs. sourceforge. net, 4(6), 2000.
 [48] S. R. Richter, Z. Hayder, and V. Koltun. Playing for benchmarks. In Proceedings of the IEEE International Conference on Computer Vision, pages 2213–2222, 2017.
 [49] D. Kappler, J. Bohg, and S. Schaal. Leveraging big data for grasp planning. In 2015 IEEE International Conference on Robotics and Automation (ICRA), pages 4304–4311. IEEE, 2015. [50] A. Kasper, Z. Xue, and R. Dillmann. The kit object models database: An object model database for object recognition, localization and manipulation in service robotics. IJRR, 2012. [51] C. Goldfeder, M. Ciocarlie, H. Dang, and P. K. Allen. The columbia grasp database. 2008. [52] L. Fan, Y. Zhu, J. Zhu, Z. Liu, O. Zeng, A. Gupta, J. Creus-Costa, S. Savarese, and L. Fei-Fei. Surreal: Open-source reinforcement learning framework and robot manipulation benchmark. In Conference on Robot Learning, 2018.
 [53] E. Todorov, T. Erez, and Y. Tassa. Mujoco: A physics engine for model-based control. In International Conference on Intelligent Robots and Systems, 2012.
@@ -223,15 +223,15 @@ References
 15
 
 
-Figure 9: Enlarged image of Figure 1.
+ Figure 9: Enlarged image of Figure 1.
 16
 
 
-Figure 10: Enlarged image of Figure 3.
+ Figure 10: Enlarged image of Figure 3.
 17
 
 
-A Task Descriptions
+ A Task Descriptions
 In Table 2, we include a description of each of the 50 Meta-World tasks.
 Task Description
 turn on faucet Rotate the faucet counter-clockwise. Randomize faucet positions sweep Sweep a puck off the table. Randomize puck positions assemble nut Pick up a nut and place it onto a peg. Randomize nut and peg positions turn off faucet Rotate the faucet clockwise. Randomize faucet positions push Push the puck to a goal. Randomize puck and goal positions pull lever Pull a lever down 90 degrees. Randomize lever positions turn dial Rotate a dial 180 degrees. Randomize dial positions push with stick Grasp a stick and push a box using the stick. Randomize stick positions. get coffee Push a button on the coffee machine. Randomize the position of the coffee machine pull handle side Pull a handle up sideways. Randomize the handle positions basketball Dunk the basketball into the basket. Randomize basketball and basket positions pull with stick Grasp a stick and pull a box with the stick. Randomize stick positions sweep into hole Sweep a puck into a hole. Randomize puck positions disassemble nut pick a nut out of the a peg. Randomize the nut positions place onto shelf pick and place a puck onto a shelf. Randomize puck and shelf positions push mug Push a mug under a coffee machine. Randomize the mug and the machine positions press handle side Press a handle down sideways. Randomize the handle positions hammer Hammer a screw on the wall. Randomize the hammer and the screw positions slide plate Slide a plate into a cabinet. Randomize the plate and cabinet positions slide plate side Slide a plate into a cabinet sideways. Randomize the plate and cabinet positions press button wall Bypass a wall and press a button. Randomize the button positions press handle Press a handle down. Randomize the handle positions pull handle Pull a handle up. Randomize the handle positions soccer Kick a soccer into the goal. Randomize the soccer and goal positions retrieve plate side Get a plate from the cabinet sideways. Randomize plate and cabinet positions retrieve plate Get a plate from the cabinet. Randomize plate and cabinet positions close drawer Push and close a drawer. Randomize the drawer positions press button top Press a button from the top. Randomize button positions reach reach a goal position. Randomize the goal positions press button top wall Bypass a wall and press a button from the top. Randomize button positions reach with wall Bypass a wall and reach a goal. Randomize goal positions insert peg side Insert a peg sideways. Randomize peg and goal positions pull Pull a puck to a goal. Randomize puck and goal positions push with wall Bypass a wall and push a puck to a goal. Randomize puck and goal positions pick out of hole Pick up a puck from a hole. Randomize puck and goal positions pick&place w/ wall Pick a puck, bypass a wall and place the puck. Randomize puck and goal positions press button Press a button. Randomize button positions pick&place Pick and place a puck to a goal. Randomize puck and goal positions pull mug Pull a mug from a coffee machine. Randomize the mug and the machine positions unplug peg Unplug a peg sideways. Randomize peg positions close window Push and close a window. Randomize window positions open window Push and open a window. Randomize window positions open door Open a door with a revolving joint. Randomize door positions close door Close a door with a revolving joint. Randomize door positions open drawer Open a drawer. Randomize drawer positions insert hand Insert the gripper into a hole. close box Grasp the cover and close the box with it. Randomize the cover and box positions lock door Lock the door by rotating the lock clockwise. Randomize door positions unlock door Unlock the door by rotating the lock counter-clockwise. Randomize door positions pick bin Grasp the puck from one bin and place it into another bin. Randomize puck positions
@@ -241,7 +241,7 @@ In this section, we aim to verify that each of the benchmark tasks are individua
 18
 
 
-0.0 0.2 0.4 0.6 0.8 1.0
+ 0.0 0.2 0.4 0.6 0.8 1.0
 Success Rate
 door-close-v2 sweep-into-v2 button-press-wall-v2 button-press-topdown-v2 push-back-v2 plate-slide-v2 coffee-button-v2 handle-press-v2 window-open-v2 reach-wall-v2 drawer-close-v2 peg-insert-side-v2 dial-turn-v2 handle-press-side-v2 button-press-v2 plate-slide-back-side-v2 reach-v2 plate-slide-side-v2 coffee-push-v2 door-unlock-v2 plate-slide-back-v2 soccer-v2 basketball-v2 door-open-v2 drawer-open-v2 button-press-topdown-wall-v2 sweep-v2 push-wall-v2 window-close-v2 handle-pull-side-v2 hand-insert-v2 pick-place-v2 door-lock-v2 stick-push-v2 handle-pull-v2 push-v2 peg-unplug-side-v2 coffee-pull-v2 lever-pull-v2 faucet-close-v2 stick-pull-v2 pick-out-of-hole-v2 shelf-place-v2 faucet-open-v2 hammer-v2 box-close-v2 bin-picking-v2 assembly-v2 disassemble-v2 pick-place-wall-v2
 Environment
@@ -254,7 +254,7 @@ In evaluating meta-learning algorithms, we care not just about performance but a
 19
 
 
-MT50 learning curves show the efficiency of multi-task learning, a critical evaluation metric, since sample efficiency gains are a primary motivation for using multi-task learning. Unsurprisingly, we find that off-policy algorithms such as soft actor-critic are able to learn with substantially less data than on-policy algorithms.
+ MT50 learning curves show the efficiency of multi-task learning, a critical evaluation metric, since sample efficiency gains are a primary motivation for using multi-task learning. Unsurprisingly, we find that off-policy algorithms such as soft actor-critic are able to learn with substantially less data than on-policy algorithms.
 0
 20
 40
@@ -288,7 +288,7 @@ Figure 13: Comparison of PEARL, MAML, and RL2 learning curves on ML-1 push.
 20
 
 
-0
+ 0
 20
 40
 60
@@ -319,7 +319,7 @@ Figure 15: Comparison of MTRL algorithms on MT-10. MT-SAC vastly outperforms is 
 21
 
 
-0.00 0.25 0.50 0.75 1.00 1.25 1.50 1.75 2.00 Total Environment Steps 1e8
+ 0.00 0.25 0.50 0.75 1.00 1.25 1.50 1.75 2.00 Total Environment Steps 1e8
 0
 5
 10
@@ -349,7 +349,7 @@ Figure 17: Performance of meta-RL algorithms on ML-10. RL2 significantly outperf
 22
 
 
-0
+ 0
 10
 20
 30
@@ -369,7 +369,7 @@ Figure 18: Learning curves of all methods on the ML-45 benchmark. Y-axis represe
 23
 
 
-D Hyperparameter Details
+ D Hyperparameter Details
 In this section, we provide hyperparameter values for each of the methods in our experimental evaluation.
 D.1 Single Task SAC
 Description value variable name
@@ -398,7 +398,7 @@ Table 3: Hyperparameters used for Garage experiments with Single Task SAC
 24
 
 
-D.2 Single Task PPO
+ D.2 Single Task PPO
 Description value variable name
 Normal Hyperparameters
 Batch size 5,000 batch size Number of epochs 4,000 n epochs Path length per roll-out 500 max path length Discount factor 0.99 discount
@@ -426,7 +426,7 @@ Below we summarize in as much detail as possible the hyperparameters used for ea
 25
 
 
-D.3 MT-PPO
+ D.3 MT-PPO
 Description MT10 MT50 variable name
 Normal Hyperparameters
 Batch size 100,000 500,000 batch size Number of epochs 10,000 10,000 n epochs Path length per roll-out 500 500 max path length Discount factor 0.99 0.99 discount
@@ -453,7 +453,7 @@ Table 5: Hyperparameters used for Garage experiments with Multi-Task PPO
 26
 
 
-D.4 MT-TRPO
+ D.4 MT-TRPO
 Description MT10 MT50 variable name
 Normal Hyperparameters
 Batch size 100,000 500,000 batch size Number of epochs 10,000 10,000 n epochs Path length per roll-out 500 500 max path length Discount factor 0.99 0.99 discount
@@ -468,7 +468,7 @@ Table 6: Hyperparameters used for Garage experiments with Multi-Task TRPO
 27
 
 
-D.5 MT-SAC
+ D.5 MT-SAC
 Description MT10 MT50 variable name
 General Hyperparameters
 Batch size 5,000 25,000 batch size Number of epochs 500 500 epochs Path length per roll-out 500 500 max path length Discount factor 0.99 0.99 discount
@@ -489,7 +489,7 @@ Table 7: Hyperparameters used for Garage experiments with Multi-Task SAC
 28
 
 
-D.6 TE-PPO
+ D.6 TE-PPO
 Description MT10 MT50 argument name
 General Hyperparameters
 Batch size 50,000 250,000 batch size Number of epochs 4,000 2,000 n epochs
@@ -500,7 +500,7 @@ Table 8: Hyperparameters used for Garage experiments with Task Embeddings PPO
 29
 
 
-D.7 MAML
+ D.7 MAML
 Description ML1 ML10 ML45 argument name
 Meta-/Multi-Task Hyperparameters
 Meta-batch size 20 20 45 meta batch size Roll-outs per task 10 10 20 rollouts per task
@@ -520,7 +520,7 @@ Table 9: Hyperparameters used for Garage experiments with MAML
 30
 
 
-D.8 RL2
+ D.8 RL2
 Description ML1 ML10 ML45 argument name
 Meta-/Multi-Task Hyperparameters
 Meta-batch size 25 10 25 meta batch size Roll-outs per task 10 10 10 rollouts per task
@@ -543,7 +543,7 @@ Table 10: Hyperparameters used for Garage experiments with RL2
 31
 
 
-D.9 PEARL
+ D.9 PEARL
 Description ML1 ML10 ML45 argument name
 Meta-/Multi-Task Hyperparameters
 Meta-batch size 16 10 45 meta batch size Tasks sampled per epoch 15 10 45 num tasks sample Number of independent evaluations
@@ -581,7 +581,7 @@ Table 11: Hyperparameters used for Garage experiments with PEARL
 32
 
 
-E Reward Functions and Single-Task Results
+ E Reward Functions and Single-Task Results
 E.1 Reward Functions
 The variables that will be discussed are the following:
 O ∈ R3 : object position
@@ -645,7 +645,7 @@ Common patterns include A + TH0 (Rcage, L(t − o, ...)), TH0 (1 − g, L(o − 
 33
 
 
-E.1.1 Basketball
+ E.1.1 Basketball
 A = I‖o−h‖<0.035 & g>0 & o(z)−oi(z)>0.01 · (1 + L(‖〈1, 1, 2〉 · (t − o)‖, 0, 0.08, ‖〈1, 1, 2〉 · (t − oi)‖))
 R=
 
@@ -693,7 +693,7 @@ R = 2TH0 (g, L(‖〈1, 4, 2〉 · (o − h)‖, 0, 0.01, ‖〈1, 4, 2〉 · (o
 34
 
 
-E.1.11 Door Unlock
+ E.1.11 Door Unlock
 R=
 2L(‖〈1, 4, 2〉 · (o − h + 〈0, 0.055, 0.07〉)‖,
 0,
@@ -747,7 +747,7 @@ R=
 35
 
 
-E.1.20 Pick Out Of Hole
+ E.1.20 Pick Out Of Hole
 A funnel-shaped surface guides the gripper as it seeks to grab and lift the object; this prevents the gripper from running into the side of the hole in the table. The height (or ”altitude”) of this surface is given by alt since the variables h and z are already used.
 alt = I‖h(xy)−oi,(xy)‖>0.03 · (0.15 + 0.015 log (‖h(xy) − oi,(xy)‖−0.03))
 A =I‖o−h‖<0.04 & g<0.33 & o(z)−oi,(z)>0.02
@@ -793,7 +793,7 @@ R=
 36
 
 
-E.1.29 Reach
+ E.1.29 Reach
 R = 10L(‖t − h‖, 0, 0.05, ‖t − hi‖)
 E.1.30 Reach Wall
 R = 10L(‖t − h‖, 0, 0.05, ‖t − hi‖)
@@ -836,7 +836,7 @@ L(‖o − h + 〈0.05, 0.02, 0.09〉‖,
 37
 
 
-E.1.38 Bin Picking
+ E.1.38 Bin Picking
 Two funnel-shaped surfaces guide the gripper as it seeks to carry the object between the two bins; this prevents the gripper from running into the side of the bins. The height (or ”altitude”) of this surface is given by alt since the variables h and z are already used.
 alt = min(I‖h(xy)−oi,(xy)‖>0.03 · (0.2 + 0.02 log (‖h(xy) − oi,(xy)‖−0.03)) ,
 I‖h(xy)−t(xy)‖>0.03 · (0.2 + 0.02 log (‖h(xy) − t(xy)‖−0.03)))
@@ -877,7 +877,7 @@ R=
 38
 
 
-E.1.44 Stick Pull
+ E.1.44 Stick Pull
 Note: a is the second object in the environment, which in this case is a thermos. in is a condition involving lots of vector offsets from the object observations. It indicates whether the stick is inserted into the thermos’ handle or not. The variable stick in place, and stick grabbed have also been defined so that the reward function fits on one page.
 stick in place = L(‖(o − a) · 〈1, 1, 2〉‖, 0, 0.12, ‖(oi − ai) · 〈1, 1, 2〉‖)
 stick grabbed = ‖h − o‖ < 0.02, g > 0, o(z) − oi,(z) > 0.01
@@ -921,7 +921,7 @@ The push-wall reward is the same as the pick-place-wall reward, but without ince
 39
 
 
-Task Success Metric
+ Task Success Metric
 faucet-open I‖o−t‖2<0.07
 sweep I‖o−t‖2<0.05
 pick-out-of-hole I‖o−t‖2<0.07 faucet-close I‖o−t‖2<0.07

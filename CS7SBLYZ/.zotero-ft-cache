@@ -21,7 +21,7 @@ For issues with unknown correlations, the arithmetic average (AA) and the geomet
 Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 09,2025 at 11:04:24 UTC from IEEE Xplore. Restrictions apply.
 
 
-used [8], [9], while the GA fusion has been observed suffering from a delay in detecting new targets and prone to missed detections, among other issues [5], [10]. Moreover, the application of generalized covariance intersection effectively addresses the challenges of uncertainty in covariance among sensors [11]. Furthermore, a rational fusion density approximation has been introduced that significantly speeds up the process [12]. The Kullback-Leibler averaging of information notably ensures immunity to data incest [13]. Also, sensor detections are frequently plagued by clutter. Some efforts have been made to transform all measurements into homogeneous signals for signal processing or to directly use learning-based methods to estimate noise parameters adaptively [6], [14]. However, fully applying these approaches to distributed systems still presents challenges. In terms of fusion strategies, the pioneering work combining AA fusion with PHD filtering based on a diffusion strategy is presented in [15], providing foundational insights for fusion under varying FoVs. Researchers have developed an innovative approach that allows only critical Bernoulli components to propagate across the sensor network and participate in subsequent information fusion [16]. This method effectively preserves essential information between nodes without interfering with the local filtering operations at individual sensors. In addition, considering the heterogeneity of sensors, each sensor can be regarded as comprising multiple submodules for fusion purposes [17]. Moreover, Chai et al. [18] extended this approach to distributed networks. Other studies focus on enhancing system performance through improvements directly based on the RFS algorithm [19]. The high mobility of multiple targets during tracking is also an issue that cannot be ignored. The jump-Markov system (JMS) is commonly employed to describe target dynamics in real time precisely [20]. The concept of jumpMarkov theory was initially integrated into the framework of the PHD filter, with implementations using particle and Gaussian mixture methods [21], [22]. Mahler [23] later expanded this domain by developing jump-Markov probability hypothesis density (JMPHD) and jump-Markov cardinalized PHD (JMCPHD) filters, which established a new theoretical foundation for these technologies. Research has since continued to refine these methods, addressing various challenges [4], [24]. However, developing a reliable and robust multisensor JMPHD filter continues to be a challenge. The article presents a method that integrates the jump-Markov system into a distributed framework and introduces a new measurement information cross-correlation (MIC) technique to estimate the positions of target appearances. This approach leverages the correlation among adjacent detections, effectively curtailing the dissemination of redundant data. The main contributions of this article are the following.
+ used [8], [9], while the GA fusion has been observed suffering from a delay in detecting new targets and prone to missed detections, among other issues [5], [10]. Moreover, the application of generalized covariance intersection effectively addresses the challenges of uncertainty in covariance among sensors [11]. Furthermore, a rational fusion density approximation has been introduced that significantly speeds up the process [12]. The Kullback-Leibler averaging of information notably ensures immunity to data incest [13]. Also, sensor detections are frequently plagued by clutter. Some efforts have been made to transform all measurements into homogeneous signals for signal processing or to directly use learning-based methods to estimate noise parameters adaptively [6], [14]. However, fully applying these approaches to distributed systems still presents challenges. In terms of fusion strategies, the pioneering work combining AA fusion with PHD filtering based on a diffusion strategy is presented in [15], providing foundational insights for fusion under varying FoVs. Researchers have developed an innovative approach that allows only critical Bernoulli components to propagate across the sensor network and participate in subsequent information fusion [16]. This method effectively preserves essential information between nodes without interfering with the local filtering operations at individual sensors. In addition, considering the heterogeneity of sensors, each sensor can be regarded as comprising multiple submodules for fusion purposes [17]. Moreover, Chai et al. [18] extended this approach to distributed networks. Other studies focus on enhancing system performance through improvements directly based on the RFS algorithm [19]. The high mobility of multiple targets during tracking is also an issue that cannot be ignored. The jump-Markov system (JMS) is commonly employed to describe target dynamics in real time precisely [20]. The concept of jumpMarkov theory was initially integrated into the framework of the PHD filter, with implementations using particle and Gaussian mixture methods [21], [22]. Mahler [23] later expanded this domain by developing jump-Markov probability hypothesis density (JMPHD) and jump-Markov cardinalized PHD (JMCPHD) filters, which established a new theoretical foundation for these technologies. Research has since continued to refine these methods, addressing various challenges [4], [24]. However, developing a reliable and robust multisensor JMPHD filter continues to be a challenge. The article presents a method that integrates the jump-Markov system into a distributed framework and introduces a new measurement information cross-correlation (MIC) technique to estimate the positions of target appearances. This approach leverages the correlation among adjacent detections, effectively curtailing the dissemination of redundant data. The main contributions of this article are the following.
 1) To address the issue of unknown covariance in sensor networks, a quantitative analysis of information
 changes during the multisensor fusion process is provided in this article from the perspective of information content (IC), exploring information redundancy in overlapping FoV. This guides the development of a Gaussian component (GC) local individual fusion (IF) method that considers the characteristics of specific regions. 2) An MIC method that considers the correlation between detections from adjacent sensors in a sensor network is proposed. Before fusion, the method leverages overlapping FoV to extract key targets, treating them as additional focal points in the filter update process. This enhances the response speed to newly emerging targets while reducing the impact of clutter on system performance. 3) In the specific clustering implementation of the MIC method, a data clustering fusion approach using local sensor measurements as indices is proposed to ensure efficient information fusion. This approach specifically considers one-way data matching between local sensors and their neighbors.
 The rest of this article is organized as follows. Section II provides background information. Section III presents a proof of the conservativeness of the AA method and analyzes the information volume in the fusion process. Section IV introduces the distributed multisensor information fusion framework, including the design of the MIC method. Section V showcases the simulation outcomes. Finally, Section VI concludes this article.
@@ -45,7 +45,7 @@ LIAN ET AL.: DISTRIBUTED MULTITARGET TRACKING WITH OVERLAPPING SENSOR FIELDS OF 
 Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 09,2025 at 11:04:24 UTC from IEEE Xplore. Restrictions apply.
 
 
-by sensor i, and each zl
+ by sensor i, and each zl
 i,k ∈ Zi. The clutter z(c)
 i,k generated by the measurement process follows a Poisson distribution with a clutter rate κc and spatial distribution λc, and the sensor output at time k is
 zi,k = zo
@@ -123,7 +123,7 @@ H(x, )opt = H −(xi, x j )
 Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 09,2025 at 11:04:24 UTC from IEEE Xplore. Restrictions apply.
 
 
-= H −(xi ) + H −(x j ) − I (xi, x j ) (11)
+ = H −(xi ) + H −(x j ) − I (xi, x j ) (11)
 where H −(xi, x j ) denotes the IC of the joint entropy, I (xi, x j ) represents the correlated IC (C-IC) between observations i and j, which can be expressed as
 I (xi, x j ) = 1
 2 R2(H −(xi ) + H −(x j ) − |H −(xi ) − H −(x j )|)
@@ -193,7 +193,7 @@ LIAN ET AL.: DISTRIBUTED MULTITARGET TRACKING WITH OVERLAPPING SENSOR FIELDS OF 
 Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 09,2025 at 11:04:24 UTC from IEEE Xplore. Restrictions apply.
 
 
-through the design of weight ω. This results in a more conservative method being adopted [26].
+ through the design of weight ω. This results in a more conservative method being adopted [26].
 B. Multisensor Multitarget Tracking Analysis
 In this section, we extend point estimation to MTT scenarios in the PHD framework. By treating overlapping and nonoverlapping FoV regions as distinct PHD components, we effectively separate shared information from unique observations, preserving the independent and identically distributed (i.i.d.) assumption of the PHD filter. First, define the FoV function, consider the coverage area S of the sensor. For a local sensor i ∈ N with a FoV Si, the FoV function of sensor i is defined as
 i(x) = 1Si ( (x)) (22)
@@ -260,7 +260,7 @@ where the IF method employs a data matching-based approach. This allows for the 
 Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 09,2025 at 11:04:24 UTC from IEEE Xplore. Restrictions apply.
 
 
-preventing effective merging at the single-GC level through linear optimal fusion. The complete information is
+ preventing effective merging at the single-GC level through linear optimal fusion. The complete information is
 HIF
 i j = Hi\ j (x, ) + H j\i(x, ) + Htotal (x, ). (32)
 The following theorem compares the two strategies.
@@ -323,7 +323,7 @@ LIAN ET AL.: DISTRIBUTED MULTITARGET TRACKING WITH OVERLAPPING SENSOR FIELDS OF 
 Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 09,2025 at 11:04:24 UTC from IEEE Xplore. Restrictions apply.
 
 
-The resulting mixture model is represented by the following GCs and associated weights, as defined:
+ The resulting mixture model is represented by the following GCs and associated weights, as defined:
 λe
 i (x) =
 Hb
@@ -398,7 +398,7 @@ i,v ), which are considered observations from the same target and are independen
 Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 09,2025 at 11:04:24 UTC from IEEE Xplore. Restrictions apply.
 
 
-measure of central tendency across a set of distributions. The specific definition is given below.
+ measure of central tendency across a set of distributions. The specific definition is given below.
 LEMMA 1 ([4]) For a measurement space (F, d (·, ·)), the discrete Fr  ́echet p-mean of densities g1(·), . . . , gn(·), where each density is assigned nonnegative weights w1, . . . , wn, is defined as
 μp( f ) = arg min
 g(·)∈F
@@ -499,7 +499,7 @@ LIAN ET AL.: DISTRIBUTED MULTITARGET TRACKING WITH OVERLAPPING SENSOR FIELDS OF 
 Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 09,2025 at 11:04:24 UTC from IEEE Xplore. Restrictions apply.
 
 
-Fig. 3. Complexity performance of the two methods.
+ Fig. 3. Complexity performance of the two methods.
 including three fully observable targets, with the clustering complexity per iteration shown in Fig. 3. In Fig. 3, the red and blue curves represent the computational efficiency of the similarity matrix and the MIC, respectively. As the number of nodes increases, MIC demonstrates progressively increasing advantages.
 REMARK 8 The cross-vision characteristics within the sensor network are fully leveraged to propose the MIC, which filters reliable targets L-GC as additional information. The filtering process only considers the matching between local sensors and neighboring nodes, which does not cause any additional information loss and significantly reduces the communication burden compared to [16].
 C. Construction of Distributed JMPHD Filtering and Communication Optimization
@@ -561,7 +561,7 @@ Simulation validates the proposed method by considering a cooperative search sce
 Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 09,2025 at 11:04:24 UTC from IEEE Xplore. Restrictions apply.
 
 
-Fig. 4. 2000 m × 2000 m tracking scenario with six sensors. The sensors have FoV and Range with {60, 1000}, {60, 1000}, {60, 1000}, {80, 1800}, {60, 1400}, and {60, 1400}, respectively. Solid lines depict the true trajectories, moving from square to circular markers, while connecting lines indicate communication.
+ Fig. 4. 2000 m × 2000 m tracking scenario with six sensors. The sensors have FoV and Range with {60, 1000}, {60, 1000}, {60, 1000}, {80, 1800}, {60, 1400}, and {60, 1400}, respectively. Solid lines depict the true trajectories, moving from square to circular markers, while connecting lines indicate communication.
 Algorithm 2: Distributed JMPHD Fusion via Consensus. 1: Initialize wv
 i,k, λmerge, T .
 2: for each sensor i = 1 to |N | do
@@ -622,7 +622,7 @@ LIAN ET AL.: DISTRIBUTED MULTITARGET TRACKING WITH OVERLAPPING SENSOR FIELDS OF 
 Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 09,2025 at 11:04:24 UTC from IEEE Xplore. Restrictions apply.
 
 
-Fig. 6. Average cardinality of different PHD filters over time.
+ Fig. 6. Average cardinality of different PHD filters over time.
 Fig. 7. Average OSPA errors of different PHD filters over time.
 still covers boundary targets effectively and typically requires more computation.
 A. Scenario 1: Probability Hypothesis Density
@@ -639,7 +639,7 @@ During the simulation process of introducing Markov jumps, each target’s state
 Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 09,2025 at 11:04:24 UTC from IEEE Xplore. Restrictions apply.
 
 
-Fig. 10. ACAs of different filters versus number T of communication iterations.
+ Fig. 10. ACAs of different filters versus number T of communication iterations.
 TABLE I ACT of Different Filters
 reduction to varying degrees. The proposed JMPHDMIC-IF filter achieved nearly complete tracking of the cardinality, except for a few points, as confirmed by the OSPA Card metric shown in Fig. 9. 2) As shown in Figs. 8 and 9 OSPA Card, the cardinality estimation errors caused by significant changes in motion patterns at Time = 22 and 63 have been effectively corrected, with further improvements observed at Time = 52. Clearly, the combination of the MIC with the JMPHD filter further pinpointed the true target positions, with the two approaches enhancing tracking performance synergistically. 3) Under the JMPHD framework, the accuracy improvement of IF compared to AA is more pronounced, as shown in the OSPA Loc in Fig. 9. This aligns with the analysis in Section III-B1, which highlights the differences between the density fusion approach of IF and the cardinality fusion of AA.
 Notably, although the introduction of JMPHD improves overall performance, achieving convergence in target cardinality still takes nearly eight steps. This is primarily due to the design of the BE and MIC methods. As illustrated in Fig. 4, targets initially located outside these prioritized regions may experience delayed detection, only being identified upon entering the overlapping FoV or boundary areas. While increasing the density of birth points or relaxing the constraints on target initialization could reduce this delay, such modifications would incur higher computational costs and the false detection rate. This tradeoff underscores the balance between computational efficiency and early target detection achieved by the proposed method. The impact of different iteration steps on target cardinality estimation was also examined. After conducting 100 tests and averaging the results, the normalized average cardinality accuracy (ACA) was obtained, as shown in Fig. 10. The results indicate that both methods achieved rapid convergence within three steps, with minimal performance improvement in subsequent iterations due to exceeding the network diameter. In addition, as discussed in Section IV-B, the filter based on the MIC demonstrates a more efficient target detection capability, leading to a lower final error. Finally, Table I presents the average computation time (ACT) for each filter, showing the impact of introducing
@@ -652,7 +652,7 @@ LIAN ET AL.: DISTRIBUTED MULTITARGET TRACKING WITH OVERLAPPING SENSOR FIELDS OF 
 Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on November 09,2025 at 11:04:24 UTC from IEEE Xplore. Restrictions apply.
 
 
-[9] L. Gao, G. Battistelli, and L. Chisci, “Fusion of labeled RFS densities with minimum information loss,” IEEE Trans. Signal Process., vol. 68, pp. 5855–5868, 2020. [10] J. Y. Yu, M. Coates, and M. Rabbat, “Distributed multi-sensor CPHD filter using pairwise gossiping,” in Proc. IEEE Int. Conf. Acoust., Speech, Signal Process., 2016, pp. 3176–3180.
+ [9] L. Gao, G. Battistelli, and L. Chisci, “Fusion of labeled RFS densities with minimum information loss,” IEEE Trans. Signal Process., vol. 68, pp. 5855–5868, 2020. [10] J. Y. Yu, M. Coates, and M. Rabbat, “Distributed multi-sensor CPHD filter using pairwise gossiping,” in Proc. IEEE Int. Conf. Acoust., Speech, Signal Process., 2016, pp. 3176–3180.
 [11] D. Clark, S. Julier, R. Mahler, and B. Ristic, “Robust multi-object sensor fusion with unknown correlations,” in Proc. Conf. Sensor Signal Process. Defence, 2010, pp. 1–5.
 [12] W. Yi, S. Li, B. Wang, R. Hoseinnezhad, and L. Kong, “Computationally efficient distributed multi-sensor fusion with multi-Bernoulli filter,” IEEE Trans. Signal Process., vol. 68, pp. 241–256, 2019. [13] K. Da, T. Li, Y. Zhu, H. Fan, and Q. Fu, “Kullback-Leibler averaging for multitarget density fusion,” in Proc. 16th Int. Conf. Distrib. Comput. Artif. Intell., 2020, pp. 253–261.
 [14] T. Li, J. Prieto, H. Fan, and J. M. Corchado, “A robust multi-sensor PHD filter based on multi-sensor measurement clustering,” IEEE Commun. Lett., vol. 22, no. 10, pp. 2064–2067, Oct. 2018. [15] T. Li, V. Elvira, H. Fan, and J. M. Corchado, “Local-diffusionbased distributed SMC-PHD filtering using sensors with limited sensing range,” IEEE Sensors J., vol. 19, no. 4, pp. 1580–1589, Feb. 2019. [16] T. Li, X. Wang, Y. Liang, and Q. Pan, “On arithmetic average fusion and its application for distributed multi-Bernoulli multitarget tracking,” IEEE Trans. Signal Process., vol. 68, pp. 2883–2896, 2020. [17] W. Yi and L. Chai, “Heterogeneous multi-sensor fusion with random finite set multi-object densities,” IEEE Trans. Signal Process., vol. 69, pp. 3399–3414, 2021. [18] L. Chai, W. Yi, R. Hoseinnezhad, and L. Kong, “Heterogeneous multi-sensor fusion for PHD filter in decentralized sensor networks,” Inf. Fusion, vol. 100, 2023, Art. no. 101956. [19] B.-N. Vo and B.-T. Vo, “A multi-scan labeled random finite set model for multi-object state estimation,” IEEE Trans. Signal Process., vol. 67, no. 19, pp. 4948–4963, Oct. 2019. [20] X. R. Li and V. P. Jilkov, “Survey of maneuvering target tracking. Part V. multiple-model methods,” IEEE Trans. Aerosp. Electron. Syst., vol. 41, no. 4, pp. 1255–1321, Oct. 2005. [21] K. Punithakumar, T. Kirubarajan, and A. Sinha, “Multiple-model probability hypothesis density filter for tracking maneuvering targets,” IEEE Trans. Aerosp. Electron. Syst., vol. 44, no. 1, pp. 87–98, Jan. 2008. [22] S. A. Pasha, B.-N. Vo, H. D. Tuan, and W.-K. Ma, “A Gaussian mixture PHD filter for jump Markov system models,” IEEE Trans. Aerosp. Electron. Syst., vol. 45, no. 3, pp. 919–936, Jul. 2009. [23] R. Mahler, “On multitarget jump-Markov filters,” in Proc. 15th Int. Conf. Inf. Fusion, 2012, pp. 149–156. [24] Z.-X. Liu, Q.-Q. Zhang, L.-Q. Li, and W.-X. Xie, “Tracking multiple maneuvering targets using a sequential multiple target Bayes filter with jump Markov system models,” Neurocomputing, vol. 216, pp. 183–191, 2016.

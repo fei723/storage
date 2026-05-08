@@ -12,7 +12,7 @@ Mobile robots and autonomous systems operate in dynamic and shared environments.
 arXiv:2210.10254v2 [cs.RO] 8 Jun 2023
 
 
-Figure 1: We predict agent trajectories using state of the art prediction algorithms, such as LSTMs, and calculate valid prediction regions (blue circles) using conformal prediction.
+ Figure 1: We predict agent trajectories using state of the art prediction algorithms, such as LSTMs, and calculate valid prediction regions (blue circles) using conformal prediction.
 classified into two categories: non-interactive and interactive. Non-interactive approaches predict agent trajectories and then integrate predictions into the planning algorithm [7, 8]. Interactive approaches simultaneously predict agent trajectories and design the path to take the coupling effect between a control action and the trajectories of other agents into account [9, 10]. While interactive approaches attempt to model interactions between actions and agents, this is generally a difficult task and existing works fail to provide quantifiable safety guarantees. In this paper, we focus on designing non-interactive planning algorithms with valid safety guarantees. Particularly, we use statistical tools from the conformal prediction literature [11, 12] to obtain valid prediction regions that quantify the uncertainty of trajectory predictions. We then formulate a model predictive controller (MPC) that incorporates trajectory predictions and valid prediction regions. While our framework is compatible with any trajectory prediction algorithm, we focus in the experiments on long short term memory (LSTM) networks [13–18] which are special recurrent neural networks (RNN) that can capture nonlinear and long-term trends [19, 20]. Our contributions are:
 • We propose a planning algorithm that incorporates trajectory predictions and valid prediction regions which are obtained using conformal prediction. The elegance in using conformal prediction is that prediction regions are easy to obtain and tight. Our algorithm is computationally tractable and, under reasonable assumptions, based on a convex optimization problem.
 • We provide valid safety guarantees which guarantee that the system is safe with a user-defined probability. Larger user-defined probabilities naturally result in more conservative plans. The strength of our approach is compatibility with state of the art trajectory predictors, e.g., RNNs and LSTMs, while making no assumptions on the underlying trajectory-generating distribution.
@@ -22,7 +22,7 @@ The works in [22–26] present non-interactive sampling-based motion planners, w
 2
 
 
-can be alleviated by receding horizon planning strategies, another direction to address this problem is to model social interaction as in interactive approaches where typically an interaction model is learned or constructed [9, 30–37]. Reinforcement learning approaches that take social interaction into account were presented in [10, 38]. A particular challenge lies in selecting a good predictive model. Recent works have used intentdriven models for human agents where model uncertainty was estimated using Bayesian inference and then used for planning [39–41]. Other works considered Gaussian processes as a predictive model [42–44]. To the best of our knowledge, none of the aforementioned works provide valid safety guarantees unless strong assumptions are placed on the prediction algorithm and the agent model or its distribution, e.g., being Gaussian. We focus instead on the predictive strength of neural networks. Particularly, RNNs and LSTMs have shown to be applicable to time-series forecasting [19, 20]. They were successfully applied in domains such as speech/handwriting recognition and image classification [45–48], but also in trajectory prediction [13–18]. We will specifically use the social LSTM presented in [16] that can jointly predict agent trajectories by taking social interaction into account. Neural network predictors, however, provide no information about the uncertainty of a prediction so that wrong predictions can lead to unsafe decisions. Therefore, monitors were constructed in [49,50] to detect prediction failures – particularly [50] used conformal prediction to obtain guarantees on the predictor’s false negative rate. Conformal prediction was also used to estimate reachable sets via neural network predictors [51–53]. Conceptually closest to our work is [54] where a valid predictor is constructed using conformal prediction, and then utilized to design a model predictive controller. However, no safety guarantees for the planner can be provided as the predictor uses a finite collection of training trajectories to represent all possible trajectories, implicitly requiring training and test trajectories to be similar. Our approach directly predicts trajectories of the dynamic environment (e.g., using RNNs or LSTMs) along with valid prediction regions so that we can provide end-to-end safety guarantees for our planner.
+ can be alleviated by receding horizon planning strategies, another direction to address this problem is to model social interaction as in interactive approaches where typically an interaction model is learned or constructed [9, 30–37]. Reinforcement learning approaches that take social interaction into account were presented in [10, 38]. A particular challenge lies in selecting a good predictive model. Recent works have used intentdriven models for human agents where model uncertainty was estimated using Bayesian inference and then used for planning [39–41]. Other works considered Gaussian processes as a predictive model [42–44]. To the best of our knowledge, none of the aforementioned works provide valid safety guarantees unless strong assumptions are placed on the prediction algorithm and the agent model or its distribution, e.g., being Gaussian. We focus instead on the predictive strength of neural networks. Particularly, RNNs and LSTMs have shown to be applicable to time-series forecasting [19, 20]. They were successfully applied in domains such as speech/handwriting recognition and image classification [45–48], but also in trajectory prediction [13–18]. We will specifically use the social LSTM presented in [16] that can jointly predict agent trajectories by taking social interaction into account. Neural network predictors, however, provide no information about the uncertainty of a prediction so that wrong predictions can lead to unsafe decisions. Therefore, monitors were constructed in [49,50] to detect prediction failures – particularly [50] used conformal prediction to obtain guarantees on the predictor’s false negative rate. Conformal prediction was also used to estimate reachable sets via neural network predictors [51–53]. Conceptually closest to our work is [54] where a valid predictor is constructed using conformal prediction, and then utilized to design a model predictive controller. However, no safety guarantees for the planner can be provided as the predictor uses a finite collection of training trajectories to represent all possible trajectories, implicitly requiring training and test trajectories to be similar. Our approach directly predicts trajectories of the dynamic environment (e.g., using RNNs or LSTMs) along with valid prediction regions so that we can provide end-to-end safety guarantees for our planner.
 2 Problem Formulation
 We first define the safe planning problem in dynamic environments that we consider, and then briefly discuss methods for trajectory prediction of dynamic agents.
 2.1 Safe Planning in Dynamic Environments
@@ -33,7 +33,7 @@ where xt ∈ X ⊆ Rn and ut ∈ U ⊆ Rm denote the state and the control input
 3
 
 
-describe a random trajectory where the joint agent state Yt := (Yt,1, . . . , Yt,N ) at time t is drawn from RNn, i.e., Yt,j is the state of agent j at time t.1 We assume at time t to have knowledge of (Y0, . . . , Yt). Modeling dynamic agents by a distribution D provides great flexibility, e.g., the pedestrians in Fig. 1 can be described by distributions D1, D2, and D3 with joint distribution D, and D can generally describe the motion of Markov decision processes. We make no assumptions on the form of the distribution D, but assume that D is independent of the system in (1) as formalized next.
+ describe a random trajectory where the joint agent state Yt := (Yt,1, . . . , Yt,N ) at time t is drawn from RNn, i.e., Yt,j is the state of agent j at time t.1 We assume at time t to have knowledge of (Y0, . . . , Yt). Modeling dynamic agents by a distribution D provides great flexibility, e.g., the pedestrians in Fig. 1 can be described by distributions D1, D2, and D3 with joint distribution D, and D can generally describe the motion of Markov decision processes. We make no assumptions on the form of the distribution D, but assume that D is independent of the system in (1) as formalized next.
 Assumption 1. For any time t ≥ 0, the control inputs (u0, . . . , ut−1) and the resulting trajectory (x0, . . . , xt), following (1), do not change the distribution of (Y0, Y1, . . .) ∼ D.
 Assumption 1 approximately holds in many applications, e.g., a self-driving car taking conservative control actions that result in socially acceptable trajectories which do not change the behavior of pedestrians. We later comment on ways to deal with distribution shifts in practice, and reserve a thorough treatment of this issue for future papers. We further assume availability of training and calibration data drawn from D.
 Assumption 2. We have a dataset D := {Y (1), . . . , Y (K)} in which each of the K trajectories
@@ -56,7 +56,7 @@ h1
 4
 
 
-Yˆτ+1|τ := Y(hd
+ Yˆτ+1|τ := Y(hd
 τ ),
 where Yτ is the input that is sequentially applied and H is a function that can parameterize different types of RNNs, e.g., LSTMs [14]. Furthermore, d is its depth and hτ1, . . . , hτd are the hidden states.
 The output Yˆt+1|t provides an estimate of Yt+1, see e.g., [18, 55] where the function Y parameter
@@ -73,7 +73,7 @@ By a surprisingly simple quantile argument, see [59, Lemma 1], one can obtain C 
 5
 
 
-3.2 Prediction Regions using Conformal Prediction
+ 3.2 Prediction Regions using Conformal Prediction
 Given observations (Y0, . . . , Yt) at time t, recall that we can obtain predictions Yˆτ|t of Yτ for all
 future times τ ∈ {t + 1, . . . , T } via the Predict function. For a failure probability of δ ̄ ∈ (0, 1), our first goal is now to construct prediction regions defined by a value Cτ|t so that
 P ∥Yτ − Yˆτ|t∥ ≤ Cτ|t) ≥ 1 − δ ̄.
@@ -121,7 +121,7 @@ T =δ
 6
 
 
-so that we can finally conclude that
+ so that we can finally conclude that
 P ∥Yτ − Yˆτ|0∥ ≤ Cτ|0, ∀τ ∈ {1, . . . , T }) ≥ 1 − δ
 which proves (3). Statement (4) follows analogously.
 Equation (3) guarantees that all τ -step ahead prediction regions at time zero are valid, while equation (4) guarantees that all one-step ahead prediction regions are valid. We note that we set δ ̄ := δ/T to compute Cτ|t according to equation (2) to obtain prediction regions over multiple time
@@ -145,7 +145,7 @@ where H is a prediction horizon and J is a cost function over states x := (x1, .
 7
 
 
-Theorem 2 (Open-loop control). Let the system (1) be given, and let the conditions from Theorem 1 and Assumption 1 hold. If the optimization problem (5) is feasible at time t = 0 with prediction horizon H = T , then the open-loop control sequence u from (5) is s.t.
+ Theorem 2 (Open-loop control). Let the system (1) be given, and let the conditions from Theorem 1 and Assumption 1 hold. If the optimization problem (5) is feasible at time t = 0 with prediction horizon H = T , then the open-loop control sequence u from (5) is s.t.
 P c(xτ , Yτ ) ≥ 0, ∀τ ∈ {1, . . . , T } ≥ 1 − δ.
 Proof. Due to constraint (5c), it holds that
 0 ≤ c(xτ , Yˆτ|0) − LCτ|0
@@ -178,7 +178,7 @@ predictions Yˆ (i)
 8
 
 
-in which we observe our states xt and Yt (line 11), obtain new predictions Yˆτ|t based on Yt (line 12), and solve the optimization problem in (5) of which we apply only ut (lines 13-14). The MPC presented in Algorithm 1 enjoys the following guarantees.
+ in which we observe our states xt and Yt (line 11), obtain new predictions Yˆτ|t based on Yt (line 12), and solve the optimization problem in (5) of which we apply only ut (lines 13-14). The MPC presented in Algorithm 1 enjoys the following guarantees.
 Theorem 3 (Closed-loop control). Let the system (1) be given, and let the conditions from Theorem 1 and Assumption 1 hold. If the optimization problem (5) is feasible at each time t ∈ {0, . . . , T −1}, then the closed-loop control u0(x0), . . . , uT −1(xT −1) obtained from Algorithm 1 is s.t.
 P c(xt, Yt) ≥ 0, ∀t ∈ {1, . . . , T } ≥ 1 − δ.
 Proof. By assumption, the optimization problem (5) is feasible at each time t ∈ {0, . . . , T − 1}. Due to constraint (5c) and Lipschitz continuity of c, it hence holds that
@@ -193,7 +193,7 @@ In the first case study, we consider navigating a mobile robot around pedestrian
 9
 
 
-Figure 2: Left: nonconformity scores R(i)
+ Figure 2: Left: nonconformity scores R(i)
 15|10 and R(i)
 18|10 on Dcal along with C15|10 and C18|10 for
 different T for Scenario 1. Right: nonconformity scores R(i)
@@ -230,11 +230,11 @@ trajectories, Fig. 3 shows the prediction regions defined by Yˆτ|t and Cτ|t f
 10
 
 
-Figure 3: Scenario 1. The top three plots show the robot trajectory (black triangles) produced by the proposed MPC at times 4, 8, and 15. There are three pedestrians, with their actual trajectories indicated by black stars, that the robot safely avoids. The LSTM predictions are indicated by red stars with the corresponding prediction regions shown in green. The prediction regions are updated at each time making the MPC less conservative than the open-loop controller, which is presented in the bottom three plots. For the open-loop controller, the prediction regions are fixed from time zero and given by Cτ|0.
+ Figure 3: Scenario 1. The top three plots show the robot trajectory (black triangles) produced by the proposed MPC at times 4, 8, and 15. There are three pedestrians, with their actual trajectories indicated by black stars, that the robot safely avoids. The LSTM predictions are indicated by red stars with the corresponding prediction regions shown in green. The prediction regions are updated at each time making the MPC less conservative than the open-loop controller, which is presented in the bottom three plots. For the open-loop controller, the prediction regions are fixed from time zero and given by Cτ|0.
 11
 
 
-Figure 4: Intersection with pedestrians in CARLA [21].
+ Figure 4: Intersection with pedestrians in CARLA [21].
 Figure 5: Scenario 2. The car (black dot) navigating an intersection while avoiding four pedestrians (current position marked in red, predictions and prediction regions indicated by green dots and circles, respectively). Plots at times 4, 8, and 36.
 that the LSTM at time t = 0 for simplicity uses information Y−20, . . . , Y−1. We can observe that prediction regions become larger for larger τ . Fig. 3 shows the result of the proposed MPC (here with H := T ) in the top three plots for a trajectory (Y0, Y1, . . .) from Dtest. For comparison, we present the results for the open-loop controller from Theorem 2, i.e., only applying the control sequence obtained at time zero, in the bottom three plots of Fig. 3. For illustration purposes, we have set ε := 0. It is visible that both the open and closed loop MPC controllers are such that the pedestrians are avoided according to the constraint function c. This has to hold in at least 95 percent of the cases by Theorems 2 and 3 since we have selected δ = 0.05. The cost function J in the open and closed loop MPC controllers additionally minimizes PT
 τ=1 vτ2 to avoid large velocities, which also acts as a proxy to minimize the total distance traveled. The closed loop MPC is, as expected and motivated before, much less conservative than the open-loop controller and finds a more direct trajectory towards the goal region. To corroborate this observation, we calculated the averaged cost over 500 test trajectories which are 414 for the open-loop controller and 367.1 for the closed loop controller. Scenario 2 (CARLA). Within the autonomous driving simulator CARLA we have created a scene consisting of an intersection that is populated with four pedestrians, see Fig. 4. These pedestrians have random initial and goal positions, and walk at random speeds to reach their goal. We collected 2600 trajectories, and then created training, calibration, and test datasets with sizes |Dtrain| = 1000, |Dcal| = 1500, and |Dtest| = 100, respectively, and train an LSTM from Dtrain to predict pedestrian trajectories. We run CARLA at a frequency of 20 Hz for 30 seconds, but
@@ -245,7 +245,7 @@ prediction regions (with R defined as in Remark 2) in Fig. 2 (right). We again i
 12
 
 
-different values of T , and observe that the size of Cτ|t increases with larger T . As we run the car for 30 seconds, the mission time T is technically 60. However, as we have a limited amount of calibration trajectories (data collection in CARLA is real-time), we only use T := 30 to calculate prediction regions Cτ|t from Dcal, i.e., we use δ ̄ := δ/30 with δ = 0.05 in Theorem 1. This choice is practically motivated and larger calibration datasets Dcal will allow to select larger T . Nonetheless, the obtained prediction regions are valid for T steps. We use the MPC again with the constraint function c and the bicycle model discretized with ∆ = 1/2, but we now set the prediction horizon to H := 10, i.e., to five seconds. Due to the large time horizon of T , we note that the open-loop controller with H := T is infeasible. We made two practically motivated modifications to the optimization problem in (5). First, for the κ step-ahead predictions we observed that the values of Ct+κ|t are similar at different times t, and we have hence used the smallest value of Ct+κ|t among all t for the κ step-ahead prediction region. Second, due to a model mismatch between the bicycle model and the CARLA model, we also included slack variables on the constraint in (5c) to obtain recursive feasibility. The MPC result for a single trajectory from the test set Dtest is shown in Fig. 5. We also ran the MPC for all 100 test trajectories, and only in one case the safety constraint c(xτ , Yτ ) ≥ 0 was violated. This confirms Theorem 3 which states that in at most 5 of the 100 MPC runs the constraint is violated. We next checked the correctness of the one-step ahead prediction regions and found that in 99.985 % it holds that ∥Yτ − Yˆτ|t∥ ≤ Cτ|t are satisfied which is higher than the theoretically ensured value of 100(1 − δ/T ) = 99.83 %.
+ different values of T , and observe that the size of Cτ|t increases with larger T . As we run the car for 30 seconds, the mission time T is technically 60. However, as we have a limited amount of calibration trajectories (data collection in CARLA is real-time), we only use T := 30 to calculate prediction regions Cτ|t from Dcal, i.e., we use δ ̄ := δ/30 with δ = 0.05 in Theorem 1. This choice is practically motivated and larger calibration datasets Dcal will allow to select larger T . Nonetheless, the obtained prediction regions are valid for T steps. We use the MPC again with the constraint function c and the bicycle model discretized with ∆ = 1/2, but we now set the prediction horizon to H := 10, i.e., to five seconds. Due to the large time horizon of T , we note that the open-loop controller with H := T is infeasible. We made two practically motivated modifications to the optimization problem in (5). First, for the κ step-ahead predictions we observed that the values of Ct+κ|t are similar at different times t, and we have hence used the smallest value of Ct+κ|t among all t for the κ step-ahead prediction region. Second, due to a model mismatch between the bicycle model and the CARLA model, we also included slack variables on the constraint in (5c) to obtain recursive feasibility. The MPC result for a single trajectory from the test set Dtest is shown in Fig. 5. We also ran the MPC for all 100 test trajectories, and only in one case the safety constraint c(xτ , Yτ ) ≥ 0 was violated. This confirms Theorem 3 which states that in at most 5 of the 100 MPC runs the constraint is violated. We next checked the correctness of the one-step ahead prediction regions and found that in 99.985 % it holds that ∥Yτ − Yˆτ|t∥ ≤ Cτ|t are satisfied which is higher than the theoretically ensured value of 100(1 − δ/T ) = 99.83 %.
 6 Conclusion
 We presented a model predictive controller (MPC) that uses conformal prediction for probabilistic safe planning in dynamic environments. The MPC uses complex trajectory predictors, such as (but not limited to) long short term memory networks, to predict future states of the dynamic environment and incorporates valid prediction regions using conformal prediction to quantify the uncertainty. To the best of our knowledge, these are the first results that provide valid safety guarantees for planning in dynamic environments without making assumptions on the predictor or the environment. To corroborate our results, we presented two numerical experiments of a mobile robot and a self-driving vehicle safely navigating around other agents. For future work, we plan to do a comparative study using different trajectory predictors and to analyze their interplay with the MPC in more detail. We will also extend the presented MPC to be able to handle an arbitrary number of agents in the environment. We further plan to investigate potential conservatism in the prediction regions (induced by union bounding over events over several time steps in Theorem 1) by using adaptive methods.
 Acknowledgements
@@ -255,7 +255,7 @@ References
 13
 
 
-[2] D. Fox, W. Burgard, and S. Thrun, “The dynamic window approach to collision avoidance,” IEEE Robotics & Automation Magazine, vol. 4, no. 1, pp. 23–33, 1997.
+ [2] D. Fox, W. Burgard, and S. Thrun, “The dynamic window approach to collision avoidance,” IEEE Robotics & Automation Magazine, vol. 4, no. 1, pp. 23–33, 1997.
 [3] S. Mitsch, K. Ghorbal, and A. Platzer, “On provably safe obstacle avoidance for autonomous robotic ground vehicles,” in Robotics: Science and Systems IX, Technische Universit ̈at Berlin, Berlin, Germany, June 24-June 28, 2013, 2013.
 [4] E. Rimon and D. E. Koditschek, “Exact robot navigation using artificial potential functions,” IEEE transactions on robotics and automation, vol. 8, no. 5, pp. 501–518, 1992.
 [5] D. V. Dimarogonas et al., “A feedback stabilization and collision avoidance scheme for multiple independent non-point agents,” Automatica, vol. 42, no. 2, pp. 229–243, 2006.
@@ -273,7 +273,7 @@ References
 14
 
 
-[17] P. Kothari, S. Kreiss, and A. Alahi, “Human trajectory forecasting in crowds: A deep learning perspective,” IEEE Transactions on Intelligent Transportation Systems, 2021.
+ [17] P. Kothari, S. Kreiss, and A. Alahi, “Human trajectory forecasting in crowds: A deep learning perspective,” IEEE Transactions on Intelligent Transportation Systems, 2021.
 [18] T. Salzmann, B. Ivanovic, P. Chakravarty, and M. Pavone, “Trajectron++: Dynamicallyfeasible trajectory forecasting with heterogeneous data,” in European Conference on Computer Vision. Springer, 2020, pp. 683–700.
 [19] Z. C. Lipton, J. Berkowitz, and C. Elkan, “A critical review of recurrent neural networks for sequence learning,” arXiv preprint arXiv:1506.00019, 2015.
 [20] A. Rudenko, L. Palmieri, M. Herman, K. M. Kitani, D. M. Gavrila, and K. O. Arras, “Human motion trajectory prediction: A survey,” The International Journal of Robotics Research, vol. 39, no. 8, pp. 895–935, 2020.
@@ -290,7 +290,7 @@ References
 15
 
 
-[31] M. Kuderer, H. Kretzschmar, C. Sprunk, and W. Burgard, “Feature-based prediction of trajectories for socially compliant navigation,” in Robotics: science and systems, 2012.
+ [31] M. Kuderer, H. Kretzschmar, C. Sprunk, and W. Burgard, “Feature-based prediction of trajectories for socially compliant navigation,” in Robotics: science and systems, 2012.
 [32] C. Mavrogiannis, J. A. DeCastro, and S. S. Srinivasa, “Implicit multiagent coordination at unsignalized intersections via multimodal inference enabled by topological braids,” arXiv preprint arXiv:2004.05205, 2020.
 [33] H. Hu and J. F. Fisac, “Active uncertainty reduction for human-robot interaction: An implicit dual control approach,” arXiv preprint arXiv:2202.07720, 2022.
 [34] K. Muvvala, P. Amorese, and M. Lahijanian, “Let’s collaborate: Regret-based reactive synthesis for robotic manipulation,” arXiv preprint arXiv:2203.06861, 2022.
@@ -306,7 +306,7 @@ References
 16
 
 
-[44] C. Fulgenzi, C. Tay, A. Spalanzani, and C. Laugier, “Probabilistic navigation in dynamic environment using rapidly-exploring random trees and gaussian processes,” in 2008 IEEE/RSJ International Conference on Intelligent Robots and Systems. IEEE, 2008, pp. 1056–1062.
+ [44] C. Fulgenzi, C. Tay, A. Spalanzani, and C. Laugier, “Probabilistic navigation in dynamic environment using rapidly-exploring random trees and gaussian processes,” in 2008 IEEE/RSJ International Conference on Intelligent Robots and Systems. IEEE, 2008, pp. 1056–1062.
 [45] A. Graves, A.-r. Mohamed, and G. Hinton, “Speech recognition with deep recurrent neural networks,” in 2013 IEEE international conference on acoustics, speech and signal processing. Ieee, 2013, pp. 6645–6649.
 [46] A. Graves and J. Schmidhuber, “Offline handwriting recognition with multidimensional recurrent neural networks,” Advances in neural information processing systems, vol. 21, 2008.
 [47] T. Du, S. Ji, L. Shen, Y. Zhang, J. Li, J. Shi, C. Fang, J. Yin, R. Beyah, and T. Wang, “Cert-rnn: Towards certifying the robustness of recurrent neural networks,” in Proceedings of the 2021 ACM SIGSAC Conference on Computer and Communications Security, 2021, pp. 516–534.
@@ -323,7 +323,7 @@ References
 17
 
 
-[58] J. Lei, M. G’Sell, A. Rinaldo, R. J. Tibshirani, and L. Wasserman, “Distribution-free predictive inference for regression,” Journal of the American Statistical Association, vol. 113, no. 523, pp. 1094–1111, 2018.
+ [58] J. Lei, M. G’Sell, A. Rinaldo, R. J. Tibshirani, and L. Wasserman, “Distribution-free predictive inference for regression,” Journal of the American Statistical Association, vol. 113, no. 523, pp. 1094–1111, 2018.
 [59] R. J. Tibshirani, R. Foygel Barber, E. Candes, and A. Ramdas, “Conformal prediction under covariate shift,” Advances in neural information processing systems, vol. 32, 2019.
 [60] M. Cauchois, S. Gupta, A. Ali, and J. C. Duchi, “Robust validation: Confident predictions even when distributions shift,” arXiv preprint arXiv:2008.04267, 2020.
 [61] K. Stankeviciute, A. M Alaa, and M. van der Schaar, “Conformal time-series forecasting,” Advances in Neural Information Processing Systems, vol. 34, pp. 6216–6228, 2021.

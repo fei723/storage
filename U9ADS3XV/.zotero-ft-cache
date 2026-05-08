@@ -16,7 +16,7 @@ numerous well-known motion planning methods have been proposed, falling into thr
 arXiv:2309.11032v1 [cs.RO] 20 Sep 2023
 
 
-2
+ 2
 and staffs. Traditional motion planning algorithms, often designed for static settings, struggle in dynamic environments. While the Risk-RRT algorithm proposed by Fulgenzi et al. [15] in 2010 has advanced the field by adapting to dynamic situations, it needs to be further modified and improved to adapt to crowded areas like airports. This article presents a novel algorithm named Multi-RiskRRT to overcome the challenges outlined above. A practical demonstration of this algorithm within an airport setting is illustrated in Fig. 1. Within the crowded waiting area, the robot employs Multi-Risk-RRT to navigate through the complex moving crowds and static obstacles, ultimately reaching the luggage trolley that needs to be collected. Multi-RiskRRT aims to enhance planning performance in dynamic and complex environments without relying on TBVP solvers. The contributions of this article are as follows:
 • This article introduces the Multi-directional Searching and Heuristic Sampling (MSHS) strategy, designed to gather heuristic information from sub-trees, guiding the growth of the rooted tree while bypassing TBVP limitations. • This article presents Multi-Risk-RRT, a novel algorithm that combines the MSHS strategy with a risk-based sampling algorithm. • Multi-Risk-RRT utilizes Heuristic Information Updating, adapted in real-time to dynamic environments, and this feature is validated through comparative experiments.
 II. RELATED WORK
@@ -26,7 +26,7 @@ III. PRELIMINARIES
 This section provides a detailed discussion of three key aspects: robot motion planning, the risk-based sampling al
 
 
-3
+ 3
 gorithm, and the extend function. Each aspect is addressed in separate subsections, namely Sections III-A, III-B, and III-C.
 A. Robot Motion Planning Formulation
 In this subsection, we present the formulation of robot motion planning. The state space of robot is denoted as X ∈ Rd. At each time step t, we define Xobs(t) ∈ X as the space occupied by obstacles, while Xfree(t) = X \Xobstacle(t) represents the obstacle-free space. The start state and goal state are denoted as xstart ∈ Xfree(t) and xgoal ∈ Xfree(t), respectively. Additionally, the goal region Xgoal(t) is defined as Xgoal(t) = x|x ∈ Xfree(t), ||x − xgoal|| < r, where r is a predefined radius. In robot motion planning, the control space of robot is denoted as U ∈ Rd. The objective of motion planning is to find a feasible trajectory P: [0, T ] → Xfree(t), where P(0) = xstart and P(T ) ∈ Xgoal. For every t ∈ [0, T ], P(t) ∈ Xfree. The planned trajectory can be realized by determining a sequence of motion controls u : [0, T ] → U. The state at time t + 1, denoted as P(t + 1), is determined by the current state P(t) and the control input u(t). Therefore, the dynamics equation governing the robot motion control [29] can be formulated as:
@@ -58,7 +58,7 @@ where w1 and w2 are pre-established constants used to harmonize the impacts of p
 v−→1 represents the robot’s velocity vector in x1 and L2 norm is denoted by || · ||.
 
 
-4
+ 4
 Algorithm 1: Risk-Based Sampling Algorithm
 Input: xstart, xgoal, M ap. Output: P. 1 P ← ∅;
 2 T ree ← ∅;
@@ -99,7 +99,7 @@ Algorithm 3: Bi-Risk-RRT Grow Function
 8 xrand ← heuristicSample(τgoal); 9 xnew ← Extend(T , xrand, N ); 10 if xnew ∈ Regin(xgoal) then 11 return Reached;
 
 
-5
+ 5
 The Bi-Risk-RRT algorithm ( Algorithm 3) follows a similar procedure to Risk-RRT but adds two trees growing simultaneously from the start state xstart and the goal state xgoal. These trees expand toward each other until they intersect. The tree originating from xgoal stops growing at the intersection point and serves as a heuristic trajectory from xgoal to the intersection point. The nodes along this trajectory form a heuristic sampling distribution, which improves the rooted tree’s growth efficiency by guiding it toward potentially feasible solutions.
 B. Multi-Risk-RRT Grow Function
 In contrast to unidirectional and bi-directional search methods, the Multi-Risk-RRT algorithm maintains multiple trees exploring the state space: a rooted tree T originating from the start state xstart and sub-trees T {τinfo}, randomly generated via RandomGenerate within the state space M ap. Each tree investigates local environments independently. When T is sufficiently close to a τinfo, which is a member of T {τinfo}, τinfo functions as a heuristic guide to direct T . Over time, T accumulates information from T {τinfo}, facilitating rapid growth toward the goal state. During the initial phase, our approach involves uniformly sampling across the map:
@@ -136,7 +136,7 @@ C. Multi-Risk-RRT Search Process
 To provide a more comprehensive illustration of the search process of Multi-Risk-RRT, we highlight six key stages of its operation on Map I, as shown in Fig. 3. At t = 3.4 s
 
 
-6
+ 6
 (see Fig. 3(a)), the tree expands incrementally and randomly within the space. When nodes from separate sub-trees find themselves in close spatial proximity, these sub-trees automatically merge. Furthermore, if nodes from any sub-tree are in the surroundings of the rooted tree, they are computationally modeled using a Gaussian Mixture Model (GMM) [30] to act as heuristic information to guide the growth of the rooted tree (see Fig. 3(b) at t = 9.5 s and Fig. 3(c) at t = 15.6 s). As the algorithm proceeds, these sub-trees merge and expand, eventually forming one or several significant sub-trees, as evident in Fig. 3(d) at t = 19.5 s. Importantly, if a node from a sub-tree containing the goal point comes into proximity with a node from the rooted tree, only the heuristic nodes leading from the goal point to the rooted tree node is retained, while other nodes are pruned (see Fig. 3(e) at t = 21.1 s). Ultimately, as shown in Fig. 3(f) at t = 43.7 s, the rooted tree effectively utilizes this heuristic guidance to aggressively grow in the most promising direction, successfully finding a feasible trajectory from the start point to the goal point.
 V. EXPERIMENTS
 In this section, we evaluate the performance of our proposed Multi-Risk-RRT algorithm compared to two popular motion planning algorithms: Risk-RRT and Bi-Risk-RRT.
@@ -151,7 +151,7 @@ B. Experiment Results
 The Success Rate, Execution Time, and Trajectory Length are calculated based on 50 experiments, and the results are
 
 
-7
+ 7
 (a) Map I. (b) Map II.
 (c) Map III. (d) Map IV.
 Fig. 4. Four different simulation maps. (a) Map I, (b) Map II, (c) Map III, and (d) Map IV. In these maps, black squares or lines represent obstacles, while the red and green points represent the start and goal points. The orange points denote dynamic pedestrians, and the blue squares symbolize the robot.
@@ -166,7 +166,7 @@ der static and dynamic conditions. Furthermore, as indicated in Tab. II and Tab.
 In addition to simulations, we also carried out a real-world experiment, illustrated in Fig. 7. For a comprehensive view of the experimental process, please refer to the video in the
 
 
-8
+ 8
 TABLE II EVALUATING SUCCESS RATE, EXECUTION TIME, AND TRAJECTORY LENGTH: A COMPARATIVE STUDY OF THREE ALGORITHMS IN STATIC AND CROWDED I ENVIRONMENTS
 Map Method Static Crowds I
 Success Rate Execution Time(s) Trajectory Length(m) Success Rate Execution Time(s) Trajectory Length(m)
@@ -199,7 +199,7 @@ B. Heuristic Information Updating
 One significant improvement of Multi-Risk-RRT is its utilization of heuristic information from the direction of the goal. When such heuristic information is available, the algorithm guides the robot more greedily toward the target direction. However, it is essential to note that there is no guarantee that a feasible trajectory can be found solely based on the heuristic information from the goal direction. To investigate the impact of this heuristic information, we experiment by comparing the Execution Time of Multi-Risk-RRT with the condition that the goal tree is retained or deleted. Retention involves using the heuristic information multiple times, while deletion means generating new heuristic information from the state space. The results, shown in Fig. 9, present the mean and standard deviation of the sixteen scenarios. The mean values indicate that updating the heuristic information has a lower
 
 
-9
+ 9
 Fig. 7. Screenshots capturing key moments from the real-world experimental process. Images have been captured at four distinct time points—0.4 s, 6 s, 18 s, and 28 s—to overview the entire planning process. The large boxes in three distinct colors signify the outcomes of three different algorithms. Correspondingly, the smaller boxes in the same color schemes represent the robot’s position at various time intervals under each algorithm. The robot’s initial position in the first column is the start point, while the dot symbolizes the goal point. The D in the last column indicates the robot’s approximate distance from the goal.
 average Execution Time than retaining it. Additionally, the trend of the standard deviation is similar to the mean value, indicating that retaining the goal tree offers greater robustness compared to its deletion. Interestingly, preserving the goal tree yields particularly poor performance on Map III compared to other simulated maps. Map III is a complex environment with numerous inflection points that can hinder the robot’s utilization of heuristic information. The initial heuristic information may not effectively guide the robot due to uneven sampling or a lack of exploration in other areas. Consequently, the robot may become trapped by invalid heuristic information. In such environments, iterative updates of the heuristic information play a critical role. Even if the initial heuristic information is ineffective, the iterative updates ensure continuous state space exploration, effectively guiding the robot toward the target direction.
 VII. CONCLUSION AND FUTURE WORK
@@ -208,7 +208,7 @@ solvers’ limitations. During Multi-directional Searching, the state obtained f
 In future work, we plan to deploy the Multi-Risk-RRT algorithm at Hong Kong International Airport and Shenzhen Baoan International Airport. We aim further to validate the algorithm’s effectiveness and robustness in real-world airport conditions.
 
 
-10
+ 10
 Fig. 8. Comparison of the search processes of three algorithms. The first row illustrates the performance of Risk-RRT, the second row represents Bi-Risk-RRT, and the third row shows Multi-Risk-RRT. The algorithms are evaluated at four distinct time points: t = 3.4 s, t = 15.6 s, t = 21.1 s, and t = 43.7 s.
 REFERENCES
 [1] J. Wang and M. Q.-H. Meng, “Real-time decision making and path planning for robotic autonomous luggage trolley collection at airports,” IEEE Transactions on Systems, Man, and Cybernetics: Systems, vol. 52, no. 4, pp. 2174–2183, 2022. [2] A. Xiao, H. Luan, Z. Zhao, Y. Hong, J. Zhao, W. Chen, J. Wang, and M. Q.-H. Meng, “Robotic autonomous trolley collection with progressive perception and nonlinear model predictive control,” in 2022 International Conference on Robotics and Automation (ICRA), 2022, pp. 4480–4486. [3] V. S. Chirala, K. Sundar, S. Venkatachalam, J. M. Smereka, and S. Kassoumeh, “Heuristics for multi-vehicle routing problem considering human-robot interactions,” IEEE Transactions on Intelligent Vehicles, vol. 8, no. 5, pp. 3228–3238, 2023. [4] O. Khatib, “Real-time obstacle avoidance for manipulators and mobile robots,” The international journal of robotics research, vol. 5, no. 1, pp. 90–98, 1986. [5] P. E. Hart, N. J. Nilsson, and B. Raphael, “A formal basis for the heuristic determination of minimum cost paths,” IEEE Transactions on Systems Science and Cybernetics, vol. 4, pp. 100–107, 1968. [6] E. W. Dijkstra, “A note on two problems in connexion with graphs,” Numerische Mathematik, vol. 1, pp. 269–271, 1959. [7] J. H. Reif, “Complexity of the mover’s problem and generalizations,” foundations of computer science, 1979.
@@ -222,7 +222,7 @@ an admissible ellipsoidal heuristic,” in Intelligent Robots and Systems, 2014.
 [20] T. Zhang, J. Wang, and M. Q.-H. Meng, “Generative adversarial network based heuristics for sampling-based path planning,” IEEE/CAA Journal of Automatica Sinica, vol. 9, no. 1, pp. 64–74, 2022.
 
 
-11
+ 11
 (a) Static. (b) Crows I.
 (c) Crows II. (d) Crows III.
 Fig. 9. Experimental results comparing the Execution Time of Multi-RiskRRT with and without goal tree in different scenarios. (a) Static, (b) Crows I, (c) Crows II, (d) Crows III.
@@ -238,5 +238,5 @@ Junjie Gao received the B.E. degree and M.S. degree in Control Science and Engin
 Ying Zhang (Member, IEEE) received the B.S. degree in Automatic Control from Heze University, Heze, China, in 2014, the M.S. degree in Control Theory and Control Engineering from Shandong Jianzhu University, Jinan, China, in 2017, and the Ph.D. degree in Control Theory and Control Engineering from Shandong University, Jinan, China, in 2021. He is currently a Lecturer with the School of Electrical Engineering, Yanshan University. His current research interests include intelligent robot system, visual perception, and environment modeling.
 
 
-12
+ 12
 Jiankun Wang (Senior Member, IEEE) received the B.E. degree in automation from Shandong University, Jinan, China, in 2015, and the Ph.D. degree from the Department of Electronic Engineering, The Chinese University of Hong Kong, Hong Kong, in 2019. During his Ph.D. degree, he spent six months with Stanford University, Stanford, CA, USA, as a Visiting Student Scholar, supervised by Prof. Oussama Khatib. He is currently an Assistant Professor with the Department of Electronic and Electrical Engineering, Southern University of Science and Technology, Shenzhen, China. His current research interests include motion planning and control, human–robot interaction, and machine learning in robotics.

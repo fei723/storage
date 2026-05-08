@@ -22,7 +22,7 @@ outdoor terrains, is robust to external disturbances, and can adapt in context.
 arXiv:2303.03381v2 [cs.RO] 14 Dec 2023
 
 
-Introduction
+ Introduction
 The dream of robotics has always been that of general purpose machines that can perform many
 tasks in diverse, unstructured environments. Examples include moving boxes, changing tires,
 ironing shirts, and baking cakes. This grand goal calls for a general purpose embodiment and a
@@ -48,7 +48,7 @@ deployed to the real world in a zero-shot fashion (Figure 7, A-B).
 2
 
 
-Our approach falls in the general family of techniques for sim-to-real transfer with domain
+ Our approach falls in the general family of techniques for sim-to-real transfer with domain
 randomization (28–31). Among these, the recent approaches for learning legged locomotion
 have employed either memory-based networks like Long Short-Term Memory (LSTM) (14,23)
 or trained an explicit estimator to regress environment properties from Temporal Convolutional
@@ -76,11 +76,11 @@ encourage future exploration of scalable learning-based approaches for humanoid 
 3
 
 
-Figure 1: Deployment to outdoor environments. We deploy our model to a number of outdoor environments. Example videos are shown in Movie 1. We find that our controller is able to traverse a range of everyday environments including plazas, side walks, tracks, and grass fields.
+ Figure 1: Deployment to outdoor environments. We deploy our model to a number of outdoor environments. Example videos are shown in Movie 1. We find that our controller is able to traverse a range of everyday environments including plazas, side walks, tracks, and grass fields.
 4
 
 
-Results
+ Results
 Digit humanoid robot. Digit is a general-purpose humanoid robot developed by Agility
 Robotics, standing at approximately 1.6 meters tall with a total weight of 45 kilograms. The
 robot’s floating-base model is equipped with 30 degrees of freedom, including four actuated
@@ -106,7 +106,7 @@ for additional discussion and analysis of adaptation).
 5
 
 
-A
+ A
 B
 C
 D
@@ -114,7 +114,7 @@ Figure 2: Indoor and simulation experiments. We test the robustness of our contr
 6
 
 
-Indoor and simulation experiments
+ Indoor and simulation experiments
 We conduct a series of experiments in the laboratory environment to test the performance of the
 proposed approach in controlled settings (Figure 2).
 External forces. Robustness to external forces is a critical requirement for real-world deploy
@@ -139,7 +139,7 @@ at higher velocity (0.2 m/s) on steeper slopes.
 7
 
 
-Payloads. Next, we evaluate the robot’s ability to carry loads of varying mass, shape, and
+ Payloads. Next, we evaluate the robot’s ability to carry loads of varying mass, shape, and
 center-of-mass while walking forward (Figure 2C). We conduct five experiments, each with
 the robot carrying a different type of load: an empty backpack, a loaded backpack, a cloth
 handbag, a loaded trash bag, and a paper bag. Our results demonstrate that the robot is able
@@ -166,7 +166,7 @@ the controllers on this terrain in the real world due to concerns for potential 
 8
 
 
-A
+ A
 B
 C
 Figure 3: Omnidirectional walking. Our learning-based controller is able to accurately follow a range of velocity commands to perform omni-directional locomotion, including (A) walking forward, (B) backward, and (C) turning. Video examples are shown in Movie 3.
@@ -181,7 +181,7 @@ show examples of walking forward, backward, and turning in Figure 3, and in Movi
 9
 
 
-AB
+ AB
 Figure 4: Arm swing and fast walking. (A) The learned humanoid locomotion in our experiments exhibits human-like arm swing behaviors in coordination with leg movements, i.e., a contralateral relationship between the arms and the legs. (B) Our controller is able to perform fast walking on hardware. The video is shown in Movie 4.
 Dynamic arm swing. A distinct feature of natural human walking is the arm swing. Studying
 the arm-swing behavior in humans has a very long history in biomechanics (40–42). There are
@@ -198,7 +198,7 @@ tions. Interestingly, we observe that our trained policy exhibits an emergent ar
 10
 
 
-similar to natural human walking, as shown in Figure 4A. The swinging arm is coordinated with
+ similar to natural human walking, as shown in Figure 4A. The swinging arm is coordinated with
 the legs like humans. Specifically, when the left leg is lifting up, the right arm swings forward.
 We note that our reward function includes energy minimization terms which might suggest that
 the emergent arm swing motion might lead to energy savings in humanoid locomotion as well.
@@ -224,14 +224,14 @@ dimensionality reduction. We project the 192-dimensional hidden state from each 
 11
 
 
-B
+ B
 A
 CD
 Figure 5: Gait changes based on terrain type. (A) We command the robot to walk forward over a course consisting of three sections: flat, downward slope, and flat again. We observe that our controller adapts its behavior based on terrain, changing the gait from natural walking on flat terrain, to small steps on downward slope, to natural walking on flat terrain again. Video is shown in Movie 5. This type of adaptation based on context is emergent and has not been prespecified during training. (B) We analyze the hidden state of the last layer of our neural network controller and find that certain neuron responses correlate with the gait patterns observed over different terrain sections. (C) In addition, some of the neuron responses correlate changes in the terrain and are high for flat sections and low for the slope section. (D) To analyze the neural responses in aggregate, we project the 192-dimensional hidden states to two dimensions using PCA and t-SNE. Each data point corresponds to one timestep and is color-coded by the terrain section. We see that the hidden states get grouped into clear clusters based on the terrain type.
 12
 
 
-C
+ C
 A
 B
 Figure 6: Emergent recovery from foot-trapping. (A) Our controller is able to adapt to discrete obstacles not seen during training and recovers from foot-trapping by lifting its legs higher and faster on subsequent attempts. This behavior is consistent and representative examples are shown in Movie 6. (B) We analyze the hidden state of the last layer of our transformer model and find that there is a change in the pattern of activity that correlates with the foot-trapping events. (C) Mean activation responses contain clear spikes during foot-trapping events as well.
@@ -246,7 +246,7 @@ We find that our controller is still able to detect and react to foot-trapping e
 13
 
 
-history of observations and actions. Specifically, after hitting the step with its leg the robot will
+ history of observations and actions. Specifically, after hitting the step with its leg the robot will
 attempt to lift its legs higher and faster on subsequent attempts. Figure 6A, shows an example
 episode. We show a representative example for one of each of the two legs in Movie 6. We find
 that our controller is able to recover from different variations of such scenarios consistently.
@@ -272,7 +272,7 @@ context, including gait changes based on the terrain and recovery from foot-trap
 14
 
 
-Limitations. Our approach shows promising results in terms of adaptability and robustness
+ Limitations. Our approach shows promising results in terms of adaptability and robustness
 to different terrains and external disturbances. However, it still has some limitations that need
 to be addressed in future work. One limitation is that our policy is not perfectly symmetrical, as
 the motors on two sides do not produce identical trajectories. This results in a slight asymmetry
@@ -297,7 +297,7 @@ sim-to-real transfer in detail. Finally, we provide analysis of our transformer 
 15
 
 
-Policy learning
+ Policy learning
 Problem formulation. We formulate the control problem as a Markov Decision Process
 (MDP), which provides a mathematical framework for modeling discrete-time decision-making
 processes. The MDP comprises the following elements: a state space S, an action space A, a
@@ -324,7 +324,7 @@ action prediction.
 16
 
 
-Causal Transformer
+ Causal Transformer
 observation action
 B Sim-to-real transfer
 Isaac Gym sim.
@@ -345,7 +345,7 @@ Figure 7: Overview of the method. (A) Our training consists of two steps. First,
 17
 
 
-Transformers are a type of neural network architecture that have been widely used in sequen
+ Transformers are a type of neural network architecture that have been widely used in sequen
 tial modeling tasks, such as natural language processing (32, 49, 51), audio processing (52), and
 increasingly in computer vision (48, 53) as well. The key feature of transformers is the use
 of a self-attention mechanism, which allows the model to weigh the importance of each input
@@ -374,7 +374,7 @@ formers can learn in-context, providing them with the flexibility to handle dive
 18
 
 
-The transformer model used in this study has four blocks, each of which has an embedding
+ The transformer model used in this study has four blocks, each of which has an embedding
 dimension of 192 and employs a multi-head attention mechanism with 4 heads. The MLP ratio
 of the transformer is set to 2.0. The hidden size of the MLP for projecting input observations
 is [512, 512]. The action prediction component of the model uses an MLP with hidden sizes of
@@ -400,7 +400,7 @@ utilize a joint optimization approach combining RL loss with state-policy superv
 19
 
 
-objective function is defined as:
+ objective function is defined as:
 L(πo) = LRL(πo) + λDKL(πo ∥ πs), (2)
 where λ is a weighting factor representing the state-policy supervision, LRL(πo) is the RL loss,
 and DKL(πo ∥ πs) is the KL divergence between the observation policy πo and the state policy
@@ -427,7 +427,7 @@ joints of the robot, Isaac Gym is unable to effectively model these dynamics. To
 20
 
 
-limitation, we introduce a “virtual spring” model with high stiffness to represent the rods. We
+ limitation, we introduce a “virtual spring” model with high stiffness to represent the rods. We
 apply forces calculated from the spring’s deviation from its nominal length to the rigid bod
 ies. Additionally, we employ an alternating simulation sub-step method to quickly correct the
 length of the virtual springs to their nominal values. We found that these efforts collectively
@@ -453,7 +453,7 @@ neural network parameters. This step only serves to filter out unsafe policies.
 21
 
 
-AB C
+ AB C
 Figure 8: Ablation studies. We perform ablation studies to understand the impact of key design choices. For fair comparisons, we keep everything fixed except for the varied component and follow the same hyper-parameter tuning procedure. (A) We find that the transformer models outperform the alternate neural network choices. (B) Our transformer-based controller benefits from larger context lengths. (C) Training with the joint objective consisting of both the imitation and reinforcement learning terms outperforms training with either of the two alone.
 For the deployment on hardware, we run the neural network policy at 50 Hz and the joint
 PD controller at 1 kHz. We can get access to joint encoders and IMU information through the
@@ -470,7 +470,7 @@ Moreover, we analyze the attention maps of our transformer controller.
 22
 
 
-Neural network comparisons. We consider four different neural network architectures: 1) a
+ Neural network comparisons. We consider four different neural network architectures: 1) a
 Multi-Layer Perceptron (MLP), 2) a Temporal Convolutional Network (TCN) (59), 3) a Long
 Short-Term Memory (LSTM) (60) and 4) a Transformer model (50). The MLP is widely used
 for quadrupedal locomotion (58, 61). The TCN achieves state-of-the-art quadrupedal locomo
@@ -497,7 +497,7 @@ learning term based on teacher policy supervision and a reinforcement learning t
 23
 
 
-on rewards. We study the impact of both terms. Using only the imitation term is common
+ on rewards. We study the impact of both terms. Using only the imitation term is common
 in quadrupedal locomotion (17) while using only reinforcement learning term corresponds to
 learning without a teacher (13,22). In Figure 8C, we report the results on the same slope setting
 as in the previous context length ablation. We find that the joint imitation and reinforcement
@@ -520,7 +520,7 @@ IEEE, 1998, pp. 1321–1326.
 24
 
 
-3. G. Nelson, A. Saunders, N. Neville, B. Swilling, J. Bondaryk, D. Billings, C. Lee,
+ 3. G. Nelson, A. Saunders, N. Neville, B. Swilling, J. Bondaryk, D. Billings, C. Lee,
 R. Playter, and M. Raibert, “Petman: A humanoid robot for testing chemical protective
 clothing,” Journal of the Robotics Society of Japan, vol. 30, no. 4, pp. 372–377, 2012.
 4. O. Stasse, T. Flayols, R. Budhiraja, K. Giraud-Esclasse, J. Carpentier, J. Mirabel,
@@ -544,7 +544,7 @@ ligent Robots and Systems. IEEE, 2012, pp. 4906–4913.
 25
 
 
-11. S. Kuindersma, R. Deits, M. Fallon, A. Valenzuela, H. Dai, F. Permenter, T. Koolen, P. Mar
+ 11. S. Kuindersma, R. Deits, M. Fallon, A. Valenzuela, H. Dai, F. Permenter, T. Koolen, P. Mar
 ion, and R. Tedrake, “Optimization-based locomotion planning, estimation, and control
 design for the atlas humanoid robot,” Autonomous robots, vol. 40, pp. 429–455, 2016.
 12. J. Di Carlo, P. M. Wensing, B. Katz, G. Bledt, and S. Kim, “Dynamic locomotion in the mit
@@ -570,7 +570,7 @@ motion over challenging terrain,” Science robotics, vol. 5, no. 47, p. eabc598
 26
 
 
-18. A. Kumar, Z. Fu, D. Pathak, and J. Malik, “Rma: Rapid motor adaptation for legged
+ 18. A. Kumar, Z. Fu, D. Pathak, and J. Malik, “Rma: Rapid motor adaptation for legged
 robots,” Robotics: Science and Systems (RSS), 2021.
 19. H. Benbrahim and J. A. Franklin, “Biped dynamic walking using reinforcement learning,”
 Robotics and Autonomous Systems, vol. 22, no. 3-4, pp. 283–302, 1997.
@@ -595,7 +595,7 @@ IEEE, 2021, pp. 3033–3039.
 27
 
 
-26. G. A. Castillo, B. Weng, W. Zhang, and A. Hereid, “Reinforcement learning-based cascade
+ 26. G. A. Castillo, B. Weng, W. Zhang, and A. Hereid, “Reinforcement learning-based cascade
 motion policy design for robust 3d bipedal locomotion,” IEEE Access, vol. 10, pp. 20 135
 20 148, 2022.
 27. L. Krishna, G. A. Castillo, U. A. Mishra, A. Hereid, and S. Kolathaya, “Linear policies
@@ -620,7 +620,7 @@ with hybrid adhesion,” IEEE Robotics and Automation Letters, vol. 7, no. 2, pp
 28
 
 
-34. G. A. Castillo, B. Weng, W. Zhang, and A. Hereid, “Robust feedback motion policy de
+ 34. G. A. Castillo, B. Weng, W. Zhang, and A. Hereid, “Robust feedback motion policy de
 sign using reinforcement learning on a 3d digit bipedal robot,” in IEEE/RSJ International
 Conference on Intelligent Robots and Systems (IROS). IEEE, 2021, pp. 5136–5143.
 35. Y. Gao, Y. Gong, V. Paredes, A. Hereid, and Y. Gu, “Time-varying alip model and robust
@@ -645,7 +645,7 @@ biology, vol. 211, no. 4, pp. 467–481, 2008.
 29
 
 
-42. S. H. Collins, P. G. Adamczyk, and A. D. Kuo, “Dynamic arm swinging in human walking,”
+ 42. S. H. Collins, P. G. Adamczyk, and A. D. Kuo, “Dynamic arm swinging in human walking,”
 Proceedings of the Royal Society B: Biological Sciences, vol. 276, no. 1673, pp. 3679
 3688, 2009.
 43. J. D. Ortega, L. A. Fehlman, and C. T. Farley, “Effects of aging and arm swing on the
@@ -669,7 +669,7 @@ standing by generative pre-training,” 2018.
 30
 
 
-50. A. Vaswani, N. Shazeer, N. Parmar, J. Uszkoreit, L. Jones, A. N. Gomez, Ł. Kaiser, and
+ 50. A. Vaswani, N. Shazeer, N. Parmar, J. Uszkoreit, L. Jones, A. N. Gomez, Ł. Kaiser, and
 I. Polosukhin, “Attention is all you need,” Advances in neural information processing sys
 tems, vol. 30, 2017.
 51. J. Devlin, M.-W. Chang, K. Lee, and K. Toutanova, “Bert: Pre-training of deep bidirectional
@@ -694,7 +694,7 @@ parallel deep reinforcement learning,” in Conference on Robot Learning. PMLR, 
 31
 
 
-59. S. Bai, J. Z. Kolter, and V. Koltun, “An empirical evaluation of generic convolutional and
+ 59. S. Bai, J. Z. Kolter, and V. Koltun, “An empirical evaluation of generic convolutional and
 recurrent networks for sequence modeling,” arXiv preprint arXiv:1803.01271, 2018.
 60. S. Hochreiter and J. Schmidhuber, “Long short-term memory,” Neural computation, 1997.
 61. J. Tan, T. Zhang, E. Coumans, A. Iscen, Y. Bai, D. Hafner, S. Bohez, and V. Vanhoucke,

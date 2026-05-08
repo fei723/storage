@@ -14,7 +14,7 @@ Abstract: Teleoperation serves as a powerful method for collecting on-robot data
 arXiv:2407.01512v2 [cs.RO] 8 Jul 2024
 
 
-Hand, Head, Wrist Pose
+ Hand, Head, Wrist Pose
 ... ...
 Stereo Video Neck Action Arm Action Hand Action
 Action Chunking
@@ -34,7 +34,7 @@ Our major contribution to allowing fine-grained manipulations comes from percept
 2
 
 
-(a) Head movements. (b) Arm and hand movements.
+ (a) Head movements. (b) Arm and hand movements.
 Figure 3: Open-TeleVision enables high-DOF control of a head-mounted active camera and upper body movements. Left: the robot’s head follows the movement of the operator, providing intuitive spatial perception. Right: the robot’s arm and hand movements are mapped from the operator with IK and motion retargetting.
 sees. This first-person active sensing brings benefits for both teleoperation and policy learning. For teleoperation, it provides a more intuitive mechanism for the user to explore a broader view when moving the robot’s head, and attend to the important regions for detailed interactions. For imitation learning, our policy will imitate how to move the robot head actively together with manipulation. Instead of taking a further and static captured view as inputs, active camera provides a natural attention mechanism to focus on next-step manipulation related regions and reduce the pixels to process, allowing smooth, real-time, and precise close-loop control. Another important innovation in perception is streaming stereoscopic video from the robot view to human eyes. The operator can have a better spatial understanding which is shown to be crucial for completing tasks in our experiments. We also show training with stereo image frames improves the performance of the policy.
 Our experiments follow the teleoperation and imitation learning paradigm. We experiment with multiple fine-grained manipulation tasks across two robots as shown in Fig. 1. For teleoperation, we qualitatively show the benefits of using an active camera allows more intuitive and focused observation, and quantitatively show streaming stereoscopic video allows better success rate and shorter completion time across different users. For imitation learning, we quantitatively report active camera sensing enables faster inference for real-time smooth control, and using stereoscopic inputs achieves better manipulation performance. Our policy can conduct long-horizon tasks such as inserting multiple cans in a sequence. A key benefit of our system is enabling remote control by an operator via the Internet. One of the authors, Ge Yang at MIT (east coast) is able to teleoperate the H1 robot at UC San Diego (west coast). We include coast-to-coast teleoperation videos on our website.
@@ -44,7 +44,7 @@ Hardwares: For robots we choose 2 humanoid robots as shown in Fig. 4: Unitree H1
 3
 
 
-Stereo Camera
+ Stereo Camera
 Active Neck
 7 DoF Arm
 Jaw Gripper
@@ -64,7 +64,7 @@ For dexterous hands, we employ seven vectors to synchronize the human and robot 
 4
 
 
-(a) The robot picks up a randomly placed can (#1), places the red can in the left case (#2), picks up the next can (#3), places the green can in the right case (#4). When the sorting box at the edge of the table is empty (as shown in #1, #3) and there is no more can on the table, the robot poses the ending gesture (End).
+ (a) The robot picks up a randomly placed can (#1), places the red can in the left case (#2), picks up the next can (#3), places the green can in the right case (#4). When the sorting box at the edge of the table is empty (as shown in #1, #3) and there is no more can on the table, the robot poses the ending gesture (End).
 (b) GR-1 robot doing the same Can Sorting task as in Fig. 5a.
 (c) The robot picks up the can (#1), inserts the can into the slot (#2), uses the other hand to repeat picking and inserting(#3, #4). When all six slots have been filled, the robot poses the ending gesture (End).
 (d) The robot picks up the two corners of the towel (#1), folds the towel (#2), gently moves the towel to the edge of the table (#3), folds the towel twice (#4). When the towel has been folded into a satisfactory configuration, the robot poses the ending gesture (End).
@@ -78,7 +78,7 @@ We choose ACT [12] as our imitation learning algorithm with two key modification
 5
 
 
-28 (7 for each arm, 6 for each hand, and 2 for active neck). For GR-1 the action dimension is 19 (7 for each arm, 1 for each gripper, 3 for active neck). The proprioception token is projected from the corresponding joint position readings.
+ 28 (7 for each arm, 6 for each hand, and 2 for active neck). For GR-1 the action dimension is 19 (7 for each arm, 1 for each gripper, 3 for active neck). The proprioception token is projected from the corresponding joint position readings.
 We choose four tasks with an emphasis on precision, generalization and long horizon to show the effectiveness of our proposed teleoperation system in Fig. 5. These tasks require actively looking to the left or right of the workspace using a single active camera, otherwise a multi-camera setup on the table. They also involve significant object location randomization and different manipulation strategies. We further show the data collection intuitiveness and speed by conducting user studies on all four tasks and comparing them with humans doing the same tasks. The tasks include:
 Can Sorting: This task as shown in Fig. 5a involves sorting randomly placed Coke cans (red) and Sprite cans (green) on a table. The cans are placed on the table one-by-one but with random positions and types (Coke or Sprite). The goal is to pick up each can on the table and toss it into the designated case: left for Coke and right for Sprite. Solving this task requires the robot to adaptively generalize upon the position and orientation of each can for accurate grasping. It also demands that the policy can adjust its planned motions based on the color of the can it is currently holding. Each episode consists of sorting 10 cans (5 Sprite 5 Coke randomly) consecutively.
 Can Insertion: This task shown in Fig. 5c involves picking up soft drink cans from the table and carefully inserting them into slots within a container in a predefined sequence. While both involve manipulation of drink cans, this task demands more precise and fine-grained actions than the previous one as a successful insertion necessitates high accuracy. In addition, a different grasping strategy is adopted in this task. In the previous can-sorting task, the robot only needs to toss the can into a designated area, hence we form a grasp that involves the palm and all five fingers, which is a tolerant but imprecise grasping strategy. In this one, to insert the can into a slot that is only slightly larger than the can (the diameter of the soda can is roughly 5.6 cm, and the diameter of the slot is roughly 7.6 cm), we employed a more pinching-like strategy that utilizes only the thumb and index fingers, enabling more granular adjustments in the placement of the cans. The two distinct grasping strategies demonstrate that our system is able to accomplish tasks with complex hand gesture requirements. Each episode of this task includes picking and placing all six cans into the right slots.
@@ -90,7 +90,7 @@ From our experiment results shown in Tab. 1, we notice that the original ResNet 
 6
 
 
-Baselines H1 Can Sorting GR-1 Can Sorting Can Insertion
+ Baselines H1 Can Sorting GR-1 Can Sorting Can Insertion
 Pick Place Pick Place Pick Insert
 w. DinoV2 (Ours) 92% 88% 87% 60% 90% 87% w. ResNet18 74% 58% 83% 50% 53% 70% w/o Stereo Input 46% 52% 73% 63% 47% 63%
 Baselines Folding Unloading
@@ -106,7 +106,7 @@ Unloading: We evaluate the success rate on three consecutive stages individually
 7
 
 
-Cropped Static Wide Angle
+ Cropped Static Wide Angle
 Active (Ours)
 4
 4
@@ -129,7 +129,7 @@ Furthermore, with a static camera, the operator needs to gaze at a PoI on the ed
 8
 
 
-Method Average Training Batch Time (s) Average Deploying Step Time (s)
+ Method Average Training Batch Time (s) Average Deploying Step Time (s)
 Cropped Active 45 (Ours) 0.41 0.012 (83Hz) Cropped Active 10 0.10 Wide Angle 10 0.32 0.024 (42Hz)
 Table 2: Computation cost comparisons between the active vs non-active vision setup. We sample 100 batches for training and 100 deployment steps and average their computation time. The number in the baseline name indicates batch size. Cropped Active is down-sampled from 640x480 to 308x224, resulting in 352 image tokens for each camera. Wide Angle is down-sampled with the same scale to 588x336, resulting in 1008 image tokens for each camera. We use batch size 10 for Wide Angle due to the memory limit of an RTX 4090 GPU.
 User
@@ -158,7 +158,7 @@ User Study. We validate our design choice of streaming and displaying stereo ima
 9
 
 
-(a) The robot holds a wood board of thickness 2cm with the left hand and uses an electric drill to drill 2 holes on the board. This task requires precise control of the drill trigger using the index finger. Furthermore, our system enables fine control of the hand so that after drilling the first hole, the robot can let the board slide in hand to leave space for the second drilling.
+ (a) The robot holds a wood board of thickness 2cm with the left hand and uses an electric drill to drill 2 holes on the board. This task requires precise control of the drill trigger using the index finger. Furthermore, our system enables fine control of the hand so that after drilling the first hole, the robot can let the board slide in hand to leave space for the second drilling.
 (b) The robot picks randomly placed earplugs on the table and places them into randomly placed latch boxes. The robot needs dexterous bimanual in-hand manipulation and adjustments to properly close the latch box.
 (c) The robot utilizes its thumb DoF to control a pipette to transfer liquid from a petri dish to a centrifuge tube. The diameter of the tube is only 1.5cm so it requires high precision to complete the task.
 Figure 8: More teleoperation experiments.These experiments aim to show our system’s reliability and precision for a wide variety of tasks.
@@ -169,7 +169,7 @@ asked to complete all four tasks under guidance and is given roughly five minute
 10
 
 
-Teleop System Actuation Hand Bimanual Perception Remote Depth
+ Teleop System Actuation Hand Bimanual Perception Remote Depth
 OPEN TEACH[2] VR Controller ✓ ✓ Direct View+RGB ✗ ✓ HATO[3] VR Tracking ✓ ✓ Direct View ✗ ✓ AnyTeleop[6] RGB(D) Tracking ✓ ✗ Direct View/RGB ✓ ✓ Telekinesis[7] RGB Tracking ✓ ✗ Direct View/RGB ✓ ✓ Transteleop[8] IMU+Depth ✓ ✗ Direct View ✗ ✓ ALOHA[12] Joint Copy ✗ ✓ Direct View ✗ ✓ AirExo[13] Joint Copy ✗ ✓ Direct View ✗ ✓ GELLO[15] Joint Copy ✗ ✓ Direct View ✗ ✓ Mobile ALOHA[16] Joint Copy ✗ ✓ Direct View ✗ ✓ DexCap[17] SLAM+Mocap ✓ ✓ Direct View ✗ ✓
 Open-TeleVision VR Tracking ✓ ✓ Stereo ✓ ✓
 Table 4: Comparing Open-TeleVision’s capabilities with prior teleoperation systems. A more detailed analysis to the contents in this table is in Appendix. A.
@@ -182,7 +182,7 @@ In this paper, we propose a system for immersive teleoperation with stereoscopic
 11
 
 
-manipulation tasks and the data collected with our system can be readily utilized by imitation learning algorithms. We also conduct user studies to show the importance of stereo perception for human operators. While the stereo perception is crucial for the operators’ spatial understanding, there is still a lack of other forms of feedback, such as haptic feedback, which is typically the dominant feedback with first-person visual occlusion and in tactile-intensive tasks. A system that enables the relabeling of expert data could be very helpful for increasing success rate, which is also missing from our system now. The future work can be extended to mobile version which utilizes all the DoFs of the robot.
+ manipulation tasks and the data collected with our system can be readily utilized by imitation learning algorithms. We also conduct user studies to show the importance of stereo perception for human operators. While the stereo perception is crucial for the operators’ spatial understanding, there is still a lack of other forms of feedback, such as haptic feedback, which is typically the dominant feedback with first-person visual occlusion and in tactile-intensive tasks. A system that enables the relabeling of expert data could be very helpful for increasing success rate, which is also missing from our system now. The future work can be extended to mobile version which utilizes all the DoFs of the robot.
 References
 [1] A. Brohan, N. Brown, J. Carbajal, Y. Chebotar, J. Dabis, C. Finn, K. Gopalakrishnan, K. Hausman, A. Herzog, J. Hsu, et al. Rt-1: Robotics transformer for real-world control at scale. arXiv preprint arXiv:2212.06817, 2022.
 [2] A. Iyer, Z. Peng, Y. Dai, I. Guzey, S. Haldar, S. Chintala, and L. Pinto. Open teach: A versatile teleoperation system for robotic manipulation, 2024.
@@ -199,7 +199,7 @@ References
 12
 
 
-[13] H. Fang, H.-S. Fang, Y. Wang, J. Ren, J. Chen, R. Zhang, W. Wang, and C. Lu. Low-cost exoskeletons for learning whole-arm manipulation in the wild. arXiv preprint arXiv:2309.14975, 2023.
+ [13] H. Fang, H.-S. Fang, Y. Wang, J. Ren, J. Chen, R. Zhang, W. Wang, and C. Lu. Low-cost exoskeletons for learning whole-arm manipulation in the wild. arXiv preprint arXiv:2309.14975, 2023.
 [14] L. X. Shi, Z. Hu, T. Z. Zhao, A. Sharma, K. Pertsch, J. Luo, S. Levine, and C. Finn. Yell at your robot: Improving on-the-fly from language corrections. arXiv preprint arXiv: 2403.12910, 2024.
 [15] P. Wu, Y. Shentu, Z. Yi, X. Lin, and P. Abbeel. Gello: A general, low-cost, and intuitive teleoperation framework for robot manipulators. arXiv preprint arXiv:2309.13037, 2023.
 [16] Z. Fu, T. Z. Zhao, and C. Finn. Mobile aloha: Learning bimanual mobile manipulation with low-cost whole-body teleoperation. arXiv preprint arXiv:2401.02117, 2024.
@@ -220,7 +220,7 @@ References
 13
 
 
-[31] M. Oquab, T. Darcet, T. Moutakanni, H. V. Vo, M. Szafraniec, V. Khalidov, P. Fernandez, D. Haziza, F. Massa, A. El-Nouby, R. Howes, P.-Y. Huang, H. Xu, V. Sharma, S.-W. Li, W. Galuba, M. Rabbat, M. Assran, N. Ballas, G. Synnaeve, I. Misra, H. Jegou, J. Mairal, P. Labatut, A. Joulin, and P. Bojanowski. Dinov2: Learning robust visual features without supervision, 2023.
+ [31] M. Oquab, T. Darcet, T. Moutakanni, H. V. Vo, M. Szafraniec, V. Khalidov, P. Fernandez, D. Haziza, F. Massa, A. El-Nouby, R. Howes, P.-Y. Huang, H. Xu, V. Sharma, S.-W. Li, W. Galuba, M. Rabbat, M. Assran, N. Ballas, G. Synnaeve, I. Misra, H. Jegou, J. Mairal, P. Labatut, A. Joulin, and P. Bojanowski. Dinov2: Learning robust visual features without supervision, 2023.
 [32] T. Darcet, M. Oquab, J. Mairal, and P. Bojanowski. Vision transformers need registers, 2023.
 [33] K. He, X. Zhang, S. Ren, and J. Sun. Deep residual learning for image recognition. In 2016 IEEE Conference on Computer Vision and Pattern Recognition (CVPR), pages 770–778, 2016. doi:10.1109/CVPR.2016.90.
 [34] D. P. Kingma and J. Ba. Adam: A method for stochastic optimization. arXiv preprint arXiv:1412.6980, 2014.
@@ -242,7 +242,7 @@ References
 14
 
 
-[50] X. Cheng, K. Shi, A. Agarwal, and D. Pathak. Extreme parkour with legged robots. arXiv preprint arXiv:2309.14341, 2023.
+ [50] X. Cheng, K. Shi, A. Agarwal, and D. Pathak. Extreme parkour with legged robots. arXiv preprint arXiv:2309.14341, 2023.
 [51] A. Gupta, A. Murali, D. P. Gandhi, and L. Pinto. Robot learning in homes: Improving generalization and reducing dataset bias. Advances in neural information processing systems, 31, 2018.
 [52] A. Khazatsky, K. Pertsch, S. Nair, A. Balakrishna, S. Dasari, S. Karamcheti, S. Nasiriany, M. K. Srirama, L. Y. Chen, K. Ellis, P. D. Fagan, J. Hejna, M. Itkina, M. Lepert, Y. J. Ma, P. T. Miller, J. Wu, S. Belkhale, S. Dass, H. Ha, A. Jain, A. Lee, Y. Lee, M. Memmel, S. Park, I. Radosavovic, K. Wang, A. Zhan, K. Black, C. Chi, K. B. Hatch, S. Lin, J. Lu, J. Mercat, A. Rehman, P. R. Sanketi, A. Sharma, C. Simpson, Q. Vuong, H. R. Walke, B. Wulfe, T. Xiao, J. H. Yang, A. Yavary, T. Z. Zhao, C. Agia, R. Baijal, M. G. Castro, D. Chen, Q. Chen, T. Chung, J. Drake, E. P. Foster, J. Gao, D. A. Herrera, M. Heo, K. Hsu, J. Hu, D. Jackson, C. Le, Y. Li, K. Lin, R. Lin, Z. Ma, A. Maddukuri, S. Mirchandani, D. Morton, T. Nguyen, A. O’Neill, R. Scalise, D. Seale, V. Son, S. Tian, E. Tran, A. E. Wang, Y. Wu, A. Xie, J. Yang, P. Yin, Y. Zhang, O. Bastani, G. Berseth, J. Bohg, K. Goldberg, A. Gupta, A. Gupta, D. Jayaraman, J. J. Lim, J. Malik, R. Mart ́ın-Mart ́ın, S. Ramamoorthy, D. Sadigh, S. Song, J. Wu, M. C. Yip, Y. Zhu, T. Kollar, S. Levine, and C. Finn. Droid: A large-scale in-the-wild robot manipulation dataset. 2024.
 [53] A. Brohan, N. Brown, J. Carbajal, Y. Chebotar, X. Chen, K. Choromanski, T. Ding, D. Driess, A. Dubey, C. Finn, et al. Rt-2: Vision-language-action models transfer web knowledge to robotic control. arXiv preprint arXiv:2307.15818, 2023.
@@ -258,7 +258,7 @@ References
 15
 
 
-[63] J. Pari, N. M. Shafiullah, S. P. Arunachalam, and L. Pinto. The surprising effectiveness of representation learning for visual imitation. arXiv preprint arXiv:2112.01511, 2021.
+ [63] J. Pari, N. M. Shafiullah, S. P. Arunachalam, and L. Pinto. The surprising effectiveness of representation learning for visual imitation. arXiv preprint arXiv:2112.01511, 2021.
 [64] A. Mandlekar, D. Xu, J. Wong, S. Nasiriany, C. Wang, R. Kulkarni, L. Fei-Fei, S. Savarese, Y. Zhu, and R. Martı ́n-Martı ́n. What matters in learning from offline human demonstrations for robot manipulation. In arXiv preprint arXiv:2108.03298, 2021.
 [65] A. Padalkar, A. Pooley, A. Jain, A. Bewley, A. Herzog, A. Irpan, A. Khazatsky, A. Rai, A. Singh, A. Brohan, et al. Open x-embodiment: Robotic learning datasets and rt-x models. arXiv preprint arXiv:2310.08864, 2023.
 [66] M. Shridhar, L. Manuelli, and D. Fox. Perceiver-actor: A multi-task transformer for robotic manipulation. In Conference on Robot Learning, pages 785–799. PMLR, 2023.
@@ -279,7 +279,7 @@ References
 16
 
 
-[81] R. Yang, Z. Chen, J. Ma, C. Zheng, Y. Chen, Q. Nguyen, and X. Wang. Generalized animal imitator: Agile locomotion with versatile motion prior. arXiv preprint arXiv:2310.01408, 2023.
+ [81] R. Yang, Z. Chen, J. Ma, C. Zheng, Y. Chen, Q. Nguyen, and X. Wang. Generalized animal imitator: Agile locomotion with versatile motion prior. arXiv preprint arXiv:2310.01408, 2023.
 [82] X. B. Peng, Z. Ma, P. Abbeel, S. Levine, and A. Kanazawa. Amp: Adversarial motion priors for stylized physics-based character control. ACM Transactions on Graphics (ToG), 40(4):1–20, 2021.
 [83] X. B. Peng, Y. Guo, L. Halper, S. Levine, and S. Fidler. Ase: Large-scale reusable adversarial skill embeddings for physically simulated characters. ACM Trans. Graph., 41(4), July 2022.
 [84] C. Tessler, Y. Kasten, Y. Guo, S. Mannor, G. Chechik, and X. B. Peng. Calm: Conditional adversarial latent models for directable virtual characters. In ACM SIGGRAPH 2023 Conference Proceedings, SIGGRAPH ’23, New York, NY, USA, 2023. Association for Computing Machinery. ISBN 9798400701597. doi:10.1145/3588432.3591541. URL https://doi.org/10.1145/3588432.3591541.
@@ -293,7 +293,7 @@ References
 17
 
 
-A Discussion on Comparing with Prior Teleoperation Systems
+ A Discussion on Comparing with Prior Teleoperation Systems
 We discuss from two critical perspectives of teleoperation: actuation and perception.
 Actuation. Various approaches have been studied for teleoperating robots through human commands, including visual tracking, motion-capture devices, and joint copying through customized hardware. While using motion-capture gloves for teleoperation seems the most intuitive, the commercially available gloves are not only costly but also unable to provide wrist pose estimations. The joint copying method has drawn significant attention recently, following the success of ALOHA[12]. This method offers precise and dexterous control. Historically, this method was considered costly, requiring using an additional pair of identical robotic arms for teleoperation; nonetheless, this issue has been mitigated by the adoption of low-cost exoskeleton devices to transmit commands[13]. Despite their simplicity, joint copying systems are currently limited to using grippers and have not yet been extended to operate multi-finger hands. Conversely, visual tracking employs off-the-shelf hand pose extractors to track finger movements, but relying solely on RGB or RGBD images can lead to noisy and imprecise data. The recent surge in VR technology has led to the development of teleoperation systems that utilize VR tracking. VR headset manufacturers often integrate built-in hand-tracking algorithms that fuse data from diverse types of sensors, including multiple cameras, depth sensors, and IMUs. Hand-tracking data collected through VR devices are generally considered more stable and accurate than self-developed vision-tracking systems, while the latter only utilize a subset of the mentioned sensors (RGB+RGBD[6], Depth+IMU[8], etc.).
 Perception. While being the other critical component of teleoperation, perception has been considerably less explored than actuation within this field. Most existing teleoperation systems require the operators to directly observe the robot’s hands using their own eyes. While direct viewing provides the operators with depth sensing, leveraging humans’ inherent capability for stereoscopic vision, it restricts the system to be non-remote, necessitating the physical presence of the operator. Some teleoperation systems circumvent this by streaming RGB images, enabling remote control[6, 7]. However, if the operator opts for remote controlling by watching an RGB stream, the benefits of depth sensing provided by the human eye are lost. Despite being capable to provide both remote controlling and depth sensing, these two features are mutually exclusive in these systems. OPEN TEACH[2] merges the two in a mixed-reality fashion, yet it still requires the operator to be in proximity to the robot, otherwise the depth sensing is unavailable. Prior to Open-TeleVision, no system offered both remote control and depth sensing simultaneously: the operator is forced to choose between either direct viewing, which demands physical presence, or RGB streaming, which abandons depth information. By utilizing stereo streaming, our system is the first to provide both functionalities within a single setup.
@@ -303,7 +303,7 @@ The results indicate a substantial improvement in the success rate of the placin
 18
 
 
-Baselines GR-1 Can Sorting
+ Baselines GR-1 Can Sorting
 Pick(new) Pick(old) Place(new) Place(old)
 w. DinoV2 (Ours) 97% 87% 100% 60% w. ResNet18 90% 83% 97% 50% w/o Stereo Input 47% 73% 93% 63%
 Table 5: Success rate for GR-1 Can Sorting. The experiments are conducted under identical settings and number of trials as outlined in Tab. 1. Columns marked as (old) contain the original results using unlabeled cans, while the columns marked as (new) contain the results of the new experiment using labeled cans.
@@ -320,7 +320,7 @@ More experimental details are listed in Tab. 6. All tasks, with the exception of
 19
 
 
-Figure 12: Our web-based cross-platform system enables access across different devices. Left: Apple Vision Pro. Middle: Meta Quest. Right: Macbook, iPad and iPhone. On VR devices, the users can enter an immersive session to start teleoperation with hand and wrist pose streaming. On other devices, hand and wrist streaming are not available but the user can still see the streamed images and control the robot’s active neck by dragging on the devices’ screen.
+ Figure 12: Our web-based cross-platform system enables access across different devices. Left: Apple Vision Pro. Middle: Meta Quest. Right: Macbook, iPad and iPhone. On VR devices, the users can enter an immersive session to start teleoperation with hand and wrist pose streaming. On other devices, hand and wrist streaming are not available but the user can still see the streamed images and control the robot’s active neck by dragging on the devices’ screen.
 Tasks Average Episode Length (s) Number of Episodes
 H1 Can Sorting 93±5 10 GR-1 Can Sorting 61±5 10 Can Insertion 84±7 20 Folding 44±5 20 Unloading 93±6 20
 Table 6: Details about collected demonstration data for each task.
@@ -334,5 +334,5 @@ The definition of temporal weighting in the temporal aggregation operation is ou
 20
 
 
-emphasis is placed on more recent actions, rendering the model more reactive but less steady. We found that using a temporal weight m of 0.01 reaches a satisfactory balance between responsiveness and stability for most tasks. However, for Unloading and Can Sorting tasks, we adjust this parameter to cater to their specific needs. For unloading, m is set as 0.05, ensuring greater stability during in-hand passing; for Can Sorting, m is set as 0.005, providing quicker movements.
+ emphasis is placed on more recent actions, rendering the model more reactive but less steady. We found that using a temporal weight m of 0.01 reaches a satisfactory balance between responsiveness and stability for most tasks. However, for Unloading and Can Sorting tasks, we adjust this parameter to cater to their specific needs. For unloading, m is set as 0.05, ensuring greater stability during in-hand passing; for Can Sorting, m is set as 0.005, providing quicker movements.
 21

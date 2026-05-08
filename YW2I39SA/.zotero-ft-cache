@@ -36,7 +36,7 @@ Generalist robot policies trained on large corpora of data have recently shown i
 arXiv:2512.08333v2 [cs.RO] 18 Dec 2025
 
 
-Robust Finetuning of Vision-Language-Action Robot Policies via Parameter Merging
+ Robust Finetuning of Vision-Language-Action Robot Policies via Parameter Merging
 objects, and language instructions [21, 45, 26, 52, 44, 32, 46, 16, 1]. Though impressively general, these generalist policies often need to be adapted to perform effectively on downstream tasks or a new robot system, which is most commonly achieved by finetuning them on a curated dataset of demonstrations for the target task. While prior work has shown that such finetuning can lead to robust policies with tens or hundreds of hours of finetuning data [8, 21, 9, 10], collecting such amounts of robot demonstration data is challenging. As a result, in practice often less than 100 demonstrations or a few hours of robot data are used for finetuning [26, 53, 27]. Existing approaches for robot policy finetuning struggle to preserve the generality of the pretrained model in such low-data regimes, and fail to robustly generalize far beyond the exact viewpoints, objects, and scenarios seen in the finetuning data [16, 64, 71, 59, 63, 73, 24]. To expand the usability of generalist policies, we need robust finetuning approaches that better preserve the generality of pretrained robot policies and allow us to generalize to a broader set of scenarios on the target task. In this work, we introduce RETAIN (Robust finE-tuning wiTh pArameter mergINg), a surprisingly simple approach for robust robot policy finetuning. By simply interpolating the weights of the pretrained generalist policy before and after finetuning on the target task (see Fig. 1), we obtain checkpoints that match the performance of the finetuned policy on scenarios present in the finetuning data, while generalizing significantly better to unseen variations of the target task, such as unseen object instances, positions, or viewpoints. Additionally, we observe that RETAIN preserves the generalist capabilities of the pretrained policy also on tasks other than the target task, allowing us to use RETAIN in a continual learning setup by sequentially merging new skills into pretrained generalist policies (in a literal sense). We demonstrate the effectiveness of RETAIN for robust policy finetuning and sequential skill acquisition across a range of real-world and simulated finetuning tasks, achieving state-of-the-art finetuning performance. We also show that RETAIN gets even more effective when the pretrained policy is trained on more data. While previous work has investigated interpolating model weights of pretrained and fine-tuned models for vision and language [62, 61, 20], this is to our knowledge the first work to investigate and analyze parameter merging for robot policies and use it to enable continual acquisition of new robotic skills. In summary, our contributions are threefold: (1) we introduce a simple approach for robust robot policy finetuning via policy parameter merging, (2) we extensively evaluate our approach across a suite of real-world and simulated robot finetuning tasks, and analyze which factors enable successful policy merging, (3) we demonstrate that our approach enables continual merging of new robot skills into state-of-the-art generalist policies. Policies finetuned with our method generalize to novel scenarios for the new skill on real robots with ∼ 40% higher success rate on average than best prior finetuning methods.
 2. Related Work
 Image Enc.
@@ -49,7 +49,7 @@ Adapting generalist policies on new tasks. Fueled by large-scale human teleopera
 2
 
 
-Robust Finetuning of Vision-Language-Action Robot Policies via Parameter Merging
+ Robust Finetuning of Vision-Language-Action Robot Policies via Parameter Merging
 conditions seen in the finetuning dataset [71], even if the base policy had broad generalization capabilities. In this work, we propose a simple alternative for robust policy finetuning in low-data regimes. Instead of directly using the finetuned policy, we observe that merging the pretrained and finetuned policy checkpoints in weight space leads to significantly improved generalization on target tasks at no additional training or inference cost.
 Model parameter merging. Our approach is inspired by work on model weight merging in vision and language domains [57, 67, 68, 42, 36, 22, 39, 69, 23]. These works demonstrate that interpolating between the weights of multiple finetuned models, or between pretrained and finetuned models, can combine their capabilities or make them more robust to distribution shifts [62, 61, 20, 43, 37]. To our knowledge, our work is the first to demonstrate the effectiveness of model merging in the context of generalist robot policies, and combining it with co-training to further improve upon vanilla model merging. Additionally, we analyze the importance of the generality of the base model, as well as the importance of different parameter groups in vision-language-action (VLA) policies and find it often sufficient to only merge parameters from the language model backbone.
 Continual learning. The focus of our work is on improving generalization of finetuned policies on a target task. However, in addition, we find that our model merging approach is also effective at retaining the generalist policy’s performance on tasks from the pretraining distribution. As such, we demonstrate that it can be used to sequentially merge multiple skills into a single pretrained policy checkpoint while retaining generality. This setting is typically referred to as continual learning and there is a large body of literature, both outside [28, 47, 35, 58] and within robotics [29, 4, 55, 40, 31, 60]. Our work differs from this line of research in that we aim to inherit and pass on the generalization ability of a pretrained model to learn new tasks robustly, whereas continual learning methods generally focus on not forgetting old skills seen during the agent’s lifetime.
@@ -71,7 +71,7 @@ Evaluation. In practice, when we finetune a policy, we don’t simply want it to
 3
 
 
-Robust Finetuning of Vision-Language-Action Robot Policies via Parameter Merging
+ Robust Finetuning of Vision-Language-Action Robot Policies via Parameter Merging
 Plates in rack (ID)
 Plates in rack (OOD)
 Wipe whiteboard (ID)
@@ -83,7 +83,7 @@ To understand the challenges of robust finetuning of generalist robot policies, 
 4
 
 
-Robust Finetuning of Vision-Language-Action Robot Policies via Parameter Merging
+ Robust Finetuning of Vision-Language-Action Robot Policies via Parameter Merging
 Figure 4: The standard approach for policy finetuning often overfits. As the policy is trained for more gradient steps, it performs worse on tasks other than the new target task (“GENERALIST”) and may even start to degrade on scenarios seen in the finetuning data (“ID”). Most importantly, it is not able to transfer the generality of a base policy to do well under variations of the target task (new object positions, instances, viewpoints; “OOD”).
 5. RETAIN: Robust Policy Finetuning via Model Merging
 The previous section illustrates that standard finetuning approaches cause the model to quickly forget generalist capabilities, and fail to transfer the pretrained policy’s robustness to the target task. To address these issues, we propose RETAIN (Robust finE-tuning wiTh pArameter mergINg), a simple approach for robust finetuning of robot policies. Given pretrained policy weights θpre and finetuned policy weights θft, we propose linearly interpolating θpre and θft to obtain a final policy checkpoint, ̃θ. So, RETAIN produces a final policy π ̃θ by setting:
@@ -126,7 +126,7 @@ While prior works have explored model-merging in the context of uni-modal vision
 5
 
 
-Robust Finetuning of Vision-Language-Action Robot Policies via Parameter Merging
+ Robust Finetuning of Vision-Language-Action Robot Policies via Parameter Merging
 We show in Section 6.4 that, somewhat surprisingly, it often suffices to only merge the language model parameters.
 5.3. Continual Task Adaptation
 θpre θ ̃1
@@ -153,7 +153,7 @@ Environments and tasks. We evaluate RETAIN in real-world and simulated finetunin
 6
 
 
-Robust Finetuning of Vision-Language-Action Robot Policies via Parameter Merging
+ Robust Finetuning of Vision-Language-Action Robot Policies via Parameter Merging
 policies on a much broader set of target environments (Fig. 6, yellow), which include unseen backgrounds, object instances, and camera views. See example task trajectories in Fig. 3. For our simulated experiments, we use the LIBERO simulation environment [31]. We finetune policies pretrained on the LIBERO-{object, spatial, goal, 90} datasets to three new tasks from the LIBERO-10 suite: pot-on-stove, mugs-on-plates, and items-into-basket. We use ≈ 45 demonstrations per task, obtained after filtering and preprocessing the 50 demos provided with the LIBERO simulator, which only contain minor variations to the initial positions of each object, and again test on a much broader distribution of initial positions, backgrounds, and additional distractors (see Fig. 6, right). More setup details can be found in Section A.5 and Section A.6. For both LIBERO and DROID, we evaluate our method and baselines on three different OOD scenes. To pick the merging coefficient α, we use one OOD scene as the “validation” scene, and tune the hyperparameter α for best performance on that validation scene. We only use α ∈ {0.25, 0.5, 0.75} in DROID. Then, we use the rest of the OOD scenes as the “test” scenes without any hyperparameter tuning.
 Pretrained policies. We use state-of-the-art pretrained robot policies for our experiments. For our real-world DROID experiments, we use π0-FAST-DROID [45], the best open-source DROID policy at the time of our experiments as judged by the RoboArena policy ranking [3]0. For LIBERO, we use a π0 [7] policy fine-tuned on the LIBERO-{object, spatial, goal, 90} datasets as our pretrained policy. π0 is a generalist policy with a flow-based action expert, while π0-FAST-DROID is an autoregressive transformer based on next-token prediction.
 Comparisons. We compare against prior methods, including those that incorporate regularization techniques to reduce overfitting, in the robust finetuning setting. Specifically, we compare our approach, RETAIN, to: “TaskFT”, which finetunes the pretrained policy only on the target task dataset using behavioral cloning (Eq. (1)) [6, 8]; “Co-FT”, which finetunes on a mix of pretraining and target task data to reduce overfitting [15, 12], “LoRA”, which uses low-rank adaptation [17] during finetuning to retain more of the pretraining capabilities [41, 26]; “Freeze-FT”, which freezes the language model backbone during finetuning and only updates the vision encoder, and, in the case of π0, the action expert output head, following similar approaches in prior work, e.g., Kim et al. [26], Zhang et al. [71]; Scratch, which learns a policy from scratch on the demonstration dataset instead of finetuning a generalist policy. For more details about the policy classes and implementations, see Section A.8. Section A.7 details our choice of hyperparameters and tuning process.
@@ -163,7 +163,7 @@ RETAIN solves the finetuning task in a broader range of variations. We compare R
 7
 
 
-Robust Finetuning of Vision-Language-Action Robot Policies via Parameter Merging
+ Robust Finetuning of Vision-Language-Action Robot Policies via Parameter Merging
 Figure 7: RETAIN results on two DROID tasks, whiteboard (top) and plates (bottom). RETAIN significantly outperform baselines in OOD evaluation and is competitive in ID evaluations, showing that it is able to learn new skills robustly and can generalize to its variations using pretrained knowledge. RETAIN also does best on generalist evaluations, showing that it is best at retaining abilities to solve old tasks. We tune merging coefficient α on one “val” OOD scene, and use the same value for two other “test” OOD scenes.
 this is similar to the policy’s ID evaluation performance on whiteboard, suggesting that RETAIN can perform a generalized new skill with the same performance regardless of variations. Comparing the performance of OOD val and test sets, we see that the performance is sometimes not impacted (whiteboard) and sometimes better with slight hyperparameter tuning (plates). This shows that RETAIN is somewhat robust to hyperparameter, but can get even better when tuned for the particular OOD scene. Overall, in OOD evaluations, RETAIN enables the policy to outperform both the base model and other finetuned models.
 Figure 8: RETAIN results averaged over the three LIBERO tasks. Similar trend as Fig. 7.
@@ -171,7 +171,7 @@ In LIBERO environments (Fig. 8), all methods exhibit trends similar to those in 
 8
 
 
-Robust Finetuning of Vision-Language-Action Robot Policies via Parameter Merging
+ Robust Finetuning of Vision-Language-Action Robot Policies via Parameter Merging
 generalization power, giving less improvement under OOD evaluations. There is also a much bigger gap between val and test OOD scenes, because the different types of variations for each OOD scene has a different difficulty level for the limited generalist model in LIBERO.
 RETAIN still performs well on tasks from the pretraining distribution. As shown above in Section 6.2, RETAIN allows the model to not overfit to the finetuning dataset and generalize to solve a broader distribution of the finetuning task. One natural question is whether RETAIN has overfit to the finetuning task distribution, and whether it can still solve tasks under the pretraining distribution. To evaluate retention of generalist skills, we evaluate RETAIN and baselines under our generalist evaluation scenes. For DROID, we evaluate on 44 different real-world tasks; for LIBERO, we evaluate on 20 random tasks in the LIBERO pretraining dataset (5 each from LIBERO-{object, spatial, goal, 90}). Fig. 7 and Fig. 8 (second subfig) show that RETAIN performs just as well as the pretrained model on generalist evaluations, showing that it has not lost its ability to solve old tasks from pretraining. RETAIN works even better when combined with co-finetuning, as discussed below.
 Model merging performs better with co-finetuning. In Fig. 7 and Fig. 8, RETAIN-co-FT outperforms RETAINtask-FT in all three evaluation settings in almost all tasks. RETAIN-co-FT is particularly effective at improving performance in generalist and OOD evaluation. In fact, we observe that co-FT almost always helps improve performance over task-FT in generalist evaluation, but not always in OOD evaluation. We hypothesize this is because co-finetuning and model merging play different roles in the regularization process: co-finetuning helps the finetuned model not overfit to the small target dataset by continuous training on pretraining data, but does not elicit pretrained knowledge to help generalization on the new task; on the other hand, model merging explicitly tries to elicit pretrained knowledge and combine it with finetuning knowledge in parameter space; however, doing so with a task-FT model is worse at keeping pretraining abilities because the task-FT model has overfitted to the target dataset.
@@ -181,7 +181,7 @@ As we saw in Section 6.2, RETAIN is not only able to perform well on tasks from 
 9
 
 
-Robust Finetuning of Vision-Language-Action Robot Policies via Parameter Merging
+ Robust Finetuning of Vision-Language-Action Robot Policies via Parameter Merging
 performing nearly as good on OOD evaluation as it does on ID evaluation. This shows that RETAIN scales with the amount of pretraining data, and can better “transfer” generalist knowledge from the pretrained model to new scenes when the pretrained model is more general.
 6.4. Analyzing the Importance of Merging Different Parameters in RETAIN
 Figure 10: Left: Illustration of three different kinds of OOD scenes we consider in LIBERO, shown in pot-on-stove. Right: Plot shows how the OOD performance on three types of OOD variations changes with the merging parameter α, averaged across three LIBERO environments.
@@ -189,7 +189,7 @@ In this section, we seek to build a mechanistic understanding of how the merging
 10
 
 
-Robust Finetuning of Vision-Language-Action Robot Policies via Parameter Merging
+ Robust Finetuning of Vision-Language-Action Robot Policies via Parameter Merging
 Figure 11: Language model parameters have the most influence in modality-specific merging. Left: Merged model’s OOD performance over a grid search of αa, αv, αl, and αl has the most impact. Middle: OOD performance of αa and αv averaged over different αl, and higher values are better. Right: Merging only the language model parameters (αa = αv = 1, αl < 1) improves performance over a uniform coefficient α for all parameters.
 6.5. RETAIN Enables Robust Learning of Multiple Skills Sequentially
 Figure 12: RETAIN enables continual adaptation to a sequence of two skills. Evaluation results show the performance of the final policy after sequentially finetuning on two tasks, evaluated on different scenes. OOD performance averaged across two test scenes.
@@ -201,7 +201,7 @@ While we empirically verified that RETAIN works exceptionally well in helping th
 11
 
 
-Robust Finetuning of Vision-Language-Action Robot Policies via Parameter Merging
+ Robust Finetuning of Vision-Language-Action Robot Policies via Parameter Merging
 parameter merging was able to lead to such generalization. This is an interesting area for future work. We have included some discussion in Section A.9 of some hypothesess and why previous work found model parameter merging effective for vision and language tasks. Additionally, RETAIN involves an important hyperparameter, the merginge coefficient, that can be tuned. While we find in our real world experiments that RETAIN is robust to different values of this parameter, slight tuning of this parameter is needed. One avenue of future work is determining a good heuristic of how to choose this value.
 References
 [1] Ali Amin, Raichelle Aniceto, Ashwin Balakrishna, Kevin Black, Ken Conley, Grace Connors, James Darpinian, Karan Dhabalia, Jared DiCarlo, Danny Driess, et al. π∗
@@ -219,7 +219,7 @@ References
 12
 
 
-Robust Finetuning of Vision-Language-Action Robot Policies via Parameter Merging
+ Robust Finetuning of Vision-Language-Action Robot Policies via Parameter Merging
 Hiroki Furuta, Homer Walke, Hongjie Fang, Igor Mordatch, Ilija Radosavovic, Isabel Leal, Jacky Liang, Jaehyung Kim, Jan Schneider, Jasmine Hsu, Jeannette Bohg, Jeffrey Bingham, Jiajun Wu, Jialin Wu, Jianlan Luo, Jiayuan Gu, Jie Tan, Jihoon Oh, Jitendra Malik, Jonathan Tompson, Jonathan Yang, Joseph J. Lim, João Silvério, Junhyek Han, Kanishka Rao, Karl Pertsch, Karol Hausman, Keegan Go, Keerthana Gopalakrishnan, Ken Goldberg, Kendra Byrne, Kenneth Oslund, Kento Kawaharazuka, Kevin Zhang, Keyvan Majd, Krishan Rana, Krishnan Srinivasan, Lawrence Yunliang Chen, Lerrel Pinto, Liam Tan, Lionel Ott, Lisa Lee, Masayoshi Tomizuka, Maximilian Du, Michael Ahn, Mingtong Zhang, Mingyu Ding, Mohan Kumar Srirama, Mohit Sharma, Moo Jin Kim, Naoaki Kanazawa, Nicklas Hansen, Nicolas Heess, Nikhil J Joshi, Niko Suenderhauf, Norman Di Palo, Nur Muhammad Mahi Shafiullah, Oier Mees, Oliver Kroemer, Pannag R Sanketi, Paul Wohlhart, Peng Xu, Pierre Sermanet, Priya Sundaresan, Quan Vuong, Rafael Rafailov, Ran Tian, Ria Doshi, Roberto Martín-Martín, Russell Mendonca, Rutav Shah, Ryan Hoque, Ryan Julian, Samuel Bustamante, Sean Kirmani, Sergey Levine, Sherry Moore, Shikhar Bahl, Shivin Dass, Shuran Song, Sichun Xu, Siddhant Haldar, Simeon Adebola, Simon Guist, Soroush Nasiriany, Stefan Schaal, Stefan Welker, Stephen Tian, Sudeep Dasari, Suneel Belkhale, Takayuki Osa, Tatsuya Harada, Tatsuya Matsushima, Ted Xiao, Tianhe Yu, Tianli Ding, Todor Davchev, Tony Z. Zhao, Travis Armstrong, Trevor Darrell, Vidhi Jain, Vincent Vanhoucke, Wei Zhan, Wenxuan Zhou, Wolfram Burgard, Xi Chen, Xiaolong Wang, Xinghao Zhu, Xuanlin Li, Yao Lu, Yevgen Chebotar, Yifan Zhou, Yifeng Zhu, Ying Xu, Yixuan Wang, Yonatan Bisk, Yoonyoung Cho, Youngwoon Lee, Yuchen Cui, Yueh hua Wu, Yujin Tang, Yuke Zhu, Yunzhu Li, Yusuke Iwasawa, Yutaka Matsuo, Zhuo Xu, and Zichen Jeff Cui. Open X-Embodiment: Robotic learning datasets and RT-X models. https://arxiv.org/abs/2310.08864, 2023.
 [12] Shivin Dass, Alaa Khaddaj, Logan Engstrom, Aleksander Madry, Andrew Ilyas, and Roberto Martín-Martín. Datamil: Selecting data for robot imitation learning with datamodels. arXiv preprint arXiv:2505.09603, 2025.
 [13] Norman Di Palo and Edward Johns. Dinobot: Robot manipulation via retrieval and alignment with vision foundation models. In 2024 IEEE International Conference on Robotics and Automation (ICRA), pages 27982805. IEEE, 2024.
@@ -233,7 +233,7 @@ Hiroki Furuta, Homer Walke, Hongjie Fang, Igor Mordatch, Ilija Radosavovic, Isab
 13
 
 
-Robust Finetuning of Vision-Language-Action Robot Policies via Parameter Merging
+ Robust Finetuning of Vision-Language-Action Robot Policies via Parameter Merging
 [21] Physical Intelligence, Kevin Black, Noah Brown, James Darpinian, Karan Dhabalia, Danny Driess, Adnan Esmail, Michael Equi, Chelsea Finn, Niccolo Fusai, et al. π0. 5: a vision-language-action model with open-world generalization, 2025. URL https://arxiv. org/abs/2504.16054, 1(2):3.
 [22] Dong-Hwan Jang, Sangdoo Yun, and Dongyoon Han. Model stock: All we need is just a few fine-tuned models. In European Conference on Computer Vision, pages 207–223. Springer, 2024.
 [23] Xisen Jin, Xiang Ren, Daniel Preotiuc-Pietro, and Pengxiang Cheng. Dataless knowledge fusion by merging weights of language models. arXiv preprint arXiv:2212.09849, 2022.
@@ -253,7 +253,7 @@ Hiroki Furuta, Homer Walke, Hongjie Fang, Igor Mordatch, Ilija Radosavovic, Isab
 14
 
 
-Robust Finetuning of Vision-Language-Action Robot Policies via Parameter Merging
+ Robust Finetuning of Vision-Language-Action Robot Policies via Parameter Merging
 [37] Davide Marincione, Donato Crisostomi, Roberto Dessi, Emanuele Rodolà, and Emanuele Rossi. Model merging improves zero-shot generalization in bioacoustic foundation models. arXiv preprint arXiv:2511.05171, 2025.
 [38] Max Sobol Mark, Tian Gao, Georgia Gabriela Sampaio, Mohan Kumar Srirama, Archit Sharma, Chelsea Finn, and Aviral Kumar. Policy agnostic rl: Offline rl and online rl fine-tuning of any class and backbone. arXiv preprint arXiv:2412.06685, 2024.
 [39] Michael S Matena and Colin A Raffel. Merging models with fisher-weighted averaging. Advances in Neural Information Processing Systems, 35:17703–17716, 2022.
@@ -270,7 +270,7 @@ Hiroki Furuta, Homer Walke, Hongjie Fang, Igor Mordatch, Ilija Radosavovic, Isab
 15
 
 
-Robust Finetuning of Vision-Language-Action Robot Policies via Parameter Merging
+ Robust Finetuning of Vision-Language-Action Robot Policies via Parameter Merging
 [50] Ajay Sridhar, Dhruv Shah, Catherine Glossop, and Sergey Levine. Nomad: Goal masked diffusion policies for navigation and exploration. In 2024 IEEE International Conference on Robotics and Automation (ICRA), pages 63–70. IEEE, 2024.
 [51] Kaustubh Sridhar, Souradeep Dutta, Dinesh Jayaraman, and Insup Lee. Ricl: Adding in-context adaptability to pre-trained vision-language-action models. arXiv preprint arXiv:2508.02062, 2025.
 [52] Gemini Robotics Team, Saminda Abeyruwan, Joshua Ainslie, Jean-Baptiste Alayrac, Montserrat Gonzalez Arenas, Travis Armstrong, Ashwin Balakrishna, Robert Baruch, Maria Bauza, Michiel Blokzijl, et al. Gemini robotics: Bringing ai into the physical world. arXiv preprint arXiv:2503.20020, 2025.
@@ -288,7 +288,7 @@ Hiroki Furuta, Homer Walke, Hongjie Fang, Igor Mordatch, Ilija Radosavovic, Isab
 16
 
 
-Robust Finetuning of Vision-Language-Action Robot Policies via Parameter Merging
+ Robust Finetuning of Vision-Language-Action Robot Policies via Parameter Merging
 [64] Fangzhou Xiong, Zhiyong Liu, Kaizhu Huang, Xu Yang, Hong Qiao, and Amir Hussain. Encoding primitives generation policy learning for robotic arm to overcome catastrophic forgetting in sequential multi-tasks learning. Neural Networks, 129:163–173, 2020.
 [65] Charles Xu, Qiyang Li, Jianlan Luo, and Sergey Levine. Rldg: Robotic generalist policy distillation via reinforcement learning. arXiv preprint arXiv:2412.09858, 2024.
 [66] Mengdi Xu, Yuchen Lu, Yikang Shen, Shun Zhang, Ding Zhao, and Chuang Gan. Hyper-decision transformer for efficient online policy adaptation. arXiv preprint arXiv:2304.08487, 2023.
@@ -302,7 +302,7 @@ Hiroki Furuta, Homer Walke, Hongjie Fang, Igor Mordatch, Ilija Radosavovic, Isab
 17
 
 
-Robust Finetuning of Vision-Language-Action Robot Policies via Parameter Merging
+ Robust Finetuning of Vision-Language-Action Robot Policies via Parameter Merging
 A. Appendix
 A.1. DROID Results Details
 Fig. 7 reports performance of two DROID tasks: whiteboard and plates. Here we present the average of the two tasks. The OOD performance shown here is averaged across the val and test scenes.
@@ -313,7 +313,7 @@ Figure 14: Detailed results on performance of the three LIBERO tasks: pot-on-sto
 18
 
 
-Robust Finetuning of Vision-Language-Action Robot Policies via Parameter Merging
+ Robust Finetuning of Vision-Language-Action Robot Policies via Parameter Merging
 A.3. Ablation on Learning Rate and Gradient Steps
 Here, we ablate the learning rate and number of gradient steps we take in the task-FT policy in Fig. 4 to study whether better hyperparameter choices can reduce or resolve overfitting1. In Fig. 4, we use learning rate 2.5e − 5. Here in Fig. 15, we ablate four different learning rates: one greater than the original and two smaller. We evaluate the model at every 100 gradient steps to also ablate on the number of gradient steps we take. With a larger learning rate, it’s clear that the overfitting issue is more severe, and the performance on all three kinds of evaluations (ID, OOD, Generalist) go down to near zero. With a smaller learning rate, the model still performs well in ID evaluations, and suffers less from forgetting generalist capabilities (measured from Generalist evaluations). This is to be expected because the finetuned model is closer to the pretrained model with a smaller learning rate. However, note that with a smaller learning rate, the OOD evaluation performance is also worse. We plot the OOD performance achieved using the original learning rate in Fig. 4 as the dotted orange line in Fig. 15, and the gap between the dotted and solid orange line shows the performance gap in OOD evaluation when we lower the learning rate, possibly due to underfitting. This experiment shows that tuning the learning rate and the number of update steps does not solve the problem of overfitting during finetuning. While lowering the learning rate can retain more generalist knowledge, it does not prevent the gradual loss of it. More importantly, the lower learning rate leads to worse OOD evaluation performance.
 Figure 15: Ablation on learning rate and number of gradient steps for task-FT on mugs-on-plates task in LIBERO.
@@ -323,14 +323,14 @@ To understand why model parameter merging helps, we first try to understand here
 19
 
 
-Robust Finetuning of Vision-Language-Action Robot Policies via Parameter Merging
+ Robust Finetuning of Vision-Language-Action Robot Policies via Parameter Merging
 Figure 16: Cosine similarity of parameter difference vectors during finetuning, showing that the finetuning path is highly non-linear.
 Figure 17: PCA projection of the parameter difference during finetuning to 2D. Each subplot corresponds to a different learning rate.
 point in the same direction and there should only be 1 non-zero singular value. However, it’s clear from Fig. 18 that most singular values are non-zero, showing that the path is non-linear in many dimensions. This generalizes the intuition from Fig. 17 to more dimensions, and shows that model merging indeed achieves a different solution than the finetuning path. All these analysis experiments go to show that the finetuning path is highly non-linear, and therefore model parameter merging actually results in a different solution than the finetuned models.
 20
 
 
-Robust Finetuning of Vision-Language-Action Robot Policies via Parameter Merging
+ Robust Finetuning of Vision-Language-Action Robot Policies via Parameter Merging
 Figure 18: Singular Values of the parameter differences during finetuning. Each subplot corresponds to a different learning rate.
 A.5. DROID Setup Details
 This section outlines the details of the DROID setup that we used for our real-world experiments.
@@ -345,7 +345,7 @@ We use the 7-DoF Franka robot arm for our experiments. We use the same language 
 21
 
 
-Robust Finetuning of Vision-Language-Action Robot Policies via Parameter Merging
+ Robust Finetuning of Vision-Language-Action Robot Policies via Parameter Merging
 loop horizon to 8: so, during evaluation, we receive 10 actions from the policy, execute the first 8, and then request a new action chunk. We execute the predicted actions at a control frequency of 15 Hz. The policy is served on a NVIDIA H200/H100 throughout our evaluations. As the openpi repository specifies, inference requires at least 8 GB of VRAM.
 A.5.5. Evaluation Criteria: Whiteboard
 For all whiteboard evaluations, we use the criteria specified in Table 1 to assign partial success. We perform 10 trials per policy evaluation, for both the ID and OOD evals.
@@ -377,7 +377,7 @@ In order to obtain a base-model to serve as the starting point for RETAIN in LIB
 22
 
 
-Robust Finetuning of Vision-Language-Action Robot Policies via Parameter Merging
+ Robust Finetuning of Vision-Language-Action Robot Policies via Parameter Merging
 Scene Image Task # Trials Randomization Rubric
 put the spoon in the
 dish rack 4 swap spoon and carrot posi
@@ -403,7 +403,7 @@ Table 3: DROID Generalist evaluation tasks grouped by scene (Scenes 1-4). Each t
 23
 
 
-Robust Finetuning of Vision-Language-Action Robot Policies via Parameter Merging
+ Robust Finetuning of Vision-Language-Action Robot Policies via Parameter Merging
 Scene Image Task # Trials Randomization Rubric
 close the drawer 4 two top, two bottom drawer 1: moves towards the drawer;
 2: closes drawer
@@ -426,7 +426,7 @@ Table 4: DROID Generalist evaluation tasks grouped by scene (Scenes 5-8). Each t
 24
 
 
-Robust Finetuning of Vision-Language-Action Robot Policies via Parameter Merging
+ Robust Finetuning of Vision-Language-Action Robot Policies via Parameter Merging
 Scene Image Task # Trials Randomization Rubric
 put the black sponge in
 the blue bowl 2
@@ -456,7 +456,7 @@ Table 5: DROID Generalist evaluation tasks grouped by scene (Scene 9). Each task
 25
 
 
-Robust Finetuning of Vision-Language-Action Robot Policies via Parameter Merging
+ Robust Finetuning of Vision-Language-Action Robot Policies via Parameter Merging
 LIBERO datasets, pretraining and finetuning, we utilize pre-processed RLDS versions gathered from here and here. These datasets consist of LIBERO demonstrations that have been preprocessed to upscale images, filter out transitions with idle actions, and remove failure trajectories. More details, such as hyperparameter choices, for the pretraining stage itself can be found in A.7. All subsequent fine-tuning and evaluation uses the normalization stats of this pretraining dataset, applying mean/standard-deviation normalization.
 A.6.2. LIBERO Finetuning Datasets
 As mentioned in 6.1, we finetune on 3 tasks from LIBERO-10: pot-on-stove, mugs-on-plates, and items-into-basket. For each dataset, we obtain pre-processed and filtered versions as described above. 19 highlights what these finetuning tasks, and thus also our ID evals, look like. The language instructions for each libero fine-tuning dataset are:
@@ -468,14 +468,14 @@ Figure 19: Three LIBERO tasks we use for finetuning: pot-on-stove, mugs-on-plate
 26
 
 
-Robust Finetuning of Vision-Language-Action Robot Policies via Parameter Merging
+ Robust Finetuning of Vision-Language-Action Robot Policies via Parameter Merging
 Figure 20: Three types of out-of-distribution variation of the LIBERO mugs task. The three different type are: (1) small translation to object positions, (2) big translation to object position and additional distractors, and (3) background change.
 Figure 21: Three types of out-of-distribution variation of the LIBERO items-into-basket task. The three different type are: (1) small translation to object positions, (2) big translation to object position and additional distractors, and (3) background change and additional distractors.
 Figure 22: Three types of out-of-distribution variation of the LIBERO pot-on-stove task. The three different type are: (1) small translation to object positions, (2) big translation to object position and additional distractors, and (3) background change.
 27
 
 
-Robust Finetuning of Vision-Language-Action Robot Policies via Parameter Merging
+ Robust Finetuning of Vision-Language-Action Robot Policies via Parameter Merging
 Scene Image Task LIBERO Eval Suite
 put the bowl on the plate LIBERO-goal
 pick up the alphabet soup
@@ -487,7 +487,7 @@ Table 6: Sample of LIBERO Generalist Evaluations for each evaluation suite.
 28
 
 
-Robust Finetuning of Vision-Language-Action Robot Policies via Parameter Merging
+ Robust Finetuning of Vision-Language-Action Robot Policies via Parameter Merging
 A.7. Hyperparameters
 A.7.1. Choosing Merging Coefficient α
 For each task that we consider (e.g. mugs-on-plate in LIBERO, plates in DROID), we test policy performance on several scenes, which are different variations of the same task with different objects, distractors, and backgrounds etc. To choose what values of α we use, we use one OOD scene as the “validation” scene, and tune the hyperparameter α for best performance on that validation scene. Then, we use the rest of the OOD scenes as the “test” scenes, and report the performance of all methods only on the test scenes. In DROID experiments, we only tune α ∈ {0.25, 0.5, 0.75} on the validation scene, while in LIBERO experiments we tune α ∈ {0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1} since it is cheap to do so. We find that on DROID α = 0.5 typically tends to perform well across tasks.
@@ -501,7 +501,7 @@ Table 7: Training hyperparameters for task-FT on DROID whiteboard .
 29
 
 
-Robust Finetuning of Vision-Language-Action Robot Policies via Parameter Merging
+ Robust Finetuning of Vision-Language-Action Robot Policies via Parameter Merging
 Hyperparameter Value
 Batch Size 32 Learning Rate Schedule Linear Warmup with Cosine Decay Peak-LR 3e-5 End-LR 2e-6 Warmup-Steps 1000 Decay Steps 10000 Gradient Steps 9999 Weight Decay 1e-10 Optimizer Adam(b1=0.9, b2=0.95, eps=1e-8) Clip Gradient Norm 1.0 Cotraining-Mix 80% task, 20% pretrain
 Table 8: Training hyperparameters for co-FT on DROID whiteboard .
@@ -517,7 +517,7 @@ Table 11: Merging hyperparameters for DROID whiteboard .
 30
 
 
-Robust Finetuning of Vision-Language-Action Robot Policies via Parameter Merging
+ Robust Finetuning of Vision-Language-Action Robot Policies via Parameter Merging
 Hyperparameter Value
 Merging Weight for task-FT 50% task-FT, 50% base model Merging Weight for co-FT 50% task-FT, 50% base model
 Table 12: Merging hyperparameters for DROID plates .
@@ -530,7 +530,7 @@ Table 13: Hyperparameters for LIBERO pretraining.
 31
 
 
-Robust Finetuning of Vision-Language-Action Robot Policies via Parameter Merging
+ Robust Finetuning of Vision-Language-Action Robot Policies via Parameter Merging
 Both task-FT and co-FT on all 3 libero finetunting tasks use the same set of hyperparameters, provided below. We determine the number of gradient steps to choose by sweeping over all taken checkpoints, evaluating them on ID and OOD, and picking the best performing ones.
 Hyperparameter Value
 Batch Size 64 Learning Rate Schedule Linear Warmup with Cosine Decay Peak-LR 2.5e-5 End-LR 2.5e-6 Warmup-Steps 1000 Decay Steps 30000 Gradient Steps 500 (items-into-basket, pot-on-stove), 1000 (mugs) Weight Decay 1e-10 Optimizer Adam(b1=0.9, b2=0.95, eps=1e-8) Clip Gradient Norm 1.0
@@ -541,7 +541,7 @@ Table 15: Training hyperparameters for co-FT on LIBERO-items-into-basket, mugs, 
 32
 
 
-Robust Finetuning of Vision-Language-Action Robot Policies via Parameter Merging
+ Robust Finetuning of Vision-Language-Action Robot Policies via Parameter Merging
 As explained earlier and similar to our DROID procedure, after checking all checkpoints and picking the best-performing one, we then apply RETAIN on it to enhance its performance on OOD and Generalist evals. In simulation, we check various merging coefficients in the range [0.0, 1.0], and after doing so, here are our final merging parameters.
 Hyperparameter Value
 Merging Weight for task-FT 90% task-FT, 10% base model Merging Weight for co-FT 90% task-FT, 10% base model
@@ -555,7 +555,7 @@ Table 18: Merging hyperparameters for LIBERO pot-on-stove .
 33
 
 
-Robust Finetuning of Vision-Language-Action Robot Policies via Parameter Merging
+ Robust Finetuning of Vision-Language-Action Robot Policies via Parameter Merging
 A.8. Details on Baseline Methods
 Here we provide addtional details on the baseline methods we compare against.
 Task-FT : We fine-tune all parameters of the base policy according to the behavioral cloning loss in Eq. (1). All data are sampled from the fine-tuning dataset.
@@ -570,7 +570,7 @@ Typically, we observe that RETAIN improves the robustness of the merged policy o
 34
 
 
-Robust Finetuning of Vision-Language-Action Robot Policies via Parameter Merging
+ Robust Finetuning of Vision-Language-Action Robot Policies via Parameter Merging
 Figure 23: Failure Example of RETAIN in DROID whiteboard task: The arm picks up the eraser, but drops it on the whiteboard instead of wiping left and right with it.
 Figure 24: Failure Example of RETAIN in DROID plates task: the arm is not able to precisely pick up the green plate, and so constantly retries this until the policy times out.
 35

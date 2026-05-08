@@ -12,7 +12,7 @@ Conformal prediction typically hinges on exchangeability—an assumption less st
 arXiv:2402.09623v2 [stat.ML] 15 May 2024
 
 
-Conformal methods for time series tend to fall into one of two categories: multi-series and single-series. Methods in the former category aim to predict a new trajectory by leveraging other jointly exchangeable trajectories from the same population [1, 2, 17]. In the single-series setting, the aim shifts to forecasting future values based on historical observations from a fixed series, typically avoiding strict exchangeability assumptions [20, 21, 22]. This paper draws inspiration from both areas and addresses a remaining limitation of current methods for multi-series forecasting.
+ Conformal methods for time series tend to fall into one of two categories: multi-series and single-series. Methods in the former category aim to predict a new trajectory by leveraging other jointly exchangeable trajectories from the same population [1, 2, 17]. In the single-series setting, the aim shifts to forecasting future values based on historical observations from a fixed series, typically avoiding strict exchangeability assumptions [20, 21, 22]. This paper draws inspiration from both areas and addresses a remaining limitation of current methods for multi-series forecasting.
 The challenge addressed in this paper is that of data heterogeneity—distinct time series with different levels of unpredictability. For instance, in motion planning, forecasting the paths of pedestrians may be complicated by the relatively erratic behavior of some individuals, such as small children or intoxicated adults. This variability aligns with the classical issue of heteroscedasticity. The latter has recently gained some recognition within the conformal prediction literature, particularly for regression [8] and classification [23, 24]. In this paper, we address heteroscedasticity within the more complex setting of trajectory forecasting.
 Related Work
 The challenge of conformal inference for non-exchangeable data is receiving significant attention, both from more general perspectives [25, 26, 27] and in the context of time-series forecasting. An important line of research has focused on forecasting a single series, including recent works inspired by [20] such as [21, 22, 28, 29, 30, 31, 32]. Further, other approaches that combine conformal prediction with single-series forecasting include those of [16, 18, 33, 34, 35, 36, 37]. The present paper builds on this extensive body of work, drawing particular inspiration from [20]. However, our approach is distinct in its pursuit of stronger simultaneous coverage guarantees, a goal justified by motion planning applications, for example, but not achievable within the constraints of single-series forecasting.
@@ -31,7 +31,7 @@ t,d ) ∈ Rd, measured at distinct time steps t ∈ {0, . . . , T }. We will ass
 2
 
 
-(Y (i)
+ (Y (i)
 0 , Y (i)
 1 , . . . ,Y (i)
 T ). Intuitively, our goal is to leverage the data in D to construct an informative
@@ -61,7 +61,7 @@ The aforementioned limitations of marginal coverage have been acknowledged befor
 3
 
 
-−0.50
+ −0.50
 −0.25
 0.00
 0.25
@@ -86,7 +86,7 @@ We introduce a novel approach for constructing prediction bands for (multi-dimen
 4
 
 
-Figure 2 offers a glimpse into the effectiveness of CAFHT applied to the pedestrian trajectories from Figure 1. Our method’s advantage over state-of-the-art techniques [17, 39] lies in its ability to automatically generate narrower bands for easier trajectories and wider ones for harder paths. As shown through extensive experiments, this leads to more useful uncertainty estimates with higher conditional coverage. In contrast, existing methods struggle to accommodate heterogeneity, often resulting in uniform prediction bands for all trajectories.
+ Figure 2 offers a glimpse into the effectiveness of CAFHT applied to the pedestrian trajectories from Figure 1. Our method’s advantage over state-of-the-art techniques [17, 39] lies in its ability to automatically generate narrower bands for easier trajectories and wider ones for harder paths. As shown through extensive experiments, this leads to more useful uncertainty estimates with higher conditional coverage. In contrast, existing methods struggle to accommodate heterogeneity, often resulting in uniform prediction bands for all trajectories.
 Easy−to−predict Hard−to−predict
 0 5 10 15 0 5 10 15
 −1.0
@@ -112,7 +112,7 @@ In this paper, we choose an LSTM model for demonstration and focus on one-step-a
 5
 
 
-3.2 Initializing the Adaptive Prediction Bands
+ 3.2 Initializing the Adaptive Prediction Bands
 After training the forecaster gˆ on the data in Dtrain, our method will convert its one-step-ahead point predictions for any new trajectory Y into suitable prediction bands. This is achieved by applying the ACI algorithm of [20]. For simplicity, we begin by focusing on the special case of one-dimensional trajectories (d = 1). An extension of our solution to higher-dimensional trajectories is deferred to Section 3.6.
 ACI was designed to generate one-step-ahead forecasts for a single one-dimensional time series, without requiring a pre-trained forecaster gˆ. In the single-series framework, [20] suggested training gˆ in an online manner. In our setting, where we have access to multiple trajectories from the same population, it is logical to pre-train it. In any case, pre-training does not exclude the potential for further online updates of gˆ with each subsequent one-step-ahead prediction. However, to simplify the notation, our discussion now focuses on a static model.
 A review of ACI [20] can be found in Appendix A1. Here, we briefly highlight two critical aspects of that algorithm. Note that the main ideas of our method can also be straightforwardly applied in combinations with other variations of the ACI method, as shown in Section 3.7.
@@ -131,7 +131,7 @@ t (Y (i), γ)].
 6
 
 
-Our method will transform these ACI bands, which can only achieve a weaker notion of asymptotic average coverage because they do not leverage any exchangeability, into simultaneous prediction bands satisfying (2). For each i ∈ Dcal, CAFHT evaluates a conformity score εˆi(γ):
+ Our method will transform these ACI bands, which can only achieve a weaker notion of asymptotic average coverage because they do not leverage any exchangeability, into simultaneous prediction bands satisfying (2). For each i ∈ Dcal, CAFHT evaluates a conformity score εˆi(γ):
 εˆi(γ) := max
 t∈[T ]
 (
@@ -180,7 +180,7 @@ The ability of the ACI algorithm to produce informative prediction bands can som
 7
 
 
-data-driven manner? In our scenario, which involves multiple relevant trajectories from the same population, addressing this tuning challenge is somewhat simpler than in the original single-series context for which the ACI algorithm was designed. Nonetheless, careful consideration is still required in the tuning process of γ, as we discuss next.
+ data-driven manner? In our scenario, which involves multiple relevant trajectories from the same population, addressing this tuning challenge is somewhat simpler than in the original single-series context for which the ACI algorithm was designed. Nonetheless, careful consideration is still required in the tuning process of γ, as we discuss next.
 As a naive approach, one may feel tempted to apply the CAFHT method described above using different learning rates, with the idea of then cherry-picking the value of γ leading to the most appealing prediction bands. Unsurprisingly, however, such an unprincipled approach would invalidate the coverage guarantee because it breaks the exchangeability between the test trajectory and the calibration data. This issue is closely related to problems of conformal prediction after model selection previously studied by [54] and [55]. Therefore, we propose two alternative solutions inspired by their works.
 The simplest approach to explain involves an additional data split. Let us randomly partition Dcal into two subsets of trajectories, D1
 cal and D2
@@ -219,7 +219,7 @@ Our method employs a grid search to optimize the ACI hyper-parameters, a standar
 8
 
 
-components of CAFHT, such as training the models and selecting γ via grid search, are conducted offline and require completion only once. After these preliminary steps, the real-time component of CAFHT, which constructs prediction bands for new test trajectories, is fast and efficient.
+ components of CAFHT, such as training the models and selecting γ via grid search, are conducted offline and require completion only once. After these preliminary steps, the real-time component of CAFHT, which constructs prediction bands for new test trajectories, is fast and efficient.
 3.5 CAFHT with Multiplicative Scores
 A potential shortcoming of Algorithm 1 is that it can only add a constant margin of error to the prediction band constructed by the ACI algorithm. While straightforward, this approach may not be always optimal. In many cases, it would seem more natural to utilize a multiplicative error. The rationale behind this is intuitive: trajectories that are inherently more unpredictable, resulting in wider ACI prediction bands, may necessitate larger margins of error to ensure valid simultaneous coverage. This concept can be seamlessly integrated into the CAFHT method by replacing the conformity scores initially outlined in (3) with these:
 ε ̃i(γ) = max
@@ -275,7 +275,7 @@ i (γ).
 9
 
 
-We conclude this section by remarking that this general idea could also be implemented using the multiplicative conformity scores described in Section 3.5, as well as by using different dimension reduction functions in (3). For example, one may consider replacing the infinity-norm in (3) with an l2 norm, leading to a “spherical” margin of error around the ACI prediction bands instead of a “square” one.
+ We conclude this section by remarking that this general idea could also be implemented using the multiplicative conformity scores described in Section 3.5, as well as by using different dimension reduction functions in (3). For example, one may consider replacing the infinity-norm in (3) with an l2 norm, leading to a “spherical” margin of error around the ACI prediction bands instead of a “square” one.
 3.7 Leveraging Conformal PID Prediction Bands
 CAFHT is not heavily reliant on the specific mechanics of ACI. The crucial aspect of ACI is its capability to transform black-box point forecasts into prediction bands that approximately mirror the unpredictability of each trajectory. Thus, our method can integrate with any variation of ACI.
 Some of our demonstrations in Appendix A5 include an alternative implementation of CAFHT that employs the conformal PID algorithm of [22] instead of ACI. To minimize computational demands, our demonstrations will primarily utilize the quantile tracking feature of the original conformal PID method. This simplified version of conformal PID is influenced only by a single hyper-parameter—a learning rate γ, similar to ACI.
@@ -288,7 +288,7 @@ The CAFHT method is compared with two benchmark approaches that also provide sim
 10
 
 
-The second benchmark is the Normalized Conformal Trajectory Predictor (NCTP) of [39]. This method is closer to ours but utilizes different scores and does not leverage ACI to adapt to heterogeneity. In short, NCTP directly takes as input a forecaster gˆ providing one-step-ahead
+ The second benchmark is the Normalized Conformal Trajectory Predictor (NCTP) of [39]. This method is closer to ours but utilizes different scores and does not leverage ACI to adapt to heterogeneity. In short, NCTP directly takes as input a forecaster gˆ providing one-step-ahead
 point predictions Yˆ (i)
 t and evaluates the scores εˆi = maxt∈[T ]{(|Yˆ (i)
 t − Y (i)
@@ -307,7 +307,7 @@ Figure 3 summarizes the performance of the three methods as a function of the nu
 11
 
 
-Simultaneous marginal coverage Simultaneous conditional coverage Average width
+ Simultaneous marginal coverage Simultaneous conditional coverage Average width
 200 500 1000 2000 500010000 200 500 1000 2000 500010000 200 500 1000 2000 500010000
 0.00
 0.50
@@ -353,7 +353,7 @@ Figure 4 summarizes the results of similar experiments investigating the perform
 12
 
 
-coverage. Meanwhile, our CAFHT method again yields the most informative prediction bands, with low average width and high conditional coverage.
+ coverage. Meanwhile, our CAFHT method again yields the most informative prediction bands, with low average width and high conditional coverage.
 Appendix A5 describes additional experimental results that are qualitatively consistent with the main findings. These experiments investigate the effects of the data dimensions (Figure A1 and Table A3), of the proportion of hard trajectories (Figure A2 and Table A4), and evaluate the robustness of different methods against distribution shifts (Figure A3 and Table A5). Additionally, these experiments are replicated using synthetic data from an AR model with a static noise profile; see Figures A4–A8 and Tables A6–A10.
 Furthermore, we conducted several experiments to investigate the performance of various implementations of our method. Figures A9–A13 and Tables A11–A15 focus on comparing alternative model selection approaches while applying the multiplicative conformity scores defined in (6). Figures A14–A18 and Tables A16–A20 summarize similar experiments based on the additive scores defined in (3).
 4.3 Pedestrian Trajectories
@@ -384,7 +384,7 @@ Figure 5 investigates the effect of varying the noise level, setting σt2 ∝ t 
 13
 
 
-Additional numerical experiments are summarized in Appendix A5. Figure A19 and Table A22 investigate the effect of having a larger fraction of hard trajectories. Figure A20 and Table A23 compare the performances of different methods as a function of the sample size used for training and calibration. Figures A21–A24 and Tables A24–A27 perform a comparative analysis of different implementations of our methods under varying noise levels, using both multiplicative and additive conformity scores.
+ Additional numerical experiments are summarized in Appendix A5. Figure A19 and Table A22 investigate the effect of having a larger fraction of hard trajectories. Figure A20 and Table A23 compare the performances of different methods as a function of the sample size used for training and calibration. Figures A21–A24 and Tables A24–A27 perform a comparative analysis of different implementations of our methods under varying noise levels, using both multiplicative and additive conformity scores.
 5 Discussion
 This work opens several directions for future research. On the theoretical side, one may want to understand the conditions under which our method can asymptotically achieve optimal prediction bands in the limit of large sample sizes, potentially drawing inspiration from [53] and [57]. Moreover, there are several potential ways to further enhance our method and address some of its remaining limitations. For example, it could be adapted to provide even stronger types of coverage guarantees beyond those considered in this paper by conditioning on the calibration data or on some other observable features. Another possible direction is to study how to best reduce the algorithmic randomness caused by data splitting [58], possibly using cross-conformal methods [59] or E-value approaches [60]. Additionally, our method could be further improved by incorporating time dependency into the ACI learning rate or by relaxing the exchangeability assumption by leveraging weighted conformal inference ideas [25]. Lastly, it would be especially interesting to apply this method in real-world motion planning scenarios.
 Software implementing the algorithms and data experiments are available online at https: //github.com/FionaZ3696/CAFHT.git.
@@ -399,7 +399,7 @@ References
 14
 
 
-[6] Jing Lei et al. “Distribution-free predictive inference for regression”. In: J. Am. Stat. Assoc. 113.523 (2018), pp. 1094–1111.
+ [6] Jing Lei et al. “Distribution-free predictive inference for regression”. In: J. Am. Stat. Assoc. 113.523 (2018), pp. 1094–1111.
 [7] Jing Lei and Larry Wasserman. “Distribution-free prediction bands for non-parametric regression”. In: J. R. Stat. Soc. (B) 76.1 (2014), pp. 71–96.
 [8] Yaniv Romano, Evan Patterson, and Emmanuel J Cande`s. “Conformalized quantile regression”. In: Adv. Neural Inf. Process. Syst. 2019, pp. 3538–3548.
 [9] Matteo Sesia and Yaniv Romano. “Conformal Prediction using Conditional Histograms”. In: Adv. Neural Inf. Process. Syst. 34 (2021).
@@ -422,7 +422,7 @@ References
 15
 
 
-[26] Rina Foygel Barber et al. “Conformal prediction beyond exchangeability”. In: Ann. Stat. 51.2 (2023), pp. 816–845.
+ [26] Rina Foygel Barber et al. “Conformal prediction beyond exchangeability”. In: Ann. Stat. 51.2 (2023), pp. 816–845.
 [27] Hongxiang Qiu, Edgar Dobriban, and Eric Tchetgen. “Prediction sets adaptive to unknown covariate shift”. In: J. R. Stat. Soc. (B) (July 2023).
 [28] Osbert Bastani et al. “Practical Adversarial Multivalid Conformal Prediction”. In: Adv. Neural Inf. Process. Syst. Ed. by Alice H. Oh et al. 2022.
 [29] Margaux Zaffran et al. “Adaptive Conformal Predictions for Time Series”. In: International Conference on Machine Learning. 2022.
@@ -444,7 +444,7 @@ References
 16
 
 
-[45] Maxime Cauchois, Suyash Gupta, and John C Duchi. “Knowing what you know: valid and validated confidence sets in multiclass and multilabel prediction”. In: J. Mach. Learn. Res., 22.1 (2021), pp. 3681–3722.
+ [45] Maxime Cauchois, Suyash Gupta, and John C Duchi. “Knowing what you know: valid and validated confidence sets in multiclass and multilabel prediction”. In: J. Mach. Learn. Res., 22.1 (2021), pp. 3681–3722.
 [46] Matteo Sesia, Stefano Favaro, and Edgar Dobriban. “Conformal frequency estimation using discrete sketched data with coverage for distinct queries”. In: J. Mach. Learn. Res. 24.348 (2023), pp. 1–80.
 [47] Yaniv Romano et al. “With Malice Toward None: Assessing Uncertainty via Equalized Coverage”. In: Harvard Data Science Review (Apr. 30, 2020).
 [48] Sepp Hochreiter and Ju ̈rgen Schmidhuber. “Long short-term memory”. In: Neural computation 9.8 (1997), pp. 1735–1780.
@@ -463,7 +463,7 @@ References
 17
 
 
-A1 Further Details on the ACI Algorithm
+ A1 Further Details on the ACI Algorithm
 A1.1 Background on ACI
 In this section, we briefly review some relevant components of the adaptive conformal inference (ACI) method introduced by [20] in the context of forecasting a single time series. The goal of ACI is to construct prediction bands in an online setting, while accounting for possible changes in the data distribution across different times. Specifically, ACI is designed to create prediction bands with a long-term average coverage guarantee. Intuitively, this guarantee means that, for an indefinitely long time series, a sufficiently large proportion of the series should be contained within the output band. This objective is notably distinct from the one investigated in our paper. However, since our method builds upon ACI, it can be useful to recall some relevant technical details of the latter method.
 In the online learning setting considered by [20], one observes covariate-response pairs {(Xt, Yt)}t∈N ⊂
@@ -481,7 +481,7 @@ t (αt),
 18
 
 
-and CˆACI
+ and CˆACI
 t (αt) = {y : St(Xt, y) ≤ Qˆt(1 − αt)}. Equivalently,
 Cˆ ACI
 t (αt) = [lˆACI
@@ -510,7 +510,7 @@ As originally designed, ACI primarily aimed at achieving asymptotic coverage in 
 19
 
 
-The solution described above is applied in our experiments using 5 warm-start scores, denoted as εˆ−4, . . . , εˆ0, and setting the initial value of α−4 equal to 0.1. A similar warm-start approach is also utilized when we apply the conformal PID algorithm of [22] instead of ACI. However, for the algorithm the warm start simply consists of setting the initial quantile q0 equal to the (1 − α)-th quantile evaluated on the empirical distribution of scores computed using the training set.
+ The solution described above is applied in our experiments using 5 warm-start scores, denoted as εˆ−4, . . . , εˆ0, and setting the initial value of α−4 equal to 0.1. A similar warm-start approach is also utilized when we apply the conformal PID algorithm of [22] instead of ACI. However, for the algorithm the warm start simply consists of setting the initial quantile q0 equal to the (1 − α)-th quantile evaluated on the empirical distribution of scores computed using the training set.
 A2 Proof of Theorem 1
 Proof of Theorem 1. The proof follows directly from the exchangeability of the conformity scores, as it is often the case for split-conformal prediction methods. Denote εˆn+1(γ) the conformity score of the test trajectory Y (t+1) evaluated using the ACI prediction band constructed with step size γ. For any
 fixed α and γ > 0, we have that Y (n+1)
@@ -523,7 +523,7 @@ t ∀t ∈ [T ]) = P(εˆn+1(γ) ≤ Qˆ(1 − α, γ)) ≥ 1 − α.
 20
 
 
-A3 Algorithms
+ A3 Algorithms
 Algorithm A1 Model selection component of CAFHT 1: Input: A pre-trained forecaster gˆ producing one-step-ahead predictions; calibration trajectories D1
 cal; a grid of candidate learning rates {γ1, . . . , γL}. 2: for l ∈ [L] do
 3: Construct CˆACI(Y (i), γl) using ACI, for i ∈ D1
@@ -566,7 +566,7 @@ t. 11: end for
 21
 
 
-Algorithm A3 Model selection component of CAFHT - multiplicative scores 1: Input: A pre-trained forecaster gˆ producing one-step-ahead predictions; calibration trajectories D1
+ Algorithm A3 Model selection component of CAFHT - multiplicative scores 1: Input: A pre-trained forecaster gˆ producing one-step-ahead predictions; calibration trajectories D1
 cal; a grid of candidate learning rates {γ1, . . . , γL}. 2: for l ∈ [L] do
 3: Construct CˆACI(Y (i), γl) using ACI, for i ∈ D1
 cal.
@@ -603,7 +603,7 @@ p|Dcal| .
 22
 
 
-A further refinement of this approach was proposed by [55], which suggested instead using
+ A further refinement of this approach was proposed by [55], which suggested instead using
 α′ = max{α′
 Markov, α′
 DKW}, (A11)
@@ -634,7 +634,7 @@ t. 10: end for
 23
 
 
-Algorithm A5 Model selection component of CAFHT (theory)
+ Algorithm A5 Model selection component of CAFHT (theory)
 1: Input: A pre-trained forecaster gˆ producing one-step-ahead predictions; calibration trajectories Dcal; a grid of candidate learning rates {γ1, . . . , γL}. 2: for l ∈ [L] do
 3: Construct CˆACI(Y (i), γl) using ACI, for i ∈ Dcal. 4: Evaluate εˆi(γl) using (3), for i ∈ Dcal. 5: Compute Qˆ(1 − α′, γl), the (1 − α′)(1 + 1/|Dcal|)-th smallest value of {εˆi(γl), i ∈ Dcal}, where α′ is defined in (A11). 6: Construct Cˆ(Y (i), γl) = (Cˆ1(Y (i), γl), . . . , CˆT (Y (i), γl)) using (4) for i ∈ Dcal. 7: end for
 8: Pick γˆ such that, γˆ := arg min
@@ -660,7 +660,7 @@ t. 10: end for
 24
 
 
-Algorithm A7 Model selection component of CAFHT (theory) - multiplicative scores
+ Algorithm A7 Model selection component of CAFHT (theory) - multiplicative scores
 1: Input: A pre-trained forecaster gˆ producing one-step-ahead predictions; calibration trajectories Dcal; a grid of candidate learning rates {γ1, . . . , γL}. 2: for l ∈ [L] do
 3: Construct CˆACI(Y (i), γl) using ACI, for i ∈ Dcal. 4: Evaluate εˆi(γl) using the multiplicative version of (4), for i ∈ Dcal. 5: Compute Qˆ(1 − α′, γl), the (1 − α′)(1 + 1/|Dcal|)-th quantile of {εˆi(γl), i ∈ Dcal}, where α′ is defined in (A11). 6: Construct Cˆ(Y (i), γl) = (Cˆ1(Y (i), γl), . . . , CˆT (Y (i), γl)) for i ∈ Dcal. 7: end for
 8: Pick γˆ such that, γˆ := arg min
@@ -670,7 +670,7 @@ AvgWidth(C(Y (i), γl)). (A14)
 25
 
 
-A5 Additional Experimental Results
+ A5 Additional Experimental Results
 A5.1 Synthetic Data
 A5.1.1 Main Results — Comparing CAFHT to CFRNN and NCTP
 AR data with dynamic noise profile. Firstly, we investigate the performance of the three methods considered in this paper, namely CAFHT, CFRNN, and NCTP, using synthetic data from an AR model with dynamic noise profile. The default settings of the experiments are as described in Section 4, but this appendix contains more detailed results.
@@ -682,7 +682,7 @@ Finally, Figure A3 and Table A5 investigate the robustness of all methods to dis
 26
 
 
-Table A1: Performance on simulated heterogeneous trajectories of prediction bands constructed by different methods, as a function of the total number of training and calibration trajectories. The red numbers indicate smaller prediction bands or higher conditional coverage. See the corresponding plot in Figure 3.
+ Table A1: Performance on simulated heterogeneous trajectories of prediction bands constructed by different methods, as a function of the total number of training and calibration trajectories. The red numbers indicate smaller prediction bands or higher conditional coverage. See the corresponding plot in Figure 3.
 Simultaneous coverage
 Sample size Method Average width Conditional-hard Conditional-easy Marginal
 200
@@ -720,7 +720,7 @@ Figure A1: Performance on simulated heterogeneous trajectories of prediction ban
 27
 
 
-Table A2: Performance on simulated heterogeneous trajectories of prediction bands constructed by different methods, as a function of the prediction horizon. The red numbers indicate smaller prediction bands or higher conditional coverage. See corresponding plot in Figure 4.
+ Table A2: Performance on simulated heterogeneous trajectories of prediction bands constructed by different methods, as a function of the prediction horizon. The red numbers indicate smaller prediction bands or higher conditional coverage. See corresponding plot in Figure 4.
 Simultaneous coverage
 Prediction horizon Method Average width Conditional-hard Conditional-easy Marginal
 5
@@ -749,7 +749,7 @@ Data dimensionality Method Average width Conditional-hard Conditional-easy Margi
 28
 
 
-Simultaneous marginal coverage Simultaneous conditional coverage Average width
+ Simultaneous marginal coverage Simultaneous conditional coverage Average width
 0.1 0.2 0.5 0.1 0.2 0.5 0.1 0.2 0.5
 0.00
 0.50
@@ -796,7 +796,7 @@ Figure A3: Performance on simulated heterogeneous trajectories of prediction ban
 29
 
 
-Table A5: Performance on simulated heterogeneous trajectories of prediction bands constructed by different methods under distributional shift. The results are shown as a function of the proportion of hard-to-predict trajectories in the test data. The red numbers indicate higher marginal coverage. See the corresponding plot in Figure A3.
+ Table A5: Performance on simulated heterogeneous trajectories of prediction bands constructed by different methods under distributional shift. The results are shown as a function of the proportion of hard-to-predict trajectories in the test data. The red numbers indicate higher marginal coverage. See the corresponding plot in Figure A3.
 Proportion of hard samples (test data) Method Length Marginal coverage
 0.2
 0.2 CFRNN 2.000 (0.000) 0.999 (0.000) 0.2 NCTP 0.300 (0.016) 0.808 (0.003) 0.2 CAFHT 0.207 (0.002) 0.877 (0.003)
@@ -817,7 +817,7 @@ Proportion of hard samples (test data) Method Length Marginal coverage
 30
 
 
-AR data with static noise profile. Next, we present the results based on data generated from the AR model with the static noise profile.
+ AR data with static noise profile. Next, we present the results based on data generated from the AR model with the static noise profile.
 Simultaneous marginal coverage Simultaneous conditional coverage Average width
 200 500 1000 2000 500010000 200 500 1000 2000 500010000 200 500 1000 2000 500010000
 0.00
@@ -856,7 +856,7 @@ Sample size Method Average width Conditional-hard Conditional-easy Marginal
 31
 
 
-Simultaneous marginal coverage Simultaneous conditional coverage Average width
+ Simultaneous marginal coverage Simultaneous conditional coverage Average width
 5 15 25 50 100 5 15 25 50 100 5 15 25 50 100
 0.00
 0.50
@@ -912,7 +912,7 @@ Figure A6: Performance on simulated heterogeneous trajectories of prediction ban
 32
 
 
-Table A8: Performance on simulated heterogeneous trajectories of prediction bands constructed by different methods, as a function of the data dimensionality. The red numbers indicate smaller prediction bands or higher conditional coverage. See the corresponding plot in Figure A6.
+ Table A8: Performance on simulated heterogeneous trajectories of prediction bands constructed by different methods, as a function of the data dimensionality. The red numbers indicate smaller prediction bands or higher conditional coverage. See the corresponding plot in Figure A6.
 Simultaneous coverage
 Data dimensionality Method Average width Conditional-hard Conditional-easy Marginal
 1
@@ -962,7 +962,7 @@ Figure A8: Performance on simulated heterogeneous trajectories of prediction ban
 33
 
 
-Table A9: Performance on simulated heterogeneous trajectories of prediction bands constructed by different methods, as a function of the proportion of hard-to-predict trajectories. The red numbers indicate smaller prediction bands or higher conditional coverage. See the corresponding plot in Figure A7.
+ Table A9: Performance on simulated heterogeneous trajectories of prediction bands constructed by different methods, as a function of the proportion of hard-to-predict trajectories. The red numbers indicate smaller prediction bands or higher conditional coverage. See the corresponding plot in Figure A7.
 Simultaneous coverage
 Proportion of hard samples (all data)
 Method Average width Conditional-hard Conditional-easy Marginal
@@ -975,7 +975,7 @@ Method Average width Conditional-hard Conditional-easy Marginal
 34
 
 
-Table A10: Performance on simulated heterogeneous trajectories of prediction bands constructed by different methods under distributional shift. The results are shown as a function of the proportion of hard-to-predict trajectories in the test data. The red numbers indicate higher marginal coverage. See the corresponding plot in Figure A8.
+ Table A10: Performance on simulated heterogeneous trajectories of prediction bands constructed by different methods under distributional shift. The results are shown as a function of the proportion of hard-to-predict trajectories in the test data. The red numbers indicate higher marginal coverage. See the corresponding plot in Figure A8.
 Proportion of hard samples (test data) Method Length Marginal coverage
 0.2
 0.2 CFRNN 2.000 (0.000) 0.999 (0.000) 0.2 NCTP 0.437 (0.028) 0.811 (0.003) 0.2 CAFHT 0.284 (0.003) 0.832 (0.003)
@@ -996,7 +996,7 @@ Proportion of hard samples (test data) Method Length Marginal coverage
 35
 
 
-A5.1.2 Supplementary Results — Comparing Different Versions of CAFHT
+ A5.1.2 Supplementary Results — Comparing Different Versions of CAFHT
 In this subsection, we add different versions of CAFHT into comparison. We will separately analyze the CAFHT prediction bands constructed using multiplicative conformity scores (6) and those constructed using additive conformity scores (3). The conclusions from the results evaluated using synthetic data with the dynamic profile and with the static profile are very similar. To save space, we only demonstrate the results using data with the static profile.
 We consider the following implementations of CAFHT:
 • CAFHT: the main method. It is the CAFHT method based on the ACI prediction band using the data splitting strategy; see Algorithm A2.
@@ -1029,7 +1029,7 @@ Figure A9: Performance on simulated heterogeneous trajectories of prediction ban
 36
 
 
-Table A11: Performance on simulated heterogeneous trajectories of prediction bands constructed by different methods, as a function of the total number of training and calibration trajectories. The red numbers indicate smaller prediction bands or higher conditional coverage. See corresponding plot in Figure A9.
+ Table A11: Performance on simulated heterogeneous trajectories of prediction bands constructed by different methods, as a function of the total number of training and calibration trajectories. The red numbers indicate smaller prediction bands or higher conditional coverage. See corresponding plot in Figure A9.
 Simultaneous coverage
 Sample size Method Average width Conditional-hard Conditional-easy Marginal
 200
@@ -1047,7 +1047,7 @@ Sample size Method Average width Conditional-hard Conditional-easy Marginal
 37
 
 
-Simultaneous marginal coverage Simultaneous conditional coverage Average width
+ Simultaneous marginal coverage Simultaneous conditional coverage Average width
 5 15 25 50 100 5 15 25 50 100 5 15 25 50 100
 0.00
 0.50
@@ -1083,7 +1083,7 @@ Prediction horizon Method Average width Conditional-hard Conditional-easy Margin
 38
 
 
-Simultaneous marginal coverage Simultaneous conditional coverage Average width
+ Simultaneous marginal coverage Simultaneous conditional coverage Average width
 1 2 3 5 10 1 2 3 5 10 1 2 3 5 10
 0.00
 0.50
@@ -1119,7 +1119,7 @@ Data dimensionality Method Average width Conditional-hard Conditional-easy Margi
 39
 
 
-Simultaneous marginal coverage Simultaneous conditional coverage Average width
+ Simultaneous marginal coverage Simultaneous conditional coverage Average width
 0.1 0.2 0.5 0.1 0.2 0.5 0.1 0.2 0.5
 0.00
 0.50
@@ -1166,7 +1166,7 @@ Figure A13: Performance on simulated heterogeneous trajectories of prediction ba
 40
 
 
-Table A15: Performance on simulated heterogeneous trajectories of prediction bands constructed by different methods under distributional shift. The results are shown as a function of the proportion of hard-to-predict trajectories in the test data. The red numbers indicate higher marginal coverage. See the corresponding plot in Figure A13.
+ Table A15: Performance on simulated heterogeneous trajectories of prediction bands constructed by different methods under distributional shift. The results are shown as a function of the proportion of hard-to-predict trajectories in the test data. The red numbers indicate higher marginal coverage. See the corresponding plot in Figure A13.
 Proportion of hard samples (test data) Method Length Marginal coverage
 0.2
 0.2 CFRNN 2.000 (0.000) 0.999 (0.000) 0.2 NCTP 0.437 (0.028) 0.811 (0.003) 0.2 CAFHT 0.284 (0.003) 0.832 (0.003) 0.2 CAFHT - PID 0.316 (0.018) 0.816 (0.003) 0.2 CAFHT (theory) 0.342 (0.005) 0.896 (0.002) 0.2 CAFHT (theory) - PID 0.411 (0.008) 0.896 (0.003)
@@ -1187,7 +1187,7 @@ Proportion of hard samples (test data) Method Length Marginal coverage
 41
 
 
-CAFHT — Additive Scores
+ CAFHT — Additive Scores
 Finally, the results of CAFHT with additive conformity scores (3) are presented.
 Simultaneous marginal coverage Simultaneous conditional coverage Average width
 200 500 1000 2000 500010000 200 500 1000 2000 500010000 200 500 1000 2000 500010000
@@ -1252,7 +1252,7 @@ Figure A16: Performance on simulated heterogeneous trajectories of prediction ba
 42
 
 
-Table A16: Performance on simulated heterogeneous trajectories of prediction bands constructed by different methods, as a function of the total number of training and calibration trajectories. The red numbers indicate smaller prediction bands or higher conditional coverage. See the corresponding plot in Figure A14.
+ Table A16: Performance on simulated heterogeneous trajectories of prediction bands constructed by different methods, as a function of the total number of training and calibration trajectories. The red numbers indicate smaller prediction bands or higher conditional coverage. See the corresponding plot in Figure A14.
 Simultaneous coverage
 Sample size Method Average width Conditional-hard Conditional-easy Marginal
 200
@@ -1270,7 +1270,7 @@ Sample size Method Average width Conditional-hard Conditional-easy Marginal
 43
 
 
-Table A17: Performance on simulated heterogeneous trajectories of prediction bands constructed by different methods, as a function of the prediction horizon. The red numbers indicate smaller prediction bands or higher conditional coverage. See the corresponding plot in Figure A15.
+ Table A17: Performance on simulated heterogeneous trajectories of prediction bands constructed by different methods, as a function of the prediction horizon. The red numbers indicate smaller prediction bands or higher conditional coverage. See the corresponding plot in Figure A15.
 Simultaneous coverage
 Prediction horizon Method Average width Conditional-hard Conditional-easy Marginal
 5
@@ -1306,7 +1306,7 @@ Figure A17: Performance on simulated heterogeneous trajectories of prediction ba
 44
 
 
-Table A18: Performance on simulated heterogeneous trajectories of prediction bands constructed by different methods, as a function of the data dimensionality. The red numbers indicate smaller prediction bands or higher conditional coverage. See the corresponding plot in Figure A16.
+ Table A18: Performance on simulated heterogeneous trajectories of prediction bands constructed by different methods, as a function of the data dimensionality. The red numbers indicate smaller prediction bands or higher conditional coverage. See the corresponding plot in Figure A16.
 Simultaneous coverage
 Data dimensionality Method Average width Conditional-hard Conditional-easy Marginal
 1
@@ -1336,7 +1336,7 @@ Figure A18: Performance on simulated heterogeneous trajectories of prediction ba
 45
 
 
-Table A19: Performance on simulated heterogeneous trajectories of prediction bands constructed by different methods, as a function of the proportion of hard-to-predict trajectories. The red numbers indicate smaller prediction bands or higher conditional coverage. See the corresponding plot in Figure A17.
+ Table A19: Performance on simulated heterogeneous trajectories of prediction bands constructed by different methods, as a function of the proportion of hard-to-predict trajectories. The red numbers indicate smaller prediction bands or higher conditional coverage. See the corresponding plot in Figure A17.
 Simultaneous coverage
 Proportion of hard samples (all data)
 Method Average width Conditional-hard Conditional-easy Marginal
@@ -1349,7 +1349,7 @@ Method Average width Conditional-hard Conditional-easy Marginal
 46
 
 
-Table A20: Performance on simulated heterogeneous trajectories of prediction bands constructed by different methods under distributional shift. The results are shown as a function of the proportion of hard-to-predict trajectories in the test data. The red numbers indicate higher marginal coverage. See the corresponding plot in Figure A18.
+ Table A20: Performance on simulated heterogeneous trajectories of prediction bands constructed by different methods under distributional shift. The results are shown as a function of the proportion of hard-to-predict trajectories in the test data. The red numbers indicate higher marginal coverage. See the corresponding plot in Figure A18.
 Proportion of hard samples (test data) Method Length Marginal coverage
 0.2
 0.2 CFRNN 2.000 (0.000) 0.999 (0.000) 0.2 NCTP 0.437 (0.028) 0.811 (0.003) 0.2 CAFHT 0.289 (0.010) 0.809 (0.003) 0.2 CAFHT - PID 0.333 (0.021) 0.810 (0.004) 0.2 CAFHT (theory) 0.438 (0.005) 0.886 (0.002) 0.2 CAFHT (theory) - PID 0.453 (0.005) 0.887 (0.003)
@@ -1370,7 +1370,7 @@ Proportion of hard samples (test data) Method Length Marginal coverage
 47
 
 
-A5.2 Pedestrian Data
+ A5.2 Pedestrian Data
 In this subsection, we present the experimental results of the pedestrian data described in 4. Recall that we preprocess the dataset by adding heteroskedasticity such that 10% of the data are designed to be hard-to-predict by adding a random noise follows N (0, σt2), where σt2 ∝ t · noise level. The
 easy-to-predict data are added a random noise with σt2 ∝ t. By default, 10% of the trajectories are set to be hard-to-predict.
 Similar to the previous section, we first demonstrate the main result by using the CAFHT method with ACI and multiplicative scores as the main method to be compared with the benchmark methods CFRNN and NCTP. The results after adding the dynamic noise profile to the data are presented here for demonstrative purposes.
@@ -1401,7 +1401,7 @@ Figure A19: Performance on heterogeneous pedestrian trajectories of conformal pr
 48
 
 
-Table A21: Performance on heterogeneous pedestrian trajectories of conformal prediction bands constructed by different methods, as a function of the noise level. The red numbers indicate smaller prediction bands or higher conditional coverage. 10% of the trajectories are set to be hard-to-predict. See the corresponding plot in Figure 5.
+ Table A21: Performance on heterogeneous pedestrian trajectories of conformal prediction bands constructed by different methods, as a function of the noise level. The red numbers indicate smaller prediction bands or higher conditional coverage. 10% of the trajectories are set to be hard-to-predict. See the corresponding plot in Figure 5.
 Coverage
 Noise level for hard samples Method Length Marginal Conditional-easy Conditional-hard
 1
@@ -1445,7 +1445,7 @@ Figure A20: Performance on heterogeneous pedestrian trajectories of conformal pr
 49
 
 
-Table A22: Performance on heterogeneous pedestrian trajectories of conformal prediction bands constructed by different methods, as a function of the noise level. The red numbers indicate smaller prediction bands or higher conditional coverage. 20% of the trajectories are set to be hard-to-predict. See the corresponding plot in Figure A19.
+ Table A22: Performance on heterogeneous pedestrian trajectories of conformal prediction bands constructed by different methods, as a function of the noise level. The red numbers indicate smaller prediction bands or higher conditional coverage. 20% of the trajectories are set to be hard-to-predict. See the corresponding plot in Figure A19.
 Coverage
 Noise level for hard samples Method Length Marginal Conditional-easy Conditional-hard
 1.5
@@ -1467,7 +1467,7 @@ Noise level for hard samples Method Length Marginal Conditional-easy Conditional
 50
 
 
-Table A23: Performance on heterogeneous pedestrian trajectories of conformal prediction bands constructed by different methods, as a function of the total number of training and calibration trajectories. The red numbers indicate smaller prediction bands or higher conditional coverage. See the corresponding plot in Figure A20.
+ Table A23: Performance on heterogeneous pedestrian trajectories of conformal prediction bands constructed by different methods, as a function of the total number of training and calibration trajectories. The red numbers indicate smaller prediction bands or higher conditional coverage. See the corresponding plot in Figure A20.
 Coverage
 Sample size Method Length Marginal Conditional-easy Conditional-hard
 200
@@ -1479,7 +1479,7 @@ Sample size Method Length Marginal Conditional-easy Conditional-hard
 51
 
 
-A5.2.2 Supplementary Results — Comparing Different CAFHT Implementations
+ A5.2.2 Supplementary Results — Comparing Different CAFHT Implementations
 CAFHT - multiplicative scores
 The results of CAFHT with multiplicative conformity scores (6) are first presented in Figures A21A22 and Tables A24–A25.
 Simultaneous marginal coverage Simultaneous conditional coverage Average width
@@ -1514,7 +1514,7 @@ Sample size Method Length Marginal Conditional-easy Conditional-hard
 52
 
 
-Simultaneous marginal coverage Simultaneous conditional coverage Average width
+ Simultaneous marginal coverage Simultaneous conditional coverage Average width
 1.5 2.0 2.5 3.0 3.5 4.04.55.0 1.5 2.0 2.5 3.0 3.5 4.04.55.0 1.5 2.0 2.5 3.0 3.5 4.04.55.0
 0.00
 0.50
@@ -1537,7 +1537,7 @@ Figure A22: Performance on heterogeneous pedestrian trajectories of conformal pr
 53
 
 
-Table A25: Performance on heterogeneous pedestrian trajectories of conformal prediction bands constructed by different methods, as a function of the noise level. The red numbers indicate smaller prediction bands or higher conditional coverage. See the corresponding plot in Figure A22.
+ Table A25: Performance on heterogeneous pedestrian trajectories of conformal prediction bands constructed by different methods, as a function of the noise level. The red numbers indicate smaller prediction bands or higher conditional coverage. See the corresponding plot in Figure A22.
 Coverage
 Noise level for hard samples Method Length Marginal Conditional-easy Conditional-hard
 1
@@ -1561,7 +1561,7 @@ Noise level for hard samples Method Length Marginal Conditional-easy Conditional
 54
 
 
-CAFHT — Additive Scores
+ CAFHT — Additive Scores
 The results of CAFHT with additive conformity scores (3) are presented in Figures A23–A24 and Tables A26–A27.
 Simultaneous marginal coverage Simultaneous conditional coverage Average width
 200 500 1000 200 500 1000 200 500 1000
@@ -1595,7 +1595,7 @@ Sample size Method Length Marginal Conditional-easy Conditional-hard
 55
 
 
-Simultaneous marginal coverage Simultaneous conditional coverage Average width
+ Simultaneous marginal coverage Simultaneous conditional coverage Average width
 1.5 2.0 2.5 3.0 3.5 4.04.55.0 1.5 2.0 2.5 3.0 3.5 4.04.55.0 1.5 2.0 2.5 3.0 3.5 4.04.55.0
 0.00
 0.50
@@ -1618,7 +1618,7 @@ Figure A24: Performance on heterogeneous pedestrian trajectories of conformal pr
 56
 
 
-Table A27: Performance on heterogeneous pedestrian trajectories of conformal prediction bands constructed by different methods, as a function of the noise level. The red numbers indicate smaller prediction bands or higher conditional coverage. See the corresponding plot in Figure A24.
+ Table A27: Performance on heterogeneous pedestrian trajectories of conformal prediction bands constructed by different methods, as a function of the noise level. The red numbers indicate smaller prediction bands or higher conditional coverage. See the corresponding plot in Figure A24.
 Coverage
 Noise level for hard samples Method Length Marginal Conditional-easy Conditional-hard
 1
@@ -1642,7 +1642,7 @@ Noise level for hard samples Method Length Marginal Conditional-easy Conditional
 57
 
 
-A5.3 Comparing ACI and CAFHT
+ A5.3 Comparing ACI and CAFHT
 As previously explained, the objectives of CAFHT and ACI are very different. CAFHT leverages information from multiple exchangeable trajectories to construct prediction bands for a trajectories from the same population, ensuring simultaneous coverage as per Equation (1). By contrast, ACI constructs an online prediction band for a single trajectory, aiming to achieve long-term average coverage.
 Consider a motion planning scenario: CAFHT’s objective is to maintain most vehicles within their predicted zones throughout a specified period, ensuring a high probability of reaching their destinations without incident. On the other hand, ACI aims for asymptotic average coverage, which tolerates frequent, albeit temporary, deviations from the predicted path for each vehicle. In practical terms, this means each vehicle might exit and re-enter the ACI-predicted region numerous times, spending about 90% of the time within the prediction band on average. If exiting these regions could lead to severe accidents, CAFHT’s approach would ensure that 90% (or any pre-specified percentage) of vehicles safely arrive at their destinations, whereas ACI’s approach could potentially result in none of the vehicles reaching their destinations safely.
 This concept is demonstrated in Figure A25, which contrasts the prediction bands created using ACI and CAFHT for two pedestrian trajectories. The figure clearly shows that ACI does not fully encompass the trajectories, thus failing to meet our objective of achieving simultaneous coverage.
@@ -1683,7 +1683,7 @@ Figure A26: Performance on simulated heterogeneous trajectories of prediction ba
 58
 
 
-Table A28: Performance on heterogeneous pedestrian trajectories of conformal prediction bands constructed by different methods, as a function of the noise level. The red numbers indicate smaller prediction bands or higher conditional coverage. See the corresponding plot in Figure A26.
+ Table A28: Performance on heterogeneous pedestrian trajectories of conformal prediction bands constructed by different methods, as a function of the noise level. The red numbers indicate smaller prediction bands or higher conditional coverage. See the corresponding plot in Figure A26.
 Simultaneous coverage
 Sample size Method Average width Conditional-hard Conditional-easy Marginal
 200
@@ -1705,7 +1705,7 @@ As shown in Figure A27, additive scores impose a constant correction term (the e
 59
 
 
-In line with established conformal inference methodologies, we prefer to delegate the more complex “adaptability” functions to the underlying machine learning model (in this case, the forecaster integrated with ACI). The next phase of conformalization simply involves a clear, straightforward adjustment to secure the simultaneous marginal coverage guarantee. Nonetheless, future developments might introduce more intricate scoring designs, potentially enhancing empirical performance but at the expense of simplicity in the methodology.
+ In line with established conformal inference methodologies, we prefer to delegate the more complex “adaptability” functions to the underlying machine learning model (in this case, the forecaster integrated with ACI). The next phase of conformalization simply involves a clear, straightforward adjustment to secure the simultaneous marginal coverage guarantee. Nonetheless, future developments might introduce more intricate scoring designs, potentially enhancing empirical performance but at the expense of simplicity in the methodology.
 Easy−to−predict Hard−to−predict
 0 5 10 15 0 5 10 15
 −0.4
@@ -1750,7 +1750,7 @@ This section presents the results of additional experiments conducted using α =
 60
 
 
-the main implementation of the CAFHT method, which utilizes multiplicative scores based on the ACI algorithm and optimizes the learning rate through data splitting.
+ the main implementation of the CAFHT method, which utilizes multiplicative scores based on the ACI algorithm and optimizes the learning rate through data splitting.
 When higher coverage levels are employed, it is necessary to increase the number of samples in the calibration data to ensure that the adjusted empirical quantile level (1 − α)(1 − 1/|Dcal|) remains below 1. In our experiments, we cap the adjusted level at 1 whenever it exceeds this value.
 Experiments with 95% coverage level
 Figure A29 shows that all methods achieve 95% simultaneous marginal coverage. Our method (CAFHT) leads to more informative bands with lower average width and higher conditional coverage.
@@ -1777,7 +1777,7 @@ Figure A29: Performance on simulated heterogeneous trajectories of prediction ba
 61
 
 
-Table A30: Performance on simulated heterogeneous trajectories of prediction bands constructed by different methods, as a function of the total number of training and calibration trajectories. The red numbers indicate smaller prediction bands or higher conditional coverage. Target simultaneous marginal coverage level is 95%. See corresponding plot in Figure A29.
+ Table A30: Performance on simulated heterogeneous trajectories of prediction bands constructed by different methods, as a function of the total number of training and calibration trajectories. The red numbers indicate smaller prediction bands or higher conditional coverage. Target simultaneous marginal coverage level is 95%. See corresponding plot in Figure A29.
 Simultaneous coverage
 Sample size Method Average width Conditional-hard Conditional-easy Marginal
 200
@@ -1797,7 +1797,7 @@ When seeking a 99% coverage level, using a relatively small sample size will res
 62
 
 
-Simultaneous marginal coverage Simultaneous conditional coverage Average width
+ Simultaneous marginal coverage Simultaneous conditional coverage Average width
 200 500 1000 2000 5000 10000 200 500 1000 2000 5000 10000 200 500 1000 2000 5000 10000
 0.00
 0.50
@@ -1837,7 +1837,7 @@ For completeness, this subsection presents empirical results that compare our CA
 63
 
 
-with large datasets of 5,000 and 10,000 trajectories, designating 25% randomly for calibration and the remainder for training. The findings were validated against an additional 100 independently generated test trajectories.
+ with large datasets of 5,000 and 10,000 trajectories, designating 25% randomly for calibration and the remainder for training. The findings were validated against an additional 100 independently generated test trajectories.
 The results, displayed in Figures A31–A32 and Tables A32–A33, confirm the anticipated outcomes. CopulaCPTS delivers results comparable to NCTP, while CAFHT surpasses the CopulaCPTS baseline by producing narrower prediction bands and achieving higher conditional coverage.
 Simultaneous marginal coverage Simultaneous conditional coverage Average width
 5 15 25 50 100 5 15 25 50 100 5 15 25 50 100
@@ -1875,7 +1875,7 @@ Prediction horizon Method Average width Conditional-hard Conditional-easy Margin
 64
 
 
-Simultaneous marginal coverage Simultaneous conditional coverage Average width
+ Simultaneous marginal coverage Simultaneous conditional coverage Average width
 0.1 0.2 0.5 0.1 0.2 0.5 0.1 0.2 0.5
 0.00
 0.50
@@ -1928,7 +1928,7 @@ t+τ output at time t from
 65
 
 
-the CAFHT method. We aim to achieve the marginal simultaneous coverage, similar to Equation (1):
+ the CAFHT method. We aim to achieve the marginal simultaneous coverage, similar to Equation (1):
 P
 h
 Y (n+1)
@@ -1972,7 +1972,7 @@ t−τ + Qˆt−τ (1 − αt−1)].
 66
 
 
-The prediction region of Yt+τ is then formed by:
+ The prediction region of Yt+τ is then formed by:
 Cˆ ACI,τ
 t (ατ
 t+1) = [Yˆ τ
@@ -2030,7 +2030,7 @@ The remaining components of our method then follow the same logic as the one-ste
 67
 
 
-using the following equation:
+ using the following equation:
 Cˆτ
 t (Y (n+1), γ) = lˆACI,τ
 t (Y (n+1), γ) − Qˆ(1 − α, γ), uˆACI,τ
@@ -2068,7 +2068,7 @@ Similar to the one-step-ahead cases, we can utilize a multiplicative score for t
 68
 
 
-Algorithm A10 Multi-step-ahead CAFHT 1: Input: A pre-trained forecaster gˆ producing multi-step-ahead predictions; calibration trajectories
+ Algorithm A10 Multi-step-ahead CAFHT 1: Input: A pre-trained forecaster gˆ producing multi-step-ahead predictions; calibration trajectories
 Dcal; the initial position Y (n+1)
 0 of a test trajectory Y (n+1); the desired nominal level α ∈ (0, 1); a grid of candidate learning rates {γ1, . . . , γL}. 2: Randomly split Dcal into D1
 cal and D2
@@ -2144,7 +2144,7 @@ As we can see, all methods attain 90% simultaneous coverage as defined in (A15).
 69
 
 
-Simultaneous marginal coverage Simultaneous conditional coverage Average width
+ Simultaneous marginal coverage Simultaneous conditional coverage Average width
 1 3 51 3 51 3 5
 0.00
 0.50
@@ -2198,7 +2198,7 @@ In another experiment, the steps-ahead parameter is fixed as H = 3, and the tota
 70
 
 
-Table A35: Performance on simulated heterogeneous trajectories of prediction bands constructed by different methods, as a function of the total number of training and calibration trajectories. The red numbers indicate smaller prediction bands or higher conditional coverage. See the corresponding plot in Figure A34.
+ Table A35: Performance on simulated heterogeneous trajectories of prediction bands constructed by different methods, as a function of the total number of training and calibration trajectories. The red numbers indicate smaller prediction bands or higher conditional coverage. See the corresponding plot in Figure A34.
 Simultaneous coverage
 Sample size Method Average width Conditional-hard Conditional-easy Marginal
 200

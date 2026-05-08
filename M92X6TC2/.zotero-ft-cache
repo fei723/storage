@@ -10,14 +10,14 @@ One of the ultimate goals of indoor mobile robotics research is to build robots 
 1
 
 
-This paper focuses on one particular aspect of the design of such a robot: the reactive avoidance of collisions with obstacles. The dynamic window approach proposed in this paper is especially designed to deal with the constraints imposed by limited velocities and accelerations, because it is derived directly from the motion dynamics of synchrodrive mobile robots. In a nutshell, our approach considers periodically only a short time interval when computing the next steering command to avoid the enormous complexity of the general motion planning problem. The approximation of trajectories during such a time interval by circular curvatures results in a two-dimensional search space of translational and rotational velocities. This search space is reduced to the admissible velocities allowing the robot to stop safely. Due to the limited accelerations of the motors a further restriction is imposed on the velocities: the robot only considers velocities that can be reached within the next time interval. These velocities form the dynamic window which is centred around the current velocities of the robot in the velocity space.
+ This paper focuses on one particular aspect of the design of such a robot: the reactive avoidance of collisions with obstacles. The dynamic window approach proposed in this paper is especially designed to deal with the constraints imposed by limited velocities and accelerations, because it is derived directly from the motion dynamics of synchrodrive mobile robots. In a nutshell, our approach considers periodically only a short time interval when computing the next steering command to avoid the enormous complexity of the general motion planning problem. The approximation of trajectories during such a time interval by circular curvatures results in a two-dimensional search space of translational and rotational velocities. This search space is reduced to the admissible velocities allowing the robot to stop safely. Due to the limited accelerations of the motors a further restriction is imposed on the velocities: the robot only considers velocities that can be reached within the next time interval. These velocities form the dynamic window which is centred around the current velocities of the robot in the velocity space.
 Among the admissible velocities within the dynamic window the combination of translational and rotational velocity is chosen by maximizing an objective function. The objective function includes a measure of progress towards a goal location, the forward velocity of the robot, and the distance to the next obstacle on the trajectory. By combining these, the robot trades o its desire to move fast towards the goal and its desire to ship around obstacles (which decrease the free space). The combination of all objectives leads to a very robust and elegant collision avoidance strategy.
 Figure 1. The robot RHINO, an RWI B21.
 The dynamic window approach has been implemented and tested using RHINO, a B21 robot manufactured by Real World Interface Inc. (see Figure 1), and other synchrodrive robots. In extensive experimental evaluations using ultrasonic proximity sensors
 2
 
 
-for the construction of local world models (obstacle line elds), the method has proven to avoid collisions reliably with speeds of up to 95 cm/sec on several robots in several indoor environments (University of Bonn, Carnegie Mellon University, 1994 AAAI robot competition, 1995 IJCAI robot exhibition, and others, see also [3]). The method has also successfully been operated based on cameras and infrared detectors as sensory input.
+ for the construction of local world models (obstacle line elds), the method has proven to avoid collisions reliably with speeds of up to 95 cm/sec on several robots in several indoor environments (University of Bonn, Carnegie Mellon University, 1994 AAAI robot competition, 1995 IJCAI robot exhibition, and others, see also [3]). The method has also successfully been operated based on cameras and infrared detectors as sensory input.
 Our approach di ers from previous approaches in (a) that it is derived directly from the motion dynamics of a mobile robot, (b) it therefore takes the inertia of the robot into account { which is particularly important if a robot with torque limits travels at high speed {, and (c) has safely controlled several RWI robots in various cluttered and dynamic environments with speeds of up to 95 centimeter per second. We envision this approach to be particularly useful for robots that travel at even higher speeds and for low-cost robots with limited motor torques, for which the constraints imposed by the motion dynamics are even more imperative.
 The remainder of this paper is organized as follows. After discussing related work Section 3 gives the general motion equations for synchro-drive mobile robots. One of the key results here is that trajectories of synchro-drive robots can be approximated accurately by nitely many segments of circles. Section 4 describes our approach, as outlined above. Experimental results are summarized in Section 5, followed by a discussion of further research issues.
 2 Related Work
@@ -26,7 +26,7 @@ Local or reactive approaches, on the other hand, use only a small fraction of th
 3
 
 
-when the world model is updated frequently based on sensor information. For example, potential eld methods, as proposed by [8], determine the steering direction by (hypothetically) assuming that obstacles assert negative forces on the robot, and that the target location asserts a positive force. These methods are extremely fast, and they typically consider only the small subset of obstacles close to the robot. Borenstein and Koren [9] identi ed that such methods often fail to nd trajectories between closely spaced obstacles; they also can produce oscillatory behavior in narrow corridors. An extended version of the potential eld approach is introduced in [7]. By modifying the potential function the motion of the robot becomes more e cient and di erent behaviors such as wall following and tracking can be achieved.
+ when the world model is updated frequently based on sensor information. For example, potential eld methods, as proposed by [8], determine the steering direction by (hypothetically) assuming that obstacles assert negative forces on the robot, and that the target location asserts a positive force. These methods are extremely fast, and they typically consider only the small subset of obstacles close to the robot. Borenstein and Koren [9] identi ed that such methods often fail to nd trajectories between closely spaced obstacles; they also can produce oscillatory behavior in narrow corridors. An extended version of the potential eld approach is introduced in [7]. By modifying the potential function the motion of the robot becomes more e cient and di erent behaviors such as wall following and tracking can be achieved.
 In [2], the vector eld histogram approach is proposed, which extends the previously developed virtual force eld histogram [1]. This approach uses an occupancy grid representation for modeling the robot's environment, which is generated and updated continuously using ultrasonic proximity sensors. Occupancy information is transformed into a histogram description of the free space around the robot, which is used to compute the motion direction and velocity for the robot. As noted above, local methods are typically very fast, and they quickly adapt to unforeseen changes in the environment.
 1m
 robot
@@ -39,7 +39,7 @@ For example consider the situation given in Figure 2 and suppose that the robot 
 4
 
 
-3 Motion Equations for a Synchro-Drive Robot
+ 3 Motion Equations for a Synchro-Drive Robot
 This section describes the fundamental motion equations for a synchro-drive mobile robot [4]. The derivation begins with the correct dynamic laws, assuming that the robot's translational and rotational velocity can be controlled independently (with limited torques). To make the equations more practical, we derive an approximation that models velocity as a piecewise constant function in time. Under this assumption, robot trajectories consist of sequences of nitely many segments of circles. Such representations are very convenient for collision checking, since intersections of obstacles with circles are easy to check. We also derive an upper bound for the approximation error. The piecewise circular representation forms the basis of the dynamic window approach to collision avoidance, described in Section 4.
 3.1 General Motion Equations
 Let x(t) and y(t) denote the robot's coordinate at time t in some global coordinate system, and let the robot's orientation (heading direction) be described by (t). The triplet hx; y; i describes the kinematic con guration of the robot. The motion of a synchro-drive robot is constrained in a way such that the translational velocity v always leads in the steering direction of the robot, which is a non-holonomic constraint [10]. Let x(t0) and x(tn) denote the x-coordinates of the robot at time t0 and tn, respectively. Let v(t) denote the translational velocity of the robot at time t, and !(t) its rotational velocity. Then x(tn) and y(tn) can be expressed as a function of x(t0), v(t) and (t):
@@ -64,7 +64,7 @@ The equations are now in the form that the trajectory of the robot depends exclu
 5
 
 
-to be controllable (for most mobile robots the accelerations determining its motion are monotonic functions of the currents owing through the motors [6]. Hence, limits on the currents directly correspond to limits on the accelerations).
+ to be controllable (for most mobile robots the accelerations determining its motion are monotonic functions of the currents owing through the motors [6]. Hence, limits on the currents directly correspond to limits on the accelerations).
 Digital hardware imposes constraints as to when one can set the motor currents (and thus set new accelerations). Hence, Eq. (3) can be simpli ed by assuming that between two arbitrary points in time, t0 and tn, the robot can only be controlled by nitely many acceleration commands. Let n denote this number of time ticks. Then, the accelerations v_i and !_ i for i = 1 : : : n are kept constant in a time interval [ti; ti+1] (i = 1 : : : n). Let i
 t and
 i
@@ -111,7 +111,7 @@ vi cos( (ti)) t; !i = 0 (7)
 6
 
 
-The corresponding equations for the y-coordinate are:
+ The corresponding equations for the y-coordinate are:
 y(tn) = y(t0) +
 n1
 X
@@ -163,7 +163,7 @@ This completes the derivation of the robot motion. To summarise, we have derived
 7
 
 
-4 The Dynamic Window Approach
+ 4 The Dynamic Window Approach
 In the dynamic window approach the search for commands controling the robot is carried out directly in the space of velocities. The dynamics of the robot is incorporated into the method by reducing the search space to those velocities which are reachable under the dynamic constraints. In addition to this restriction only velocities are considered which are safe with respect to the obstacles. This pruning of the search space is done in the rst step of the algorithm. In the second step the velocity maximizing the objective function is chosen from the remaining velocities. A brief outline of the di erent parts of one cycle of the algorithm is given in Figure 3. In the current implementation such a cycle is performed every 0.25 seconds.
 In the remainder of this section we will use the situation shown in Figure 2 to describe the di erent aspects of the dynamic window approach.
 4.1 Search Space
@@ -175,7 +175,7 @@ Obstacles in the closer environment of the robot impose restrictions on the rota
 8
 
 
-1. Search space: The search space of the possible velocities is reduced in three steps:
+ 1. Search space: The search space of the possible velocities is reduced in three steps:
 (a) Circular trajectories: The dynamic window approach considers only circular trajectories (curvatures) uniquely determined by pairs (v; !) of translational and rotational velocities. This results in a two-dimensional velocity search space.
 (b) Admissible velocities: The restriction to admissible velocities ensures that only safe trajectories are considered. A pair (v; !) is considered admissible, if the robot is able to stop before it reaches the closest obstacle on the corresponding curvature.
 (c) Dynamic window: The dynamic window restricts the admissible velocities to those that can be reached within a short time interval given the limited accelerations of the robot.
@@ -193,7 +193,7 @@ Thus Va is the set of velocities (v; !) which allow the robot to stop without co
 9
 
 
-Va
+ Va
 Vs
 -90 deg/sec 90 deg/sec
 90 cm/sec
@@ -210,7 +210,7 @@ Example 2 An exemplary dynamic window obtained in the situation shown in Figure 
 10
 
 
-Va
+ Va
 Vs
 Vr
 -90 deg/sec 90 deg/sec
@@ -232,7 +232,7 @@ The target heading heading(v; !) measures the alignment of the robot with the ta
 11
 
 
-actual position
+ actual position
 predicted position
 θ
 target targt heading
@@ -276,7 +276,7 @@ Figure 9. Evaluation of the velocities
 12
 
 
-Example 4 The evaluation of the distances as given in Figure 8 solely depends on the proximity information about obstacles around the robot. In the given plot one can nd low evaluations for those curvatures which lead to the walls. For higher translational velocities these values fall into the non-admissible areas and are thus set to zero.
+ Example 4 The evaluation of the distances as given in Figure 8 solely depends on the proximity information about obstacles around the robot. In the given plot one can nd low evaluations for those curvatures which lead to the walls. For higher translational velocities these values fall into the non-admissible areas and are thus set to zero.
 Velocity
 The function velocity(v; !) is used to evaluate the progress of the robot on the corresponding trajectory. It is simply a projection on the translational velocity v, as can be seen in Figure 9.
 Smoothing
@@ -309,7 +309,7 @@ In a former version of our approach (see [3]) the search for the best velocity w
 13
 
 
-resulting behavior of the robot was the same, we decided to use this single step evaluation of the objective function. We adopted the idea for this representation from [13].
+ resulting behavior of the robot was the same, we decided to use this single step evaluation of the objective function. We adopted the idea for this representation from [13].
 4.3 Role of the dynamic window
 In the previous section we introduced the objective function to be maximized for smooth and goal directed behavior. For illustration purposes we always showed the evaluation for the whole velocity space. As mentioned in Section 4.1 this space is reduced to the admissible velocities in the dynamic window. In this section we describe how the robot respects the dynamics by this restriction. We discuss the dependency of the behavior on di erent velocities and accelerations. In both examples the time interval determining the dynamic window is xed to 0.25 seconds.
 Role of the Current Velocity
@@ -327,7 +327,7 @@ In the rst case, where the current velocity is 75 cm/sec, the robot moves too fa
 14
 
 
-dynamic window (70,0)
+ dynamic window (70,0)
 -90 -45 0 45 0
 30
 60
@@ -357,7 +357,7 @@ The dynamic window approach has been implemented and tested using the robot RHIN
 15
 
 
-Va
+ Va
 Vd
 door
 corridor
@@ -391,7 +391,7 @@ The obstacle line eld is centred around the robot's position and is built out of
 16
 
 
-1m
+ 1m
 robot
 target
 obstacle lines
@@ -412,7 +412,7 @@ Speed dependent side clearance. To adapt the speed of the robot according to the
 17
 
 
-5.4 Experimental Results
+ 5.4 Experimental Results
 Based on the dynamic window approach to collision avoidance, RHINO has been operated safely in various environments, over the last 2 years. Its maximum velocity is constrained by the hardware to approximately 95 cm/sec. RHINO reaches this velocity in large openings and hallways, if no obstacles block its way. If obstacles block its way, slower velocities are selected, and collisions are avoided by selecting appropriate trajectories. For example, when moving through doors, RHINO typically decelerates to approximately 20 cm per second in the vicinity of the door. In the remainder of this section, we will give experimental results generated with the dynamic window approach. In the following gures the environment is drawn by hand. Nonetheless each diagram is an actual experiment and all shown trajectories are extracted from real position data. Each of these examples show the complete path to a particular goal point, which in our tests is set by a human operator. In the every-day use, these goal points are set automatically by a global path planner described in [14, 15, 16].
 Parameter Settings
 Although the performance of the obstacle avoidance depends on the weighting parameters , , and , it is stable against slight changes of their values. Without any exhaustive tuning of these parameters we found values of 0.8, 0.1, and 0.1 for , , and to give good results. The alignment of the robot with the target point is mainly determined by the ratio between and the other two parameters. Very low values of the target heading weight give the robot much freedom in moving around obstacles. At the same time they may detain the robot from reaching target points behind narrow openings if sensors with low angular resolution are used (e.g. ultrasonic sensors). This is because the robot turns away from the opening before its sensors are able to detect it. On the other extreme, a high heading weight forces the robot to approach objects very closely before turning away, which prohibits smooth circumvention of obstacles.
@@ -422,7 +422,7 @@ The rst experiment demonstrates the in uence of the dynamic window on the behavi
 18
 
 
-denoted by the dashed line. In the other two cases the robot decides to pass the opening and moves parallel to the wall until the evaluation of the target heading angle(v; !) becomes very small.
+ denoted by the dashed line. In the other two cases the robot decides to pass the opening and moves parallel to the wall until the evaluation of the target heading angle(v; !) becomes very small.
 1m
 Decision area
 2 2 2
@@ -442,7 +442,7 @@ Figure 21 shows an example of traveling along a hallway with only one obstacle i
 19
 
 
-Fast Motion through Cluttered Environment
+ Fast Motion through Cluttered Environment
 1m
 humans
 Figure 22. Trajectory through cluttered corridor
@@ -455,7 +455,7 @@ This paper describes an approach to collision avoidance for mobile robots equipp
 20
 
 
-start
+ start
 robot
 Figure 23. Run at the AAAI '94 mobile robot competition
 to stop safely without colliding with an obstacle. Finally, the dynamic window restricts the admissible velocities to those that can be reached within a short time interval given the limited accelerations of the robot. This way we make sure that the dynamic constraints are taken into account. The robot constantly picks a trajectory at which it can maximize its translational velocity and the distance to obstacles, yet minimize the angle to its goal relative to its own heading direction. This is done by maximizing the objective function.
@@ -464,7 +464,7 @@ In principle, the approach proposed here only assumes geometric information abou
 21
 
 
-pixel information is converted to proximity information. However, the resulting proximity estimate is only accurate if an obstacle touches the oor. Obstacles in di erent heights lead to an overestimation of distance, which may cause the robot to collide. Stereo vision might potentially overcome this problem. The result with infrared detectors su ered from the fact that RHINO 's detectors have only a small range of view (< 30 cm). Therefore, when moving high-speed the robot may collide nonetheless. Combining either of the two sensor systems with ultrasonic measurements, however, consistently improved the smoothness of the robot's trajectories.
+ pixel information is converted to proximity information. However, the resulting proximity estimate is only accurate if an obstacle touches the oor. Obstacles in di erent heights lead to an overestimation of distance, which may cause the robot to collide. Stereo vision might potentially overcome this problem. The result with infrared detectors su ered from the fact that RHINO 's detectors have only a small range of view (< 30 cm). Therefore, when moving high-speed the robot may collide nonetheless. Combining either of the two sensor systems with ultrasonic measurements, however, consistently improved the smoothness of the robot's trajectories.
 Acknowledgment
 The authors thank Thomas Hofmann and the other members of the RHINO team for insightful discussion, help and advice.
 One author (S.T.) is sponsored in part by the National Science Foundation under award IRI-9313367, and by the Wright Laboratory, Aeronautical Systems Center, Air Force Materiel Command, USAF, and the Defense Advanced Research Projects Agency (DARPA) under grant number F33615-93-1-1330. The views and conclusions contained in this document are those of the author and should not be interpreted as necessarily representing o cial policies or endorsements, either expressed or implied, of NSF, Wright Laboratory or the United States Government.
@@ -478,7 +478,7 @@ References
 22
 
 
-[7] M. Khatib and R. Chatila. An extended potential eld approach for mobile robot sensor-based motions. In Proc. International Conference on Intelligent Autonomous Systems (IAS'4), 1995.
+ [7] M. Khatib and R. Chatila. An extended potential eld approach for mobile robot sensor-based motions. In Proc. International Conference on Intelligent Autonomous Systems (IAS'4), 1995.
 [8] O. Khatib. Real-time obstacle avoidance for robot manipulator and mobile robots. The International Journal of Robotics Research, 5(1):90{98, 1986.
 [9] Y. Koren and J. Borenstein. Potential eld methods and their inherent limitations for mobile robot navigation. In Proc. IEEE Int. Conf. Robotics and Automation, April 1991.
 [10] J. Latombe. Robot Motion Planning. Kluwer Academic Publishers, Boston, MA, 1991. ISBN 0-7923-9206-X.

@@ -33,7 +33,7 @@ constraints. Our experiments show that BRICKGPT produces stable, diverse, and ae
 1
 
 
-1. Introduction
+ 1. Introduction
 3D generative models have made remarkable progress, driven by advances in generative modeling [16, 67] and neural rendering [27, 53]. These models have enabled various applications in virtual reality, gaming, entertainment, and scientific computing. Several works have explored synthesizing 3D objects from text [60], adding texture to meshes [8, 63], and manipulating the shape and appearance of existing 3D objects and scenes [20, 41]. However, creating real-world objects with existing methods remains challenging. Most approaches focus on generating diverse 3D objects with high-fidelity geometry and appearance [22, 88], but these digital designs often cannot be physically realized due to two key challenges [47]. First, the objects may be difficult to assemble or fabricate using standard components. Second, the resulting structure may be physically unstable even if assembly is possible. Without proper support, parts of the design could collapse, float, or remain disconnected. In this work, we address the challenge of generating physically realizable objects. We study this problem in the context of designing structures made of interlocking toy bricks, such as LEGO® blocks. These are widely used in entertainment, education, artistic creation, and manufacturing prototyping. Additionally, they can serve as a reproducible research benchmark, as all standard components are readily available. Due to the significant effort required to design brick structures manually, recent studies have developed automated algorithms to streamline the process and generate compelling results. However, existing approaches primarily create structures from a given 3D object [46] or focus on a single object category [13, 14]. Our goal is to develop a method for generating brick assembly structures directly from freeform text prompts while ensuring physical stability and buildability. Specifically, we aim to train a generative model that produces designs that are: • Physically stable: Built on a baseplate with strong structural integrity, without floating or collapsing bricks. • Buildable: Compatible with standard interconnecting toy brick pieces and able to be assembled brick-by-brick by humans or robots. In this work, we introduce BRICKGPT with the key insight of repurposing autoregressive large language models, originally trained for next-token prediction, for next-brick prediction. We formulate the problem of brick structure design as an autoregressive text generation task, where the next-brick dimension and placement are specified with a simple textual format. To ensure generated structures are both stable and buildable, we enforce physics-aware assembly constraints during both training and inference. During training, we construct a large-scale dataset of physically stable brick structures paired
 with captions. During autoregressive inference, we enforce feasibility with an efficient validity check and physics-aware rollback to ensure that the final tokens adhere to physics laws and assembly constraints. Our experiments show that the generated designs are stable, diverse, and visually appealing while adhering to input text prompts. Our method outperforms pre-trained LLMs with and without in-context learning, and previous approaches based on 3D mesh generation. Finally, we explore applications such as text-driven brick texturing, as well as manual assembly and automated robotic assembly of our designs. Our dataset, code, and models are available at the project website: https://avalovelace1.github. io/BrickGPT/.
 2. Related Work
@@ -43,7 +43,7 @@ Brick Assembly and Design Generation. Creating brick structures given a referenc
 2
 
 
-...
+ ...
 ...
 Figure 2. StableText2Brick Dataset. (a) From a ShapeNetCore [2] mesh, we generate a brick structure by voxelizing it onto a 20 × 20 × 20 grid, then constructing its brick layout with a delete-and-rebuild algorithm. (b) We augment each shape with multiple structural variations by randomizing the brick layout while preserving the overall shape. (c) Stability analysis [38] is performed on each variation to filter out physically unstable designs. (d) To obtain captions for each shape, we render the brick structure from 24 different viewpoints and use GPT-4o [1] to generate detailed geometric descriptions. (e) Data samples from 5 categories in our StableText2Brick dataset.
 Wang et al. [79] translate a visual manual into step-by-step brick assembly instructions. Luo et al. [46] leverage structural stability estimation to find weak structural parts and rearrange the local brick layout to generate physically stable designs. Kim et al. [28], Liu et al. [40] formulate a planning problem to fill the target 3D model sequentially. However, these methods only generate designs given an input 3D shape, assuming a valid brick structure exists, which is difficult to verify in practice.
@@ -57,7 +57,7 @@ Brick Representation. We consider brick structures built on a fixed baseplate. E
 3
 
 
-LLaMA-3.2-Instruct-1B
+ LLaMA-3.2-Instruct-1B
 Create a LEGO model of the input. Format your response as a list of bricks ...... <Input>
 “A chair with ...... legs.”
 Create legs.”
@@ -111,7 +111,7 @@ Here, we introduce BRICKGPT, a method for generating physically stable interconn
 4
 
 
-sequences and understand text, we fine-tune a pre-trained LLM for the brick structure generation task (Section 4.1). To increase the stability and buildability of our designs, we use brick-by-brick rejection sampling and physics-aware rollback during inference (Section 4.2). Figure 3 illustrates an overview of our method.
+ sequences and understand text, we fine-tune a pre-trained LLM for the brick structure generation task (Section 4.1). To increase the stability and buildability of our designs, we use brick-by-brick rejection sampling and physics-aware rollback during inference (Section 4.2). Figure 3 illustrates an overview of our method.
 4.1. Model Fine-tuning
 Pre-trained LLMs excel at modeling sequences and understanding natural language, making them promising candidates for our task. We further fine-tune a pre-trained LLM on a custom instruction dataset containing text prompts and their corresponding brick structures from StableText2Brick.
 Pre-trained Base Model. We use LLaMA-3.2-1BInstruct [11] as our base model. This model is fine-tuned to give coherent answers to instruction prompts, making it suitable for text-based brick structure generation. As shown in Figure 5, the base model can generate brick structures through in-context learning, highlighting the promise of using pre-trained LLMs for our task. However, the generated structures fail to follow the input prompt, and they contain intersecting or disconnected bricks, making them physically unstable and unbuildable. To address these issues, we further fine-tune the pre-trained model using our StableText2Brick.
@@ -170,7 +170,7 @@ subject to three constraints: 1) all force candidates in F should take non-negat
 5
 
 
-given connection point, the supporting force on the upper brick should be equal to the pressing force on the bottom brick. Di ⊂ Fi is the set of candidate dragging forces (green arrow) on bi. α and β are hyperparameter weights. Solving the above nonlinear program in Eqn. 3 using Gurobi [18] finds a force distribution F that drives the structure to static equilibrium with the minimum required internal stress, suppressing the overall friction (i.e., P Di) as well as avoiding extreme values (i.e., Dmax
+ given connection point, the supporting force on the upper brick should be equal to the pressing force on the bottom brick. Di ⊂ Fi is the set of candidate dragging forces (green arrow) on bi. α and β are hyperparameter weights. Solving the above nonlinear program in Eqn. 3 using Gurobi [18] finds a force distribution F that drives the structure to static equilibrium with the minimum required internal stress, suppressing the overall friction (i.e., P Di) as well as avoiding extreme values (i.e., Dmax
 i ). From the force distribution F, we obtain the per-brick stability score as
 si =
 
@@ -218,7 +218,7 @@ where text prompt c describes the visual appearance. This texture can be applied
 6
 
 
-Table 1. Quantitative Analysis. We evaluate our method against several baselines on validity (no out-of-library, out-of-bounds, or colliding bricks), stability, CLIP-based text similarity, and DINOv2-based image similarity. Stability, CLIP, and DINO are computed over valid structures only. For LLaMA-Mesh [81], validity requires a well-formed OBJ file. Our method outperforms all baselines as well as the ablated setups on validity and stability using our proposed rejection sampling and rollback, while maintaining high text similarity.
+ Table 1. Quantitative Analysis. We evaluate our method against several baselines on validity (no out-of-library, out-of-bounds, or colliding bricks), stability, CLIP-based text similarity, and DINOv2-based image similarity. Stability, CLIP, and DINO are computed over valid structures only. For LLaMA-Mesh [81], validity requires a well-formed OBJ file. Our method outperforms all baselines as well as the ablated setups on validity and stability using our proposed rejection sampling and rollback, while maintaining high text similarity.
 Method % valid % stable mean brick stability min brick stability CLIP DINO
 Pre-trained LLaMA (0-shot) 0.0% 0.0% N/A N/A N/A N/A In-context learning (5-shot) 2.4% 1.2% 0.675 0.479 0.284 0.814 LLaMA-Mesh [81] 94.8% 50.8% 0.894 0.499 0.317 0.851 LGM [70] 100% 25.2% 0.942 0.231 0.300 0.851 XCube [62] 100% 75.2% 0.964 0.686 0.322 0.859 Hunyuan3D-2 [89] 100% 75.2% 0.973 0.704 0.324 0.868
 Ours w/o rejection sampling or rollback 37.2% 12.8% 0.956 0.325 0.329 0.888 Ours w/o rollback 100% 24.0% 0.947 0.228 0.322 0.882
@@ -278,7 +278,7 @@ Figure 5. Result gallery and baseline comparisons. Our method generates high-qua
 7
 
 
-Ours w/o rollback
+ Ours w/o rollback
 Ours w/o rejec0on
 sampling or rollback Ours
 Invalid (colliding bricks)
@@ -345,7 +345,7 @@ Baseline Comparisons. As baselines, we use LLaMAMesh [81], LGM [70], XCube [62],
 8
 
 
-.........
+ .........
 .........
 Figure 8. Automated Assembly. We demonstrate robotic assembly of generated structures using LEGO bricks.
 than the baselines.
@@ -362,7 +362,7 @@ Acknowledgments. We thank Minchen Li, Ken Goldberg, Nupur Kumari, Ruihan Gao, an
 9
 
 
-References
+ References
 [1] Josh Achiam, Steven Adler, Sandhini Agarwal, Lama Ahmad, Ilge Akkaya, Florencia Leoni Aleman, Diogo Almeida, Janko Altenschmidt, Sam Altman, Shyamal Anadkat, et al. GPT-4 technical report. arXiv preprint arXiv:2303.08774, 2023. 3, 4 [2] Angel X. Chang, Thomas Funkhouser, Leonidas Guibas, Pat Hanrahan, Qixing Huang, Zimo Li, Silvio Savarese, Manolis Savva, Shuran Song, Hao Su, Jianxiong Xiao, Li Yi, and Fisher Yu. ShapeNet: An Information-Rich 3D Model Repository. Technical Report arXiv:1512.03012 [cs.GR], Stanford University — Princeton University — Toyota Technological Institute at Chicago, 2015. 3, 4, 14 [3] Rui Chen, Yongwei Chen, Ningxin Jiao, and Kui Jia. Fantasia3D: Disentangling geometry and appearance for highquality text-to-3D content creation. In IEEE International Conference on Computer Vision (ICCV), 2023. 2
 [4] Sijin Chen, Xin Chen, Anqi Pang, Xianfang Zeng, Wei Cheng, Yijun Fu, Fukun Yin, Yanru Wang, Zhibin Wang, Chi Zhang, Jingyi Yu, Gang Yu, Bin Fu, and Tao Chen. MeshXL: Neural coordinate field for generative 3D foundation models. arXiv preprint arXiv:2405.20853, 2024. 2
 [5] Yiwen Chen, Tong He, Di Huang, Weicai Ye, Sijin Chen, Jiaxiang Tang, Xin Chen, Zhongang Cai, Lei Yang, Gang Yu, Guosheng Lin, and Chi Zhang. MeshAnything: Artist-created mesh generation with autoregressive transformers. arXiv preprint arXiv:2406.10163, 2024.
@@ -387,7 +387,7 @@ Llama 3 herd of models. arXiv preprint arXiv:2407.21783, 2024. 5, 15
 10
 
 
-[25] Siyuan Huang, Zan Wang, Puhao Li, Baoxiong Jia, Tengyu Liu, Yixin Zhu, Wei Liang, and Song-Chun Zhu. Diffusionbased generation, optimization, and planning in 3D scenes. In IEEE Conference on Computer Vision and Pattern Recognition (CVPR), 2023. 3
+ [25] Siyuan Huang, Zan Wang, Puhao Li, Baoxiong Jia, Tengyu Liu, Yixin Zhu, Wei Liang, and Song-Chun Zhu. Diffusionbased generation, optimization, and planning in 3D scenes. In IEEE Conference on Computer Vision and Pattern Recognition (CVPR), 2023. 3
 [26] Oren Katzir, Or Patashnik, Daniel Cohen-Or, and Dani Lischinski. Noise-free score distillation. In International Conference on Learning Representations (ICLR), 2024. 2 [27] Bernhard Kerbl, Georgios Kopanas, Thomas Leimkühler, and George Drettakis. 3D Gaussian splatting for real-time radiance field rendering. In ACM Transactions on Graphics (TOG), 2023. 2 [28] Jungtaek Kim, Hyunsoo Chung, Jinhwi Lee, Minsu Cho, and Jaesik Park. Combinatorial 3D shape generation via sequential assembly. arXiv preprint arXiv:2004.07414, 2020. 3
 [29] Jae Woo Kim. Survey on automated LEGO assembly construction. 2014. 2 [30] LDraw.org. Ldraw.org homepage, 2025. 5, 8 [31] Kyle Lennon, Katharina Fransen, Alexander O’Brien, Yumeng Cao, Matthew Beveridge, Yamin Arefeen, Nikhil Singh, and Iddo Drori. Image2Lego: Customized LEGO set generation from images. arXiv preprint arXiv:2108.08477, 2021. 3
 [32] Jiahao Li, Hao Tan, Kai Zhang, Zexiang Xu, Fujun Luan, Yinghao Xu, Yicong Hong, Kalyan Sunkavalli, Greg Shakhnarovich, and Sai Bi. Instant3D: Fast text-to-3D with sparse-view generation and large reconstruction model. In International Conference on Learning Representations (ICLR), 2024. 2 [33] Muheng Li, Yueqi Duan, Jie Zhou, and Jiwen Lu. DiffusionSDF: Text-to-shape via voxelized diffusion. In IEEE Conference on Computer Vision and Pattern Recognition (CVPR), 2023. 2 [34] Weiyu Li, Rui Chen, Xuelin Chen, and Ping Tan. SweetDreamer: Aligning geometric priors in 2D diffusion for consistent text-to-3D. arXiv preprint arXiv:2310.02596, 2023. 2
@@ -407,7 +407,7 @@ International Symposium on Flexible Automation, page V001T07A004, 2024. 9, 15 [4
 11
 
 
-meshes. In IEEE Conference on Computer Vision and Pattern Recognition (CVPR), 2022. 2
+ meshes. In IEEE Conference on Computer Vision and Pattern Recognition (CVPR), 2022. 2
 [53] Ben Mildenhall, Pratul P. Srinivasan, Matthew Tancik, Jonathan T. Barron, Ravi Ramamoorthi, and Ren Ng. NeRF: Representing scenes as neural radiance fields for view synthesis. In European Conference on Computer Vision (ECCV), 2020. 2 [54] Vihaan Misra, Peter Schaldenbrand, and Jean Oh. ShapeShift: Towards text-to-shape arrangement synthesis with content-aware geometric constraints. arXiv preprint arXiv:2503.14720, 2025. 3
 [55] Gimin Nam, Mariem Khlifi, Andrew Rodriguez, Alberto Tono, Linqi Zhou, and Paul Guerrero. 3D-LDM: Neural implicit 3D shape generation with latent diffusion models. arXiv preprint arXiv:2212.00842, 2022. 2
 [56] Charlie Nash, Yaroslav Ganin, S. M. Ali Eslami, and Peter Battaglia. PolyGen: An autoregressive generative model of 3D meshes. In International Conference on Machine Learning (ICML), pages 7220–7229. PMLR, 2020. 2 [57] Junfeng Ni, Yixin Chen, Bohan Jing, Nan Jiang, Bin Wang, Bo Dai, Puhao Li, Yixin Zhu, Song-Chun Zhu, and Siyuan Huang. PhyRecon: Physically plausible neural scene reconstruction. In Advances in Neural Information Processing Systems (NeurIPS), 2024. 3
@@ -425,7 +425,7 @@ synthesis with latent diffusion models. In IEEE Conference on Computer Vision an
 12
 
 
-[78] Haochen Wang, Xiaodan Du, Jiahao Li, Raymond A. Yeh, and Greg Shakhnarovich. Score Jacobian chaining: Lifting pretrained 2D diffusion models for 3D generation. In IEEE Conference on Computer Vision and Pattern Recognition (CVPR), 2023. 2
+ [78] Haochen Wang, Xiaodan Du, Jiahao Li, Raymond A. Yeh, and Greg Shakhnarovich. Score Jacobian chaining: Lifting pretrained 2D diffusion models for 3D generation. In IEEE Conference on Computer Vision and Pattern Recognition (CVPR), 2023. 2
 [79] Ruocheng Wang, Yunzhi Zhang, Jiayuan Mao, Chin-Yi Cheng, and Jiajun Wu. Translating a visual lego manual to a machine-executable plan. In European Conference on Computer Vision (ECCV), 2022. 3
 [80] Zhengyi Wang, Cheng Lu, Yikai Wang, Fan Bao, Chongxuan Li, Hang Su, and Jun Zhu. ProlificDreamer: High-fidelity and diverse text-to-3D generation with variational score distillation. In Advances in Neural Information Processing Systems (NeurIPS), 2023. 2
 [81] Zhengyi Wang, Jonathan Lorraine, Yikai Wang, Hang Su, Jun Zhu, Sanja Fidler, and Xiaohui Zeng. LLaMA-Mesh: Unifying 3D mesh generation with language models. arXiv preprint arXiv:2411.09595, 2024. 2, 7, 8
@@ -443,7 +443,7 @@ synthesis with latent diffusion models. In IEEE Conference on Computer Vision an
 13
 
 
-Appendix
+ Appendix
 A. BRICKGPT Implementation Details
 Captioning Details. The complete prompt template used for GPT-4o caption generation is as follows: “This is a rendering of a 3D object built with LEGO bricks with 24 different views. The object belongs to the category of {CATEGORY_NAME}. You will generate five different captions for this {CATEGORY_NAME} that: 1. Describes the core object/subject and its key geometric features 2. Focuses on structure, geometry, and layout information 3. Uses confident, concrete, and declarative language 4. Omits color and texture information 5. Excludes medium-related terms (model, render, design) 6. Do not describe or reference each view individually. 7. Focus on form over function. Describe the physical appearance of components rather than their purpose. 8. Describe components in detail, including size, shape, and position relative to other components. 9. The five captions should be from coarse to fine, with the first one being the most coarse-grained (e.g., a general description of the object, within 10 words) and the last one being the most fine-grained (e.g., a detailed description of the object, within 50 words). The five captions should be different from each other. Do not include any ordering numbers (e.g., 1, a, etc.). 10. Describe the object using the category name "{CATEGORY_NAME}" or synonyms of the category name "{CATEGORY_NAME}".”
 StableText2Brick Details. We generate StableText2Brick starting from the objects in ShapeNetCore [2]. While ShapeNetCore provides both voxel and mesh representations, we find that working directly with mesh data better preserves geometric details. We voxelize the 3D mesh into a 20 × 20 × 20 grid representation and generate its brick structure using a delete-and-rebuild algorithm. This algorithm is similar to that studied in prior work [46]. However, instead of initializing the structure by filling its voxels with 1 × 1 unit bricks and randomly merging them into larger bricks, we greedily place bricks to fill the voxels layer-by-layer from bottom to top. We prioritize placing 1) bricks that are only partially supported by bricks on the layer below, 2) bricks that touch multiple bricks on the layer below, 3) large bricks, and 4) bricks of the opposite orientation from bricks on the layer below. After initializing the structure, we apply the new stability analysis algorithm [38] to iteratively identify weak regions, delete their bricks, and rebuild them by greedily placing bricks, prioritizing 1) bricks that connect multiple disconnected components and 2) large bricks. This process is stochastic; we choose weak regions randomly as per [46],
@@ -467,7 +467,7 @@ Training details. The full prompt that we use to construct our instruction fine-
 14
 
 
-Ours
+ Ours
 Closest design in dataset (Chamfer distance)
 Figure 10. Novelty analysis. For each structure generated by BRICKGPT, we find the closest structure in the training dataset as measured by Chamfer distance in voxel space. The generated structures are distinct from their nearest neighbors, indicating low memorization.
 ### Input:
@@ -484,7 +484,7 @@ As shown in Figure 11, human users can assemble our generated structures, demons
 15
 
 
-"A backless bench with armrest."
+ "A backless bench with armrest."
 “An acoustic guitar with an hourglass shape [...]”
 "A two-seater bench with a straight backrest and an open rectangular design on the sides, [...]"
 "A rectangular bookshelf featuring three horizontal shelves with open sides, supported by four [...]"

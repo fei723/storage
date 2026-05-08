@@ -13,7 +13,7 @@ Recent advancements in data-driven reachability analysis have established a dive
 arXiv:2511.23322v1 [eess.SY] 28 Nov 2025
 
 
-general settings, such as between non-convex sets or over long, potentially infinite, time horizons?
+ general settings, such as between non-convex sets or over long, potentially infinite, time horizons?
 To address this challenge, this paper introduce a novel data-driven reachability verification framework based on the Koopman spectrum. Diverging from conventional approaches that pursue a set-based framework to geometrically verify reachability in the state space, our algorithm adopts a fundamentally different paradigm inspired by the method in Ding and Deka (2024). Specifically, we encode the uncertainty of the underlying dynamics, as captured from data, into Koopman spectral information with error bounds. Leveraging this spectral representation, we verify the reachability specification by computing the probability of the existence of a non-empty time interval, during which trajectories starting from the given initial set can reach the target set.
 2. PRELIMINARIES
 Notations: We use R and C to denote the set of real and complex numbers, respectively. Rn denotes the n−dimensional real space. The space of all k−times continuously differentiable functions on domain X is denoted by Ck(X). The notation spec(M ) denotes the spectrum of a matrix M ∈ Cn×n. Re(·) and Im(·) denote the real and imaginary parts of an argument, respectively. |· | is used to denote the absolute value of a real or complex number and likewise ∠· denotes the phase angle of a complex scalar.
@@ -81,7 +81,7 @@ Pn
 i=1 αi Re (λi)
 
 
-(b) For Re (λ) < 0, Imag(λ, ψ) ⊆ Iˆmag(λ, ψ) .=
+ (b) For Re (λ) < 0, Imag(λ, ψ) ⊆ Iˆmag(λ, ψ) .=
 Pn
 i=1 αiLψi (X0, XF )
 Pn
@@ -146,7 +146,7 @@ Lemma 1. Suppose the inaccurate eigenfunction ψ ̃(x) = ε(x)ψ(x) satisfying a
 2 In our case, δλ = 0 by the Assumption 2.
 
 
-and Aψ ̃ computed from the inaccurate ψ ̃(x) can be bounded such that,
+ and Aψ ̃ computed from the inaccurate ψ ̃(x) can be bounded such that,
 Lψ(W, V ) − Lε(V, W ) ≤ Lψ ̃(W, V )
 ≤ Lψ(W, V ) + Lε(W, V ) (6)
 Aψ(W, V ) − Aε(V, W ) ≤ Aψ ̃(W, V )
@@ -233,7 +233,7 @@ dH (Iˆ(λ, ψ), I ̃(λ, ψ)) ≤ ∆. (15)
 Since event E is only a sufficient condition to guarantee the bounded Hausdorff distance, thus
 
 
-P
+ P
 n
 dH (I ̃(λ, ψ), Iˆ(λ, ψ)) ≤ ∆
 o
@@ -297,7 +297,7 @@ To empirically validate the probabilistic guarantees established in Theorem 3, w
 Next, we investigate the convergence of our framework with respect to the quality of the data-driven inputs. Example 2. (Duffing’s oscillator) Given the nonlinear dynamics
 
 
-Fig. 3. Distribution of Hausdorff distances over 2000 random settings.
+ Fig. 3. Distribution of Hausdorff distances over 2000 random settings.
 x ̇ 1
 x ̇ 2 = x2
 −0.5x2 − x1(x21 − 1) ,
@@ -320,7 +320,7 @@ We formulate the task to verify no trajectories starting from the initial set X0
 In this paper, we introduced a novel data-driven framework for reachability verification for unknown dynamical systems based on the Koopman spectrum. Our main contribution is propagating model uncertainty from data into a formal probabilistic guarantee on the time-to-reach bounds. Key future works include incorporating the uncertainty of the Koopman eigenvalues into the analysis, and extending the framework to control synthesis for safetycritical systems.
 
 
-Fig. 6. Reachability verification of the Roessler attractor system.
+ Fig. 6. Reachability verification of the Roessler attractor system.
 REFERENCES
 Alanwar, A., Koch, A., Allg ̈ower, F., and Johansson, K.H. (2021). Data-driven reachability analysis using matrix zonotopes. In Learning for Dynamics and Control, 163175. PMLR. Alanwar, A., Koch, A., Allg ̈ower, F., and Johansson, K.H. (2023). Data-driven reachability analysis from noisy data. IEEE Transactions on Automatic Control, 68(5), 3054–3069. Bak, S., Bogomolov, S., Hencey, B., Kochdumper, N., Lew, E., and Potomkin, K. (2025). Reachability of koopman linearized systems using explicit kernel approximation and polynomial zonotope refinement. Formal Methods in System Design, 1–27.
 Bansal, S. and Tomlin, C. (2020). Deepreach: A deep learning approach to high-dimensional reachability,”nov. arXiv preprint arXiv:2011.02082.
@@ -341,7 +341,7 @@ Prajna, S. and Rantzer, A. (2007). Convex programs for temporal verification of 
 Tebjou, A., Frehse, G., et al. (2023). Data-driven reachability using christoffel functions and conformal prediction. In Conformal and Probabilistic Prediction with Applications, 194–213. PMLR.
 
 
-Williams, M.O., Kevrekidis, I.G., and Rowley, C.W. (2015). A data–driven approximation of the koopman operator: Extending dynamic mode decomposition. Journal of Nonlinear Science, 25(6), 1307–1346.
+ Williams, M.O., Kevrekidis, I.G., and Rowley, C.W. (2015). A data–driven approximation of the koopman operator: Extending dynamic mode decomposition. Journal of Nonlinear Science, 25(6), 1307–1346.
 Williams, M.O., Rowley, C.W., and Kevrekidis, I.G. (2014). A kernel-based approach to data-driven koopman spectral analysis. arXiv preprint arXiv:1411.2260.
 Appendix A. PROOF OF THEOREM 1
 Proof. Let x0 be some point in X0 such that sT (x0) ∈ XF

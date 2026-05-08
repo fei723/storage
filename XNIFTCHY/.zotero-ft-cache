@@ -15,7 +15,7 @@ and flexible adaptation. The key insight is to model the humanoid proprioception
 arXiv:2503.19901v2 [cs.CV] 3 Apr 2025
 
 
-1. Introduction
+ 1. Introduction
 Generating diverse and life-like Human-Scene Interactions (HSI) through physics simulation is a fascinating yet challenging task for computer animation and embodied AI. In real-world scenarios, humans function as general-purpose agents, proficient in executing a wide variety of complex interaction tasks and adept at adapting to novel contexts. Driven by this, we aim to establish a unified controller for learning versatile human-scene interaction skills and to explore an effective method for adapting learned skills to new tasks and environments, thereby narrowing the gap between simulated characters and real-world humans. Beyond methods [8, 23, 27, 72, 75, 99, 109, 116] that develop controllers solely focused on a single interaction task, some advancements [90, 106] have aimed to devise unified controllers with diverse skills. However, they have notable limitations in two main aspects: (1) Their controllers are primarily designed for interactions in static scenes, such as sitting or touching immovable objects, and therefore cannot be applied to dynamic scenarios that require manipulation skills, such as carrying those objects. This incomplete skill set results in limited applicability and diminishes the potential to accomplish tasks that require various synergies between diverse skills, such as composite tasks (e.g., sitting down while carrying an object) and long-term manipulation tasks by sequencing multiple skills. (2) These approaches focus more on in-domain settings and suffer from limited generalization capability in novel scenes, overlooking the adaptation of learned skills to novel scenarios. The process of directly fine-tuning pre-trained policies for new tasks is inefficient [111], thereby further constraining the adaptability of their controllers. To address these challenges, we present TokenHSI, the first physics-based character control framework designed for unifying diverse HSI skills within a single network while maintaining flexible adaptability to novel scenarios. TokenHSI constructs a separate observation space by individually tokenizing the humanoid proprioception and multiple task states. During inference, the character is directed to perform a specific task by combining the proprioception token with the corresponding task token using the masking mechanism in the transformer encoder [92]. That is, the proprioception token is shared across tasks. This design choice not only enables the unified learning of multiple HSI skills but also encourages motor knowledge sharing to boost performance. Through multi-task training, our proprioception tokenizer can generalize to a wide range of character states. To demonstrate the effectiveness, we train TokenHSI to simultaneously learn four representative HSI skills using a single transformer network, including following, sitting, climbing, and carrying. Transcending multi-skill unification, TokenHSI further excels at quickly adapting its learned skills to tackle new,
 more challenging HSI tasks. Given that our transformer policy enables variable length inputs, we can introduce additional task tokenizers to adapt the pre-trained policy to new tasks and environments both robustly and efficiently. This is thanks to the effective generalization of our proprioception tokenizer which is trained across diverse tasks, and the reuse of prior task tokenizers relevant to new contexts via the masking mechanism. Although the concurrent works [29, 90] also utilize the transformer architecture with a shared proprioception tokenizer to develop a single controller, TokenHSI differs from these approaches since we not only unify diverse HSI tasks but also further unleash the model’s flexible and efficient adaptability to new tasks. Our framework facilitates the adaptation to novel task configurations by training only few additional parameters once the foundational skills are acquired, including task tokenizers, as well as adapter layers for the multilayer perceptron (MLP) based action head that predicts the actions. It eliminates the need to fine-tune the full parameters of the pre-trained policy, thereby enhancing the efficiency of the adaptation process. TokenHSI demonstrates significantly improved sample efficiency and performance compared to recent policy adaptation methods [110, 111]. We conduct extensive experiments on a variety of HSI tasks, including skill composition, object and terrain shape variation, and long-horizon task completion in complex environments; See an overview in Fig. 1. Our results demonstrate that TokenHSI, despite its simplicity and efficiency, significantly outperforms existing methods on these challenging HSI benchmarks. Our contributions can be summarized as follows:
 1. We present TokenHSI, a novel transformer-based physical character controller that integrates versatile HSI skills within a single, unified policy. 2. Once trained, our approach enables flexible and efficient policy adaptation to novel HSI tasks, avoiding the full fine-tuning of the pre-trained policy. 3. We propose a dedicated tokenizer to encode proprioception, effectively facilitating both multi-task training and policy adaptation.
@@ -25,7 +25,7 @@ Recent advancements in human-scene interaction motion synthesis can be categoriz
 2
 
 
-utilize large-scale datasets [4, 21, 26, 47, 62, 70, 107, 114] and advanced generative motion models [10, 15, 16, 20, 31, 32, 50, 52, 53, 65, 66, 87, 91, 93, 105, 108, 128, 132], to synthesize high-quality human-scene interaction motions. However, these methods often overlook the importance of the physical plausibility. To address this, traditional physics-based methods utilize hand-crafted controllers to implement physics-based grasping skills [82, 131]. For instance, [131] constructed a hand-grasping database to generate grasping poses for PD controllers, enabling real-time physics-based hand-grasping synthesis. As the complexity of human-object interactions increases, trajectory optimization offers a versatile and effective approach for synthesizing complex skills [9, 54, 55, 58, 59, 73, 74, 120]. However, these optimization-based methods are typically offline and cannot be deployed in real-time applications. More recently, deep reinforcement learning (DRL) has emerged as a powerful framework for learning motor skills in physically simulated agents [3, 12, 14, 18, 27, 60, 76–80, 86, 89, 115, 119, 134] and realworld humanoid robots [11, 22, 28–30, 35, 38, 94, 123]. This approach has successfully synthesized numerous impressive human-object interaction skills that were previously unattainable, including basketball dribbling [57, 100], skateboarding [56], playing tennis [97, 125], solving a Rubik’s Cube with hands [1], using chopsticks [117], and interacting with everyday objects [5, 23, 27, 49, 51, 61, 68, 75, 99, 104, 106]. However, despite these significant advancements, existing methods still fall short of establishing a single, comprehensive controller for integrating diverse skills, such as climbing, contacting, and manipulation.
+ utilize large-scale datasets [4, 21, 26, 47, 62, 70, 107, 114] and advanced generative motion models [10, 15, 16, 20, 31, 32, 50, 52, 53, 65, 66, 87, 91, 93, 105, 108, 128, 132], to synthesize high-quality human-scene interaction motions. However, these methods often overlook the importance of the physical plausibility. To address this, traditional physics-based methods utilize hand-crafted controllers to implement physics-based grasping skills [82, 131]. For instance, [131] constructed a hand-grasping database to generate grasping poses for PD controllers, enabling real-time physics-based hand-grasping synthesis. As the complexity of human-object interactions increases, trajectory optimization offers a versatile and effective approach for synthesizing complex skills [9, 54, 55, 58, 59, 73, 74, 120]. However, these optimization-based methods are typically offline and cannot be deployed in real-time applications. More recently, deep reinforcement learning (DRL) has emerged as a powerful framework for learning motor skills in physically simulated agents [3, 12, 14, 18, 27, 60, 76–80, 86, 89, 115, 119, 134] and realworld humanoid robots [11, 22, 28–30, 35, 38, 94, 123]. This approach has successfully synthesized numerous impressive human-object interaction skills that were previously unattainable, including basketball dribbling [57, 100], skateboarding [56], playing tennis [97, 125], solving a Rubik’s Cube with hands [1], using chopsticks [117], and interacting with everyday objects [5, 23, 27, 49, 51, 61, 68, 75, 99, 104, 106]. However, despite these significant advancements, existing methods still fall short of establishing a single, comprehensive controller for integrating diverse skills, such as climbing, contacting, and manipulation.
 2.2. Unified Character Controller
 Beyond controllers designed for limited skills [27, 56, 78], recent works aim to develop unified controllers for a broader range of skills. Notably, studies [67, 101, 102] have enhanced the capabilities of physics-aware motion imitation, enabling support for large-scale reference motions and accommodating a variety of body shapes. To improve the flexibility of learned skills, [18, 69, 80, 86, 103, 118, 119] have established motion manifolds using physics simulations to model versatile and reusable skills while also training additional controllers for specific tasks. UniHSI [106] proposes a unified controller for various contact-based humanscene interaction tasks, utilizing automatic task generation through large language models (LLMs). More recently, [29, 90, 98] introduced a masking mechanism to train controllers that follow on-demand tracking targets. In contrast, our approach not only incorporates the masking mechanism to unify various HSI tasks across different categories—such as following, sitting, climbing, and carrying—but also explores effective methods to adapt the skills learned by our unified character controller to new tasks and environments.
 3. Methodology
@@ -41,7 +41,7 @@ t=0 γtrt. We use the widely adopted Proximal Policy Optimization (PPO) algorith
 3
 
 
-e
+ e
 Condition
 Multi-task Env
 Transformer Encoder
@@ -91,7 +91,7 @@ t ). Besides, we condition the motion discriminator D on the one-hot label lt to
 4
 
 
-3.4. Transformer-based Policy Adaptation
+ 3.4. Transformer-based Policy Adaptation
 In this section, we demonstrate how to adapt the pretrained policy to address diverse new HSI tasks. We validate our approach on three challenging tasks. As depicted in Fig. 2 (right), the adaptation process first freezes these components: Tprop, e, H, and φ to ensure that the adapted model remains effective for prior skills. Then, we introduce zero-initialized adapter layers ξA = {ξ0A, ξ1A} to the action head H to enhance the adaptation efficiency. We train a new motion discriminator D from scratch during each task. Next, we detail how we reuse pre-trained task tokenizers and introduce new tokenizers to learn these tasks. Detailed task designs are provided in Sec. B.3 in the supplementary. Skill Composition. We aim to create composite motions, such as sitting down while carrying a box (see Fig. 4 (b)). We reuse and freeze the task tokenizers for the sitting Ts and the carrying Tc tasks. Furthermore, we introduce an additional trainable task tokenizer Tnew to perceive the new task state gtnew, which is designed to contain the states of the target object and the box. During the training, the model gradually learns to coordinate the two learned skills to complete the composite task. We also apply this method to combine other learned skills with the carrying skill, respectively. Object Shape Variation. Possessing the ability to interact with a variety of objects is an essential feature of an HSI controller. The pre-trained policy learns a box-carrying skill. Therefore, we aim to adapt it to new environments in which the boxes are replaced with irregular objects, such as chairs and tables. Since we can use the same observation information, we directly fine-tune the pre-trained task tokenizer Tc. After training, we obtain two additional finetuned tokenizers Tc
 chair and Tc
 table, enabling the unified model to generalize to more diverse object categories. Terrain Shape Variation. The basic skills of our policy are trained on flat ground. However, there is usually complex terrain in the real world, such as stairs. As illustrated in Fig. 2 (right), we generalize the trajectory following and carrying skills to stairs environments. Similarly, we directly fine-tune the prior task tokenizer Tf or Tc. We further introduce an additional trainable task tokenizer Tnew to encode the height map [84].
@@ -112,7 +112,7 @@ xttar is the dynamically sampled target pelvis position. Both training and testi
 5
 
 
-Task Method Success Rate (%) Error (cm)
+ Task Method Success Rate (%) Error (cm)
 Follow
 Specialist 98.7±0.5 6.5±0.0 Ours (w/o Tprop) 99.3±0.3 9.7±0.2 Ours 99.7±0.0 9.3±0.1
 Sit
@@ -138,7 +138,7 @@ the box-carrying policy, which is further trained to 100k iterations. This elimi
 6
 
 
-(a) Skill Composition: follow + carry (b) Skill Composition: sit + carry (c) Skill Composition: climb + carry
+ (a) Skill Composition: follow + carry (b) Skill Composition: sit + carry (c) Skill Composition: climb + carry
 (e) Terrain Shape Variation: box carrying across uneven terrain
 (f) Terrain Shape Variation: trajectory following across uneven terrain
 (d) Object Shape Variation: irregular object carrying
@@ -166,7 +166,7 @@ Experimental Setup. We aim to adapt Follow and Carry skills trained on flat grou
 7
 
 
-Method Follow Carry
+ Method Follow Carry
 Succ. (%) Err. (cm) Succ. (%) Err. (cm) Scratch [79] 93.4±0.7 14.9±0.2 0 AdaptNet [111] 92.4±0.5 12.3±0.2 63.4±0.6 5.9±0.3 Ours (w/o adapters) 63.0±1.1 22.5±0.4 10.8±1.5 7.7±0.1 Ours 96.0±0.4 11.8±0.0 74.0±2.5 5.9±0.2
 Table 4. Quantitative results across terrain shape variation tasks.
 Follow: Flat Ground-2-Terrain Carry: Flat Ground-2-Terrain Success Rate (%) Success Rate (%)
@@ -185,7 +185,7 @@ The main limitation is that learning these skills requires engineering of reward
 8
 
 
-6. Acknowledgments
+ 6. Acknowledgments
 We would like to thank Zhewen Zheng for his professional rendering techniques, which helped make appealing figures and videos in our paper. We also appreciate the anonymous reviewers for their constructive comments that improved the final version of this paper. This work is funded in part by the National Key R&D Program of China (2022ZD0160201), HKU Startup Fund, and Shanghai Artificial Intelligence Laboratory. This work is partly supported by the Innovation and Technology Commission of the HKSAR Government under the ITSP-Platform grant (Ref: ITS/335/23FP) and the InnoHK initiative (TransGP project). The research work was in part conducted in the JC STEM Lab of Robotics for Soft Materials funded by The Hong Kong Jockey Club Charities Trust.
 References
 [1] Ilge Akkaya, Marcin Andrychowicz, Maciek Chociej, Mateusz Litwin, Bob McGrew, Arthur Petron, Alex Paino, Matthias Plappert, Glenn Powell, Raphael Ribas, et al. Solving rubik’s cube with a robot hand. arXiv preprint arXiv:1910.07113, 2019. 3
@@ -199,7 +199,7 @@ References
 9
 
 
-ternational Conference on Computer Vision, pages 1093310942, 2021. 3, 2 [22] Zipeng Fu, Qingqing Zhao, Qi Wu, Gordon Wetzstein, and Chelsea Finn. Humanplus: Humanoid shadowing and imitation from humans. arXiv preprint arXiv:2406.10454, 2024. 3 [23] Jiawei Gao, Ziqin Wang, Zeqi Xiao, Jingbo Wang, Tai Wang, Jinkun Cao, Xiaolin Hu, Si Liu, Jifeng Dai, and Jiangmiao Pang. Coohoi: Learning cooperative humanobject interaction with manipulated object dynamics. Advances in Neural Information Processing Systems, 37: 79741–79763, 2024. 2, 3, 4 [24] F Sebastian Grassia. Practical parameterization of rotations using the exponential map. Journal of graphics tools, 3(3): 29–48, 1998. 1 [25] Assaf Hallak, Gal Dalal, Chen Tessler, Kelly Guo, Shie Mannor, and Gal Chechik. Plamo: Plan and move in rich 3d physical environments. arXiv preprint arXiv:2406.18237, 2024. 4 [26] Mohamed Hassan, Duygu Ceylan, Ruben Villegas, Jun Saito, Jimei Yang, Yi Zhou, and Michael J Black. Stochastic scene-aware motion prediction. In Proceedings of the IEEE/CVF International Conference on Computer Vision, pages 11374–11384, 2021. 3, 2 [27] Mohamed Hassan, Yunrong Guo, Tingwu Wang, Michael Black, Sanja Fidler, and Xue Bin Peng. Synthesizing physical character-scene interactions. In ACM SIGGRAPH 2023 Conference Proceedings, pages 1–9, 2023. 2, 3, 4
+ ternational Conference on Computer Vision, pages 1093310942, 2021. 3, 2 [22] Zipeng Fu, Qingqing Zhao, Qi Wu, Gordon Wetzstein, and Chelsea Finn. Humanplus: Humanoid shadowing and imitation from humans. arXiv preprint arXiv:2406.10454, 2024. 3 [23] Jiawei Gao, Ziqin Wang, Zeqi Xiao, Jingbo Wang, Tai Wang, Jinkun Cao, Xiaolin Hu, Si Liu, Jifeng Dai, and Jiangmiao Pang. Coohoi: Learning cooperative humanobject interaction with manipulated object dynamics. Advances in Neural Information Processing Systems, 37: 79741–79763, 2024. 2, 3, 4 [24] F Sebastian Grassia. Practical parameterization of rotations using the exponential map. Journal of graphics tools, 3(3): 29–48, 1998. 1 [25] Assaf Hallak, Gal Dalal, Chen Tessler, Kelly Guo, Shie Mannor, and Gal Chechik. Plamo: Plan and move in rich 3d physical environments. arXiv preprint arXiv:2406.18237, 2024. 4 [26] Mohamed Hassan, Duygu Ceylan, Ruben Villegas, Jun Saito, Jimei Yang, Yi Zhou, and Michael J Black. Stochastic scene-aware motion prediction. In Proceedings of the IEEE/CVF International Conference on Computer Vision, pages 11374–11384, 2021. 3, 2 [27] Mohamed Hassan, Yunrong Guo, Tingwu Wang, Michael Black, Sanja Fidler, and Xue Bin Peng. Synthesizing physical character-scene interactions. In ACM SIGGRAPH 2023 Conference Proceedings, pages 1–9, 2023. 2, 3, 4
 [28] Tairan He, Zhengyi Luo, Xialin He, Wenli Xiao, Chong Zhang, Weinan Zhang, Kris M Kitani, Changliu Liu, and Guanya Shi. Omnih2o: Universal and dexterous humanto-humanoid whole-body teleoperation and learning. In 8th Annual Conference on Robot Learning, 2024. 3
 [29] Tairan He, Wenli Xiao, Toru Lin, Zhengyi Luo, Zhenjia Xu, Zhenyu Jiang, Jan Kautz, Changliu Liu, Guanya Shi, Xiaolong Wang, Linxi Fan, and Yuke Zhu. Hover: Versatile neural whole-body controller for humanoid robots. arXiv preprint arXiv:2410.21229, 2024. 2, 3
 [30] Tairan He, Jiawei Gao, Wenli Xiao, Yuanhang Zhang, Zi Wang, Jiashun Wang, Zhengyi Luo, Guanqi He, Nikhil Sobanbab, Chaoyi Pan, et al. Asap: Aligning simulation and real-world physics for learning agile humanoid wholebody skills. arXiv preprint arXiv:2502.01143, 2025. 3
@@ -216,7 +216,7 @@ Vision and Pattern Recognition, pages 16750–16761, 2023. 2
 10
 
 
-interaction synthesis. In European Conference on Computer Vision, pages 54–72. Springer, 2024. 2 [49] Jianan Li, Tao Huang, Qingxu Zhu, and Tien-Tsin Wong. Physics-based scene layout generation from human motion. In ACM SIGGRAPH 2024 Conference Papers, pages 1–10, 2024. 3 [50] Ronghui Li, YuXiang Zhang, Yachao Zhang, Hongwen Zhang, Jie Guo, Yan Zhang, Yebin Liu, and Xiu Li. Lodge: A coarse to fine diffusion network for long dance generation guided by the characteristic dance primitives. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 1524–1534, 2024. 3 [51] Yitang Li, Mingxian Lin, Zhuo Lin, Yipeng Deng, Yue Cao, and Li Yi. Learning physics-based full-body human reaching and grasping from brief walking references. arXiv preprint arXiv:2503.07481, 2025. 3
+ interaction synthesis. In European Conference on Computer Vision, pages 54–72. Springer, 2024. 2 [49] Jianan Li, Tao Huang, Qingxu Zhu, and Tien-Tsin Wong. Physics-based scene layout generation from human motion. In ACM SIGGRAPH 2024 Conference Papers, pages 1–10, 2024. 3 [50] Ronghui Li, YuXiang Zhang, Yachao Zhang, Hongwen Zhang, Jie Guo, Yan Zhang, Yebin Liu, and Xiu Li. Lodge: A coarse to fine diffusion network for long dance generation guided by the characteristic dance primitives. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 1524–1534, 2024. 3 [51] Yitang Li, Mingxian Lin, Zhuo Lin, Yipeng Deng, Yue Cao, and Li Yi. Learning physics-based full-body human reaching and grasping from brief walking references. arXiv preprint arXiv:2503.07481, 2025. 3
 [52] Jing Lin, Ailing Zeng, Shunlin Lu, Yuanhao Cai, Ruimao Zhang, Haoqian Wang, and Lei Zhang. Motion-x: A largescale 3d expressive whole-body human motion dataset. Advances in Neural Information Processing Systems, 36: 25268–25280, 2023. 3 [53] Hung Yu Ling, Fabio Zinno, George Cheng, and Michiel Van De Panne. Character controllers using motion vaes. ACM Transactions on Graphics (TOG), 39(4):40–1, 2020. 3
 [54] C Karen Liu. Synthesis of interactive hand manipulation. In Proceedings of the 2008 ACM SIGGRAPH/Eurographics Symposium on Computer Animation, pages 163–171, 2008. 3
 [55] C Karen Liu. Dextrous manipulation from a grasping pose. ACM Transactions on Graphics (TOG), 28(3), 2009. 3
@@ -233,7 +233,7 @@ human interaction dataset for collaborative object rearrangement. arXiv preprint
 11
 
 
-[75] Liang Pan, Jingbo Wang, Buzhen Huang, Junyu Zhang, Haofan Wang, Xu Tang, and Yangang Wang. Synthesizing physically plausible human motions in 3d scenes. In 2024 International Conference on 3D Vision (3DV), pages 1498–1507. IEEE, 2024. 2, 3, 4, 5
+ [75] Liang Pan, Jingbo Wang, Buzhen Huang, Junyu Zhang, Haofan Wang, Xu Tang, and Yangang Wang. Synthesizing physically plausible human motions in 3d scenes. In 2024 International Conference on 3D Vision (3DV), pages 1498–1507. IEEE, 2024. 2, 3, 4, 5
 [76] Soohwan Park, Hoseok Ryu, Seyoung Lee, Sunmin Lee, and Jehee Lee. Learning predict-and-simulate policies from unorganized human motion data. ACM Transactions on Graphics (TOG), 38(6), 2019. 3
 [77] Xue Bin Peng, Glen Berseth, KangKang Yin, and Michiel Van De Panne. Deeploco: Dynamic locomotion skills using hierarchical deep reinforcement learning. ACM Transactions on Graphics (TOG), 36(4), 2017.
 [78] Xue Bin Peng, Pieter Abbeel, Sergey Levine, and Michiel van de Panne. Deepmimic: Example-guided deep reinforcement learning of physics-based character skills. ACM Transactions on Graphics (TOG), 37(4), 2018. 3, 2
@@ -256,7 +256,7 @@ human interaction dataset for collaborative object rearrangement. arXiv preprint
 12
 
 
-[102] Jungdam Won, Deepak Gopinath, and Jessica Hodgins. A scalable approach to control diverse behaviors for physically simulated characters. ACM Transactions on Graphics (TOG), 39(4):33–1, 2020. 3 [103] Jungdam Won, Deepak Gopinath, and Jessica Hodgins. Physics-based character controllers using conditional vaes. ACM Transactions on Graphics (TOG), 41(4):1–12, 2022. 3
+ [102] Jungdam Won, Deepak Gopinath, and Jessica Hodgins. A scalable approach to control diverse behaviors for physically simulated characters. ACM Transactions on Graphics (TOG), 39(4):33–1, 2020. 3 [103] Jungdam Won, Deepak Gopinath, and Jessica Hodgins. Physics-based character controllers using conditional vaes. ACM Transactions on Graphics (TOG), 41(4):1–12, 2022. 3
 [104] Zhen Wu, Jiaman Li, Pei Xu, and C Karen Liu. Humanobject interaction from human-level instructions. arXiv preprint arXiv:2406.17840, 2024. 3
 [105] Lixing Xiao, Shunlin Lu, Huaijin Pi, Ke Fan, Liang Pan, Yueer Zhou, Ziyong Feng, Xiaowei Zhou, Sida Peng, and Jingbo Wang. Motionstreamer: Streaming motion generation via diffusion-based autoregressive model in causal latent space. arXiv preprint arXiv:2503.15451, 2025. 3
 [106] Zeqi Xiao, Tai Wang, Jingbo Wang, Jinkun Cao, Wenwei Zhang, Bo Dai, Dahua Lin, and Jiangmiao Pang. Unified human-scene interaction via prompted chain-of-contacts. In The Twelfth International Conference on Learning Representations, 2024. 2, 3, 4
@@ -272,11 +272,11 @@ physics-based human-object interactions. arXiv preprint arXiv:2502.20390, 2025. 
 13
 
 
-method for intuitive physics guided human-object interaction. arXiv e-prints, pages arXiv–2403, 2024. 3 [129] Yan Zhang and Siyu Tang. The wanderings of odysseus in 3d scenes. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 2048120491, 2022. 2 [130] Kaifeng Zhao, Yan Zhang, Shaofei Wang, Thabo Beeler, and Siyu Tang. Synthesizing diverse human motions in 3d indoor scenes. In Proceedings of the IEEE/CVF international conference on computer vision, pages 14738–14749, 2023. 2 [131] Wenping Zhao, Jianjie Zhang, Jianyuan Min, and Jinxiang Chai. Robust realtime physics-based motion control for human grasping. ACM Transactions on Graphics (TOG), 32 (6), 2013. 3 [132] Wenyang Zhou, Zhiyang Dou, Zeyu Cao, Zhouyingcheng Liao, Jingbo Wang, Wenjia Wang, Yuan Liu, Taku Komura, Wenping Wang, and Lingjie Liu. Emdm: Efficient motion diffusion model for fast and high-quality motion generation. In European Conference on Computer Vision, pages 18–38. Springer, 2024. 3 [133] Yi Zhou, Connelly Barnes, Jingwan Lu, Jimei Yang, and Hao Li. On the continuity of rotation representations in neural networks. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 5745–5753, 2019. 1 [134] Qingxu Zhu, He Zhang, Mengting Lan, and Lei Han. Neural categorical priors for physics-based character control. ACM Transactions on Graphics (TOG), 42(6):1–16, 2023. 3
+ method for intuitive physics guided human-object interaction. arXiv e-prints, pages arXiv–2403, 2024. 3 [129] Yan Zhang and Siyu Tang. The wanderings of odysseus in 3d scenes. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 2048120491, 2022. 2 [130] Kaifeng Zhao, Yan Zhang, Shaofei Wang, Thabo Beeler, and Siyu Tang. Synthesizing diverse human motions in 3d indoor scenes. In Proceedings of the IEEE/CVF international conference on computer vision, pages 14738–14749, 2023. 2 [131] Wenping Zhao, Jianjie Zhang, Jianyuan Min, and Jinxiang Chai. Robust realtime physics-based motion control for human grasping. ACM Transactions on Graphics (TOG), 32 (6), 2013. 3 [132] Wenyang Zhou, Zhiyang Dou, Zeyu Cao, Zhouyingcheng Liao, Jingbo Wang, Wenjia Wang, Yuan Liu, Taku Komura, Wenping Wang, and Lingjie Liu. Emdm: Efficient motion diffusion model for fast and high-quality motion generation. In European Conference on Computer Vision, pages 18–38. Springer, 2024. 3 [133] Yi Zhou, Connelly Barnes, Jingwan Lu, Jimei Yang, and Hao Li. On the continuity of rotation representations in neural networks. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 5745–5753, 2019. 1 [134] Qingxu Zhu, He Zhang, Mengting Lan, and Lei Han. Neural categorical priors for physics-based character control. ACM Transactions on Graphics (TOG), 42(6):1–16, 2023. 3
 14
 
 
-TokenHSI: Unified Synthesis of Physical Human-Scene Interactions
+ TokenHSI: Unified Synthesis of Physical Human-Scene Interactions
 through Task Tokenization
 Supplementary Material
 A. Simulated Character
@@ -295,7 +295,7 @@ Reference Motion Dataset. To encourage the character to perform tasks in a reali
 1
 
 
-Task Num. of Num. of Obj. Reference Motion Dataset Epis. Len. (s) Early Termination Condition
+ Task Num. of Num. of Obj. Reference Motion Dataset Epis. Len. (s) Early Termination Condition
 Task Tokens Train Test Loco Stair Climb Carry Sit Char. Fall Obj. Fall Path Dist. IET
 Follow 1 / / ✓ 10 ✓ ✓ Sit 1 49 26 ✓ ✓ 10 ✓ ✓ Climb 1 38 26 ✓ ✓ 10 ✓ ✓ Carry 1 9 9 ✓ ✓ 20 ✓ Follow + Carry 3 / + 5 / + 9 ✓ ✓ 10 ✓ ✓ ✓ Sit + Carry 3 49 + 5 26 + 9 ✓ ✓ ✓ 10 ✓ ✓ ✓ Climb + Carry 3 38 + 5 26 + 9 ✓ ✓ ✓ 10 ✓ ✓ ✓ Obj. Shap. Var. (Chair) 1 63 27 ✓ ✓ 20 ✓ ✓ Obj. Shap. Var. (Table) 1 21 9 ✓ ✓ 20 ✓ ✓ Terr. Shap. Var. (Follow) 2 / / ✓ ✓ 10 ✓ ✓ Terr. Shap. Var. (Carry) 2 9 9 ✓ ✓ ✓ 20 ✓ Long-horizon Task 5 / / ✓ ✓ ✓ ✓ 40 ✓ ✓
 Table A. The overview of all 12 tasks implemented in this paper. Key settings for each task are summarized, including the number of task tokens, the construction of reference motion and object datasets, the episode length, and early termination conditions. The available termination conditions contain character fall, object fall, path distance, and interaction early termination (IET). A slash (/) indicates that the specific configuration is not applicable.
@@ -311,7 +311,7 @@ T }, where xτ0.1 denotes a 2D waypoint of the trajectory τ at the simulation t
 2
 
 
-the whole trajectory τ by linear interpolation. The sampling time interval is 0.1s. We use the 2D coordinates of the sampled waypoints as the task observation gf
+ the whole trajectory τ by linear interpolation. The sampling time interval is 0.1s. We use the 2D coordinates of the sampled waypoints as the task observation gf
 t ∈ R2×10.
 Task Reward. The task reward rf
 t calculates the distance
@@ -459,7 +459,7 @@ t
 3
 
 
-rnear
+ rnear
 t = exp − 10.0 xtar
 t − xobj
 t
@@ -597,7 +597,7 @@ t , rts, rtm, or rtc)). Once a step is completed, the reward value for that sub-
 4
 
 
-C. Implementation Details of CML
+ C. Implementation Details of CML
 In Sec. 4.2.1, we compare our transformer-based policy adaptation with CML [110] and CML (dual) on the skill composition tasks. The network structure of CML (dual) is an improved version based on the original CML framework. CML [110] employs a hierarchical framework consisting of a pre-trained, fixed meta policy πmeta as the low-level controller and a newly introduced, trainable policy πnew as the high-level controller. The high-level policy πnew observes the humanoid proprioception st and the new task observation gtnew. The low-level policy πmeta observes the humanoid proprioception st and the base task observation gbase
 t . Take the Climb + Carry task as an example. We use a specialist policy trained on the climbing task as the πmeta(ameta
 t |st, gtm), which possesses a joint character-goal state space. Then, we introduce a new policy πnew(atnew, wtnew|st, gm+c
@@ -643,7 +643,7 @@ Quantitative Results. Our method achieves the highest value of the completed sub
 5
 
 
-(a)
+ (a)
 (b)
 Figure C. Qualitative results of new skills learned by our policy adaptation. (a) We first learn two out-of-domain interaction skills, i.e., pushing down a large object and walking to a target location while lifting up a box using two hands. (b) We then combine the new lifting skill with previously learned sitting and path-following skills. These results demonstrate the good extensibility of our transformer policy.
 E. Extensibility

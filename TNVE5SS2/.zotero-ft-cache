@@ -8,7 +8,7 @@ In recent years, multimodal large language models (MLLMs) have achieved breakthr
 arXiv:2512.02895v2 [cs.CV] 3 Dec 2025
 
 
-Figure 1 Performance of MindGPT-4ov across multiple benchmarks.
+ Figure 1 Performance of MindGPT-4ov across multiple benchmarks.
 intelligence (Lin et al., 2025; Lozano et al., 2025). To address this challenge, some studies have explored various lines of exploration. For example, SpatialBot (Cai et al., 2025b) applies MLLMs to embodied intelligence, helping robots perceive their environment and plan tasks; DiMA (Hegde et al., 2025) proposes an end-to-end autonomous driving system distilled from a pre-trained MLLM; and HealthGPT (Lin et al., 2025) is an MLLM used to support medical treatment.
 However, these studies suffer from two problems, resulting in poor practicality and generalization of current models: (1) as MLLMs acquire domain expertise, they often suffer from catastrophic forgetting, degrading their original general understanding capabilities; and (2) they lack a systematic post-training methodology: they either prioritize domain data collection while neglecting stringent data quality and cost controls; focus solely on learning domain-specific capabilities at the expense of maintaining foundational general abilities and real-world user experience; or optimize the training framework without adequately accounting for practical deployment requirements.
 By contrast, we propose the MindGPT-4ov framework that offers a systematic, end-to-end methodology that covers the entire pipeline, including: (1) An information density-driven data synthesis method. Through automated data acquisition, intelligent annotation assistance, and data quality assessment, we build high-quality training sets with data augmentation and synthesis strategies to alleviate long-tailed data distributions; (2) A collaborative curriculum supervised fine-tuning method. This framework integrates domain expertise into the model through coordinated data admission techniques and curriculum learning, which preserves its general capabilities and applies targeted optimizations to address user-experience pain points. (3) A multi-stage hybrid-reward reinforcement learning method.Through multi-stage reinforcement learning, combined with a carefully designed hybrid reward strategy, we progressively improve both general and vertical domain performance. (4) A 5D parallel training framework. For Mixture-of-Experts (MoE) architectures (Cai et al., 2025a), we introduce a series of training optimizations during the supervised fine-tuning and reinforcement learning phases to significantly improve training efficiency. We also optimize the inference engine to enhance the user experience in high-concurrency and other specific application scenarios.
@@ -16,7 +16,7 @@ Ultimately, the model trained with the proposed framework not only excels on ver
 2
 
 
-Engineering, Mathematics) benchmarks, respectively. In addition, it also provides a superior realworld user experience, such as . Finally, the proposed framework supports efficient deployment, characterized by lower CPU/GPU utilization, more efficient cache reuse, faster response times, and improved user experience.
+ Engineering, Mathematics) benchmarks, respectively. In addition, it also provides a superior realworld user experience, such as . Finally, the proposed framework supports efficient deployment, characterized by lower CPU/GPU utilization, more efficient cache reuse, faster response times, and improved user experience.
 In summary, MindGPT-4ov’s end-to-end, systematic design ensures that data preparation, model training, and deployment are all optimized, enabling a seamless transition from academic research to industrial application. Our main contributions include:
 • A generalizable post-training paradigm. We propose MindGPT-4ov, whose training paradigm is applicable to most current MLLMs. Our approach encompasses high-quality data construction, a multi-stage supervised fine-tuning and reinforcement learning scheme, and efficient training and deployment strategies, providing a low-cost, reusable, and scalable technical pathway for the real-world deployment of MLLMs.
 • Outstanding performance. The MindGPT-4ov model achieves superior performance across multiple multimodal general benchmarks compared to Qwen3-VL. Moreover, it can provide a better user experience for the specific domain tasks than Qwen3-VL.
@@ -29,7 +29,7 @@ To address the aforementioned challenges and better support the transition of ge
 3
 
 
-3-level topic 3-level topic
+ 3-level topic 3-level topic
 2-level label
 3-level topic
 ...
@@ -94,7 +94,7 @@ The dual-dimensional design offers the advantage of breaking through the limitat
 4
 
 
-Spatial Relationships Identification Hierarchical Structure Recognition Geometric Relationship Modeling Page Structure Understanding Proximity Analysis...
+ Spatial Relationships Identification Hierarchical Structure Recognition Geometric Relationship Modeling Page Structure Understanding Proximity Analysis...
 Cultural Landscape Recognition Natural Disaster Identification Soil Type Classification Topographic Analysis Hydrography Studies...
 Language Identification Font Style Recognition Brand Recognition Text Extraction Translation... ...
 Greatest Common Divisor Calculation Least Common Multiple Calculation Prime Number Identification Prime Factorization Modular Arithmetic...
@@ -177,7 +177,7 @@ Leveraging the semantic comprehension and generative capabilities of MLLMs, we o
 5
 
 
-L3 topics based on predefined L1 and expanded L2 labels. The construction of this extensive topic tree has significantly mitigated the limitations of manually defined labels, such as constrained coverage and inadequate richness. Meanwhile, the topics fuse ability and domain knowledge into practical applications, highlighting the close connection between multimodal capabilities and vertical scenarios and providing support for synthesizing rich and diverse data.
+ L3 topics based on predefined L1 and expanded L2 labels. The construction of this extensive topic tree has significantly mitigated the limitations of manually defined labels, such as constrained coverage and inadequate richness. Meanwhile, the topics fuse ability and domain knowledge into practical applications, highlighting the close connection between multimodal capabilities and vertical scenarios and providing support for synthesizing rich and diverse data.
 2.2.3 Topic Matching
 The goal of topic matching is to accurately associate multimodal data with relevant topics, ensuring the precision and effectiveness of synthetic data. This process leverages the inherent content strengths of the data for annotation to prevent scenarios where high-value data results in lowquality QA pairs or misaligned content. Moreover, due to the vast scale and rich content of the topic tree we construct, the matching process ensures from the source that the generated data achieves broad coverage and high diversity. Specifically, we employ a two-stage matching process of coarsegrained matching followed by fine-grained matching, leveraging the powerful comprehension and multimodal retrieval capabilities of MLLMs, and assign each data corresponding topics. The specific approach is as follows:
 Coarse-grained matching. We employ high-performance MLLMs, such as Qwen3VL-235B-A22B (Bai et al., 2025a), to perform relevance ranking of L1 labels, achieving preliminary matching between image content and labels. The procedure is as follows: Provide the image along with the full set of L1 labels, and include an Others category as a boundary for relevance ranking to prevent ambiguously borderline data from being forcibly categorized. Then rank labels by their relevance to the image content and select the Top-3 L1 labels that fall above the Others category.
@@ -189,7 +189,7 @@ Data synthesis based on IDS. The IDS assesses image data across four dimensions:
 6
 
 
-objects), OCR text dimension (the richness of textual information in the image), and world knowledge relevance (the density of entity information in the image that requires external knowledge to answer).
+ objects), OCR text dimension (the richness of textual information in the image), and world knowledge relevance (the density of entity information in the image that requires external knowledge to answer).
 We use MLLMs to score candidate images for QA synthesis based on these four dimensions. The scores are then weighted and fused according to the contribution of each dimension. During weight allocation, the contribution of each dimension to multimodal capability is considered in combination with the application scenarios, ultimately resulting in a unified IDS.
 The candidate topics obtained through topic matching determine the direction of QA synthesis, while the IDS determines the upper limit of the number of QA pairs to be generated per image. Images with higher IDS yield more QA pairs, while those with lower IDS yield fewer. QA synthesis is guided by carefully designed prompts and generated based on the candidate topics. Special processing is applied to data with existing annotations to ensure that the original annotation information is not lost.
 Quality evaluation based on judge voting. To better align images, topics, and questions, we employ three high-performance MLLMs, Qwen3VL-235B-A22B, GPT-4o, and GPT-5 (gpt, 2025), as judges to evaluate whether the topics and questions match the given images. Specifically, each of these three MLLMs provides a score of 0 or 1 to every (image, topic, question) triplet based on its consistency and rationality. Only samples that receive a score of 1 from at least two models are retained.
@@ -200,7 +200,7 @@ To address the above issues, we propose a curriculum-learning SFT paradigm that 
 7
 
 
-3.1 Data Preparation
+ 3.1 Data Preparation
 To support the three-stage curriculum learning process, we split the whole training data into three subsets: SFT-Knowledge, SFT-Ability, and SFT-Preference. These subsets have different focuses: SFT-Knowledge targets the acquisition of new knowledge in vertical domains; the images of the SFT-Knowledge set are sourced from real-world usage scenarios, whose data annotations are obtained using the data synthesis method described in Sec. 2.2. SFT-Ability focuses on enhancing general capabilities. The images of the SFT-Ability set are sampled from open-source datasets. To collect as much of such data as possible, we sample data from a large-scale repository of images from open-source datasets, including Laion (Schuhmann et al., 2021), SA-1B (Kirillov et al., 2023), and others. We use the data synthesis pipeline described in Sec. 2.2 to annotate the collected images. SFT-Preference is responsible for improving the user experience. The data of the SFT-Preference set are sampled from specific domain or open-source datasets.
 3.2 Training Recipe
 3.2.1 Overview
@@ -213,7 +213,7 @@ Data balancing. SFT data is sourced from both open-source and collected real ver
 8
 
 
-Data balancing
+ Data balancing
 Rapid Quality Assessment
 New Data Ratioing
 Ability
@@ -245,7 +245,7 @@ New data ratioing. As both open-source and vertical data continue to grow, we ma
 9
 
 
-failure cases, we quickly determine the optimal ratio for the next training cycle. Eventually, the newly incorporated data is fully integrated into the new stable data version.
+ failure cases, we quickly determine the optimal ratio for the next training cycle. Eventually, the newly incorporated data is fully integrated into the new stable data version.
 3.2.3 Curriculum-based Model Training
 The overall SFT training process is structured around two key dimensions. The first dimension divides the training into three stages based on cognitive progression, balancing the trade-off between vertical domain knowledge and general capabilities. This curriculum-based approach mirrors human cognitive development: it begins with understanding the world (knowledge acquisition), then moves to strengthening weak areas (capability building), and finally advances to integrating diverse skills and generalizing knowledge (flexible adaptation to vertical scenarios). The second dimension involves difficulty gradation within each stage. Throughout the training, we refine the data into three difficulty levels via rejection sampling, enabling steady improvement in the model’s capabilities, guiding its evolution from foundational to advanced proficiency while eliminating weakness. Based on the principles outlined above, we divide the SFT training process into the following three steps:
 Stage-1: Cross-domain knowledge learning. Two key factors drive our decision to prioritize cross-domain knowledge learning in the SFT phase. First, the cognitive sequence should progress from perception to reasoning. Therefore, during early model training, we focus on enhancing the model’s vertical domain knowledge to prevent it from generating significant hallucinations when performing reasoning in new domains without adequate domain-specific knowledge. Second, vertical knowledge data often comes from heterogeneous sources with varying and uncontrollable quality, which can adversely affect the model’s capabilities and lead to severe degradation in general multimodal benchmark performance. To balance the trade-off between vertical domain knowledge and general capabilities, we first conduct cross-domain knowledge learning, followed by a dedicated phase to restore degraded general abilities. Additionally, the training data for this stage is designated as SFT-Knowledge, which focuses extensively on vertical knowledge. Its specific production methodology is detailed in Sec. 3.1.
@@ -255,7 +255,7 @@ Stage-3: Preference alignment. The objective of this training phase is to align 
 10
 
 
-thereby strengthening both multimodal and linguistic capabilities.
+ thereby strengthening both multimodal and linguistic capabilities.
 • Instruction-preference data. For different vertical domain scenarios, we include preferencetailored data to shape distinct response format styles (e.g., structured markdown and human-like styles).
 • Long context data. By increasing the training token limit so the model can ingest and produce longer sequences, we enhance logical reasoning and lay the foundation for subsequent reinforcement learning.
 • High-difficulty supplementary data. We employ rejection sampling to extract data that the model completely fails to handle from the reinforcement learning phase (described in Sec. 4), allowing the model to learn it in advance through SFT to lay the groundwork for subsequent reinforcement learning.
@@ -269,7 +269,7 @@ To alleviate the above issues, we propose a multimodal reinforcement-learning pa
 11
 
 
-inefficiency caused by advantage collapse.
+ inefficiency caused by advantage collapse.
 • A two-stage online-offline hybrid RL scheme that balances text-only and multimodal competencies, progressively improving both general-purpose and domain-specific metrics while mitigating visual neglect.
 • A multi-dimensional hybrid reward design that simultaneously promotes improvements in model’s overall performance, encourages exploratory diversity and concise replies.
 4.1 Data Preparation
@@ -297,7 +297,7 @@ STEM. The STEM corpus is constructed to broaden the model’s multidisciplinary 
 12
 
 
-We collect document sources from open web repositories and feed the raw documents into the open-source parser MinerU Niu et al. (2025) to extract candidate (image, question, answer) triples. During extraction, we exclude documents lacking images and retain only question instances that require image evidence for correct resolution. Because MinerU occasionally produces extraction artifacts (OCR errors, layout-induced sentence reorderings, and other hallucinations), we apply a large MLLM as a second-pass filter to cleanse and remove samples exhibiting such defects.
+ We collect document sources from open web repositories and feed the raw documents into the open-source parser MinerU Niu et al. (2025) to extract candidate (image, question, answer) triples. During extraction, we exclude documents lacking images and retain only question instances that require image evidence for correct resolution. Because MinerU occasionally produces extraction artifacts (OCR errors, layout-induced sentence reorderings, and other hallucinations), we apply a large MLLM as a second-pass filter to cleanse and remove samples exhibiting such defects.
 To improve the efficiency and stability of online RL and to mitigate advantage-signal collapse, we apply rejection sampling to exclude trivially all-correct or all-incorrect training examples Zhang et al. (2025b); Yu et al. (2025). Additionally, for precise answer parsing and accurate reward computation, we append the following instruction to the end of every training sample: The final answer MUST BE put in ∖∖boxed{}. This constraint forces the model to output the final answer at a designated location, enabling reliable automatic scoring during RL.
 4.1.2 Offline RL Data
 Adversarial hallucination data. To mitigate hallucinations stemming from unimodal knowledge leakage or memorization (i.e., the model confidently answering without visual evidence) Huang et al. (2025); Tonmoy et al. (2024); Li et al. (2025c), we construct a dedicated adversarial hallucination dataset. The construction pipeline proceeds as follows. First, we create imageablated variants of existing image–text QA pairs by removing the image input and retaining only the question text; the model is then required to regenerate the answer under the image-absent condition. These image-ablated examples explicitly penalize and correct unsupported assertions by training the model not to fabricate visual facts when visual evidence is unavailable. Second, we automatically screen the original multimodal QA samples: if removal of the image still produces a response that is highly consistent with the original ground truth, we mark the sample as exhibiting LLM knowledge leakage (i.e., the answer is language-driven rather than visually grounded). Such samples are excluded from the multimodal RL pool to prevent the RL phase from amplifying hallucination behaviors. The resulting adversarial dataset encourages reliance on visual evidence during reasoning and reduces false answers in downstream deployments.
@@ -309,7 +309,7 @@ Stage-1: Online RL for generality and diversity. We perform GSPO-based RLVR Zhen
 13
 
 
-MultiModal
+ MultiModal
 Human Preference
 SingleModal
 &
@@ -343,7 +343,7 @@ Compared with Pass@1, Pass@k permits the policy to produce multiple (possibly in
 14
 
 
-of the solution space, improving exploration. Concretely, when computing the advantage for each sampled response, we follow the grouping-based derivation used in the original Pass@k analysis Chen et al. (2025): We partition the Nrollout generated responses into groups of size k and compute each group’s mean reward and standard deviation, which are then used to normalize per-sample advantages. The number of groups is calculated as N group
+ of the solution space, improving exploration. Concretely, when computing the advantage for each sampled response, we follow the grouping-based derivation used in the original Pass@k analysis Chen et al. (2025): We partition the Nrollout generated responses into groups of size k and compute each group’s mean reward and standard deviation, which are then used to normalize per-sample advantages. The number of groups is calculated as N group
 total = (︀ Nrollout
 k
 )︀ , and the number of negative groups can be calculated as N group
@@ -410,7 +410,7 @@ Length Reward. To mitigate excessive redundancy in production outputs, we introd
 15
 
 
-Concretely, we apply a length-based reward as follows:
+ Concretely, we apply a length-based reward as follows:
 Rlengthy =
 ⎧
 ⎪ ⎪ ⎨
@@ -450,7 +450,7 @@ JDPO
 16
 
 
-Data
+ Data
 Parallelism
 Pipeline Parallelism
 Model
@@ -470,7 +470,7 @@ Complicated training pipelines typically lead to an exorbitant computational ove
 17
 
 
-inputs Expert0
+ inputs Expert0
 Expert1
 Expert2
 hidden_size ffn_hidden_size
@@ -505,7 +505,7 @@ Figure 8 GroupGEMM optimization for MoE computation. Batched matrix multiplicati
 18
 
 
-5.2 Inference
+ 5.2 Inference
 To provide users with smooth text generation, we have optimized the MindGPT-4ov inference engine in three aspects: model adaptation, streaming inference, and high concurrency scenarios.
 • Model Adaptation. We adopt FP8 for inference and optimize the MHA operator using FlashInfer (Ye et al. (2025)) together with PagedAttention (Kwon et al. (2023)). The MoE operator is accelerated through DeepGEMM, while an enhanced multimodal ROPE operator further improves inference efficiency. In the preprocessing stage, the entire image pipeline is executed on the GPU to reduce CPU overhead.
 • Streaming Inference. For streaming inference, we introduce two key optimizations to reduce inference latency and to improve multi-turn dialogue performance. First, we employ a chunked prefill mechanism (Agrawal et al. (2023)) that splits the input into image and text chunks by modality, enabling parallel execution of vision encoding and text encoding during the user’s speaking phase, thereby masking part of the prefill latency. Second, we cache the vision encoding outputs for image inputs so that subsequent turns can directly reuse the cached embeddings when the cache is hit, avoiding redundant encoding. A unique session identifier ensures that all requests within the same conversation are routed to the same node, preventing cross-node cache invalidation and maximizing the efficiency of image-embedding reuse.
@@ -517,7 +517,7 @@ We use pre-trained MLLMs from the Qwen3-VL series Bai et al. (2025a), specifical
 19
 
 
-Table 1 Performance comparison across MLLMs on various visual benchmarks grouped by task type. All scores are reported as accuracy percentages unless otherwise specified.
+ Table 1 Performance comparison across MLLMs on various visual benchmarks grouped by task type. All scores are reported as accuracy percentages unless otherwise specified.
 Benchmark
 MindGPT-4ov 30B-A3B
 Qwen3-VL 30B-A3B
@@ -547,7 +547,7 @@ General VQA: Comprehensive Visual QA Ability. In general VQA, MindGPT-4ov-30B-A3
 20
 
 
-Table 2 Performance comparison across MLLMs on various textual benchmarks grouped by task type. All scores are reported as accuracy percentages unless otherwise specified.
+ Table 2 Performance comparison across MLLMs on various textual benchmarks grouped by task type. All scores are reported as accuracy percentages unless otherwise specified.
 Benchmark
 MindGPT-4ov 30B-A3B
 Qwen3-VL 30B-A3B
@@ -581,7 +581,7 @@ OCR & Chart: Text-Dense Scene Recognition and Reasoning. OCR & Chart benchmarks 
 21
 
 
-MindGPT-4ov-30B-A3B Qwen3-VL-30B-A3B
+ MindGPT-4ov-30B-A3B Qwen3-VL-30B-A3B
 (c) Distribution of Response Lengths on MathVista
 Response Length
 Density
@@ -615,7 +615,7 @@ Overall, MindGPT-4ov achieves substantial improvements over the base models acro
 22
 
 
-要回答这个问题,我们需要分析图中“细粒度感知” (Fine-grained Perception)的案例数。
+ 要回答这个问题,我们需要分析图中“细粒度感知” (Fine-grained Perception)的案例数。
 1. **定位主类别**:在图的中心,我们可以看到两个主 要类别:“Perception”(感知)和 “Reasoning”(推理)。 问题关注的是“感知”,所以我们先看“Perception”部分。 2. **定位子类别**:从“Perception”向外,它分为两个子 类别:
 - Coarse Perception (粗粒度感知) - Fine-grained Perception (细粒度感知)
 3. **计算细粒度感知的总案例数**:问题要求的是“细 粒度感知”的总案例数。这包括了“Fine-grained Perception”下的所有子类别的案例数之和。
@@ -651,7 +651,7 @@ Math: mathematical reasoning. The math reasoning benchmarks comprises AIME24 and
 23
 
 
-Sample-1 (Image-Text Inconsistency) Sample-2 (Context Inconsistency)
+ Sample-1 (Image-Text Inconsistency) Sample-2 (Context Inconsistency)
 Question
 您好,您的问题很有趣!不过, 我注意到您提供的图片是一个 数学运算的流程图,它展示了 一个数字序列的计算过程,与 猫咪或狗无关。 让我先为您解答这个数学问题: 第一步:从48开始,减去20。 48−20=28
 第二步:将28加上9。 28+9=37
@@ -702,7 +702,7 @@ Chinese question answering. MindGPT-4ov also demonstrates superior performance i
 24
 
 
-Question
+ Question
 1. One of the Harry Potter books is *Harry Potter and the Sorcerer's Stone*. 2. One Harry Potter book is *Harry Potter and the Sorcerer's Stone*. 3. One of the Harry Potter books is *Harry Potter and the Sorcerer's Stone*. 4. One of the Harry Potter books is *Harry Potter and the Philosopher's Stone*. 5. One of the Harry Potter books is *Harry Potter and the Philosopher's Stone*.
 Qwen3-VL-30B-A3B
 Diversity
@@ -732,7 +732,7 @@ Concise and accurate responses. An excellent MLLM must not only possess strong g
 25
 
 
-An all-equity firm is considering the following projects: The T-bill rate is 3.5 percent, and the expected return on the market is 11 percent. Which projects would be incorrectly accepted or rejected if the firm's overall cost of capital was used as a hurdle rate? A. Project X would be incorrectly rejected; Project Z would be incorrectly accepted. B. Project Y would be incorrectly rejected; Project X would be incorrectly accepted. C. Project Z would be incorrectly rejected; Project X would be incorrectly accepted. D. No project would be incorrectly rejected; Project Z would be incorrectly accepted.
+ An all-equity firm is considering the following projects: The T-bill rate is 3.5 percent, and the expected return on the market is 11 percent. Which projects would be incorrectly accepted or rejected if the firm's overall cost of capital was used as a hurdle rate? A. Project X would be incorrectly rejected; Project Z would be incorrectly accepted. B. Project Y would be incorrectly rejected; Project X would be incorrectly accepted. C. Project Z would be incorrectly rejected; Project X would be incorrectly accepted. D. No project would be incorrectly rejected; Project Z would be incorrectly accepted.
 Question
 We are given: An all-equity firm considering four projects (W, X, Y, Z) Each project has a beta and an IRR Risk-free rate (T-bill rate) = 3.5% Expected market return = 11% We need to determine which projects would be incorrectly accepted or rejected if the firm uses its overall cost of capital as the hurdle rate. But here's the key: since it's an **all-equity firm**, its overall cost of capital is the cost of equity for the firm as a whole. However, the firm may have different risk levels across projects. The correct way to evaluate each project is using the **required return based on its own beta**, via the **Capital Asset Pricing Model (CAPM)**. So we'll compute the required return (expected return) for each project using CAPM: CAPM Formula: $$ R_i = R_f + \beta_i (R_m - R_f)$$ Where: $$ R_f = 3.5\%$$ $$ R_m = 11\%$$ $$ R_m - R_f = 7.5\%$$ Step 1: Compute required return for each project Project W: $$ \beta = 0.80$$ $$ R_W = 3.5\% + 0.80 \times 7.5\% = 3.5\% + 6.0\% = 9.5\%$$ IRR = 9.4% → IRR < Required Return → Reject Project X: $$ \beta = 0.95$$ $$ R_X = 3.5\% + 0.95 \times 7.5\% = 3.5\% + 7.125\% = 10.625\%$$ IRR = 10.9% → IRR > Required Return → Accept Project Y: $$ \beta = 1.15$$ $$ R_Y = 3.5\% + 1.15 \times 7.5\% = 3.5\% + 8.625\% = 12.125\%$$ IRR = 13.0% → IRR > Required Return → Accept Project Z: $$ \beta = 1.45$$ $$ R_Z = 3.5\% + 1.45 \times 7.5\% = 3.5\% + 10.875\% = 14.375\%$$ IRR = 14.2% → IRR < Required Return → Reject Step 2: Determine what the firm’s overall cost of capital is Since it's an all-equity firm, the overall cost of capital is the cost of equity of the firm. But we aren't told the firm's beta. However, the question says: "**if the firm's overall cost of capital was used as a hurdle rate**", so we must assume that the firm uses **its own average cost of capital**, not the individual project betas. But we don’t know the firm’s beta. So how can we proceed? Wait — actually, the problem implies that the firm uses its overall cost of capital (i.e., the cost of equity for the firm as a whole), but since we don’t know the firm’s beta, perhaps we’re meant to infer that the firm uses the **same hurdle rate for all projects**, which would be **the firm’s cost of capital**. But again, we don’t know the firm’s beta. So unless we assume the firm’s beta is **average**, or perhaps the firm's cost of capital is computed from one of the projects? That doesn’t make sense. Wait — perhaps the firm's overall cost of capital is not given, but the hurdle rate is assumed to be the cost of capital that the firm uses. Since the firm is all-equity, the cost of capital is the expected return on the firm’s assets. But without knowing the firm’s beta, we cannot directly compute it. However, the question is asking: Which projects would be incorrectly accepted or rejected if the firm's overall cost of capital was used as a hurdle rate? This suggests that the firm uses a single discount rate (the firm’s cost of capital) for all projects, even though they have different risks. So we must find out: What is the firm’s cost of capital? But it’s not given. Wait — perhaps we are supposed to assume that the firm’s cost of capital is the average of the projects’ returns? Or maybe we can infer from the data? Alternatively, perhaps the firm’s cost of capital is not based on any project’s beta, but rather the firm has a certain beta. But we don’t know. Wait — let’s re-read: "An all-equity firm is considering the following projects..." It doesn’t say anything about the firm’s current beta or cost of capital. So this suggests that **we are to assume that the firm uses its own cost of capital as the hurdle rate**, and since it’s all-equity, the cost of capital is the **expected return on the firm’s stock**, but we don’t know it. But here's a key insight: **The firm’s overall cost of capital is not necessarily equal to the average of the projects’ betas or returns**. But the problem is asking us to compare the decision made using the wrong hurdle rate (the firm’s overall cost of capital) vs. the correct one (project-specific CAPM required return). But we still don’t know the firm’s cost of capital. Wait — unless... the firm’s cost of capital is not given because it’s irrelevant — instead, we are to assume that the hurdle rate used is the **same for all projects**, and that **this hurdle rate is the firm’s cost of capital**, which is likely based on the firm’s **current risk**. But we don’t know that either. Wait — perhaps there’s another interpretation: Maybe the firm’s overall cost of capital is the weighted average of the projects’ costs? But no, that doesn’t make sense. Wait — perhaps the firm **has no projects yet**, and the overall cost of capital is the return required by investors for the firm’s existing operations. But we don’t know that. Hold on — perhaps the key is that the firm’s overall cost of capital is not given, but the hurdle rate used is **the same as the firm’s cost of capital**, and we are to assume that the firm’s cost of capital is **equal to the cost of capital for a project with average risk**. But what is average risk? Let’s look at the betas: W: 0.80 X: 0.95 Y: 1.15 Z: 1.45 Average beta = (0.80 + 0.95 + 1.15 + 1.45)/4 = (4.35)/4 = 1.0875 Then, cost of capital (using CAPM) = 3.5% + 1.0875 × 7.5% ≈ 3.5% + 8.156% = 11.656% But that seems arbitrary. Alternatively, maybe the firm’s cost of capital is **based on the market risk premium and risk-free rate**, but we need a specific beta. Wait — perhaps the firm’s overall cost of capital is not being calculated from the projects, but rather the hurdle rate used is **the firm’s cost of capital**, and we are to assume that the firm’s cost of capital is equal to the required return for a project with beta = 1 (market risk). Let’s try that. If the firm’s overall cost of capital is based on **beta = 1**, then: $$ R_{firm} = 3.5\% + 1.0 \times 7.5\% = 11.0\%$$ That’s a reasonable assumption: many firms use the market return as a benchmark, especially when not adjusting for risk. So let’s suppose the firm uses 11.0% as the hurdle rate (because it’s the expected market return, and the firm is all-equity, so its cost of capital might be approximated as the market return if it has average risk). But wait — the firm’s cost of capital isn't necessarily 11%. It depends on its beta. But perhaps the point is: **the firm uses its own cost of capital**, but we don’t know it. So we need to compare the correct decision (based on CAPM per project) with the decision made if the firm uses a single hurdle rate (say, the firm’s cost of capital). But since we don’t know the firm’s cost of capital, we can’t do that. Wait — but the question is multiple choice, and the answer choices suggest that some projects are incorrectly accepted/rejected depending on whether we use the wrong hurdle rate. But here’s a better idea: Perhaps the firm’s overall cost of capital is not specified, but the **hurdle rate used is the firm’s cost of capital**, and the **firm’s cost of capital is the cost of equity for the firm as a whole**. But since the firm is all-equity, and we don’t know its beta, maybe we are supposed to assume that the **firm’s cost of capital is the average of the projects' required returns**? But that would be circular. Wait — let’s think differently. Perhaps the firm’s overall cost of capital is not based on any project’s beta, but is a single rate that the firm uses for all projects. And the question is: **which projects would be incorrectly accepted or rejected if the firm used its own cost of capital as the hurdle rate**, implying that the firm’s cost of capital is not equal to the CAPM required return for each project. But we still don’t know what the firm’s cost of capital is. Unless... the firm’s cost of capital is **the cost of capital for the firm**, and since the firm is all-equity, it’s the **expected return on the firm’s stock**, but we don’t know it. But perhaps the answer lies in comparing the IRR to the **CAPM required return**, and seeing which projects
 would be accepted or rejected under a single hurdle rate that is not adjusted for risk. But the question is: Which projects would be incorrectly accepted or rejected if the firm's overall cost of capital was used as a hurdle rate? So we need to know what the firm’s overall cost of capital is. Wait — perhaps the firm’s overall cost of capital is not given because it’s not needed — instead, the hurdle rate used is **the same for all projects**, and we are to assume that the **firm’s cost of capital is the CAPM return for a project with beta = 1**. Let’s assume that. So, let’s assume the firm uses 11.0% as the hurdle rate (since market return is 11%). Now let’s see: So: Project X: Correct decision is **accept**, but with hurdle rate 11%, it would be rejected → Incorrectly rejected Project Z: Correct decision is **reject**, but with hurdle rate 11%, it would be accepted → Incorrectly accepted So Project X is **incorrectly rejected**, Project Z is **incorrectly accepted**. Now check the options: A. Project X would be incorrectly rejected; Project Z would be incorrectly accepted. → Matches B. Project Y would be incorrectly rejected; Project X would be incorrectly accepted. → No, Y is correctly accepted, X is incorrectly rejected, not accepted. C. Project Z would be incorrectly rejected; Project X would be incorrectly accepted. → Opposite. D. No project would be incorrectly rejected; Project Z would be incorrectly accepted. → No, X is incorrectly rejected. So A seems correct. But is our assumption valid? We assumed the firm’s cost of capital is 11% (market return), i.e., beta = 1. Is that reasonable? Well, the firm is all-equity, and if it has **average risk**, then its cost of capital would be 11%. But let’s check: the projects have betas ranging from 0.8 to 1.45, so average beta is 1.0875, so if the firm were average, its cost of capital should be around 11.65%, not 11%. But let’s test with that. Suppose the firm’s cost of capital is based on average beta = 1.0875: $$ R = 3.5\% + 1.0875 \times 7.5\% = 3.5\% + 8.15625\% = 11.65625\%$$ Now apply this hurdle rate: Same result: X is incorrectly rejected, Z is incorrectly accepted. So regardless of whether we use 11% or ~11.66%, the results are the same. Now check if any other project changes: Project W: IRR = 9.4%, CAPM = 9.5% → reject. Hurdle rate > 9.5% → still reject. Project Y: IRR = 13.0%, CAPM = 12.125% → accept. Hurdle rate < 13.0% → accept. Only X and Z are affected. X: IRR = 10.9% > CAPM = 10.625% → accept. But hurdle rate > 10.9% → reject → incorrectly rejected Z: IRR = 14.2% < CAPM = 14.375% → reject. But hurdle rate < 14.2% → accept → incorrectly accepted So both X and Z are misclassified. Thus, Project X would be incorrectly rejected; Project Z would be incorrectly accepted. Answer: A ✅ Final Answer: A
@@ -771,7 +771,7 @@ This paper proposes MindGPT-4ov, a systematic and end-to-end engineering framewo
 26
 
 
-stage hybrid reward reinforcement learning mechanisms, and efficient training and inference optimization techniques, MindGPT-4ov demonstrates significant advantages in both general and vertical tasks; its performance matches or even surpasses existing advanced multimodal large language models, while also exhibiting excellent user experience and system scalability. MindGPT4ov is a reproducible, scalable approach for vertical-domain customization that requires no changes to the underlying architecture of pretrained general multimodal large language models, which enables seamless transfer from general capabilities to vertical applications.
+ stage hybrid reward reinforcement learning mechanisms, and efficient training and inference optimization techniques, MindGPT-4ov demonstrates significant advantages in both general and vertical tasks; its performance matches or even surpasses existing advanced multimodal large language models, while also exhibiting excellent user experience and system scalability. MindGPT4ov is a reproducible, scalable approach for vertical-domain customization that requires no changes to the underlying architecture of pretrained general multimodal large language models, which enables seamless transfer from general capabilities to vertical applications.
 8 Contributions
 All contributors of this work are listed in alphabetical order by their last names.
 Core Contributors: Chaoqun Du, Feng Gu, Wei He, Qizhen Li, Zide Liu, Xuhao Pan, Chang Ren, Xudong Rao, Chenfeng Wang, Chengjun Yu, Yufei Zheng, Chunpeng Zhou, Xuhan Zhu
@@ -791,7 +791,7 @@ Weilin Cai, Juyong Jiang, Fan Wang, Jing Tang, Sunghun Kim, and Jiayi Huang. A s
 27
 
 
-Wenxiao Cai, Iaroslav Ponomarenko, Jianhao Yuan, Xiaoqi Li, Wankou Yang, Hao Dong, and Bo Zhao. Spatialbot: Precise spatial understanding with vision language models. In 2025 IEEE International Conference on Robotics and Automation (ICRA), pages 9490–9498. IEEE, 2025b.
+ Wenxiao Cai, Iaroslav Ponomarenko, Jianhao Yuan, Xiaoqi Li, Wankou Yang, Hao Dong, and Bo Zhao. Spatialbot: Precise spatial understanding with vision language models. In 2025 IEEE International Conference on Robotics and Automation (ICRA), pages 9490–9498. IEEE, 2025b.
 Yuji Cao, Huan Zhao, Yuheng Cheng, Ting Shu, Yue Chen, Guolong Liu, Gaoqi Liang, Junhua Zhao, Jinyue Yan, and Yun Li. Survey on large language model-enhanced reinforcement learning: Concept, taxonomy, and methods. IEEE Transactions on Neural Networks and Learning Systems, 2024.
 Boyuan Chen, Zhuo Xu, Sean Kirmani, Brain Ichter, Dorsa Sadigh, Leonidas Guibas, and Fei Xia. Spatialvlm: Endowing vision-language models with spatial reasoning capabilities. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 14455–14465, 2024a.
 Jiankang Chen, Tianke Zhang, Changyi Liu, Haojie Ding, Yaya Shi, Huihui Xiao, Bin Wen, Fan Yang, Tingting Gao, Di ZHANG, et al. Taskgalaxy: Scaling multi-modal instruction fine-tuning with tens of thousands vision task types. In The Thirteenth International Conference on Learning Representations.
@@ -806,7 +806,7 @@ Ling Fu, Biao Yang, Zhebin Kuang, Jiajun Song, Yuzhe Li, Linghao Zhu, Qidi Luo, 
 28
 
 
-Xingyu Fu, Yushi Hu, Bangzheng Li, Yu Feng, Haoyu Wang, Xudong Lin, Dan Roth, Noah A Smith, Wei-Chiu Ma, and Ranjay Krishna. Blink: Multimodal large language models can see but not perceive. In European Conference on Computer Vision, pages 148–166. Springer, 2024.
+ Xingyu Fu, Yushi Hu, Bangzheng Li, Yu Feng, Haoyu Wang, Xudong Lin, Dan Roth, Noah A Smith, Wei-Chiu Ma, and Ranjay Krishna. Blink: Multimodal large language models can see but not perceive. In European Conference on Computer Vision, pages 148–166. Springer, 2024.
 Trevor Gale, Deepak Narayanan, Cliff Young, and Matei Zaharia. MegaBlocks: Efficient Sparse Training with Mixture-of-Experts. Proceedings of Machine Learning and Systems, 5, 2023.
 Tianrui Guan, Fuxiao Liu, Xiyang Wu, Ruiqi Xian, Zongxia Li, Xiaoyu Liu, Xijun Wang, Lichang Chen, Furong Huang, Yaser Yacoob, et al. Hallusionbench: an advanced diagnostic suite for entangled language hallucination and visual illusion in large vision-language models. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 14375–14385, 2024.
 Daya Guo, Dejian Yang, Haowei Zhang, Junxiao Song, Ruoyu Zhang, Runxin Xu, Qihao Zhu, Shirong Ma, Peiyi Wang, Xiao Bi, et al. Deepseek-r1: Incentivizing reasoning capability in llms via reinforcement learning. arXiv preprint arXiv:2501.12948, 2025a.
@@ -823,7 +823,7 @@ Alexander Kirillov, Eric Mintun, Nikhila Ravi, Hanzi Mao, Chloe Rolland, Laura G
 29
 
 
-Woosuk Kwon, Zhuohan Li, Siyuan Zhuang, Ying Sheng, Lianmin Zheng, Cody Hao Yu, Joseph Gonzalez, Hao Zhang, and Ion Stoica. Efficient memory management for large language model serving with pagedattention. In Proceedings of the 29th symposium on operating systems principles, pages 611–626, 2023.
+ Woosuk Kwon, Zhuohan Li, Siyuan Zhuang, Ying Sheng, Lianmin Zheng, Cody Hao Yu, Joseph Gonzalez, Hao Zhang, and Ion Stoica. Efficient memory management for large language model serving with pagedattention. In Proceedings of the 29th symposium on operating systems principles, pages 611–626, 2023.
 Sicong Leng, Yun Xing, Zesen Cheng, Yang Zhou, Hang Zhang, Xin Li, Deli Zhao, Shijian Lu, Chunyan Miao, and Lidong Bing. The curse of multi-modalities: Evaluating hallucinations of large multimodal models across language, visual, and audio. arXiv preprint arXiv:2410.12787, 2024.
 Kunchang Li, Yali Wang, Yinan He, Yizhuo Li, Yi Wang, Yi Liu, Zun Wang, Jilan Xu, Guo Chen, Ping Luo, et al. Mvbench: A comprehensive multi-modal video understanding benchmark. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 22195–22206, 2024.
 Tianjian Li, Yiming Zhang, Ping Yu, Swarnadeep Saha, Daniel Khashabi, Jason Weston, Jack Lanchantin, and Tianlu Wang. Jointly reinforcing diversity and quality in language model generations. arXiv preprint arXiv:2509.02534, 2025a.
@@ -838,7 +838,7 @@ Alejandro Lozano, Min Woo Sun, James Burgess, Liangyu Chen, Jeffrey J Nirschl, J
 30
 
 
-Pan Lu, Hritik Bansal, Tony Xia, Jiacheng Liu, Chunyuan Li, Hannaneh Hajishirzi, Hao Cheng, Kai-Wei Chang, Michel Galley, and Jianfeng Gao. Mathvista: Evaluating mathematical reasoning of foundation models in visual contexts. In ICLR, 2024.
+ Pan Lu, Hritik Bansal, Tony Xia, Jiacheng Liu, Chunyuan Li, Hannaneh Hajishirzi, Hao Cheng, Kai-Wei Chang, Michel Galley, and Jianfeng Gao. Mathvista: Evaluating mathematical reasoning of foundation models in visual contexts. In ICLR, 2024.
 Minesh Mathew, Dimosthenis Karatzas, and CV Jawahar. Docvqa: A dataset for vqa on document images. In WACV, 2021.
 Minesh Mathew, Viraj Bagal, Rubèn Tito, Dimosthenis Karatzas, Ernest Valveny, and CV Jawahar. Infographicvqa. In WACV, 2022.
 Deepak Narayanan, Mohammad Shoeybi, Jared Casper, Patrick LeGresley, Mostofa Patwary, Vijay Korthikanti, Dmitri Vainbrand, Prethvi Kashinkunti, Julie Bernauer, Bryan Catanzaro, et al. Efficient large-scale language model training on gpu clusters using megatron-lm. In Proceedings of the international conference for high performance computing, networking, storage and analysis, pages 1–15, 2021.
@@ -856,7 +856,7 @@ Xiaoyu Tian, Junru Gu, Bailin Li, Yicheng Liu, Yang Wang, Zhiyong Zhao, Kun Zhan
 31
 
 
-SMTI Tonmoy, SM Zaman, Vinija Jain, Anku Rani, Vipula Rawte, Aman Chadha, and Amitava Das. A comprehensive survey of hallucination mitigation techniques in large language models. arXiv preprint arXiv:2401.01313, 6, 2024.
+ SMTI Tonmoy, SM Zaman, Vinija Jain, Anku Rani, Vipula Rawte, Aman Chadha, and Amitava Das. A comprehensive survey of hallucination mitigation techniques in large language models. arXiv preprint arXiv:2401.01313, 6, 2024.
 Fei Wang, Xingyu Fu, James Y Huang, Zekun Li, Qin Liu, Xiaogeng Liu, Mingyu Derek Ma, Nan Xu, Wenxuan Zhou, Kai Zhang, et al. Muirbench: a comprehensive benchmark for robust multi-image understanding (2024). URL https://arxiv. org/abs/2406.09411.
 Ke Wang, Junting Pan, Weikang Shi, Zimu Lu, Mingjie Zhan, and Hongsheng Li. Measuring multimodal mathematical reasoning with math-vision dataset. In NeurIPS, 2024a.
 Peng Wang, Shuai Bai, Sinan Tan, Shijie Wang, Zhihao Fan, Jinze Bai, Keqin Chen, Xuejing Liu, Jialin Wang, Wenbin Ge, et al. Qwen2-vl: Enhancing vision-language model’s perception of the world at any resolution. arXiv:2409.12191, 2024b.
@@ -873,7 +873,7 @@ Yang Yue, Zhiqi Chen, Rui Lu, Andrew Zhao, Zhaokai Wang, Shiji Song, and Gao Hua
 32
 
 
-Kaiyan Zhang, Yuxin Zuo, Bingxiang He, Youbang Sun, Runze Liu, Che Jiang, Yuchen Fan, Kai Tian, Guoli Jia, Pengfei Li, et al. A survey of reinforcement learning for large reasoning models. arXiv preprint arXiv:2509.08827, 2025a.
+ Kaiyan Zhang, Yuxin Zuo, Bingxiang He, Youbang Sun, Runze Liu, Che Jiang, Yuchen Fan, Kai Tian, Guoli Jia, Pengfei Li, et al. A survey of reinforcement learning for large reasoning models. arXiv preprint arXiv:2509.08827, 2025a.
 Xiangxiang Zhang, Jingxuan Wei, Donghong Zhong, Qi Chen, Caijun Jia, Cheng Tan, Jinming Gu, Xiaobo Qin, Zhiping Liu, Liang Hu, et al. Structvrm: Aligning multimodal reasoning with structured and verifiable reward models. arXiv preprint arXiv:2508.05383, 2025b.
 Yiming Zhang, Harshita Diddee, Susan Holm, Hanchen Liu, Xinyue Liu, Vinay Samuel, Barry Wang, and Daphne Ippolito. Noveltybench: Evaluating language models for humanlike diversity. arXiv preprint arXiv:2504.05228, 2025c.
 Chujie Zheng, Shixuan Liu, Mingze Li, Xiong-Hui Chen, Bowen Yu, Chang Gao, Kai Dang, Yuqiong Liu, Rui Men, An Yang, et al. Group sequence policy optimization. arXiv preprint arXiv:2507.18071, 2025.

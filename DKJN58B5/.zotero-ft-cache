@@ -19,7 +19,7 @@ where xt is the state vector, evolving through a nonlinear state function f (·)
 Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on October 16,2025 at 01:25:12 UTC from IEEE Xplore. Restrictions apply.
 
 
-KO AND SHAFIEEZADEH: CHOLESKY-KALMANNET: MODEL-BASED DEEP LEARNING WITH POSITIVE DEFINITE ERROR COVARIANCE 327
+ KO AND SHAFIEEZADEH: CHOLESKY-KALMANNET: MODEL-BASED DEEP LEARNING WITH POSITIVE DEFINITE ERROR COVARIANCE 327
 and vt are white Gaussian with zero mean and covariances
 E[wtwtT ] = Qt and E[vtvtT ] = Rt.
 A. Model-Based Extended Kalman Filter
@@ -130,7 +130,7 @@ and β ∈ [0, 1] balances the emphasis between L 2 and Lcov. The first term L 2
 Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on October 16,2025 at 01:25:12 UTC from IEEE Xplore. Restrictions apply.
 
 
-328 IEEE SIGNAL PROCESSING LETTERS, VOL. 32, 2025
+ 328 IEEE SIGNAL PROCESSING LETTERS, VOL. 32, 2025
 Fig. 1. Block diagrams for CKN: (a) Split-GRU architecture used to estimate the innovation covariance ˆSt|t−1 and the state covariance ˆPt|t−1. The architecture includes GRU layers combined with the Positive Definite Enforcing Layer (PDEL). (b) Detailed CKN architecture, comprising a fully connected (FC) input layer, followed by a GRU layer, another FC output layer, and ending with the PDEL, which reshapes the output, applies Cholesky decomposition, and enforces positive definiteness in the output covariance matrix.
 Lcov minimizes discrepancies between actual residuals and the estimated covariance Σˆ t|t, capturing interdependencies among state variables by incorporating both diagonal and off-diagonal elements. Together, these terms enable the network to provide accurate state estimates and reliable error covariance estimates. Furthermore, this total loss function explicitly guides training to produce the posterior covariances that are not only aligned with the observed data discrepancies but also meet the fundamental statistical requirements for valid covariances.
 IV. NUMERICAL EXAMPLES
@@ -163,7 +163,7 @@ h(x) = a · (b · x + c)2 y ∈ R2 (9b)
 Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on October 16,2025 at 01:25:12 UTC from IEEE Xplore. Restrictions apply.
 
 
-KO AND SHAFIEEZADEH: CHOLESKY-KALMANNET: MODEL-BASED DEEP LEARNING WITH POSITIVE DEFINITE ERROR COVARIANCE 329
+ KO AND SHAFIEEZADEH: CHOLESKY-KALMANNET: MODEL-BASED DEEP LEARNING WITH POSITIVE DEFINITE ERROR COVARIANCE 329
 TABLE I PARAMETERS OF INACCURATE SYSTEM MODELS FOR SECTION IV-B
 TABLE II MSE FOR THREE TIERS OF PARAMETERS FOR SECTION IV-B
 Fig. 4. (a) Estimated trajectory comparison and (b) MSE variation for 10 different data splits for IV-C.
@@ -180,7 +180,7 @@ Any opinions, findings, and conclusions are those of the authors and do not nece
 Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on October 16,2025 at 01:25:12 UTC from IEEE Xplore. Restrictions apply.
 
 
-330 IEEE SIGNAL PROCESSING LETTERS, VOL. 32, 2025
+ 330 IEEE SIGNAL PROCESSING LETTERS, VOL. 32, 2025
 REFERENCES
 [1] O. El-Khoury, C. Kim, A. Shafieezadeh, J. E. Hur, and G. H. Heo, “Mitigation of the seismic response of multi-span bridges using MR dampers: Experimental study of a new SMC-based controller,” J. Vib. Control, vol. 24, no. 1, pp. 83–99, 2018. [2] M. Sun, M. E. Davies, I. K. Proudler, and J. R. Hopgood, “Adaptive kernel Kalman filter based belief propagation algorithm for maneuvering multitarget tracking,” IEEE Signal Process. Lett., vol. 29, pp. 1452–1456, 2022. [3] Z. Wei, G. Dong, X. Zhang, J. Pou, Z. Quan, and H. He, “Noise-immune model identification and state-of-charge estimation for lithium-ion battery using bilinear parameterization,” IEEE Trans. Ind. Electron., vol. 68, no. 1, pp. 312–323, Jan. 2021. [4] S. Battilotti, “Performance optimization via sequential processing for nonlinear state estimation of noisy systems,” IEEE Trans. Autom. Control, vol. 67, no. 6, pp. 2957–2972, Jun. 2022. [5] Y. Wang, Y. Sun, and V. Dinavahi, “Robust forecasting-aided state estimation for power system against uncertainties,” IEEE Trans. Power Syst., vol. 35, no. 1, pp. 691–702, Jan. 2020. [6] R. E. Kalman, “A new approach to linear filtering and prediction problems,” J. Basic Eng., vol. 82, no. 1, pp. 35–45, Mar. 1960.
 [7] A. H. Jazwinski, Stochastic Processes and Filtering Theory. North Chelmsford, MA, USA: Courier Corporation, 2007. [8] R. Zhan and J. Wan, “Neural network-aided adaptive unscented Kalman filter for nonlinear state estimation,” IEEE Signal Process. Lett., vol. 13, no. 7, pp. 445–448, Jul. 2006. [9] S. Julier, J. Uhlmann, and H. Durrant-Whyte, “A new method for the nonlinear transformation of means and covariances in filters and estimators,” IEEE Trans. Autom. Control, vol. 45, no. 3, pp. 477–482, Mar. 2000. [10] J. Qi, K. Sun, J. Wang, and H. Liu, “Dynamic state estimation for multi-machine power system by unscented Kalman filter with enhanced numerical stability,” IEEE Trans. Smart Grid, vol. 9, no. 2, pp. 1184–1196, Mar. 2018. [11] I. Grooms, Y. Lee, and A. J. Majda, “Ensemble Kalman filters for dynamical systems with unresolved turbulence,” J. Comput. Phys., vol. 273, pp. 435–452, 2014. [12] R. Dehghannasiri, M. S. Esfahani, and E. R. Dougherty, “Intrinsically Bayesian robust Kalman filter: An innovation process approach,” IEEE Trans. Signal Process., vol. 65, no. 10, pp. 2531–2546, May 2017. [13] G. Revach, N. Shlezinger, X. Ni, A. L. Escoriza, R. J. G. van Sloun, and Y. C. Eldar, “KalmanNet: Neural network aided Kalman filtering for partially known dynamics,” IEEE Trans. Signal Process., vol. 70, pp. 1532–1547, 2022. [14] G. Choi, J. Park, N. Shlezinger, Y. C. Eldar, and N. Lee, “Split-KalmanNet: A robust model-based deep learning approach for state estimation,” IEEE Trans. Veh. Technol., vol. 72, no. 9, pp. 12326–12331, Sep. 2023. [15] I. Buchnik, G. Revach, D. Steger, R. J. Van Sloun, T. Routtenberg, and N. Shlezinger, “Latent-KalmanNet: Learned Kalman filtering for tracking from high-dimensional signals,” IEEE Trans. Signal Process., vol. 72, pp. 352–367, 2023.

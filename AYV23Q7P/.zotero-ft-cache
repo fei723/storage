@@ -12,7 +12,7 @@ transformation from perspective view (PV) to BEV, often implemented with archite
 arXiv:2509.14636v1 [cs.RO] 18 Sep 2025
 
 
-JOURNAL OF LATEX CLASS FILES, VOL. XXX, NO. XXX, AUGUST 2025 2
+ JOURNAL OF LATEX CLASS FILES, VOL. XXX, NO. XXX, AUGUST 2025 2
 at a feature level. It is then projected into the BEV space using the same LSS pipeline and fused with the BEV-native correlation features. This architecture allows our model to leverage the geometric richness of the perspective view while retaining the scale consistency and efficiency of the 3-DoF BEV representation.
 Based on these insights, we present BEV-ODOM2, an enhanced monocular visual odometry framework that integrates this dual-strategy approach into a unified, end-to-end architecture. Our method preserves the robust scale consistency and suppression of cumulative drift inherent to BEV-based odometry, while achieving superior accuracy by incorporating dense supervision and preserving 6-DoF motion information. Critically, all supervision signals are constructed from the pose ground truth alone. This multi-level supervision scheme includes dense BEV optical flow for correspondence learning, a 5-DoF pose for the PV branch, and a 3-DoF pose for the final output. The 5-DoF supervision consists of the full rotation and a scale-free translation direction, which maintains geometric consistency within the monocular framework. Furthermore, the framework incorporates targeted data augmentation strategies to enhance robustness across the diverse motion patterns encountered in real-world transportation scenarios.
 In addition, we introduce the ZJH-VO dataset, a new ground-vehicle odometry dataset that covers multiple scenes and scales, addressing the lack of publicly available benchmarks with such diversity. We use ZJH-VO to evaluate the generalization ability of BEV-ODOM2, and we have released the dataset to the community to support future research.
@@ -28,7 +28,7 @@ C. Learning-Based Methods Under BEV Representation
 Leveraging the common ground-plane assumption for ground vehicles, BEV representation has emerged as a promising paradigm for MVO [12]. The inherent properties of BEV’s unified metric-scaled grid enable a natural reduction from 6
 
 
-JOURNAL OF LATEX CLASS FILES, VOL. XXX, NO. XXX, AUGUST 2025 3
+ JOURNAL OF LATEX CLASS FILES, VOL. XXX, NO. XXX, AUGUST 2025 3
 Fig. 2: Overview of the proposed framework.
 DoF to 3-DoF pose estimation, establishing an implicit scale anchoring mechanism through the consistent spatial resolution of the grid structure.
 Initial BEV-based odometry approaches primarily focus on semantic-level understanding for motion estimation. BEVSLAM [1] constructs semantic BEV representations through CNNs and performs localization by matching against preexisting semantic maps. BEV-Locator [3] transforms perspective imagery into BEV encodings and employs cross-modal transformers for semantic feature alignment. OCC-VO [27] extends this paradigm to volumetric space, generating 3D semantic occupancy representations from multi-view inputs for global map registration.
@@ -42,7 +42,7 @@ Fig. 2 illustrates the overall architecture of BEV-ODOM2. The system processes c
 The framework employs three supervision strategies, all derived from pose ground truth: (1) dense BEV optical flow supervision that exploits the constructible property of BEV representation for pixel-level motion learning, (2) 5-DoF pose supervision for the PV branch (excluding scale to maintain consistency with monocular constraints), and (3) 3-DoF pose supervision for the final output. This multi-level supervision scheme ensures comprehensive motion information extraction while avoiding the need for additional supervisory modalities beyond pose ground truth.
 
 
-JOURNAL OF LATEX CLASS FILES, VOL. XXX, NO. XXX, AUGUST 2025 4
+ JOURNAL OF LATEX CLASS FILES, VOL. XXX, NO. XXX, AUGUST 2025 4
 B. Feature Extraction and PV Branch
 The dual-branch architecture leverages complementary advantages of perspective view and BEV representations to address information preservation challenges inherent in traditional BEV-only approaches. Both branches share a common feature extraction backbone to ensure consistent feature representation while processing motion information through distinct geometric paradigms.
 Shared Feature Extraction: The system employs a ResNet-50 [29] backbone integrated with Feature Pyramid Network (FPN) [30] to extract multi-scale hierarchical features FIF ∈ RCIF×HPV×WPV from consecutive input images It and It+1. Camera intrinsic parameters K ∈ R3×3 and extrinsic parameters E ∈ R3×4 are encoded through a Multi-Layer Perceptron and fused with image features via element-wise multiplication:
@@ -82,7 +82,7 @@ The motion information extraction and fusion process combines correlation-based 
 BEV Correlation Computation: Local correlation computation between consecutive BEV features captures planar
 
 
-JOURNAL OF LATEX CLASS FILES, VOL. XXX, NO. XXX, AUGUST 2025 5
+ JOURNAL OF LATEX CLASS FILES, VOL. XXX, NO. XXX, AUGUST 2025 5
 motion patterns directly in the unified metric-scaled coordinate system:
 CBEV[∆x,∆y,x,y] =
 CBEV X
@@ -120,7 +120,7 @@ Fflow-gt[u, v] = P(Trelpveh) − [u, v], (12)
 where P(·) denotes the projection operation that converts the transformed homogeneous vehicle coordinates back to pixel coordinates using the inverse mapping of Equation (11). This construction ensures accurate pixel-level correspondence without requiring external optical flow sensors, additional annotations, or complex depth-dependent geometric computations. The resulting dense flow field Fflow-gt ∈ R2×HBEV×WBEV provides comprehensive supervision signals that guide the network to learn fine-grained motion patterns, directly addressing the sparse supervision limitation inherent in pose-only training approaches.
 
 
-JOURNAL OF LATEX CLASS FILES, VOL. XXX, NO. XXX, AUGUST 2025 6
+ JOURNAL OF LATEX CLASS FILES, VOL. XXX, NO. XXX, AUGUST 2025 6
 F. Enhanced Rotation Sampling Strategy
 To address dataset biases toward straight-line driving scenarios and improve robustness to diverse motion patterns in real-world transportation systems, we implement a targeted sampling strategy that ensures balanced representation of both linear and turning maneuvers while leveraging temporal consistency within driving sequences.
 Rotation-Aware Data Augmentation: We construct comprehensive motion pattern databases by preprocessing training sequences to identify frames with diverse rotational characteristics. For each frame in the training dataset, we establish a temporal search window spanning one minute before and after the current timestamp, then extract relative pose transformations for all frame pairs within this window. Frame pairs are categorized based on two criteria: (1) relative yaw angle differences between 15° and 45° are stored in a high-rotation list Lhigh, while pairs with angular differences below 15° are maintained in a standard-rotation list Lstandard, and (2) spatial displacement constraints where only pairs with translation distances up to 4 meters are retained to ensure meaningful correspondence learning. During training, when a particular frame is selected, the system probabilistically samples from these pre-constructed lists using a 70%-30% distribution, where 70% of samples are drawn from Lhigh and 30% from Lstandard. This balanced sampling strategy addresses the inherent dataset bias toward straight-line driving by ensuring adequate exposure to challenging rotational motions, while simultaneously preventing over-representation of any single motion pattern that could lead to insufficient training diversity across varied driving scenarios.
@@ -143,7 +143,7 @@ A. Datasets
 NCLT Dataset: The NCLT [16] dataset presents challenging conditions including significant vehicle jitter, dramatic illumination changes, and indoor-outdoor transitions. The dataset features diverse weather conditions and seasonal variations, making it suitable for generalization assessment. We train on three sequences and test on four sequences with varying degrees of weather, illumination, and path overlap with the training set. Notably, the sequence 08-20 features distinct seasonal conditions with foliage, testing our method’s ability to generalize. Oxford Dataset: The Oxford Radar RobotCar dataset [17] provides complex urban driving scenarios with varying traffic density and dynamic background participants. It evaluates MVO performance across different motion scales (long-term stops, low speed, high speed), spatial scales (alleys, streets), and conditions with numerous moving objects (following and
 
 
-JOURNAL OF LATEX CLASS FILES, VOL. XXX, NO. XXX, AUGUST 2025 7
+ JOURNAL OF LATEX CLASS FILES, VOL. XXX, NO. XXX, AUGUST 2025 7
 Fig. 4: ZJH-VO Multi-Scale Dataset Overview. Left: Data collection vehicle and camera coordinate system setup with PV-BEV transformation. Center: Representative trajectory paths across four floors (Floor 9, 4, 1, and 0). Right: Sample image pairs from each environment showing diverse scene characteristics.
 TABLE I: ZJH-VO DATASET ENVIRONMENT CHARACTERISTICS
 Environment Object Distance Complexity BEV Challenge ITS Application
@@ -155,7 +155,7 @@ Fig. 5: ZJH-VO Multi-Scale dataset motion statistics across four environment typ
 dataset across different floor scenarios. Underground Garage environments present dynamic vehicle interactions and dim lighting conditions, challenging BEV feature consistency. Outdoor Open Space scenarios test long-range feature detection with sparse distant landmarks (≥10m) and ground-dominant visual cues. Conference Corridor environments exhibit variable lighting from dark passages to bright overhead illumination, combined with floor-to-ceiling glass windows and narrow passages. Dense Office scenarios include furniture-dense layouts (0.5m-3m) with frequent large in-place rotations and corridor segments with texture-less white walls that limit feature extraction. These scenarios represent typical operational environments encountered in autonomous vehicle deployment across parking systems, campus navigation, service robotics, and last-mile delivery applications. Fig. 5 presents motion characteristics across four environ
 
 
-JOURNAL OF LATEX CLASS FILES, VOL. XXX, NO. XXX, AUGUST 2025 8
+ JOURNAL OF LATEX CLASS FILES, VOL. XXX, NO. XXX, AUGUST 2025 8
 ments through dual-axis visualization. The left panel shows inter-frame motion distances (bars) and rotation angle distributions (violin plots), while the right panel displays motion velocities (bars) and total trajectory distances (line plot), including inter-frame distances ranging from 0.00 to 0.31m, inter-frame rotation angles from 0.00° to 17.70°, and motion velocities from 0.00 to 0.59m/s. We select 8 trajectories from the 12 trajectories (two from each floor) for training and utilize the remaining 4 trajectories for testing. Since the collection times and paths are not completely identical, this enables comprehensive evaluation of the same model’s generalization when facing multiple scene types, as well as the adaptability of BEV-based visual representation under spatial scale variations and motion complexity commonly encountered in intelligent transportation applications.
 B. Experimental Setup
 1) Baselines
@@ -179,7 +179,7 @@ where di and dGT
 i represent the estimated and ground truth displacements for segment i. The logarithmic space representation naturally accommodates the multiplicative characteristics of scale drift in MVO systems. The resulting curves illustrate how scale consistency evolves across different trajectory seg
 
 
-JOURNAL OF LATEX CLASS FILES, VOL. XXX, NO. XXX, AUGUST 2025 9
+ JOURNAL OF LATEX CLASS FILES, VOL. XXX, NO. XXX, AUGUST 2025 9
 Fig. 6: Case Study of BEV-ODOM2 Performance on Four Datasets. The figure illustrates predicted trajectories for representative straight (S), left-turn (L), and right-turn (R) maneuvers. For each case, we visualize the predicted dense BEV optical flow and its corresponding error map, with most pixel errors below 0.4. Below, violin plots show the distribution of translational and rotational errors for 51-frame sequences centered on these maneuvers.
 Fig. 7: Logarithmic scale factor variation on the NCLT (top) and Oxford (bottom) datasets, demonstrating the consistent low-scale-drift performance of BEV-based methods.
 ments, providing insights into the long-term drift behavior of each method.
@@ -190,7 +190,7 @@ D. Quantitative Analysis
 As shown in Table II, BEV-ODOM2 demonstrates superior performance on the challenging NCLT and Oxford datasets, achieving RTE of 5.01% and 4.60% with RRE of 2.14°/100m and 1.02°/100m, respectively. The traditional ORB-SLAM3 method fails completely on NCLT due to feature tracking loss in high-jitter environments and suffers from severe scale drift on Oxford with numerous dynamic objects, highlighting the inherent challenges of these datasets. Among perspective view methods, those requiring auxiliary supervision signals (TartanVO, DF-VO, DROIDSLAM, DPVO) introduce additional complexity in data col
 
 
-JOURNAL OF LATEX CLASS FILES, VOL. XXX, NO. XXX, AUGUST 2025 10
+ JOURNAL OF LATEX CLASS FILES, VOL. XXX, NO. XXX, AUGUST 2025 10
 TABLE II: PERFORMANCE COMPARISON ON NCLT AND OXFORD DATASETS
 Methods Ex. Supv. Metric
 Seq NCLT Oxford
@@ -240,7 +240,7 @@ As presented in Table III, BEV-ODOM2 also performs exceptionally well on the KIT
 For experiments on the ZJH-VO dataset, to reduce the generalization impact of pretrained models from learningbased methods in new scenes, we compare multiple optical flow foundation models and select the best-performing Unimatch-Flow to generate optical flow ground truth. We fine-tune TartanVO based on its pretrained model, achieving significant improvement over pose-only supervised DeepVO,
 
 
-JOURNAL OF LATEX CLASS FILES, VOL. XXX, NO. XXX, AUGUST 2025 11
+ JOURNAL OF LATEX CLASS FILES, VOL. XXX, NO. XXX, AUGUST 2025 11
 TABLE IV: ABLATION STUDY ON THREE DATASETS
 Enhanced Rotation Sampling
 Dense Flow Supervision
@@ -277,7 +277,7 @@ Effect of Enhanced Rotation Sampling: Introducing the enhanced rotation sampling
 Effect of Dense Flow Supervision: After adding dense BEV optical flow supervision (third row), performance shows further significant improvement. All datasets demonstrate over 20% improvement in RTE metrics, especially for the multiscale, multi-scene ZJH-VO dataset, where RTE improvement reaches nearly 30%. This demonstrates that our proposed constructible dense supervision signals provide dense, pixel-level correspondence information for the network, greatly enhancing its learning capability for fine motion patterns, especially bringing more precise BEV mapping and representation capabilities for dataset scenarios with extensive feature distance spans. The introduction of BEV optical flow supervision also brings stability improvements, corresponding to significant ATE improvements across four trajectories on each dataset, intuitively indicating that predicted trajectories are overall closer to ground truth, showing more stable performance in pose estimation across the entire pipeline. Effect of PV-BEV Fusion: Finally, after fusing PV branch information (fourth row, complete BEV-ODOM2), model performance reaches optimal levels. This indicates that the PV branch successfully compensates for information loss in nonprimary degrees of freedom such as pitch and roll in BEV representation by extracting correlation information before projection to the BEV plane. By fusing features from both branches, the model can more comprehensively understand the vehicle’s complete motion state, enabling more accurate 3-DoF pose estimation. Although the improvement is more modest compared to sampling and supervision strategies, consistent gains across all metrics prove the value of preserving rich motion information lost during LSS transformation. This com
 
 
-JOURNAL OF LATEX CLASS FILES, VOL. XXX, NO. XXX, AUGUST 2025 12
+ JOURNAL OF LATEX CLASS FILES, VOL. XXX, NO. XXX, AUGUST 2025 12
 ponent is particularly beneficial for complex motion pattern scenarios requiring comprehensive geometric understanding.
 V. CONCLUSION AND FUTURE WORK
 This paper introduces BEV-ODOM2, a monocular visual odometry framework that significantly improves upon existing BEV-based methods. Our approach incorporates two key innovations: (1) dense BEV optical flow supervision constructed directly from pose ground truth, which provides dense, pixellevel guidance without extra annotations; and (2) a PV-BEV fusion strategy that preserves 6-DoF motion cues to mitigate information loss during BEV projection. Extensive evaluations show that BEV-ODOM2 achieves a 40% improvement in relative translation error over prior BEV methods while maintaining the robust scale consistency inherent to the BEV representation. An enhanced rotation sampling strategy further ensures robust performance across diverse motion patterns. To facilitate future research, we release the ZJH-VO dataset, a comprehensive multi-scene, multi-scale benchmark for ground vehicle visual odometry. Alongside the dataset, we open-source the associated calibration results and provide performance baselines from representative MVO methods. Future work will focus on enhancing long-term robustness by integrating multi-camera systems for 360-degree perception, incorporating relocalization and loop closure capabilities to correct accumulated drift, and developing adaptive temporal models for stability in adverse conditions. These steps aim to transition BEV-ODOM2 from a research prototype to a production-ready system for reliable navigation in intelligent transportation applications.

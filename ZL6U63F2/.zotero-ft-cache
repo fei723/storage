@@ -15,7 +15,7 @@ Therefore, we present BEV-LIO(LC), a LIO framework that utilizes BEV images to t
 arXiv:2502.19242v2 [cs.RO] 17 Jul 2025
 
 
-• We integrate BEV feature reprojection errors with geometric registration via analytic Jacobian derivation, establishing a tightly-coupled iEKF framework that improves front-end odometry accuracy. • We propose a loop closure algorithm that utilizes a KDtree-indexed keyframe database with global descriptors for efficient candidate retrieval. Detected candidates first undergo RANSAC-based coarse alignment using BEV image matching, then ICP refinement between geometric measurements. The optimized transformation is integrated into a factor graph with odometry factors to improve the global consistency of localization. • Extensive experimental results demonstrate that BEVLIO(LC) outperforms state-of-the-art methods in various environments with different LiDAR types.
+ • We integrate BEV feature reprojection errors with geometric registration via analytic Jacobian derivation, establishing a tightly-coupled iEKF framework that improves front-end odometry accuracy. • We propose a loop closure algorithm that utilizes a KDtree-indexed keyframe database with global descriptors for efficient candidate retrieval. Detected candidates first undergo RANSAC-based coarse alignment using BEV image matching, then ICP refinement between geometric measurements. The optimized transformation is integrated into a factor graph with odometry factors to improve the global consistency of localization. • Extensive experimental results demonstrate that BEVLIO(LC) outperforms state-of-the-art methods in various environments with different LiDAR types.
 II. RELATED WORKS
 A. LiDAR (Inertial) SLAM
 LiDAR-based SLAM has long been significantly influenced by LOAM [10], which splits the SLAM problem into two parallel tasks: odometry and mapping. By extracting edge and planar features from LiDAR scans and optimizing feature correspondences over long-term optimization, LOAM achieves high accuracy with low computational cost in structured environments. This approach has inspired subsequent works such as LeGO-LOAM [11] and LIOSAM [12]. LeGO-LOAM introduced lightweight groundoptimized segmentation and loop closure mechanisms. LIOSAM innovated through Inertial Measurement Unit (IMU) tight-coupling in factor graphs [13] with the Bayes tree [14], enabling motion-aware submap matching and drift-aware loop closure integration. However, traditional methods like [10] and its variants struggle in featureless environments or with LiDARs that have a small field of view. To address these challenges, FAST-LIO [15] introduces an iEKF update mechanism, enabling real-time alignment of each scan with an incrementally built map. In its later iteration, FAST-LIO2, based on the ikd-Tree, replaces feature matching with pointto-plane ICP on raw points, offering improved robustness and state-of-the-art performance across various environments. DLIO [16] further utilizes analytical equations for fast and parallelizable motion correction. By directly registering scans to the map and employing a nonlinear geometric observer, DLIO improves both accuracy and computational efficiency. LTA-OM [17] integrates FAST-LIO2 for front-end odometry and STD [18] for loop closure, further incorporating loop optimization. Its multisession operation enables dynamic map updates and robust localization, yielding performance gains over state-of-the-art SLAM systems. iG-LIO [19] introduces a tightly-coupled LIO framework using GICP, a voxel-based surface covariance estimator that replaces kdtree-based method [20], [21] to accelerate processing in dense scans, and an incremental voxel map, enhancing efficiency while maintaining state-of-the-art accuracy. Recently, correspondence-based methods employ geometric primitives and robust estimation to reduce problem size and prune correspondences [22], [23], yet point feature degradation and
@@ -26,7 +26,7 @@ C. Related BEV Approaches
 Recent advances in LiDAR localization, place recognition and loop closure have explored BEV representations to improve accuracy. MapClosures [30] proposes a loop closure detection method for SLAM utilizing BEV density images with ORB features derived from local maps, enabling effective place recognition and detection of map-level closures. [7] pioneers BEV-based place recognition by projecting 3D LiDAR scans to BEV images, generating rotation-invariant maximum index maps using Log-Gabor filters, and employing the novel Bird’s-Eye View Feature Transform (BVFT) for robust feature extraction and pose estimation. BEVPlace [5] and its extension [6] further advance this concept using lightweight CNNs with rotation-equivariant modules and NetVLAD [31] global descriptors, achieving state-of-theart performance in subtasks of global localization including place recognition and loop closure detection. In contrast to direct point cloud matching or spherical projection based methods, BEV representations inherently avoid scale distortions by projecting 3D points into a unified 2D plane, thereby enabling stable improvements in
 
 
-State Prediction
+ State Prediction
 Motion Compesation Tree Rebuild
 Unbalanced?
 Odometry Output
@@ -80,7 +80,7 @@ According to existing 3-DoF localization works [8], [30], [32], we assume that t
 0 with a resolution of μ meters. Considering a [2ymax, 2xmax] rectangle window centered at
 
 
-(a) (b)
+ (a) (b)
 Fig. 3. Examples of BEV image features. They highlight BEV image features from one scan of mobile low-cost LiDAR (red) distributed across the Leica prior map of KTH (a) and NTU (b) campus, both conforming to geometrically consistent structures.
 the coordinate origin, each point Pi = [xi, yi, zi] projected in the image can be described as:
 Π(Pi) = ui
@@ -154,7 +154,7 @@ k − (I − KH)(J κ)−1(xbκ
 k ⊟ xbk)) (8)
 
 
-(a) (b)
+ (a) (b)
 (c) Ref Img (d)
 t1 = 48s t2 = 164s
 Matching Img
@@ -208,7 +208,7 @@ IV. EXPERIMENT RESULTS
 We evaluate our proposed BEV-LIO and BEV-LIO-LC methods on public datasets: Multi-Campus Dataset (MCD) [37], Multi-modal and Multi-scenario Dataset (M2DGR) [38], and Newer College dataset (NCD) [39]. NCD and MCD’s kth/tuhh sequences use handheld devices, MCD’s ntu sequence employs an all-terrain vehicle (ATV), while M2DGR utilizes a ground robot. We compare our BEV-LIO with several state-of-the-art and widely used open-source methods, including FAST-LIO2, LIO-SAM, D-LIO, iG-LIO, and COIN-LIO. For loop closure evaluation, we compare our BEV-LIO-LC method with STD [18] integrated into FAST-LIO2, as well as FAST-LIO-SC and LIO-SAM-SC, both well-integrated by Kim et al. [40] using [8]. Due to the unavailability of certain closely related method BEV-LSLAM [41] at the time of submission, we could not include them in our comparison. The experiments are conducted on an AMD Ryzen 7 6800H CPU and an NVIDIA GeForce RTX 3060 Laptop GPU running Ubuntu 20.04, using the REIN feature extractor from [6] without additional training. The parameters of the experiments will be released later.
 
 
-TABLE I ABSOLUTE TRAJECTORY ERROR OF STATE ESTIMATION EVALUATION (RMSE, METER)
+ TABLE I ABSOLUTE TRAJECTORY ERROR OF STATE ESTIMATION EVALUATION (RMSE, METER)
 Method Years cloister1O* math1O* park1O* under1O* ntu 012O* ntu 022O* ntu 102O* ntu 042O* ntu 082O* ntu 132O* kth 062O kth 092O kth 102O Dist.(m) 428 290 2396 236 3198 642 1783 1459 2421 1231 1403 1076 920
 DLIO 2022 0.150 0.157 0.458 0.168 3.879 0.688 4.659 1.313 3.357 1.320 1.146 2.450 1.946 LIOSAM 2020 - - - - 2.603 0.277 2.570 0.736 4.197 1.117 0.746 0.572 0.721 iG-LIO 2024 × 0.059 0.233 × 1.594 0.509 1.811 1.956 1.784 1.257 × × × COIN-LIO 2024 0.062 0.059 0.303 0.051 6.450 0.772 3.054 2.370 7.076 1.909 10.102 25.583 13.571 FAST-LIO2 2021 0.062 0.060 0.323 0.056 1.414 0.416 1.789 1.772 1.959 1.028 0.615 0.207 0.718 BEV-LIO 2025 0.053 0.054 0.295 0.052 1.396 0.410 1.618 1.627 1.811 0.929 0.580 0.189 0.367
 Method kth 012O kth 042O kth 052O tuhh 022O tuhh 032O tuhh 042O tuhh 072O tuhh 082O tuhh 092O gate 033V street 013V street 033V street 043V street 083V Dist.(m) 1416 1052 919 749 1137 297 742 1128 290 248 752 424 840 340
@@ -225,7 +225,7 @@ As shown in Fig. 6, BEV-LIO demonstrates a good alignment with the ground truth 
 3) Runtime Analysis. To evaluate the runtime performance of our method, we tested it in the clositer sequence, where our approach achieves an average processing time of 62.7 ms per frame (16 Hz) on our laptop, with the hardware configuration as mentioned earlier.
 
 
-TABLE II LOOP METHOD ABSOLUTE TRAJECTORY ERROR (RMSE) (m) / IMPROVEMENT (RMSE) (m)
+ TABLE II LOOP METHOD ABSOLUTE TRAJECTORY ERROR (RMSE) (m) / IMPROVEMENT (RMSE) (m)
 Method ntu01 ntu08 kth06 kth09 kth01 kth04 kth05 tuhh02 tuhh08
 LIO Methods
 LIO-SAM 2.603 4.197 0.746 0.572 12.745 0.506 0.588 0.334 37.735 FAST-LIO2 1.414 1.959 0.615 0.208 0.476 0.568 0.574 0.209 0.716 BEV-LIO 1.396 1.811 0.580 0.189 0.363 0.289 0.488 0.203 0.643 LIO-LC Methods
@@ -240,7 +240,7 @@ V. CONCLUSION
 In this work, we propose BEV-LIO(LC), a LIO framework that combines BEV images of LiDAR data with geometric registration for front-end odometry and integrates loop closure via BEV image features and factor graph optimization for the back-end. Our approach enhances front-end odometry by combining reprojection error from BEV image matching with geometric registration, and utilizes iEKF to couple these residuals, improving odometry accuracy and reliability. For loop closure, our back-end system employs a KD-treeindexed BEV descriptor database. Upon loop detection, a coarse transform computed via RANSAC from BEV image matching initializes the ICP process, which refines the transform for improved global consistency of localization when integrated into a factor graph alongside odometry factors. Extensive experiments across various scenarios and with different LiDAR validate the competitive localization accuracy of BEV-LIO(LC) compared to state-of-the-art methods. Looking ahead, future work will focus on eliminating the dependency on CNNs for feature extraction, with the goal of further enhancing real-time performance of the system.
 
 
-REFERENCES
+ REFERENCES
 [1] W. Xu, Y. Cai, D. He, J. Lin, and F. Zhang, “Fast-lio2: Fast direct lidarinertial odometry,” IEEE Transactions on Robotics, vol. 38, no. 4, pp. 2053–2073, 2022. [2] J. Zhang and S. Singh, “Laser–visual–inertial odometry and mapping with high robustness and low drift,” Journal of Field Robotics, vol. 35, pp. 1242 – 1264, 2018. [3] X. Zuo, Y. Yang, P. Geneva, J. Lv, Y. Liu, G. P. Huang, and M. Pollefeys, “Lic-fusion 2.0: Lidar-inertial-camera odometry with sliding-window plane-feature tracking,” 2020 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS), 2020.
 [4] L. Di Giammarino, L. Brizi, T. Guadagnino, C. Stachniss, and G. Grisetti, “Md-slam: Multi-cue direct slam,” in 2022 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS), 2022, pp. 11 047–11 054. [5] L. Luo, S. Zheng, Y. Li, Y. Fan, B. Yu, S.-Y. Cao, J. Li, and H.-L. Shen, “Bevplace: Learning lidar-based place recognition using bird’s eye view images,” in 2023 IEEE/CVF International Conference on Computer Vision (ICCV), 2023, pp. 8666–8675.
 [6] L. Luo, S.-Y. Cao, X. Li, J. Xu, R. Ai, Z. Yu, and X. Chen, “Bevplace++: Fast, robust, and lightweight lidar global localization for unmanned ground vehicles,” IEEE Transactions on Robotics (TRO), 2025. [7] L. Luo, S.-Y. Cao, B. Han, H.-L. Shen, and J. Li, “Bvmatch: Lidarbased place recognition using bird’s-eye view images,” IEEE Robotics and Automation Letters, vol. 6, no. 3, pp. 6076–6083, 2021. [8] G. Kim and A. Kim, “Scan context: Egocentric spatial descriptor for place recognition within 3d point cloud map,” in 2018 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS), 2018, pp. 4802–4809. [9] L. Luo, S.-Y. Cao, Z. Sheng, and H.-L. Shen, “Lidar-based global localization using histogram of orientations of principal normals,” IEEE Transactions on Intelligent Vehicles, vol. 7, no. 3, pp. 771–782, 2022. [10] J. Zhang and S. Singh, “Loam: Lidar odometry and mapping in realtime,” in Robotics: Science and Systems, 2014.

@@ -10,7 +10,7 @@ and lack of a data pipeline for humanoids to learn autonomous skills from egocen
 arXiv:2406.10454v1 [cs.RO] 15 Jun 2024
 
 
-HumanPlus: https://humanoid-ai.github.io
+ HumanPlus: https://humanoid-ai.github.io
 man body and hand motion in real time using only a RGB camera, i.e. shadowing. Through shadowing, human operators can teleoperate humanoids to collect whole-body data for learning different tasks in the real world. Using the data collected, we then perform supervised behavior cloning to train skill policies using egocentric vision, allowing humanoids to complete different tasks autonomously by imitating human skills. We demonstrate the system on our customized 33-DoF 180cm humanoid, autonomously completing tasks such as wearing a shoe to stand up and walk, unloading objects from warehouse racks, folding a sweatshirt, rearranging objects, typing, and greeting another robot with 60-100% success rates using up to 40 demonstrations.
 1. Introduction
 Humanoid robots have long been of interest in the robotics community due to their human-like form factors. Since our surrounding environments, tasks and tools are structured and designed based on the human morphology, human-sized humanoids are the nature hardware platforms of general-purpose robots for potentially solving all tasks that people can complete. The human-like morphology of humanoids also presents a unique opportunity to leverage the vast amounts of human motion and skill data available for training, bypassing the scarcity of robot data. By mimicking humans, humanoids can potentially tap into the rich repertoire of skills and motion exhibited by humans, offering a promising avenue towards achieving general robot intelligence.
@@ -21,7 +21,7 @@ After deploying the low-level policy that controls the humanoid given target pos
 2
 
 
-HumanPlus: https://humanoid-ai.github.io
+ HumanPlus: https://humanoid-ai.github.io
 +XPDQRLG 'R)V
 +DQG :ULVW 'R)V HDFK
 0DVV NJ
@@ -47,7 +47,7 @@ Teleoperation of Humanoids. Prior works develop humanoid and dexterous teleopera
 3
 
 
-HumanPlus: https://humanoid-ai.github.io
+ HumanPlus: https://humanoid-ai.github.io
 RGB camera
 (60Hz) Body &
 Hand Pose Estimation (25Hz)
@@ -66,7 +66,7 @@ Retargeting. Our humanoid body has a subset of the degrees of freedom of SMPL-X 
 4
 
 
-HumanPlus: https://humanoid-ai.github.io
+ HumanPlus: https://humanoid-ai.github.io
 HS T
 ✕
 ...
@@ -100,7 +100,7 @@ We formulate our low-level policy, Humanoid Shadowing Transformer, as a decoder-
 5
 
 
-HumanPlus: https://humanoid-ai.github.io
+ HumanPlus: https://humanoid-ai.github.io
 #1. #2. #3.
 #1. #2. #3.
 #1. #2. #3. #4.
@@ -129,7 +129,7 @@ rt is the reward at time step t, T is the maximum episode length, and γ is the 
 6
 
 
-HumanPlus: https://humanoid-ai.github.io
+ HumanPlus: https://humanoid-ai.github.io
 Cost # of Operators Whole-Body
 Rearrange Objects Rearrange Lower Objects (s)
 Approach Object (s)
@@ -151,7 +151,7 @@ In the Wear a Shoe and Walk task, the robot (1) flips a shoe, (2) picks it up, (
 7
 
 
-HumanPlus: https://humanoid-ai.github.io
+ HumanPlus: https://humanoid-ai.github.io
 Maximum Force Thresholds Whole-Body Skills
 forward (↑) backward (↑) leftward (↑) rightward (↑) Recovery Time (↓) Squat(↓) Jump(↑) Stand Up
 Ours 32N 44N 70N 100N 1.2s 0.44m 0.35m ✓ H1 Default 24N 36N 40N 40N 15s 0.85m 0m ✗
@@ -181,7 +181,7 @@ For Shadowing Tasks, we demonstrate five tasks: boxing, opening a two-door cabin
 8
 
 
-HumanPlus: https://humanoid-ai.github.io
+ HumanPlus: https://humanoid-ai.github.io
 Fold Clothes (40 demos) Rearrange Objects (30 demos)
 Fold Left Sleeve
 Fold Right Sleeve
@@ -233,7 +233,7 @@ We record the average task completion time over six participants, with three tri
 9
 
 
-HumanPlus: https://humanoid-ai.github.io
+ HumanPlus: https://humanoid-ai.github.io
 using our low-level policy. While ALOHA enables precise control of robot joint angles, its fixed hardware setup makes it harder to adapt to people with different heights and body shapes, and it does not support whole-body control of humanoids by default. Meta Quest often results in singularities and mismatches between target and actual poses in Cartesian space due to the limited 5 degrees of freedom of each humanoid arm plus a wrist, resulting to the longest completion time and destabilized standing at arm singularities. While Kinesthetic Teaching is intuitive and has a low time-to-completion, it requires multiple operators, and sometimes external forces on arms during teaching causes the humanoid to stumble. In contrast, our system has the lowest timeto-completion, has the highest success rate of stable standing, and is the only method that can be used for whole-body teleoperation, solving the Rearrange Lower Objects task.
 8.2. Robustness Evaluation
 Shown in Table 4, We evaluate our low-level policy by comparing it to the manufacturer default controller (H1 Default). The robot must maintain balance while manipulating with objects, so we assess robustness by applying forces to the pelvis and record the minimum forces causing instability. Shown in Figure 7, our policy withstands significantly larger forces and has a shorter recovery time. When robot is unbalanced, the manufacturer default controller takes several steps and up to 20 seconds to stabilize the robot, while ours typically recovers within one or two steps and below 3 seconds. More recovery steps result in jittery behavior and compromise manipulation performance. We also show that our policy enables more whole-body skills that are not possible by the default controller like squatting, high jumping, standing up from sitting on a chair.
@@ -246,7 +246,7 @@ In this work, we present HumanPlus, a full-stack system for humanoids to learn m
 10
 
 
-HumanPlus: https://humanoid-ai.github.io
+ HumanPlus: https://humanoid-ai.github.io
 regions of the human operators. Lastly, we focus on manipulation tasks with some locomotion tasks like squatting, standing up and walking in this work, as dealing with long-horizon navigation requires a much larger size of human demonstrations and accurate velocity tracking in the real world. We hope to address these limitations in future, and to enable more autonomous and robust humanoid skills that can be applied in various real-world tasks.
 Acknowledgements
 We thank Steve Cousins and Oussama Khatib at Stanford Robotics Center for providing facility support for our experiments. We also thank Inspire-Robots and Unitree Robotics for providing extensive supports on hardware and low-level firmware. We thank Huy Ha, Yihuai Gao, Chong Zhang, Ziwen Zhuang, Jiaman Li, Yifeng Jiang, Yuxiang Zhang, Xingxing Wang, Tony Yang, Walter Wen, Yunguo Cui, Rosy Wang, Zhiqiang Ma, Wei Yu, Xi Chen, Mengda Xu, Peizhuo Li, Tony Z. Zhao, Lucy X. Shi and Bartie for helps on experiments, valuable discussions and supports. This project is supported by The AI Institute and ONR grant N00014-21-1-2685. Zipeng Fu is supported by Pierre and Christine Lamond Fellowship.
@@ -267,7 +267,7 @@ Malla, Deeksha Manjunath, Igor Mordatch, Ofir Nachum, Carolina Parada, Jodilyn P
 11
 
 
-HumanPlus: https://humanoid-ai.github.io
+ HumanPlus: https://humanoid-ai.github.io
 and control for acrobatic behaviors. In 2020 IEEE-RAS 20th International Conference on Humanoid Robots (Humanoids), 2021. 3
 [14] R Cisneros, M Benallegue, K Kaneko, H Kaminaga, G Caron, A Tanguy, R Singh, L Sun, A Dallard, C Fournier, et al. Team janus humanoid avatar: A cybernetic avatar to embody human telepresence. In Toward Robot Avatars: Perspectives on the ANA Avatar XPRIZE Competition, RSS Workshop, 2022. 3
 [15] Open X-Embodiment Collaboration, Abhishek Padalkar, Acorn Pooley, Ajinkya Jain, Alex Bewley, Alex Herzog, Alex Irpan, Alexander Khazatsky, Anant Rai, Anikait Singh, Anthony Brohan, Antonin Raffin, Ayzaan Wahid, Ben Burgess-Limerick, Beomjoon Kim, Bernhard Schölkopf, Brian Ichter, Cewu Lu, Charles Xu, Chelsea Finn, Chenfeng Xu, Cheng Chi, Chenguang Huang, Christine Chan, Chuer Pan, Chuyuan Fu, Coline Devin, Danny Driess, Deepak Pathak, Dhruv Shah, Dieter Büchler, Dmitry Kalashnikov, Dorsa Sadigh, Edward Johns, Federico Ceola, Fei Xia, Freek Stulp, Gaoyue Zhou, Gaurav S. Sukhatme, Gautam Salhotra, Ge Yan, Giulio Schiavi, Hao Su, Hao-Shu Fang, Haochen Shi, Heni Ben Amor, Henrik I Christensen, Hiroki Furuta, Homer Walke, Hongjie Fang, Igor Mordatch, Ilija Radosavovic, Isabel Leal, Jacky Liang, Jaehyung Kim, Jan Schneider, Jasmine Hsu, Jeannette Bohg, Jeffrey Bingham, Jiajun Wu, Jialin Wu, Jianlan Luo, Jiayuan Gu, Jie Tan, Jihoon Oh, Jitendra Malik, Jonathan Tompson, Jonathan Yang, Joseph J. Lim, João Silvério, Junhyek Han, Kanishka Rao, Karl Pertsch, Karol Hausman, Keegan Go, Keerthana Gopalakrishnan, Ken Goldberg, Kendra Byrne, Kenneth Oslund, Kento Kawaharazuka, Kevin Zhang, Keyvan Majd, Krishan Rana, Krishnan Srinivasan, Lawrence Yunliang Chen, Lerrel Pinto, Liam Tan, Lionel Ott, Lisa Lee, Masayoshi Tomizuka, Maximilian Du, Michael Ahn, Mingtong Zhang, Mingyu Ding, Mohan Kumar Srirama, Mohit Sharma, Moo Jin Kim, Naoaki Kanazawa, Nicklas Hansen, Nicolas Heess, Nikhil J Joshi, Niko Suenderhauf, Norman Di Palo, Nur Muhammad Mahi Shafiullah, Oier Mees, Oliver Kroemer, Pannag R Sanketi, Paul Wohlhart, Peng Xu, Pierre Sermanet, Priya Sundaresan, Quan Vuong, Rafael Rafailov, Ran Tian, Ria Doshi, Roberto MartínMartín, Russell Mendonca, Rutav Shah, Ryan Hoque, Ryan Julian, Samuel Bustamante,
@@ -281,7 +281,7 @@ Sean Kirmani, Sergey Levine, Sherry Moore, Shikhar Bahl, Shivin Dass, Shuran Son
 12
 
 
-HumanPlus: https://humanoid-ai.github.io
+ HumanPlus: https://humanoid-ai.github.io
 [22] Mohamed Elobaid, Yue Hu, Giulio Romualdi, Stefano Dafarra, Jan Babic, and Daniele Pucci. Telexistence and teleoperation for walking humanoid robots. In Intelligent Systems and Applications: Proceedings of the 2019 Intelligent Systems Conference (IntelliSys) Volume 2, pages 1106–1121. Springer, 2020. 4
 [23] Siyuan Feng, Eric Whitman, X Xinjilefu, and Christopher G Atkeson. Optimization based full body control for the atlas robot. In International Conference on Humanoid Robots, 2014. 2
 [24] Paolo Ferrari, Marco Cognetti, and Giuseppe Oriolo. Humanoid whole-body planning for loco-manipulation tasks. In 2017 IEEE International Conference on Robotics and Automation (ICRA), 2017. 3
@@ -303,7 +303,7 @@ Kanehiro, Kiyoshi Fujiwara, Kenji Kaneko, Kazuhito Yokoi, and Hirohisa Hirukawa.
 13
 
 
-HumanPlus: https://humanoid-ai.github.io
+ HumanPlus: https://humanoid-ai.github.io
 [39] Lokesh Krishna, Guillermo A Castillo, Utkarsh A Mishra, Ayonga Hereid, and Shishir Kolathaya. Linear policies are sufficient to realize robust bipedal walking on challenging terrains. IEEE Robotics and Automation Letters, 2022. 3
 [40] Scott Kuindersma, Robin Deits, Maurice Fallon, Andrés Valenzuela, Hongkai Dai, Frank Permenter, Twan Koolen, Pat Marion, and Russ Tedrake. Optimization-based locomotion planning, estimation, and control design for the atlas humanoid robot. Autonomous robots, 2016. 2, 3
 [41] Ashish Kumar, Zipeng Fu, Deepak Pathak, and Jitendra Malik. Rma: Rapid motor adaptation for legged robots. arXiv preprint arXiv:2107.04034, 2021. 2
@@ -327,7 +327,7 @@ ual humanoid control for real-time simulated avatars. In International Conferenc
 14
 
 
-HumanPlus: https://humanoid-ai.github.io
+ HumanPlus: https://humanoid-ai.github.io
 Conf. on Computer Vision and Pattern Recognition (CVPR), pages 10975–10985, 2019. 4
 [58] Georgios Pavlakos, Dandan Shan, Ilija Radosavovic, Angjoo Kanazawa, David Fouhey, and Jitendra Malik. Reconstructing hands in 3D with transformers. In CVPR, 2024. 2, 5
 [59] Luigi Penco, Nicola Scianca, Valerio Modugno, Leonardo Lanari, Giuseppe Oriolo, and Serena Ivaldi. A multimode teleoperation framework for humanoid loco-manipulation: An application for the icub robot. IEEE Robotics & Automation Magazine, 2019. 2, 3
@@ -353,7 +353,7 @@ Sreenath. Real-world humanoid locomotion with reinforcement learning. Science Ro
 15
 
 
-HumanPlus: https://humanoid-ai.github.io
+ HumanPlus: https://humanoid-ai.github.io
 IEEE-RAS 16th International Conference on Humanoid Robots (Humanoids), 2016. 3
 [78] Nur Muhammad Mahi Shafiullah, Anant Rai, Haritheja Etukuru, Yiqian Liu, Ishan Misra, Soumith Chintala, and Lerrel Pinto. On bringing robots home. arXiv preprint arXiv:2311.16098, 2023. 4
 [79] Lin Shao, Toki Migimatsu, Qiang Zhang, Karen Yang, and Jeannette Bohg. Concept2robot: Learning manipulation concepts from instructions and human demonstrations. The International Journal of Robotics Research, 40(12-14):1419–1434, 2021. 4
@@ -379,7 +379,7 @@ Thomas Funkhouser. Grasping in the wild: Learning 6dof closed-loop grasping from
 16
 
 
-HumanPlus: https://humanoid-ai.github.io
+ HumanPlus: https://humanoid-ai.github.io
 nipulation controllers from pre-trained representations. In Proceedings of the IEEE/CVF International Conference on Computer Vision, pages 3859–3868, 2023. 4 [98] Eric R Westervelt, Jessy W Grizzle, and Daniel E Koditschek. Hybrid zero dynamics of planar biped walkers. IEEE transactions on automatic control, 2003. 3
 [99] Tete Xiao, Ilija Radosavovic, Trevor Darrell, and Jitendra Malik. Masked visual pretraining for motor control. arXiv preprint arXiv:2203.06173, 2022. 4
 [100] Zhaoming Xie, Glen Berseth, Patrick Clary, Jonathan Hurst, and Michiel Van de Panne. Feedback control for cassie with deep reinforcement learning. In 2018 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS), 2018. 3

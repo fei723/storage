@@ -18,7 +18,7 @@ The underlying model of the system dynamics is described by a nonlinear function
 Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on October 16,2025 at 01:56:18 UTC from IEEE Xplore. Restrictions apply.
 
 
-IEEE TRANSACTIONS ON VEHICULAR TECHNOLOGY, VOL. 72, NO. 9, SEPTEMBER 2023 12327
+ IEEE TRANSACTIONS ON VEHICULAR TECHNOLOGY, VOL. 72, NO. 9, SEPTEMBER 2023 12327
 Measurement model: For each time t, we measure the noise observation yt ∈ RM corrupted by additive noise. The measurement model is given by
 yt = h(xt) + vt, (2)
 where h : RN → RM is a non-linear measurement function and vt is zero-mean Gaussian random vector with unknown covariance Rt. State estimation problem: The state estimation problem aims to recover the hidden state xt using the noisy measurements up to time t in terms of MMSE. Mathematically, we need to solve the following optimization problem in each time t:
@@ -122,7 +122,7 @@ By plugging (9) into the following chain rule:
 Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on October 16,2025 at 01:56:18 UTC from IEEE Xplore. Restrictions apply.
 
 
-12328 IEEE TRANSACTIONS ON VEHICULAR TECHNOLOGY, VOL. 72, NO. 9, SEPTEMBER 2023
+ 12328 IEEE TRANSACTIONS ON VEHICULAR TECHNOLOGY, VOL. 72, NO. 9, SEPTEMBER 2023
 one can find a local optimal parameter Θ such that ∂L(Θ )
 ∂Θ = 0 using a stochastic gradient descent algorithm. To track the covariance matrices implicitly, recurrent neural networks (RNNs) were used to train the parameter using the innovation difference Δyt = yt − yˆt|t−1 and the state update difference Δˆxt = xˆt|t − xˆt|t−1 as input features. We refer to [13] for the detailed structure of the KalmanNet. This DNN-aided EKF algorithm does not require knowledge of the covariance matrices for process and measurement noise, i.e., Qt and Rt. Rather, these matrices are implicitly learned from data for the Kalman gain computation; thereby, it can diminish statistical model mismatch effects compared to the model-based EKF method. In addition, it simplifies the state and time update procedures because a priori and a posteriori covariance matrices Σt|t−1 and Σt|t can be discarded. Notwithstanding, this joint learning approach of the Kalman gain can lead to performance loss when one of Qt and Rt mismatch effects dominates the other. For instance, the dominant mismatch error in measurement Rt hinders learning the covariance matrix of states Qt. This fact motivates us to consider a split learning structure when computing the Kalman gain matrix.
 IV. SPLIT-KALMANNET
@@ -221,7 +221,7 @@ F3 The innovation difference Δyt = yt − yˆt|t−1.
 Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on October 16,2025 at 01:56:18 UTC from IEEE Xplore. Restrictions apply.
 
 
-IEEE TRANSACTIONS ON VEHICULAR TECHNOLOGY, VOL. 72, NO. 9, SEPTEMBER 2023 12329
+ IEEE TRANSACTIONS ON VEHICULAR TECHNOLOGY, VOL. 72, NO. 9, SEPTEMBER 2023 12329
 F4 The measurement difference Δy ̃t = yt − yt−1. F5 The linearization error h(ˆxt|t−1) − Htˆxt|t−1.
 F6 The Jacobian matrix of measurement function Ht.
 Features F1 and F3 characterize the uncertainty of state estimates, while features F2 and F4 characterize the information about the state and measurement evolution process. In addition, features F5 and F6 encapsulate the local behavior of the measurement function.
@@ -280,7 +280,7 @@ where t0 ∈ {0, 10, 20, 30} is randomly selected for each training sequence.
 Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on October 16,2025 at 01:56:18 UTC from IEEE Xplore. Restrictions apply.
 
 
-12330 IEEE TRANSACTIONS ON VEHICULAR TECHNOLOGY, VOL. 72, NO. 9, SEPTEMBER 2023
+ 12330 IEEE TRANSACTIONS ON VEHICULAR TECHNOLOGY, VOL. 72, NO. 9, SEPTEMBER 2023
 Fig. 4. MSE (y-axis) comparison according to noise parameters (σ2w = −30
 dB, σ2v = νσ2w) for non-linear measurement model. The length of trajectory is
 T = 15 for training, and T = 100 for testing.
@@ -300,7 +300,7 @@ REFERENCES
 Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on October 16,2025 at 01:56:18 UTC from IEEE Xplore. Restrictions apply.
 
 
-IEEE TRANSACTIONS ON VEHICULAR TECHNOLOGY, VOL. 72, NO. 9, SEPTEMBER 2023 12331
+ IEEE TRANSACTIONS ON VEHICULAR TECHNOLOGY, VOL. 72, NO. 9, SEPTEMBER 2023 12331
 [7] N. J. Gordon, D. J. Salmond, and A. F. Smith, “Novel approach to nonlinear/non-Gaussian Bayesian state estimation,” IEE Proc. F (Radar Signal Process.), vol. 140, no. 2, pp. 107–113, Apr. 1993. [8] O. Cappé, S. J. Godsill, and E. Moulines, “An overview of existing methods and recent advances in sequential monte carlo,” Proc. IEEE, vol. 95, no. 5, pp. 899–924, May 2007. [9] I. Arasaratnam and S. Haykin, “Cubature kalman filters,” IEEE Trans. Autom. Control, vol. 54, no. 6, pp. 1254–1269, Jun. 2009. [10] G. A. Terejanu et al., “Extended Kalman filter tutorial,” University at Buffalo, 2008. [Online]. Available: https://homes.cs.washington.edu/todorov/ courses/cseP590/readings/tutorialEKF.pdf [11] B. Hajek, Random Processes for Engineers. New York, NY, USA: Cambridge Univ. Press, 2015. [12] G. A. Einicke and L. B. White, “Robust extended Kalman filtering,” IEEE Trans. Signal Process., vol. 47, no. 9, pp. 2596–2599, Sep. 1999. [13] G. Revach, N. Shlezinger, X. Ni, A. L. Escoriza, R. J. V. Sloun, and Y. C. Eldar, “KalmaNet: Neural network aided Kalman filtering for partially known dynamics,” IEEE Trans. Signal Process., vol. 70, pp. 1532–1547, 2022. [14] N. Shlezinger, Y. C. Eldar, and S. P. Boyd, “Model-based deep learning: On the intersection of deep learning and optimization,” IEEE Access, vol. 10, pp. 115384–115398, 2022. [15] A. L. Escoriza, G. Revach, N. Shlezinger, and R. J. V. Sloun, “Data-driven Kalman-based velocity estimation for autonomous racing,” in Proc. IEEE Int. Conf. Auton. Syst., 2021, pp. 1–5.
 [16] B.-N. Vo and W.-K. Ma, “The Gaussian mixture probability hypothesis density filter,” IEEE Trans. Signal Process., vol. 54, no. 11, pp. 4091–4104, Nov. 2006. [17] J. Mullane, B.-N. Vo, M. D. Adams, and B.-T. Vo, “A random-finiteset approach to Bayesian SLAM,” IEEE Trans. Robot., vol. 27, no. 2, pp. 268–282, Apr. 2011. [18] L. Xie, Y. C. Soh, and C. E. De Souza, “Robust Kalman filtering for uncertain discrete-time systems,” IEEE Trans. Autom. Control, vol. 39, no. 6, pp. 1310–1314, Jun. 1994. [19] M. Zorzi, “Robust Kalman filtering under model perturbations,” IEEE Trans. Autom. Control, vol. 62, no. 6, pp. 2902–2907, Jun. 2017. [20] S. Akhlaghi, N. Zhou, and Z. Huang, “Adaptive adjustment of noise covariance in Kalman filter for dynamic state estimation,” in Proc. IEEE Power Energy Soc. Gen. Meeting, 2017, pp. 1–5. [21] N. Carlevaris-Bianco, A. K. Ushani, and R. M. Eustice, “University of michigan north campus long-term vision and lidar dataset,” Int. J. Robot. Res., vol. 35, no. 9, pp. 1023–1035, Aug. 2016. [22] G. Revach, N. Shlezinger, T. Locher, X. Ni, R. J. V. Sloun, and Y. C. Eldar, “Unsupervised learned Kalman filtering,” in Proc. 30th Eur. Signal Process. Conf., 2022, pp. 1571–1575. [23] M. A. Richards, J. Scheer, and W. A. Holm, Principles of Modern Radar: Basic Principles. New York, NY, USA: Scitech, 2010.
 Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on October 16,2025 at 01:56:18 UTC from IEEE Xplore. Restrictions apply.

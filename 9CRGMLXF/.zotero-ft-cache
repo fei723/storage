@@ -8,7 +8,7 @@ nondeterministic behaviors is almost impossible. Stochastic models, naturally, h
 arXiv:2109.05128v2 [eess.SY] 18 Sep 2021
 
 
-of the uncontrolled agent. To obtain tractability, the continuous spectrum of possible behaviors of the uncontrolled agent is simplified with a finite set of policies, which are feedback control laws that represent the multimodality of the reactive behavior. On top of this finite set of policies, we assume that a predictive model is given that outputs the probability of each policy given the scenario. We then construct a scenario tree by forward propagating the policies of the uncontrolled agent and solve for a trajectory tree with the same topology. The objective is then to minimize the expected overall cost, where the expectation is taken over all the branches with the probability given by the predictive model. Furthermore, we use coherent risk measures such as the Conditional Value at Risk (CVaR) in presence of the possibly inaccurate predictive model to improve the robustness of the policy. The branching idea for MPC can date back to [15]. In [15], the authors showed that optimizing over a tree of trajectories is equivalent to optimizing over feedback policies, when the goal is to minimize the worst case cost and the uncertainties acting on the system are uni-modal. The multi-modal case was studied in [16]–[19], where the authors leveraged the optimization over a tree of trajectories to optimize over a set of feedback policies. However in these works the interaction between the controlled agent and the environment was not considered, meaning that the probability associated with the uncertainty modes determining the different tree branches is fixed. The advantage of the proposed branch MPC framework are (i) the reactive behavior of the uncontrolled agent in future steps is leveraged via the branching structure (ii) the MPC formulation can handle highly dynamic systems and generate high-quality motion plans (iii) the risk level acts as a convenient tuning knob reflecting the confidence of the reactive model and enables tradeoff between robustness and performance.
+ of the uncontrolled agent. To obtain tractability, the continuous spectrum of possible behaviors of the uncontrolled agent is simplified with a finite set of policies, which are feedback control laws that represent the multimodality of the reactive behavior. On top of this finite set of policies, we assume that a predictive model is given that outputs the probability of each policy given the scenario. We then construct a scenario tree by forward propagating the policies of the uncontrolled agent and solve for a trajectory tree with the same topology. The objective is then to minimize the expected overall cost, where the expectation is taken over all the branches with the probability given by the predictive model. Furthermore, we use coherent risk measures such as the Conditional Value at Risk (CVaR) in presence of the possibly inaccurate predictive model to improve the robustness of the policy. The branching idea for MPC can date back to [15]. In [15], the authors showed that optimizing over a tree of trajectories is equivalent to optimizing over feedback policies, when the goal is to minimize the worst case cost and the uncertainties acting on the system are uni-modal. The multi-modal case was studied in [16]–[19], where the authors leveraged the optimization over a tree of trajectories to optimize over a set of feedback policies. However in these works the interaction between the controlled agent and the environment was not considered, meaning that the probability associated with the uncertainty modes determining the different tree branches is fixed. The advantage of the proposed branch MPC framework are (i) the reactive behavior of the uncontrolled agent in future steps is leveraged via the branching structure (ii) the MPC formulation can handle highly dynamic systems and generate high-quality motion plans (iii) the risk level acts as a convenient tuning knob reflecting the confidence of the reactive model and enables tradeoff between robustness and performance.
 II. PRELIMINARIES
 We first review the major tools used in our framework.
 A. Model predictive control
@@ -53,7 +53,7 @@ where dP (x) is the probability density function of X.
 CVaR is the expectation of the α percent worst outcomes of X, α ∈ [0, 1] is a parameter that determines how riskaverse the CVaR is and CVaR is monotonically decreasing w.r.t. α. Moreover, limα→0 CVaR1−α(X) = ess sup X and CVaR0(X) = E[X].
 
 
-It is shown in [25], [26] that any coherent risk measure has a dual representation as the maximization of expectation over a probability ambiguity set, which often turns out more convenient in computation, i.e.,
+ It is shown in [25], [26] that any coherent risk measure has a dual representation as the maximization of expectation over a probability ambiguity set, which often turns out more convenient in computation, i.e.,
 ρ(X) = max
 Q∈A EQ[X].
 A is the ambiguity set, which is a set of probability distributions. For CVaR, the ambiguity set is
@@ -87,7 +87,7 @@ Predictive model and scenario tree. Given a policy set, z can be propagated forw
 Remark 2. Due to the causality constraint, before the uncontrolled agent demonstrate which policy it executes, the MPC would not be able to take different actions. Therefore, the node directly following a branching node in the trajectory tree
 
 
-Fig. 1: Example scenario tree with two policies, branching nodes are in red and non-branching nodes are in blue
+ Fig. 1: Example scenario tree with two policies, branching nodes are in red and non-branching nodes are in blue
 is shared by multiple branches. Another way to view it is that the m children of a branching node share the same state in the trajectory tree.
 For a branch bi, wi denotes its weight, the root always has weight w0 = 1, and at every branching point, a predictive model then assigns weight to the children of the branching node based on the x and z predictions. Take the branching from b1 to b3 and b4 as an example,
 w3 = w1P (π1|xt+3|b1 , zt+1|b1 ),
@@ -138,7 +138,7 @@ wi(xi, zi)J ̄i(xi, zi, ui) ≈ ∂wi
 where xˆi and ˆui are the solution from the last iteration shifted backwards. The first term on the RHS of (6) represents the change of the weighted cost function achieved by changing
 
 
-wi, and the second term represents the cost with the weight calculated with the motion plan from the last iteration. This decomposition of cost encourages the ego agent to not only minimize the weighted cost by minimizing J ̄, but also put more weight on branches with smaller costs via influencing the weights given by the predictive model. This phenomenon is shown later in the vehicle highway simulation where the ego vehicle would ‘nudge’ forward before an overtaking to reduce the probability that the uncontrolled vehicle changes lane and blocks the overtaking. The SQP after linearization for branch MPC is then
+ wi, and the second term represents the cost with the weight calculated with the motion plan from the last iteration. This decomposition of cost encourages the ego agent to not only minimize the weighted cost by minimizing J ̄, but also put more weight on branches with smaller costs via influencing the weights given by the predictive model. This phenomenon is shown later in the vehicle highway simulation where the ego vehicle would ‘nudge’ forward before an overtaking to reduce the probability that the uncontrolled vehicle changes lane and blocks the overtaking. The SQP after linearization for branch MPC is then
 min
 xi ,ui
 ∑
@@ -213,7 +213,7 @@ V. BRANCH MPC FOR HIGHWAY DRIVING
 This section presents some implementation details of the branch MPC on the highway driving example.
 
 
-A. Implementation details
+ A. Implementation details
 Predictive model. We use a simple predictive model inspired by the backup control barrier function work in [29] where the idea is to forward integrate the dynamics following a policy, and check collision along the trajectory. To be specific, for every branching node in the scenario tree, let x and z denote the ego agent and the uncontrolled agent states, respectively. Given a fixed horizon T and a set of policies Π = {πi}m
 i=1,
 we propagate the uncontrolled agent state z under all policies in Π, and let zπi be the trajectory propagated under πi for the uncontrolled agent. Let xπi denote the planned trajectory in the branch MPC corresponding to the child branch under πi, both xπi and zπi last for T steps. Then given safety constraints C including collision avoidance and lane boundary constraints for the uncontrolled agent, a safety function h : X T ×ZT → R is defined. h is defined such that h(x, z) ≥ 0 indicates that the uncontrolled agent satisfies C, otherwise it violates C, and the smaller h is, the more z violates C. the predictive model is simply defined with a softmax function:
@@ -250,7 +250,7 @@ where κ > 0 is a constant, ∆X = |X−Xz|
 Xz, Yz are the coordinates of the uncontrolled vehicle, ∆Xmax and ∆Ymax are the longitudinal and lateral clearance. We use the softmax function instead of the max function so that the expression can be differentiated by automatic differentiation. The uncontrolled vehicle has three policies, maintain fixed speed, slow down, and lane change, where the direction of lane change is towards the ego vehicle as lane change towards the other direction is of no danger to the ego vehicle. During the simulation, the uncontrolled vehicle would update its policy with a fixed frequency, and we tested two update rules: (i) the uncontrolled vehicle randomly sample its policy according to the predictive model in (4) (ii) the uncontrolled vehicle always pick the most likely policy, and the simulation results are similar. Fig. 2 shows the snapshots from the simulation of the overtaking and lane change task under the branch MPC controller with the CVaR objective function. α is chosen to be 0.9 (CVaR0.1(·)), which is relatively risk-neutral. As shown in the snapshots, the branch MPC plans a tree of trajectories, corresponding to the multiple possible behaviors in the scenario tree. Fig. 3 shows the weight changing of b1,b2, and b3 changing over time, which corresponds to the maintain fixed speed, slow down, and lane change policies, respectively (they all have children branches, but their children branches’ weights are omitted in the plot). The ego vehicle demonstrates an interesting ‘nudging’ behavior at the beginning since there is a substantial probability that the uncontrolled vehicle may change to the left lane. Since the branch corresponding to the left lane change has a high cost, the gradient of the branching probability in (7) motivates the ego vehicle to nudge forward so that the weight on b3 reduces. After 2.5 seconds, by nudging forward, the branch MPC determines that the probability of a lane change from the uncontrolled vehicle is very low and eventually it performs the overtaking and cut in front of the uncontrolled vehicle. After the overtaking, the different branches in the trajectory tree converge since all branches of the scenario tree pose little to no danger of collision. As a benchmark, we tested the same task under a robust MPC controller, which only optimizes over one trajectory and tries to avoid all possible trajectories of the uncontrolled vehicle. Due to this limitation, the vehicle is stuck behind the uncontrolled vehicle and is afraid to perform the overtake, as shown in Fig. 4.
 
 
-Fig. 2: Simulation of the overtaking and lane change under branch MPC
+ Fig. 2: Simulation of the overtaking and lane change under branch MPC
 0 1 2 3 4 5 6 7 8 9 10
 0.15
 0.2
@@ -273,7 +273,7 @@ A. Implementation details
 Platform setup A Unitree A1 quadruped was used as the ego robot, with locomotion performed via an inverse dynamicsbased trotting controller built off the work in [33]. This
 
 
-Fig. 6: Simulation of the merging task
+ Fig. 6: Simulation of the merging task
 controller was executed via an off-board i7-8565U CPU @ 1.80GHz with 16GB RAM, which computed desired joint torques, velocities, and positions and communicated with the A1 motor drivers over UDP at 1kHz. The trot controller tracked body-frame forward, lateral, and angular velocity commands from the branch MPC controller using the motion primitive framework in [34]. The uncontrolled robot was a teleoperated Vision 60 from Ghost Robotics using the proprietary walking controller for locomotion. To get global location of the two quadrupeds, an OptiTrack motion capture system was used with 6 cameras and 5 markers per robot. The position and orientation data was streamed over a ROS node at 125 Hz to the branch MPC controller on the off-board computer.
 Dynamic model and setup for branch MPC The actual quadruped model is a 36 dimensional hybrid highly nonlinear model, which is not suitable for the interactive motion planning. We use a modified unicycle model on the high-level planning layer and sends command to the low-level controller which tracks the desired motion. In particular, the following unicycle model is used:
 x=
@@ -293,7 +293,7 @@ since the quadruped has the ability to sidestep, yet it incurs a much larger cos
 Stability and optimality of the SQP The nonlinear, noncon
 
 
-Fig. 8: Top-down view of the motion plan
+ Fig. 8: Top-down view of the motion plan
 vex MPC was solved by linearizing around the solution from the last time step and formulate a quadratic approximation of the problem. The sequential quadratic programming strategy may cause stability issues as the linearization point may change drastically between time steps. This issue was not observed in the highway driving example as the vehicle’s heading angle was constrained to a narrow range; yet we observed instability of the SQP in the quadruped experiment. We were able to maintain stability after adding a proximal cost, i.e., Jprox = || x −xˆ||, which penalizes the deviation from the linearization point. With stability ensured by proximal terms, the SQP may still get stuck in local minimums, resulting in compromised performance. In future works, we plan to combine the branch MPC with sampling based motion planning tools such as probabilistic roadmaps and use the latter to provide linearization point to the SQP solver to prevent the local minimum problem.
 VII. CONCLUSION AND FUTURE WORKS
 We present a branch Model Predictive Control framework for reactive motion planning for autonomous agents in the presence of uncontrolled agents. The branch MPC approximates the reactive behavior of the uncontrolled agent with a finite set of policies to build a scenario tree, where each branch has an associated probability determined by the reactive model. A feedback policy is then solved in the form of a
@@ -334,7 +334,7 @@ Lagrange multiplier for ∑
 j qj = 1. It is easy to see that the
 
 
-feasible set has a nonempty interior. Therefore, strong duality holds:
+ feasible set has a nonempty interior. Therefore, strong duality holds:
 max
 q∈Ai
 ∑

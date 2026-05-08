@@ -24,7 +24,7 @@ OPEN
 School of Surveying and Land Information Engineering, Henan Polytechnic University, Jiaozuo 454003, China. *email: zengzenglian@hpu.edu.cn
 
 
-2
+ 2
 Vol:.(1234567890)
 Scientific Reports | (2024) 14:1925 | https://doi.org/10.1038/s41598-024-52464-y
 www.nature.com/scientificreports/
@@ -50,7 +50,7 @@ took TOA for comparison without considering other deep learning models. In the l
 the calculation time and has a certain impact on real-time positioning. In the literature34,35, the advantage of high ranging accuracy of UWB was exploited to combine UWB and inertial navigation systems, and the LSTM network was used to process the time series in the position estimation process, thereby achieving higher positioning accuracy. However, this solution needs to be combined with the INS system, which will increase the cost
 
 
-3
+ 3
 Vol.:(0123456789)
 Scientific Reports | (2024) 14:1925 | https://doi.org/10.1038/s41598-024-52464-y
 www.nature.com/scientificreports/
@@ -79,7 +79,7 @@ Tˆ p = (TR1 × TR2 − Tr1 × Tr2)
 Figure 1. UWB ranging principle.
 
 
-4
+ 4
 Vol:.(1234567890)
 Scientific Reports | (2024) 14:1925 | https://doi.org/10.1038/s41598-024-52464-y
 www.nature.com/scientificreports/
@@ -111,7 +111,7 @@ ot = σ (Wxoxt + Whoht−1 + Wcoct + bo)
 Figure 2. The basic structure of the LSTM network.
 
 
-5
+ 5
 Vol.:(0123456789)
 Scientific Reports | (2024) 14:1925 | https://doi.org/10.1038/s41598-024-52464-y
 www.nature.com/scientificreports/
@@ -142,7 +142,7 @@ Pk = (I − KkH)Pk
 Figure 3. The flow chart of the KF-LSTM algorithm.
 
 
-6
+ 6
 Vol:.(1234567890)
 Scientific Reports | (2024) 14:1925 | https://doi.org/10.1038/s41598-024-52464-y
 www.nature.com/scientificreports/
@@ -208,7 +208,7 @@ dAE =
 (xA − xE)2 + (yA − yE)2
 
 
-7
+ 7
 Vol.:(0123456789)
 Scientific Reports | (2024) 14:1925 | https://doi.org/10.1038/s41598-024-52464-y
 www.nature.com/scientificreports/
@@ -216,7 +216,7 @@ Figure 4. The error curves for the four algorithms’ calculation results under 
 Figure 5. When the noise standard deviation is 10 cm, 30 cm, 50 cm, 60 cm, 80 cm, and 100 cm, the box plots of the four algorithms are displayed in (a), (b), (c), (d), (e), and (f), in that order.
 
 
-8
+ 8
 Vol:.(1234567890)
 Scientific Reports | (2024) 14:1925 | https://doi.org/10.1038/s41598-024-52464-y
 www.nature.com/scientificreports/
@@ -229,7 +229,7 @@ Noise standard deviation (cm)
 Average error (cm) Standard deviation(cm) BP KF-BP LSTM KF-LSTM BP KF-BP LSTM KF-LSTM 10 16.7 4.8 3.7 1.8 8.2 2.5 2.1 1.4 20 16.3 6.5 7.1 3.4 9.2 3.7 3.8 2.6 30 24 8.8 10.3 5.3 14.7 5 6.3 4 40 33.8 10.5 15.8 7.3 18.7 6.6 8.1 5.4 50 37.4 16.6 13.7 6.1 22 7.7 9.6 4.8 60 43.2 19.9 17 8 31 9.8 11.6 7.4 70 47.6 20.4 20.5 10.5 29 12.8 13.1 9.1 80 55.9 23.5 24.2 12.8 40.3 13 15.2 10 90 66.7 23.6 27.9 13.5 46.9 13.7 177.3 12 100 76.6 24.6 32 16.8 51.8 16.6 21.2 14
 
 
-9
+ 9
 Vol.:(0123456789)
 Scientific Reports | (2024) 14:1925 | https://doi.org/10.1038/s41598-024-52464-y
 www.nature.com/scientificreports/
@@ -243,7 +243,7 @@ Table 2. Coefficients and Offset for linear fitting of four base stations.
 Base station Coefficient (cm) Offset (cm) A 0.98 4.5 B 0.94 0.5 C 0.97 13 D 0.96 1.5
 
 
-10
+ 10
 Vol:.(1234567890)
 Scientific Reports | (2024) 14:1925 | https://doi.org/10.1038/s41598-024-52464-y
 www.nature.com/scientificreports/
@@ -251,7 +251,7 @@ Figure 8. (a), (b), (c), and (d) show the least squares fitting results of base 
 Figure 9. The roadmap calculated by the four algorithms.
 
 
-11
+ 11
 Vol.:(0123456789)
 Scientific Reports | (2024) 14:1925 | https://doi.org/10.1038/s41598-024-52464-y
 www.nature.com/scientificreports/
@@ -262,7 +262,7 @@ Figure 10. The CDF curve.
 Figure 11. Error distribution.
 
 
-12
+ 12
 Vol:.(1234567890)
 Scientific Reports | (2024) 14:1925 | https://doi.org/10.1038/s41598-024-52464-y
 www.nature.com/scientificreports/
@@ -277,7 +277,7 @@ References
 Figure 12. The average error and standard deviation of the four algorithms.
 
 
-13
+ 13
 Vol.:(0123456789)
 Scientific Reports | (2024) 14:1925 | https://doi.org/10.1038/s41598-024-52464-y
 www.nature.com/scientificreports/
@@ -293,7 +293,7 @@ Funding
 This research was funded by the Fundamental Research Funds for the Universities of Henan Province (Grant Number NSFRF230405, Grant Number NSFRF210309), the Doctoral Scientific Fund Project of Henan Polytechnic University (Grant Number B2017-10), Henan Polytechnic University Funding Plan for Young Backbone Teachers (Grant Number 2022XQG-08), the Natural Science Foundation of Henan Province (Grant Number
 
 
-14
+ 14
 Vol:.(1234567890)
 Scientific Reports | (2024) 14:1925 | https://doi.org/10.1038/s41598-024-52464-y
 www.nature.com/scientificreports/
