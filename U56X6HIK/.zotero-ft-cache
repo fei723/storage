@@ -1,379 +1,379 @@
-Sequential Linear Quadratic Optimal Control for Nonlinear Switched Systems
-Farbod Farshidian ∗ Maryam Kamgarpour ∗∗ Diego Pardo ∗ Jonas Buchli ∗
-∗ Agile and Dexterous Robotics Lab, ETH Z ̈urich, Switzerland (e-mail: {farbodf, depardo, buchlij}@ethz.ch), ∗∗ Automatic Control Laboratory, ETH Z ̈urich, Switzerland (e-mail: mkamgar@control.ee. ethz.ch).
-Abstract: In this contribution, we introduce an efficient method for solving the optimal control problem for an unconstrained nonlinear switched system with an arbitrary cost function. We assume that the sequence of the switching modes are given but the switching time in between consecutive modes remains to be optimized. The proposed method uses a two-stage approach as introduced by Xu and Antsaklis (2004) where the original optimal control problem is transcribed into an equivalent problem parametrized by the switching times and the optimal control policy is obtained based on the solution of a two-point boundary value differential equation. The main contribution of this paper is to use a Sequential Linear Quadratic approach to synthesize the optimal controller instead of solving a boundary value problem. The proposed method is numerically more efficient and scales very well to the high dimensional problems. In order to evaluate its performance, we use two numerical examples as benchmarks to compare against the baseline algorithm. In the third numerical example, we apply the proposed algorithm to the Center of Mass control problem in a quadruped robot locomotion task.
-Keywords: Control design for hybrid systems, Switching stability and control, Optimal control of hybrid systems, Optimal control theory, Real-time control, Riccati equations, and Mobile robots.
-1. INTRODUCTION
-Switched systems are a subclass of a general family known as hybrid systems. Hybrid system model consists of a finite number of dynamical subsystems subjected to discrete events which cause transition between these subsystems. This transition is either triggered by an external input, or through the intersection of the continuous states trajectory to a certain manifolds known as the switching surfaces. Switched systems are usually characterized by systems that have continuous state transition during these switches. Switched system models are encountered in many practical applications such as automobiles and locomotives with different gears, DC-DC converters, manufacturing processes, biological systems, and robotics.
-Our interest in switched systems originates from an application on a legged robot where we model the Center of Mass (CoM) as a switched system. The control goal is to synthesize a controller which, for a given gait, stabilizes the robot while it minimizes a cost function. To fulfill this task, the robot can manipulate the ground reaction forces at the stance feet and adjust the switching times between different stance leg configurations. For instance, assume the problem of controlling the walking gait for a quadruped robot. In this task, the gait is fixed, thus the sequence of mode switches are known. The control task is to modulate the contact forces of the stance legs and to determine the switching times between each mode.
-? This research has been supported in part by a Max-Planck ETH Center for Learning Systems Ph.D. fellowship to Farbod Farshidian, a Swiss National Science Foundation Professorship Award to Jonas Buchli, the NCCR Robotics, and Maryam Kamgarpour’s ERC Starting Grant CONENE.
-The optimal control problem for the switched systems involves synthesizing the optimal controller for the continuous inputs and finding a mode sequence and the switching times between the modes. In general, the procedure of synthesizing an optimal control law for a switched system can be divided into three subtasks (Giua et al., 2001; Xu and Antsaklis, 2004): (1) finding the optimal sequence of the modes, (2) finding the optimal switching times between consecutive modes, (3) finding the optimal continuous control inputs. Given the switching sequence and times, the third subtask is a regular optimal control problem with a finite number of discontinuities in the system vector field. The necessary condition of optimality in the context of hybrid systems has been derived from Pontryagin’s maximum principle (Branicky et al., 1998; Sussmann, 1999; Riedinger et al., 2003) and subsequently, various computational techniques have been developed to solve this problem (Shaikh and Caines, 2007; Soler et al., 2012; Pakniyat and Caines, 2014).
-Based on the Pontryagin’s maximum principle, the optimal solution should satisfy a two-point boundary value problem (BVP). However, similar to the classical control problem, the difficulties related to numerical solution of the necessary condition of optimality limits the application of this approach. In Riedinger et al. (1999), it has been shown that for a LinearQuadratic (LQ) problem it is sufficient to solve a sequence of Riccati equations with proper transversality conditions at the switching times in order to optimize the continuous inputs but the mode switches should be still calculated based on the enumerations of all the possible switches at each time step. In order to ease the computational burden of finding the optimal switching behavior, in Bengea and DeCarlo (2005), the switched
-arXiv:1609.02198v2 [cs.SY] 1 May 2017
-
-
- system is embedded in larger family of systems defined by the convex hull of the switched subsystems. It has been shown that if the sufficient and necessary conditions for optimality in the embedded systems exists, the bang-bang optimal solution of the embedded problem is also the optimal solution of the switched system; otherwise a sub-optimal solution can be derived.
-Borrelli et al. (2005) propose an off-line method to synthesize an optimal control law for a discrete linear hybrid system with linear inequality constraints. The proposed method is a combination of dynamic programming and multi-parametric quadratic programming which designs a feedback law for continuous and discrete inputs in the feasible regions. A simpler approach in Bemporad and Morari (1999) uses a mixed integer linear/ quadratic program to solve the optimal control problem for mixed logical dynamical systems.
-Optimizing the cost function with respect to the switching times has been studied for autonomous systems by Egerstedt et al. (2003); Johnson and Murphey (2011); Wardi et al. (2012) and for non-autonomous systems by Kamgarpour and Tomlin (2012). By using the derivative of the cost function with respect to the switching time, these methods use nonlinear programming techniques to optimize the cost function. However, in general these methods do not consider the sensitivity of the continuous inputs’ control law to the switching times.
-While many of the aforementioned approaches are computationally demanding for real-time robotic applications, there is a class of efficient optimal control algorithms known as Sequential Linear Quadratic (SLQ) methods which can be applied to real-time, complex robotic applications (Neunert et al., 2016). An SLQ algorithm sequentially solves the extremal problem around the latest estimation of the optimal trajectories and improves these optimal trajectories using the extremal problem solution (Mayne, 1966; Todorov and Li, 2005; Sideris and Bobrow, 2005). Motivated by their efficiency in solving regular optimal control problems, in this paper we have extended an SLQ algorithm to solve the optimal control problem for nonlinear switched system with predefined mode sequence. To this end, we adopt an approach introduced by Xu and Antsaklis (2004) where the primary switched problem is transcribed into an equivalent problem. We then introduce a two-stage optimization method to optimize the continuous inputs and the switching times. While Xu and Antsaklis (2004) use a computationally demanding approach based on solving a set of two-point BVPs, we propose a new SLQ algorithm to efficiently solve the optimal control problem for nonlinear switched systems.
-The main contributions of this paper are: (1) it uses an efficient SLQ algorithm to synthesize the optimal control law for the continuous inputs. (2) it calculates the cost function derivative with respect to switching times using an LQ approximation of the problem. This approximation is obtained without any additional computation from the SLQ solution. (3) it introduces a new practical application of the optimal control for switched systems in the field of motion planning of legged robots.
-2. PROBLEM FORMULATION
-In this section, we briefly introduce the optimal control problem based on the parameterization of switching times. We assume that the switched system dynamics consist of I subsystems where the system dynamics for the ith subsystem (i ∈ {1, 2, . . . , I}) is as follows
-x ̇(t) = fi (x(t), u(t)) for ti−1 ≤ t < ti, (1)
-where x(t) ∈ Rnx is the continuous state, u(t) ∈ Rnu is the piece
-wise continuous control input, and fi : Rnx × Rnu → R is the vector field of subsystem i which is continuously differentiable and Lipschitz up to the first order derivatives. ti is the switching time between subsystem i and i + 1. t0 and tI are respectively the given initial time and the final time. The initial state is x0
-and x(t−
-i ) = x(t+
-i ) at the switching moments because of the state continuity condition. The optimal control problem for the switched system in Equation (1) is defined as
-min
-t ∈ T, u(·)
-Φ(x(tI)) +
-I
-i=∑1
-∫ ti
-ti−1
-Li(x, u)dt, (2)
-where Φ(·) and Li(·, ·) are the final cost and the running cost (for subsystem i) which are continuously differentiable and Lipschitz up to the second order derivatives. T is a polytope in RI−1 defined as T = {(t1, . . . ,tI−1)|to ≤ t1 ≤ · · · ≤ tI−1 ≤ tI}.
-The optimal control problem based on the parameterization of switching times can be defined as the following two-stage optimization problem
-tm∈iTn J[t, x∗, u∗] s.t. {x∗, u∗} = argmin J[t, x, u]. (3)
-with
-J[t, x, u] = Φ(xI) +
-I
-i=∑1
-(ti − ti−1)
-∫i
-i−1
-Li(x(z), u(z))dz, (4)
-dx(z)
-dz = (ti − ti−1)fi (x(z), u(z)) for i − 1 ≤ z < i (5)
-t = (ti − ti−1)(z − i) + ti, (6)
-in which we have replaced the independent time variable t with a normalized time variable z defined by (6). With this change of variable, while the switching times are still part of the decision variables, they are fixed parameters for the bottom-level optimization in (3). Therefore, the reformulated optimal control problem does not have variable switching times and it reduces to a conventional optimal control problem parameterized over the switching times (Theorem 1 in Xu and Antsaklis (2004)). In the next section, we introduce our algorithm for calculating the optimized cost function and its gradient.
-3. SOLUTION APPROACH
-In this section, we use a gradient-based method to solve the top-level optimization introduced in (3) and a dynamic programming approach to synthesize the continuous inputs control law. In each iteration of the gradient-based method for finding the optimal switching time, we first solve a continuous-time optimal control problem for the system with a fixed switching times. Then, the cost function gradient with respect to the switching times is calculated in order to determine the descent direction for the switching times update. This approach is similar to Xu and Antsaklis (2004). However, instead of using the two-point BVP solver for optimizing J(t) with respect to u and calculating its gradient with respect to t, we use a more efficient approach. This facilitates implementing this algorithm in realtime on complex systems such as legged robots.
-Our Optimal Control for Switched Systems algorithm (OCS2 algorithm) consists of two main steps: a method which synthesizes the continuous input controller and a method which calculates the parameterized cost function derivatives with respect to the switching times. For synthesizing the continuous input controller, OCS2 uses the SLQ algorithm in Algorithm 1. As a dynamic programming approach, SLQ uses the Bellman
-
-
- equation of optimality to locally estimate the value function and consequently the optimal control law. In the second step of OCS2, we use the approximated problem for calculating the value function from the first step to efficiently compute the value function gradient with respect to switching times.
-Using the SLQ algorithm to calculate the optimal control law for the continuous inputs has two major advantages. First, as discussed by Sideris and Rodriguez (2010), this algorithm has a linear time complexity with respect to the optimization time horizon in contrast to many standard discretization-based algorithms which scale cubically (such as the direct collocation methods). Second, since in each iteration of SLQ, an LQ problem is optimized, we can efficiently calculate the value function derivatives by obtaining derivatives of an LQ subproblem’s value function. However, in contrast to a regular timevariant LQ problem in which the system dynamics and the cost function are independent of the switching times, in this problem the cost and the system dynamics of the approximated LQ subproblem are functions of the switching times. Therefore, in order to calculate the cost function gradient, we should also consider the LQ subproblem variations to the switching times. We tackle this problem more rigorously in Theorem 1.
-Here, we first briefly introduce the SLQ algorithm. We consider an intermediate iteration of the algorithm. We assume that {x ̄ (z)}I
-z=0 and {u ̄ (z)}I
-z=0 are the nominal state and input tra
-jectories which are obtained by forward integrating system dynamics in (5) (performing a rollout) using the latest estimation of the optimal control law with a fixed switching time vector  ̄t. For simplicity of notation, in the followings we have dropped the dependencies of the nominal trajectories and consequently the approximated LQ problem with respect to  ̄t. The linearized system dynamics of the equivalent system in (5) around these nominal trajectories are defined as
-d(δ x)
-dz = (ti − ti−1) (Ai(z)δ x + Bi(z)δ u) i − 1 ≤ z < i
-Ai(z) = ∂ fi(x ̄(z), u ̄ (z))
-∂ x , Bi(z) = ∂ fi(x ̄(z), u ̄ (z))
-∂ u , (7)
-where δ x(z) = x(z) − x ̄(z), δ u(z) = u(z) − u ̄ (z). The quadratic approximation of the cost function in (4) is
-J ̃ = Φ ̃ (xtf ) +
-I
-i=∑1
-∫i
-i−1
-(ti − ti−1)L ̃ i(z, x, u)dz
-Φ ̃ f (x) = q f + q>
-f δx+ 1
-2 δ x>Q f δ x
-L ̃ i(z, x, u) = qi(z) + δ x>qi(z) + δ u>ri(z) + δ xT Pi(z)δ u
-+1
-2 δ x>Qi(z)δ x + 1
-2 δ u>Ri(z)δ u. (8)
-In the above, q(z), q(z), r(z), Q(z), P(z), and R(z) are the coefficients of the Taylor expansion of the cost function in (4) evaluated at the nominal trajectories. The optimal control law for this LQ extremal subproblem can be derived by solving the following Riccati equations (Bryson, 1975)
-− dS(z)
-dz = (ti − ti−1)W(z), S(i−) = S(i+), S(I) = Q f (9)
-− ds(z)
-dz = (ti − ti−1)w(z), s(i−) = s(i+), s(I) = q f (10)
-− ds(z)
-dz = (ti − ti−1)w(z), s(i−) = s(i+), s(I) = q f , (11)
-where S(z) and W(z) are in Rnx×nx , s(z) and w(z) are in Rnx , s(z) and w(z) are in R. These matrices are defined as
-W(z) = Q(z) + A(z)>S(z) + S(z)A(z) − L(z)>R(z) L(z) (12)
-w(z) = q(z) + A(z)>s(z) − L(z)>R(z) l(z) (13)
-w(z) = q(z) − 0.5α(2 − α) l(z)>R(z) l(z) (14)
-l(z) = −R(z)−1(r(z) + B(z)>s(z)) (15)
-L(z) = −R(z)−1(P(z)> + B(z)>S(z)). (16)
-The updated optimal control law, the value function, and the total cost are defined as
-u(z, x) =  ̄u(z) + αl(z) + L(z)δ x (17)
-V (z, x) = s(z) + δx>s(z) + 1
-2 δx>S(z)δx (18)
-J ̃ = V (0, x0) = s(0), (19)
-where z is defined in (6). α ∈ [0, 1] is the learning rate for backtracking line-search (Armijo, 1966). In each iteration of SLQ, the line-search parameter controls the maximum step to move along the feedforward component of the control law update. This parameter is chosen by starting with a full step in the direction of the update (α = 1), and then iteratively shrinking the step size until the cost associated to the updated controller rollout is lower than the current nominal trajectories cost. Before proceeding to the main theorem and its proof, we state the following lemma which will be used in Theorem 1.
-Lemma 1. H : Rn → R and y : R → Rn as twice continuously differentiable functions. If |τ − τ ̄| < ε1 and |δy| < ε2, for small enough ε1 and ε2, H(y(τ) + δy) can be approximated as
-H(y(τ) + δy) ' H(y ̄) + δy>∇H(y ̄) + ∂ y ̄>∇H( ̄y)(τ − τ ̄)
-+1
-2 δy>∇2H(y ̄)δy + δy>∇2H(y ̄)∂  ̄y(τ − τ ̄)
-+1
-2
-(
-∂ y ̄>∇2H(y ̄)∂ y ̄ + ∂ 2y ̄>∇H(y ̄)
-)
-(τ − τ ̄)2,
-where y ̄ = y(τ ̄), ∂ y ̄ = dy
-dτ |τ ̄, and ∂ 2y ̄ = d2y
-dτ2 |τ ̄. Furthermore, ∇H
-and ∇2H are the gradient and the Hessian of H respectively.
-Proof. This lemma can be easily proven using the Taylor series expansion of H and few steps of simplification.
-Theorem 2. The partial derivative of the value function in (18) and the partial derivative of the total cost with respect to the switching time t j can be derived as
-∂tjV (z, x) =∂tj s(z) + δx>∂tj s(z) + 1
-2 δx>∂tj S(z)δx − ∂tj x ̄>s(z)
-−1
-2 ∂tj  ̄x>S(z)δx − 1
-2 δx>S(z)∂tj x ̄ (20)
-∂tj J ̃ =∂tj s(0), (21)
-where z is defined by (6), ∂tj is the partial derivative operator with respect to switching time t j. Then ∂tj x ̄ and ∂tj u ̄ are respectively the state and input sensitivity to switching time t j which are calculated by the following differential equation
-d(∂tj x ̄)
-dz =(δi, j − δi−1, j)fi( ̄x(z), u ̄ (z))
-+ (ti − ti−1) (Ai(z)∂tj x ̄ + Bi(z)∂tj u ̄ ) (22)
-∂tj u ̄ (z, ∂tj x ̄) = −L(z)∂tj x ̄ + ∂tj L(z)δ x ̄ + ∂tj l(z), (23)
-with the initial condition ∂tj  ̄x(0) = 0 and the transversality con
-dition ∂tj x ̄(i−) = ∂tj x ̄(i+). δi, j is the Kronecker delta which is one if the variables are equal, and zero otherwise. Furthermore, ∂tj S(z), ∂tj s(z), and ∂tj s(z) can be calculated from the following set of linear differential equations
-
-
- Algorithm 1 SLQ Algorithm Given
-- Mode switch sequence and switching times - Cost function (4) and system dynamics (5) Initialization
-- Initialize the controller with a stable control law, u0(·) repeat
-- Forward integrate system dynamics: { x ̄(z), u ̄ (z)}I
-z=0,
-- Compute the LQ approximation of the problem along the nominal trajectory, (7) and (8). - Solve the final value differential equations, (9-11). - Line search for the optimal α with policy (17)
-- Update control law: u∗(z, x) = u ̄ (z) + α∗l(z) + L(z)δ x until ‖l(·)‖2 < lmin or maximum number of iterations
-− d(∂tj S(z))
-dz = (δi, j − δi−1, j)W(z) + (ti − ti−1)∂tjW(z) (24)
-− d(∂tj s(z))
-dz = (δi, j − δi−1, j)w(z) + (ti − ti−1)∂tjw(z) (25)
-− d(∂tj s(z))
-dz = (δi, j − δi−1, j)w(z) + (ti − ti−1)∂tjw(z), (26)
-where we have
-∂tjW(z) = A(z)>∂tj S(z) + ∂tj S(z)A(z) − ∂tj L(z)>R(z)L(z)
-− L(z)>R(z)∂tj L(z)
-∂tjw(z) = ∂tj q(z) + A(z)>∂tj s(z) − ∂tj L(z)>R(z)l(z)
-− L(z)>R(z)∂tj l(z)
-∂tjw(z) = ∂tj q(z) − 0.5α(2 − α)(
-∂tj l(z)>R(z)l(z)
-+ l(z)>R(z)∂tj l(z))
-∂tj l(z) = −R(z)−1(
-∂tj r(z) + B(z)>∂tj s(z))
-∂tj L(z) = −R(z)−1B(z)>∂tj S(z).
-The derivative of the cost coefficients with respect to t j is
-
-
-∂tj q(z) ∂tj r(z) ∂tj q(z)
-
-=
-
-
-Q(z) P(z) P(z)> R(z) q(z)> r(z)>
-
-
-[∂tj x(z) ∂tj u(z)
-]
-. (27)
-Finally, the terminal condition are defined as
-∂tjS(I) = 0, ∂tjs(I) = Q f ∂tjx(I), ∂tjs(I) = q>
-f ∂tjx(I), (28)
-and the transversality conditions are
-∂t jS(i−) = ∂t jS(i+), ∂t js(i−) = ∂t js(i+), ∂t js(i−) = ∂t js(i+).
-Proof. Equations (24-26) can be derived by directly differentiating the Riccati equations in (9-11), where based on the continuity condition, the order of differentiation with respect to time, z, and t j has been changed. For calculating ∂tjW, ∂tjw, and ∂tjw, we need to calculate the derivative of the linearized dynamics and the quadratic approximation of the cost function with respect to switching time t j as well. To do so, we need to examine the impact of t j variation on the system dynamics and cost function of the approximated LQ subproblem.
-In each approximated LQ subproblem, we use a quadratic approximation of the cost function components L and Φ around the nominal trajectories x ̄(z) and u ̄ (z) of the equivalent system (5). We can readily derive the differential equation which determines the sensitivity of the state trajectory with respect to switching time t j by differentiating both side of the equivalent systems dynamics in (5) with respect to t j.
-Algorithm 2 OCS2 Algorithm Given
-- Mode switch sequence and initial switching times, t0 - The optimal control problem in equations (1) and (2) Initialization
-- Empty the solution bag - Initialize SLQ policy, u0(·) - Initialize the switching times, t0 repeat
-- Compute the equivalent cost function in Equation (4) - Compute the equivalent system dynamics in Equation (5) if Solution bag in not empty then - Initialized the SLQ policy with the controller in the solution bag that has the most similar switching vector else
-- Initialized the SLQ policy, u0(z, x). end if
-- Run the SLQ algorithm - Get the optimal control u∗(z, x; t∗) - Memorize the pair (t∗, u∗(z, x; t∗)) in the solution bag - Calculate ∂tj S(0), ∂tj s(0), and ∂tj s(0) using (24-26). - Calculate the cost function gradient ∇tJ = [∂tj s(0)] j
-- Use a gradient-descent method to update t∗ until gradient-descent method converges Return the optimal t∗, and u∗(z, x; t∗).
-∂t j
-dx ̄
-dz = (δi, j − δi−1, j)fi(x ̄, u ̄ ) + (ti − ti−1) (Ai∂tjx ̄ + Bi∂tju ̄ ) .
-For simplicity in notation, we drop this dependencies on time, z. Using the continuity condition of the state trajectory, the order of derivatives on the right hand side of the equation is changed which is resulted in (22). Furthermore, since the control input trajectory in SLQ comprises a time-varying feedforward term and a time-varying linear state feedback, its sensitivity can be calculated as (23). Moreover, for the initial condition of this equation we have ∂tj x ̄(z = 0) = 0 due to the fixed initial state. Based on Lemma 1, the second order approximation of the intermediate cost L(x, u) around the nominal trajectories (which are in turn a function of t j) can be written as
-L(z, x ̄(s) + δx, u ̄ (s) + δu) ' q(z) +
-[q(z) r(z)
-]> [∂tj x(z) ∂tj u(z)
-]
-(t j − t ̄j)
-+
-[
-δx δu
-]>([q(z)
-r(z)
-]
-+
-[ Q(z) P(z) P(z)> R(z)
-] [∂tj x(z) ∂tj u(z)
-]
-(t j − t ̄j)
-)
-+1
-2
-[
-δx δu
-]>[ Q(z) P(z) P(z)> R(z)
-][
-δx δu
-]
-+ (t j − t ̄j)2
-2
-[q(z) r(z)
-]>[
-∂2
-t j x(z)
-∂2
-t j u(z)
-]
-+ (t j − t ̄j)2
-2
-[∂tj x(z) ∂tj u(z)
-]>[ Q(z) P(z) P(z)> R(z)
-] [∂tj x(z) ∂tj u(z)
-]
-(29)
-In the above, we have combined the like terms of the state and input increments. Based on this equation the sensitivity of the cost function components will be
-∂tj r(z) =P(z)>∂tj x(z) + R(z)∂tj u(z), ∂tj R(z) = 0,
-∂tj q(z) =Q(z)∂tj x(z) + P(z)∂tj u(z), ∂tj Q(z) = 0,
-∂tj q(z) =q(z)>∂tj x(z) + r(z)>∂tj u(z), ∂tj P(z) = 0,
-which can be written in matrix form as (27). By the same process, we can derive (28) for the final cost.
-In order to find the linearized system dynamics sensitivity with respect to the switching time t j, we can use the result from
-
-
- Lemma 1 where we only keep the terms up to the first order. d dz
-(x ̄ + ∂tjx(t j − t ̄j) + δx) ' (t ̄i − t ̄i−1)(f(x ̄, u ̄ ) + Aiδx + Biδu)
-+ (t j − t ̄j)((δi, j − δi−1, j)fi(x ̄, u ̄ ) + (t ̄i − t ̄i−1) (Ai∂tj x ̄ + Bi∂tj u ̄ ) ),
-where for simplicity in notation, we drop the dependencies on time, z. By equating the coefficients, we get
-dx ̄
-dz ' (t ̄i − t ̄i−1) f (x ̄,  ̄u)
-dδx
-dz ' (t ̄i − t ̄i−1)(Aiδx + Biδu)
-d(∂tj x)
-dz ' (δi, j − δi−1, j)fi(x ̄, u ̄ ) + (t ̄i − t ̄i−1)(Ai∂tjx ̄ + Bi∂tju ̄ ),
-which are respectively the nominal trajectory equation, the linear approximation of system dynamics, and trajectory sensitivity. Based on this approximation, the linear part is not a function of t j, so we get ∂tjAi(z) = 0 and ∂tjBi(z) = 0 (note that the effect of the switching time variations on the approximated system dynamics would have been appeared if we had used a second order or a higher order approximation).
-4. OCS2 ALGORITHM
-In Section 3, we have discussed the technical details behind the OCS2 algorithm. Here, we highlight the main steps of the algorithm for synthesizing the optimal continuous control law and the optimal switching times (refer to Algorithm 2). Each iteration of the OCS2 algorithm has three main steps namely (1) using SLQ algorithm to find the continuous inputs’ optimal control, (2) calculating the cost function gradient based on the LQ approximation of the problem which has been already calculated by the SLQ algorithm, (3) using a gradient descent method to update the switching times where we use the Frank-Wolfe method (Jaggi, 2013). An interesting aspect of our algorithm is its linear-time computational complexity with respect to the optimization time-horizon both in SLQ algorithm and calculating cost gradient. As we will show in the next section, this characteristic results in a superior performance of our algorithm in comparison to the two-point BVP approach originally introduced by Xu and Antsaklis (2004).
-As discussed, OCS2 uses the SLQ algorithm for solving a nonlinear optimal control problem on the equivalent system with fixed switching times (refer to Algorithm 1). The SLQ algorithm is based on an iterative scheme where in each iteration it forward integrates the controlled system and then approximates the nonlinear optimal control problem with a local LQ problem. In general, the SLQ algorithm requires an initial stable controller for the first forward integration. For deriving the initial controller, we define a set of operating points in each switching mode (normally one point) and approximate the optimal control problem around these operating points with an LQ approximation. Then, we follow the same process described in the SLQ algorithm to design an initial controller.
-A good initialization can often increase the convergence speed of the SLQ algorithm. One interesting characteristic of our algorithm is the warm starting scheme for the initial policy of SLQ. Here, we use a memorization scheme where we store the solutions of the different runs of SLQ in a solution bag and later initialize the policy of a new run of SLQ with the most similar switching time’s policy (refer to Algorithm 2). The similarity between two switching time sequences is measured as a sum of squared differences between corresponding times in two sequences.
-5. CASE STUDIES
-In this section, we evaluate the performance of the proposed method on three numerical examples. The first two examples are provided as illustrative cases to compare the performance of the proposed algorithm to the baseline algorithm introduced by Xu and Antsaklis (2004) and the third one is about the application of our method in motion control of legged robots. We here refer to the baseline algorithm as the BVP method since it is based on the solution of two-point BVPs.
-Example 1: The first example is a nonlinear switched system with three mode switches which are defined as followings
-1:
-{ x ̇1 = x1 + u1 sin x1
-x ̇2 = −x2 + u1 cos x2 , 2 :
-{ x ̇1 = x2 + u1 sin x2 x ̇2 = −x1 − u1 cos x1
-3:
-{ x ̇1 = −x1 − u1 sin x1 x ̇2 = x2 + u1 cos x2
-with the initial condition x0 = [2, 3]>. The optimization goal is to calculate the optimal switching times t1 (from subsystem 1 to 2), t2 (from subsystem 2 to 3), and the continuous control input u1 such that the following cost function is minimized
-J = 0.5‖x(3) − xg‖2 + 0.5
-∫3
-0
-(‖x(t) − xg‖2 + ‖u(t)‖2) dt,
-where xg = [1, −1]>. We apply both OCS2 and BVP to this system with uniformly distributed initial switching times. The optimized switching times, the optimized cost, the number of the iterations, and number of function calls (bottom-level optimization calls) for both algorithms are presented in Table 1. As it illustrates, OCS2 and BVP converge to the same solution within a comparable number of iterations and function calls. However, the consumed CPU times are significantly different. The BVP method utilizes about 235 seconds on an Intel’s core i7 2.7-GHz processor while the OCS2 algorithm uses only 31 seconds which is roughly 7.5 times faster (Figure 1).
-Example 2: In order to examine the scalability of both algorithms to higher dimensions, we augment each subsystem in Example 1 with two more states and one additional control input. The augmented states have the following system dynamics
-1′ :
-{ x ̇3 = −x3 + 2x3u2
-x ̇4 = x4 + x4u2 , 2′ :
-{ x ̇3 = x3 − 3x3u2 x ̇4 = 2x4 − 2x4u2
-3′ :
-{ x ̇3 = 2x3 + x3u2 x ̇4 = −x4 + 3x4u2
-with the initial condition x0 = [2, 3, 1, 1]>. The cost function is
-the same as Example 1 with xg = [1, −1, 2, 2]>. As Example 1, the optimized solutions are comparable for both algorithms (refer to Table 1). However the CPU times are drastically different. For the BVP method, the CPU time is about 1500 seconds while the OCS2 algorithm uses only 76 seconds which is 19.5 times more efficient. This manifests the efficiency of the OCS2 algorithm in higher dimensional problems where computational time of the BVP algorithm prohibitively increases.
-Example 3: Quadruped’s CoM motion control In this example, we apply OCS2 to the quadruped’s CoM control problem. In a quadruped robot, based on the stance legs configuration the system shows different dynamical behavior. Furthermore, at the switching instances the non-elastic nature of contacts introduces a jump in the state trajectory. Therefore, basically a legged robot have to be modeled as a nonlinear hybrid system with discontinuous state trajectory.
-
-
- Example 1 Example 2 Example 3
-0
-500
-1000
-1500
-CPU Time [sec]
-BVP OCS2
-Fig. 1. Comparison between the CPU time consumption of the BVP algorithm (blue) and the OCS2 algorithm (orange). The evaluation is done on an Intel’s core i7 2.7-GHz processor. The BVP method run-time on Example 3 is missing since the algorithm failed to terminate.
-Table 1. Comparison between the performance of the BVP and OCS2 algorithms. In the table Itr. is the number of iterations in the gradient-descent method until it converges. FC. is the number of requests for cost function and its derivative evaluation in the gradient-descent algorithm.
-Alg. J s1 s2 Itr. FC. EX1 BVP 5.4498 0.2235 1.0198 9 13
-OCS2 5.4438 0.2324 1.0236 7 14
-EX2 BVP 10.3797 0.2754 1.6076 9 13
-OCS2 10.3888 0.2973 1.5978 8 20
-The computational burden of solving the optimal control problem on such a nonlinear and hybrid system has encouraged researchers to use CoM dynamics instead of the complete system dynamics. In addition to optimizing a lower dimension problem, this approach has another important advantage: the CoM state trajectory is more smooth and the impact force does not cause a noticeable jump in states. Therefore the CoM dynamics can be modeled as a switched system which facilitates solving the optimal control problem. The CoM system has in total 12 states consisting of: 3 states for orientation, θ , 3 states for position, p, and 6 states for linear and angular velocities in body frame, v and ω. The control inputs of the CoM system are an input which triggers the mode switch and the contact forces of the stance legs {λ i(t)}4
-i=1. The simplified CoM equation can be
-derived from the Newton-Euler equation as
-
-   
-   
-θ ̇ = R(θ )ω, ω ̇ = I−1( − ω × Iω +
-4
-i=∑0
-σiJT
-ω,iλ i
-),
-p ̇ = R(θ )v, v ̇ = 1
-m
-(mg +
-4
-i=∑0
-σiJT
-v,iλ i
-)
-where R(θ ) is the rotation matrix, g is gravitational acceleration in body frame, I and m are moment of inertia about the CoM and the total mass respectively. Jω,i and Jv,i are the Jacobian matrices of the ith foot with respect to CoM which depends on the foot position and CoM’s position and orientation (for technical specifications of this quadruped robot refer to Semini et al. (2011)). In this example, we study the trotting gait.
-In a quadruped trotting gait, the pairwise alternating diagonal legs are the stance legs. In each phase of the motion only two opposing feet are on the ground. Since we assume that our robot has point feet, it looses controllability in one degree of freedom, namely the rotation around the connecting line between the two stance feet. Therefore, the subsystems in each phase of the trotting gait are not controllable individually. However, the ability to switch from one diagonal pair to the other, allows the robot for gaining control over that degree of freedom. Therefore, for a successful trot, the robot requires to plan and control the contact forces as well as the switching times.
-step sequence [1]
-12345678
-switching times [s]
-0
-0.5
-1
-initial final
-Fig. 2. Comparison between the initial (blue) and optimized (yellow) switching times sequence. After optimization mode 6 and 7 switching times are set to zero and the number of total steps reduced to 6 form the initial 8 steps.
-The cost function in this example is defined as (8). The control effort weighting matrix is a diagonal matrix which penalizes all continuous control inputs (contact forces) equally. Furthermore, our cost function penalizes intermediate orientation and z-offsets during the entire trajectory. In the final cost, we penalize deviations from a target point p = [3, 0, 0]> which lies 3 m in front of the robot. For the following evaluation, we assume that the x direction points to the front, the y direction points to the left and the z direction is orthogonal to ground. Furthermore, we penalize the linear and angular velocities to ensure the robot comes to a stop towards the end of the trajectory.
-Figure 2 shows the difference between the initial and optimized switching times. The initial switching times have been chosen uniformly over the three-second period. During optimization the controller both extends and shortens different switching times. More interestingly, it set the time periods of two phases to zero. Therefore, although we initially asked the robot to take 8 steps the optimized trot has 6 steps.
-Figure 3 shows the optimized contact forces of the trotting experiment. The vertical contact force λz which needs to compensate for gravity is fairly equally distributed between the legs. However, we can see that the plots are not perfectly symmetric. This results from the quadruped being modeled after the hardware, which has unsymmetrical inertia. Additionally, we can see that the force profiles are non-trivial and thus would be difficult to derive manually. However, the contact forces are smooth within each step sequence which makes tracking easy.
-Figure 4 shows a few snapshots of the quadruped during the optimized trotting gait. The CoM motion is controlled by the OCS2-designed controller. The swing feet’s trajectories (the ones that are not in contact) are designed based on a simple heuristic that the distance between the CoM and a swing foot at the moment of take off (breaking contact) and at the moment of touch down (establishing contact) should be the same.
-6. CONCLUSIONS AND FUTURE WORK
-In this paper, we have presented an efficient method to solve the optimal control problem for nonlinear switched systems with predefined mode sequence. The proposed method is based on a two-stage optimization scheme which optimizes the continuous inputs as well as the switching times. In order to obtain an accurate estimation of the cost function derivatives, Xu and Antsaklis (2004) have introduced a set of two-point BVPs. Although there exist many numerical methods for solving two-point BVP (e.g. collocation method), many of them do not scale properly to high dimensional problems such as controlling quadruped locomotion. To tackle this issue, we have proposed the OCS2 algorithm which is based on an SLQ algorithm. In order to obtain cost function derivatives, OCS2 takes into account the sensitivity of the approximated LQ models with respect to the switching times. OCS2 obtains an approximation of the LQ
-
-
- time [s]
-0123
-LF Contact Forces [N]
--5
-0
-5
-6x 6y 6z/100
-time [s]
-0123
-RF Contact Forces [N]
--5
-0
-5
-6x 6y 6z/100
-time [s]
-0123
-LH Contact Forces [N]
--5
-0
-5
-6x 6y 6z/100
-time [s]
-0123
-RH Contact Forces [N]
--5
-0
-5
-6x 6y 6z/100
-Fig. 3. Contact forces as optimized by the trotting gait controller. For visibility, contact forces in z-direction have been scaled by a factor of 1/100. The gray dotted vertical lines indicate the switching times. The non-symmetric pattern results from the fact, that the quadruped is not perfectly symmetric and thus also not modeled as such.
-Fig. 4. Few snapshots of the modeled quadruped during optimized trotting gait. The CoM motion is controlled by the controller synthesized by OCS2 algorithm. The swing foot trajectories (the ones that are not in contact) are designed based on a simple heuristic over the CoM linear velocity.
-model sensitivity, only by using the LQ approximation of the problem which has been already calculated by SLQ. Therefore, the algorithm can calculate values of the derivatives with no further computational cost for evaluating the higher order derivatives of the system dynamics and cost function. This feature increases the proposed algorithm efficiency in comparison to other methods such as direct collocation which rely on higher order derivatives.
-In order to demonstrate the computational efficiency of the algorithm, we have compared the CPU time used by the OCS2 algorithm with the baseline method introduced by Xu and Antsaklis (2004). We observe that as the dimensions of state and input spaces increase, the difference in computational time between the algorithms becomes significant to the point that for the quadruped CoM control task, the run-time of the baseline algorithm becomes prohibitively long.
-REFERENCES
-Armijo, L. (1966). Minimization of functions having lipschitz continuous first partial derivatives. Pacific Journal of mathematics.
-Bemporad, A. and Morari, M. (1999). Control of systems integrating logic, dynamics, and constraints. Automatica. Bengea, S. and DeCarlo, R. (2005). Optimal control of switching systems. Automatica. Borrelli, F., Baotic ́, M., Bemporad, A., and Morari, M. (2005). Dynamic programming for constrained optimal control of discrete-time linear hybrid systems. Automatica. Branicky, M.S., Borkar, V.S., and Mitter, S.K. (1998). A unified framework for hybrid control: model and optimal control theory. IEEE Transactions on Automatic Control.
-Bryson, A.E. (1975). Applied optimal control: optimization, estimation and control. CRC Press.
-Egerstedt, M., Wardi, Y., and Delmotte, F. (2003). Optimal control of switching times in switched dynamical systems. In 42nd IEEE Conference on Decision and Control (CDC). Giua, A., Seatzu, C., and der Mee, C.V. (2001). Optimal control of switched autonomous linear systems. In 40th IEEE Conference on Decision and Control (CDC).
-Jaggi, M. (2013). Revisiting frank-wolfe: Projection-free sparse convex optimization. In ICML. Johnson, E.R. and Murphey, T.D. (2011). Second-order switching time optimization for nonlinear time-varying dynamic systems. IEEE Transactions on Automatic Control.
-Kamgarpour, M. and Tomlin, C. (2012). On optimal control of non-autonomous switched systems with a fixed mode sequence. Automatica.
-Mayne, D. (1966). A second-order gradient method for determining optimal trajectories of non-linear discrete-time systems. International Journal of Control.
-Neunert, M., de Crousaz, C., Furrer, F., Kamel, M., Farshidian, F., Siegwart, R., and Buchli, J. (2016). Fast nonlinear model predictive control for unified trajectory optimization and tracking. In IEEE International Conference on Robotics and Automation (ICRA).
-Pakniyat, A. and Caines, P.E. (2014). On the relation between the minimum principle and dynamic programming for hybrid systems. In 53rd IEEE Conference on Decision and Control. Riedinger, P., Iung, C., and Kratz, F. (2003). An optimal control approach for hybrid systems. European Journal of Control. Riedinger, P., Kratz, F., Iung, C., and Zanne, C. (1999). Linear quadratic optimization for hybrid systems. In 38th IEEE Conference on Decision and Control (CDC).
-Semini, C., Tsagarakis, N.G., Guglielmino, E., Focchi, M., Cannella, F., and Caldwell, D.G. (2011). Design of hyqa hydraulically and electrically actuated quadruped robot. Proceedings of the Institution of Mechanical Engineers, Part I: Journal of Systems and Control Engineering.
-Shaikh, M.S. and Caines, P.E. (2007). On the hybrid optimal control problem: theory and algorithms. IEEE Transactions on Automatic Control.
-Sideris, A. and Bobrow, J. (2005). An efficient sequential linear quadratic algorithm for solving nonlinear optimal control problems. IEEE Transactions on Automatic Control.
-Sideris, A. and Rodriguez, L.A. (2010). A riccati approach to equality constrained linear quadratic optimal control. In Proceedings of the 2010 American Control Conference.
-Soler, M., Kamgarpour, M., Tomlin, C., and Staffetti, E. (2012). Multiphase mixed-integer optimal control framework for aircraft conflict avoidance. In 51st IEEE Conference on Decision and Control (CDC).
-Sussmann, H.J. (1999). A maximum principle for hybrid optimal control problems. In 38th IEEE Conference on Decision and Control (CDC).
-Todorov, E. and Li, W. (2005). A generalized iterative lqg method for locally-optimal feedback control of constrained nonlinear stochastic systems. In Proceedings of the 2005 American Control Conference.
-Wardi, Y., Egerstedt, M., and Twu, P. (2012). A controlledprecision algorithm for mode-switching optimization. In 51st IEEE Conference on Decision and Control (CDC).
+Sequential Linear Quadratic Optimal Control for Nonlinear Switched Systems 
+Farbod Farshidian ∗ Maryam Kamgarpour ∗∗ Diego Pardo ∗ Jonas Buchli ∗ 
+∗ Agile and Dexterous Robotics Lab, ETH Z ̈urich, Switzerland (e-mail: {farbodf, depardo, buchlij}@ethz.ch), ∗∗ Automatic Control Laboratory, ETH Z ̈urich, Switzerland (e-mail: mkamgar@control.ee. ethz.ch). 
+Abstract: In this contribution, we introduce an efficient method for solving the optimal control problem for an unconstrained nonlinear switched system with an arbitrary cost function. We assume that the sequence of the switching modes are given but the switching time in between consecutive modes remains to be optimized. The proposed method uses a two-stage approach as introduced by Xu and Antsaklis (2004) where the original optimal control problem is transcribed into an equivalent problem parametrized by the switching times and the optimal control policy is obtained based on the solution of a two-point boundary value differential equation. The main contribution of this paper is to use a Sequential Linear Quadratic approach to synthesize the optimal controller instead of solving a boundary value problem. The proposed method is numerically more efficient and scales very well to the high dimensional problems. In order to evaluate its performance, we use two numerical examples as benchmarks to compare against the baseline algorithm. In the third numerical example, we apply the proposed algorithm to the Center of Mass control problem in a quadruped robot locomotion task. 
+Keywords: Control design for hybrid systems, Switching stability and control, Optimal control of hybrid systems, Optimal control theory, Real-time control, Riccati equations, and Mobile robots. 
+1. INTRODUCTION 
+Switched systems are a subclass of a general family known as hybrid systems. Hybrid system model consists of a finite number of dynamical subsystems subjected to discrete events which cause transition between these subsystems. This transition is either triggered by an external input, or through the intersection of the continuous states trajectory to a certain manifolds known as the switching surfaces. Switched systems are usually characterized by systems that have continuous state transition during these switches. Switched system models are encountered in many practical applications such as automobiles and locomotives with different gears, DC-DC converters, manufacturing processes, biological systems, and robotics. 
+Our interest in switched systems originates from an application on a legged robot where we model the Center of Mass (CoM) as a switched system. The control goal is to synthesize a controller which, for a given gait, stabilizes the robot while it minimizes a cost function. To fulfill this task, the robot can manipulate the ground reaction forces at the stance feet and adjust the switching times between different stance leg configurations. For instance, assume the problem of controlling the walking gait for a quadruped robot. In this task, the gait is fixed, thus the sequence of mode switches are known. The control task is to modulate the contact forces of the stance legs and to determine the switching times between each mode. 
+? This research has been supported in part by a Max-Planck ETH Center for Learning Systems Ph.D. fellowship to Farbod Farshidian, a Swiss National Science Foundation Professorship Award to Jonas Buchli, the NCCR Robotics, and Maryam Kamgarpour’s ERC Starting Grant CONENE. 
+The optimal control problem for the switched systems involves synthesizing the optimal controller for the continuous inputs and finding a mode sequence and the switching times between the modes. In general, the procedure of synthesizing an optimal control law for a switched system can be divided into three subtasks (Giua et al., 2001; Xu and Antsaklis, 2004): (1) finding the optimal sequence of the modes, (2) finding the optimal switching times between consecutive modes, (3) finding the optimal continuous control inputs. Given the switching sequence and times, the third subtask is a regular optimal control problem with a finite number of discontinuities in the system vector field. The necessary condition of optimality in the context of hybrid systems has been derived from Pontryagin’s maximum principle (Branicky et al., 1998; Sussmann, 1999; Riedinger et al., 2003) and subsequently, various computational techniques have been developed to solve this problem (Shaikh and Caines, 2007; Soler et al., 2012; Pakniyat and Caines, 2014). 
+Based on the Pontryagin’s maximum principle, the optimal solution should satisfy a two-point boundary value problem (BVP). However, similar to the classical control problem, the difficulties related to numerical solution of the necessary condition of optimality limits the application of this approach. In Riedinger et al. (1999), it has been shown that for a LinearQuadratic (LQ) problem it is sufficient to solve a sequence of Riccati equations with proper transversality conditions at the switching times in order to optimize the continuous inputs but the mode switches should be still calculated based on the enumerations of all the possible switches at each time step. In order to ease the computational burden of finding the optimal switching behavior, in Bengea and DeCarlo (2005), the switched 
+arXiv:1609.02198v2 [cs.SY] 1 May 2017 
+ 
+ 
+ system is embedded in larger family of systems defined by the convex hull of the switched subsystems. It has been shown that if the sufficient and necessary conditions for optimality in the embedded systems exists, the bang-bang optimal solution of the embedded problem is also the optimal solution of the switched system; otherwise a sub-optimal solution can be derived. 
+Borrelli et al. (2005) propose an off-line method to synthesize an optimal control law for a discrete linear hybrid system with linear inequality constraints. The proposed method is a combination of dynamic programming and multi-parametric quadratic programming which designs a feedback law for continuous and discrete inputs in the feasible regions. A simpler approach in Bemporad and Morari (1999) uses a mixed integer linear/ quadratic program to solve the optimal control problem for mixed logical dynamical systems. 
+Optimizing the cost function with respect to the switching times has been studied for autonomous systems by Egerstedt et al. (2003); Johnson and Murphey (2011); Wardi et al. (2012) and for non-autonomous systems by Kamgarpour and Tomlin (2012). By using the derivative of the cost function with respect to the switching time, these methods use nonlinear programming techniques to optimize the cost function. However, in general these methods do not consider the sensitivity of the continuous inputs’ control law to the switching times. 
+While many of the aforementioned approaches are computationally demanding for real-time robotic applications, there is a class of efficient optimal control algorithms known as Sequential Linear Quadratic (SLQ) methods which can be applied to real-time, complex robotic applications (Neunert et al., 2016). An SLQ algorithm sequentially solves the extremal problem around the latest estimation of the optimal trajectories and improves these optimal trajectories using the extremal problem solution (Mayne, 1966; Todorov and Li, 2005; Sideris and Bobrow, 2005). Motivated by their efficiency in solving regular optimal control problems, in this paper we have extended an SLQ algorithm to solve the optimal control problem for nonlinear switched system with predefined mode sequence. To this end, we adopt an approach introduced by Xu and Antsaklis (2004) where the primary switched problem is transcribed into an equivalent problem. We then introduce a two-stage optimization method to optimize the continuous inputs and the switching times. While Xu and Antsaklis (2004) use a computationally demanding approach based on solving a set of two-point BVPs, we propose a new SLQ algorithm to efficiently solve the optimal control problem for nonlinear switched systems. 
+The main contributions of this paper are: (1) it uses an efficient SLQ algorithm to synthesize the optimal control law for the continuous inputs. (2) it calculates the cost function derivative with respect to switching times using an LQ approximation of the problem. This approximation is obtained without any additional computation from the SLQ solution. (3) it introduces a new practical application of the optimal control for switched systems in the field of motion planning of legged robots. 
+2. PROBLEM FORMULATION 
+In this section, we briefly introduce the optimal control problem based on the parameterization of switching times. We assume that the switched system dynamics consist of I subsystems where the system dynamics for the ith subsystem (i ∈ {1, 2, . . . , I}) is as follows 
+x ̇(t) = fi (x(t), u(t)) for ti−1 ≤ t < ti, (1) 
+where x(t) ∈ Rnx is the continuous state, u(t) ∈ Rnu is the piece 
+wise continuous control input, and fi : Rnx × Rnu → R is the vector field of subsystem i which is continuously differentiable and Lipschitz up to the first order derivatives. ti is the switching time between subsystem i and i + 1. t0 and tI are respectively the given initial time and the final time. The initial state is x0 
+and x(t− 
+i ) = x(t+ 
+i ) at the switching moments because of the state continuity condition. The optimal control problem for the switched system in Equation (1) is defined as 
+min 
+t ∈ T, u(·) 
+Φ(x(tI)) + 
+I 
+i=∑1 
+∫ ti 
+ti−1 
+Li(x, u)dt, (2) 
+where Φ(·) and Li(·, ·) are the final cost and the running cost (for subsystem i) which are continuously differentiable and Lipschitz up to the second order derivatives. T is a polytope in RI−1 defined as T = {(t1, . . . ,tI−1)|to ≤ t1 ≤ · · · ≤ tI−1 ≤ tI}. 
+The optimal control problem based on the parameterization of switching times can be defined as the following two-stage optimization problem 
+tm∈iTn J[t, x∗, u∗] s.t. {x∗, u∗} = argmin J[t, x, u]. (3) 
+with 
+J[t, x, u] = Φ(xI) + 
+I 
+i=∑1 
+(ti − ti−1) 
+∫i 
+i−1 
+Li(x(z), u(z))dz, (4) 
+dx(z) 
+dz = (ti − ti−1)fi (x(z), u(z)) for i − 1 ≤ z < i (5) 
+t = (ti − ti−1)(z − i) + ti, (6) 
+in which we have replaced the independent time variable t with a normalized time variable z defined by (6). With this change of variable, while the switching times are still part of the decision variables, they are fixed parameters for the bottom-level optimization in (3). Therefore, the reformulated optimal control problem does not have variable switching times and it reduces to a conventional optimal control problem parameterized over the switching times (Theorem 1 in Xu and Antsaklis (2004)). In the next section, we introduce our algorithm for calculating the optimized cost function and its gradient. 
+3. SOLUTION APPROACH 
+In this section, we use a gradient-based method to solve the top-level optimization introduced in (3) and a dynamic programming approach to synthesize the continuous inputs control law. In each iteration of the gradient-based method for finding the optimal switching time, we first solve a continuous-time optimal control problem for the system with a fixed switching times. Then, the cost function gradient with respect to the switching times is calculated in order to determine the descent direction for the switching times update. This approach is similar to Xu and Antsaklis (2004). However, instead of using the two-point BVP solver for optimizing J(t) with respect to u and calculating its gradient with respect to t, we use a more efficient approach. This facilitates implementing this algorithm in realtime on complex systems such as legged robots. 
+Our Optimal Control for Switched Systems algorithm (OCS2 algorithm) consists of two main steps: a method which synthesizes the continuous input controller and a method which calculates the parameterized cost function derivatives with respect to the switching times. For synthesizing the continuous input controller, OCS2 uses the SLQ algorithm in Algorithm 1. As a dynamic programming approach, SLQ uses the Bellman 
+ 
+ 
+ equation of optimality to locally estimate the value function and consequently the optimal control law. In the second step of OCS2, we use the approximated problem for calculating the value function from the first step to efficiently compute the value function gradient with respect to switching times. 
+Using the SLQ algorithm to calculate the optimal control law for the continuous inputs has two major advantages. First, as discussed by Sideris and Rodriguez (2010), this algorithm has a linear time complexity with respect to the optimization time horizon in contrast to many standard discretization-based algorithms which scale cubically (such as the direct collocation methods). Second, since in each iteration of SLQ, an LQ problem is optimized, we can efficiently calculate the value function derivatives by obtaining derivatives of an LQ subproblem’s value function. However, in contrast to a regular timevariant LQ problem in which the system dynamics and the cost function are independent of the switching times, in this problem the cost and the system dynamics of the approximated LQ subproblem are functions of the switching times. Therefore, in order to calculate the cost function gradient, we should also consider the LQ subproblem variations to the switching times. We tackle this problem more rigorously in Theorem 1. 
+Here, we first briefly introduce the SLQ algorithm. We consider an intermediate iteration of the algorithm. We assume that {x ̄ (z)}I 
+z=0 and {u ̄ (z)}I 
+z=0 are the nominal state and input tra 
+jectories which are obtained by forward integrating system dynamics in (5) (performing a rollout) using the latest estimation of the optimal control law with a fixed switching time vector  ̄t. For simplicity of notation, in the followings we have dropped the dependencies of the nominal trajectories and consequently the approximated LQ problem with respect to  ̄t. The linearized system dynamics of the equivalent system in (5) around these nominal trajectories are defined as 
+d(δ x) 
+dz = (ti − ti−1) (Ai(z)δ x + Bi(z)δ u) i − 1 ≤ z < i 
+Ai(z) = ∂ fi(x ̄(z), u ̄ (z)) 
+∂ x , Bi(z) = ∂ fi(x ̄(z), u ̄ (z)) 
+∂ u , (7) 
+where δ x(z) = x(z) − x ̄(z), δ u(z) = u(z) − u ̄ (z). The quadratic approximation of the cost function in (4) is 
+J ̃ = Φ ̃ (xtf ) + 
+I 
+i=∑1 
+∫i 
+i−1 
+(ti − ti−1)L ̃ i(z, x, u)dz 
+Φ ̃ f (x) = q f + q> 
+f δx+ 1 
+2 δ x>Q f δ x 
+L ̃ i(z, x, u) = qi(z) + δ x>qi(z) + δ u>ri(z) + δ xT Pi(z)δ u 
++1 
+2 δ x>Qi(z)δ x + 1 
+2 δ u>Ri(z)δ u. (8) 
+In the above, q(z), q(z), r(z), Q(z), P(z), and R(z) are the coefficients of the Taylor expansion of the cost function in (4) evaluated at the nominal trajectories. The optimal control law for this LQ extremal subproblem can be derived by solving the following Riccati equations (Bryson, 1975) 
+− dS(z) 
+dz = (ti − ti−1)W(z), S(i−) = S(i+), S(I) = Q f (9) 
+− ds(z) 
+dz = (ti − ti−1)w(z), s(i−) = s(i+), s(I) = q f (10) 
+− ds(z) 
+dz = (ti − ti−1)w(z), s(i−) = s(i+), s(I) = q f , (11) 
+where S(z) and W(z) are in Rnx×nx , s(z) and w(z) are in Rnx , s(z) and w(z) are in R. These matrices are defined as 
+W(z) = Q(z) + A(z)>S(z) + S(z)A(z) − L(z)>R(z) L(z) (12) 
+w(z) = q(z) + A(z)>s(z) − L(z)>R(z) l(z) (13) 
+w(z) = q(z) − 0.5α(2 − α) l(z)>R(z) l(z) (14) 
+l(z) = −R(z)−1(r(z) + B(z)>s(z)) (15) 
+L(z) = −R(z)−1(P(z)> + B(z)>S(z)). (16) 
+The updated optimal control law, the value function, and the total cost are defined as 
+u(z, x) =  ̄u(z) + αl(z) + L(z)δ x (17) 
+V (z, x) = s(z) + δx>s(z) + 1 
+2 δx>S(z)δx (18) 
+J ̃ = V (0, x0) = s(0), (19) 
+where z is defined in (6). α ∈ [0, 1] is the learning rate for backtracking line-search (Armijo, 1966). In each iteration of SLQ, the line-search parameter controls the maximum step to move along the feedforward component of the control law update. This parameter is chosen by starting with a full step in the direction of the update (α = 1), and then iteratively shrinking the step size until the cost associated to the updated controller rollout is lower than the current nominal trajectories cost. Before proceeding to the main theorem and its proof, we state the following lemma which will be used in Theorem 1. 
+Lemma 1. H : Rn → R and y : R → Rn as twice continuously differentiable functions. If |τ − τ ̄| < ε1 and |δy| < ε2, for small enough ε1 and ε2, H(y(τ) + δy) can be approximated as 
+H(y(τ) + δy) ' H(y ̄) + δy>∇H(y ̄) + ∂ y ̄>∇H( ̄y)(τ − τ ̄) 
++1 
+2 δy>∇2H(y ̄)δy + δy>∇2H(y ̄)∂  ̄y(τ − τ ̄) 
++1 
+2 
+( 
+∂ y ̄>∇2H(y ̄)∂ y ̄ + ∂ 2y ̄>∇H(y ̄) 
+) 
+(τ − τ ̄)2, 
+where y ̄ = y(τ ̄), ∂ y ̄ = dy 
+dτ |τ ̄, and ∂ 2y ̄ = d2y 
+dτ2 |τ ̄. Furthermore, ∇H 
+and ∇2H are the gradient and the Hessian of H respectively. 
+Proof. This lemma can be easily proven using the Taylor series expansion of H and few steps of simplification. 
+Theorem 2. The partial derivative of the value function in (18) and the partial derivative of the total cost with respect to the switching time t j can be derived as 
+∂tjV (z, x) =∂tj s(z) + δx>∂tj s(z) + 1 
+2 δx>∂tj S(z)δx − ∂tj x ̄>s(z) 
+−1 
+2 ∂tj  ̄x>S(z)δx − 1 
+2 δx>S(z)∂tj x ̄ (20) 
+∂tj J ̃ =∂tj s(0), (21) 
+where z is defined by (6), ∂tj is the partial derivative operator with respect to switching time t j. Then ∂tj x ̄ and ∂tj u ̄ are respectively the state and input sensitivity to switching time t j which are calculated by the following differential equation 
+d(∂tj x ̄) 
+dz =(δi, j − δi−1, j)fi( ̄x(z), u ̄ (z)) 
++ (ti − ti−1) (Ai(z)∂tj x ̄ + Bi(z)∂tj u ̄ ) (22) 
+∂tj u ̄ (z, ∂tj x ̄) = −L(z)∂tj x ̄ + ∂tj L(z)δ x ̄ + ∂tj l(z), (23) 
+with the initial condition ∂tj  ̄x(0) = 0 and the transversality con 
+dition ∂tj x ̄(i−) = ∂tj x ̄(i+). δi, j is the Kronecker delta which is one if the variables are equal, and zero otherwise. Furthermore, ∂tj S(z), ∂tj s(z), and ∂tj s(z) can be calculated from the following set of linear differential equations 
+ 
+ 
+ Algorithm 1 SLQ Algorithm Given 
+- Mode switch sequence and switching times - Cost function (4) and system dynamics (5) Initialization 
+- Initialize the controller with a stable control law, u0(·) repeat 
+- Forward integrate system dynamics: { x ̄(z), u ̄ (z)}I 
+z=0, 
+- Compute the LQ approximation of the problem along the nominal trajectory, (7) and (8). - Solve the final value differential equations, (9-11). - Line search for the optimal α with policy (17) 
+- Update control law: u∗(z, x) = u ̄ (z) + α∗l(z) + L(z)δ x until ‖l(·)‖2 < lmin or maximum number of iterations 
+− d(∂tj S(z)) 
+dz = (δi, j − δi−1, j)W(z) + (ti − ti−1)∂tjW(z) (24) 
+− d(∂tj s(z)) 
+dz = (δi, j − δi−1, j)w(z) + (ti − ti−1)∂tjw(z) (25) 
+− d(∂tj s(z)) 
+dz = (δi, j − δi−1, j)w(z) + (ti − ti−1)∂tjw(z), (26) 
+where we have 
+∂tjW(z) = A(z)>∂tj S(z) + ∂tj S(z)A(z) − ∂tj L(z)>R(z)L(z) 
+− L(z)>R(z)∂tj L(z) 
+∂tjw(z) = ∂tj q(z) + A(z)>∂tj s(z) − ∂tj L(z)>R(z)l(z) 
+− L(z)>R(z)∂tj l(z) 
+∂tjw(z) = ∂tj q(z) − 0.5α(2 − α)( 
+∂tj l(z)>R(z)l(z) 
++ l(z)>R(z)∂tj l(z)) 
+∂tj l(z) = −R(z)−1( 
+∂tj r(z) + B(z)>∂tj s(z)) 
+∂tj L(z) = −R(z)−1B(z)>∂tj S(z). 
+The derivative of the cost coefficients with respect to t j is 
+ 
+ 
+∂tj q(z) ∂tj r(z) ∂tj q(z) 
+ 
+= 
+ 
+ 
+Q(z) P(z) P(z)> R(z) q(z)> r(z)> 
+ 
+ 
+[∂tj x(z) ∂tj u(z) 
+] 
+. (27) 
+Finally, the terminal condition are defined as 
+∂tjS(I) = 0, ∂tjs(I) = Q f ∂tjx(I), ∂tjs(I) = q> 
+f ∂tjx(I), (28) 
+and the transversality conditions are 
+∂t jS(i−) = ∂t jS(i+), ∂t js(i−) = ∂t js(i+), ∂t js(i−) = ∂t js(i+). 
+Proof. Equations (24-26) can be derived by directly differentiating the Riccati equations in (9-11), where based on the continuity condition, the order of differentiation with respect to time, z, and t j has been changed. For calculating ∂tjW, ∂tjw, and ∂tjw, we need to calculate the derivative of the linearized dynamics and the quadratic approximation of the cost function with respect to switching time t j as well. To do so, we need to examine the impact of t j variation on the system dynamics and cost function of the approximated LQ subproblem. 
+In each approximated LQ subproblem, we use a quadratic approximation of the cost function components L and Φ around the nominal trajectories x ̄(z) and u ̄ (z) of the equivalent system (5). We can readily derive the differential equation which determines the sensitivity of the state trajectory with respect to switching time t j by differentiating both side of the equivalent systems dynamics in (5) with respect to t j. 
+Algorithm 2 OCS2 Algorithm Given 
+- Mode switch sequence and initial switching times, t0 - The optimal control problem in equations (1) and (2) Initialization 
+- Empty the solution bag - Initialize SLQ policy, u0(·) - Initialize the switching times, t0 repeat 
+- Compute the equivalent cost function in Equation (4) - Compute the equivalent system dynamics in Equation (5) if Solution bag in not empty then - Initialized the SLQ policy with the controller in the solution bag that has the most similar switching vector else 
+- Initialized the SLQ policy, u0(z, x). end if 
+- Run the SLQ algorithm - Get the optimal control u∗(z, x; t∗) - Memorize the pair (t∗, u∗(z, x; t∗)) in the solution bag - Calculate ∂tj S(0), ∂tj s(0), and ∂tj s(0) using (24-26). - Calculate the cost function gradient ∇tJ = [∂tj s(0)] j 
+- Use a gradient-descent method to update t∗ until gradient-descent method converges Return the optimal t∗, and u∗(z, x; t∗). 
+∂t j 
+dx ̄ 
+dz = (δi, j − δi−1, j)fi(x ̄, u ̄ ) + (ti − ti−1) (Ai∂tjx ̄ + Bi∂tju ̄ ) . 
+For simplicity in notation, we drop this dependencies on time, z. Using the continuity condition of the state trajectory, the order of derivatives on the right hand side of the equation is changed which is resulted in (22). Furthermore, since the control input trajectory in SLQ comprises a time-varying feedforward term and a time-varying linear state feedback, its sensitivity can be calculated as (23). Moreover, for the initial condition of this equation we have ∂tj x ̄(z = 0) = 0 due to the fixed initial state. Based on Lemma 1, the second order approximation of the intermediate cost L(x, u) around the nominal trajectories (which are in turn a function of t j) can be written as 
+L(z, x ̄(s) + δx, u ̄ (s) + δu) ' q(z) + 
+[q(z) r(z) 
+]> [∂tj x(z) ∂tj u(z) 
+] 
+(t j − t ̄j) 
++ 
+[ 
+δx δu 
+]>([q(z) 
+r(z) 
+] 
++ 
+[ Q(z) P(z) P(z)> R(z) 
+] [∂tj x(z) ∂tj u(z) 
+] 
+(t j − t ̄j) 
+) 
++1 
+2 
+[ 
+δx δu 
+]>[ Q(z) P(z) P(z)> R(z) 
+][ 
+δx δu 
+] 
++ (t j − t ̄j)2 
+2 
+[q(z) r(z) 
+]>[ 
+∂2 
+t j x(z) 
+∂2 
+t j u(z) 
+] 
++ (t j − t ̄j)2 
+2 
+[∂tj x(z) ∂tj u(z) 
+]>[ Q(z) P(z) P(z)> R(z) 
+] [∂tj x(z) ∂tj u(z) 
+] 
+(29) 
+In the above, we have combined the like terms of the state and input increments. Based on this equation the sensitivity of the cost function components will be 
+∂tj r(z) =P(z)>∂tj x(z) + R(z)∂tj u(z), ∂tj R(z) = 0, 
+∂tj q(z) =Q(z)∂tj x(z) + P(z)∂tj u(z), ∂tj Q(z) = 0, 
+∂tj q(z) =q(z)>∂tj x(z) + r(z)>∂tj u(z), ∂tj P(z) = 0, 
+which can be written in matrix form as (27). By the same process, we can derive (28) for the final cost. 
+In order to find the linearized system dynamics sensitivity with respect to the switching time t j, we can use the result from 
+ 
+ 
+ Lemma 1 where we only keep the terms up to the first order. d dz 
+(x ̄ + ∂tjx(t j − t ̄j) + δx) ' (t ̄i − t ̄i−1)(f(x ̄, u ̄ ) + Aiδx + Biδu) 
++ (t j − t ̄j)((δi, j − δi−1, j)fi(x ̄, u ̄ ) + (t ̄i − t ̄i−1) (Ai∂tj x ̄ + Bi∂tj u ̄ ) ), 
+where for simplicity in notation, we drop the dependencies on time, z. By equating the coefficients, we get 
+dx ̄ 
+dz ' (t ̄i − t ̄i−1) f (x ̄,  ̄u) 
+dδx 
+dz ' (t ̄i − t ̄i−1)(Aiδx + Biδu) 
+d(∂tj x) 
+dz ' (δi, j − δi−1, j)fi(x ̄, u ̄ ) + (t ̄i − t ̄i−1)(Ai∂tjx ̄ + Bi∂tju ̄ ), 
+which are respectively the nominal trajectory equation, the linear approximation of system dynamics, and trajectory sensitivity. Based on this approximation, the linear part is not a function of t j, so we get ∂tjAi(z) = 0 and ∂tjBi(z) = 0 (note that the effect of the switching time variations on the approximated system dynamics would have been appeared if we had used a second order or a higher order approximation). 
+4. OCS2 ALGORITHM 
+In Section 3, we have discussed the technical details behind the OCS2 algorithm. Here, we highlight the main steps of the algorithm for synthesizing the optimal continuous control law and the optimal switching times (refer to Algorithm 2). Each iteration of the OCS2 algorithm has three main steps namely (1) using SLQ algorithm to find the continuous inputs’ optimal control, (2) calculating the cost function gradient based on the LQ approximation of the problem which has been already calculated by the SLQ algorithm, (3) using a gradient descent method to update the switching times where we use the Frank-Wolfe method (Jaggi, 2013). An interesting aspect of our algorithm is its linear-time computational complexity with respect to the optimization time-horizon both in SLQ algorithm and calculating cost gradient. As we will show in the next section, this characteristic results in a superior performance of our algorithm in comparison to the two-point BVP approach originally introduced by Xu and Antsaklis (2004). 
+As discussed, OCS2 uses the SLQ algorithm for solving a nonlinear optimal control problem on the equivalent system with fixed switching times (refer to Algorithm 1). The SLQ algorithm is based on an iterative scheme where in each iteration it forward integrates the controlled system and then approximates the nonlinear optimal control problem with a local LQ problem. In general, the SLQ algorithm requires an initial stable controller for the first forward integration. For deriving the initial controller, we define a set of operating points in each switching mode (normally one point) and approximate the optimal control problem around these operating points with an LQ approximation. Then, we follow the same process described in the SLQ algorithm to design an initial controller. 
+A good initialization can often increase the convergence speed of the SLQ algorithm. One interesting characteristic of our algorithm is the warm starting scheme for the initial policy of SLQ. Here, we use a memorization scheme where we store the solutions of the different runs of SLQ in a solution bag and later initialize the policy of a new run of SLQ with the most similar switching time’s policy (refer to Algorithm 2). The similarity between two switching time sequences is measured as a sum of squared differences between corresponding times in two sequences. 
+5. CASE STUDIES 
+In this section, we evaluate the performance of the proposed method on three numerical examples. The first two examples are provided as illustrative cases to compare the performance of the proposed algorithm to the baseline algorithm introduced by Xu and Antsaklis (2004) and the third one is about the application of our method in motion control of legged robots. We here refer to the baseline algorithm as the BVP method since it is based on the solution of two-point BVPs. 
+Example 1: The first example is a nonlinear switched system with three mode switches which are defined as followings 
+1: 
+{ x ̇1 = x1 + u1 sin x1 
+x ̇2 = −x2 + u1 cos x2 , 2 : 
+{ x ̇1 = x2 + u1 sin x2 x ̇2 = −x1 − u1 cos x1 
+3: 
+{ x ̇1 = −x1 − u1 sin x1 x ̇2 = x2 + u1 cos x2 
+with the initial condition x0 = [2, 3]>. The optimization goal is to calculate the optimal switching times t1 (from subsystem 1 to 2), t2 (from subsystem 2 to 3), and the continuous control input u1 such that the following cost function is minimized 
+J = 0.5‖x(3) − xg‖2 + 0.5 
+∫3 
+0 
+(‖x(t) − xg‖2 + ‖u(t)‖2) dt, 
+where xg = [1, −1]>. We apply both OCS2 and BVP to this system with uniformly distributed initial switching times. The optimized switching times, the optimized cost, the number of the iterations, and number of function calls (bottom-level optimization calls) for both algorithms are presented in Table 1. As it illustrates, OCS2 and BVP converge to the same solution within a comparable number of iterations and function calls. However, the consumed CPU times are significantly different. The BVP method utilizes about 235 seconds on an Intel’s core i7 2.7-GHz processor while the OCS2 algorithm uses only 31 seconds which is roughly 7.5 times faster (Figure 1). 
+Example 2: In order to examine the scalability of both algorithms to higher dimensions, we augment each subsystem in Example 1 with two more states and one additional control input. The augmented states have the following system dynamics 
+1′ : 
+{ x ̇3 = −x3 + 2x3u2 
+x ̇4 = x4 + x4u2 , 2′ : 
+{ x ̇3 = x3 − 3x3u2 x ̇4 = 2x4 − 2x4u2 
+3′ : 
+{ x ̇3 = 2x3 + x3u2 x ̇4 = −x4 + 3x4u2 
+with the initial condition x0 = [2, 3, 1, 1]>. The cost function is 
+the same as Example 1 with xg = [1, −1, 2, 2]>. As Example 1, the optimized solutions are comparable for both algorithms (refer to Table 1). However the CPU times are drastically different. For the BVP method, the CPU time is about 1500 seconds while the OCS2 algorithm uses only 76 seconds which is 19.5 times more efficient. This manifests the efficiency of the OCS2 algorithm in higher dimensional problems where computational time of the BVP algorithm prohibitively increases. 
+Example 3: Quadruped’s CoM motion control In this example, we apply OCS2 to the quadruped’s CoM control problem. In a quadruped robot, based on the stance legs configuration the system shows different dynamical behavior. Furthermore, at the switching instances the non-elastic nature of contacts introduces a jump in the state trajectory. Therefore, basically a legged robot have to be modeled as a nonlinear hybrid system with discontinuous state trajectory. 
+ 
+ 
+ Example 1 Example 2 Example 3 
+0 
+500 
+1000 
+1500 
+CPU Time [sec] 
+BVP OCS2 
+Fig. 1. Comparison between the CPU time consumption of the BVP algorithm (blue) and the OCS2 algorithm (orange). The evaluation is done on an Intel’s core i7 2.7-GHz processor. The BVP method run-time on Example 3 is missing since the algorithm failed to terminate. 
+Table 1. Comparison between the performance of the BVP and OCS2 algorithms. In the table Itr. is the number of iterations in the gradient-descent method until it converges. FC. is the number of requests for cost function and its derivative evaluation in the gradient-descent algorithm. 
+Alg. J s1 s2 Itr. FC. EX1 BVP 5.4498 0.2235 1.0198 9 13 
+OCS2 5.4438 0.2324 1.0236 7 14 
+EX2 BVP 10.3797 0.2754 1.6076 9 13 
+OCS2 10.3888 0.2973 1.5978 8 20 
+The computational burden of solving the optimal control problem on such a nonlinear and hybrid system has encouraged researchers to use CoM dynamics instead of the complete system dynamics. In addition to optimizing a lower dimension problem, this approach has another important advantage: the CoM state trajectory is more smooth and the impact force does not cause a noticeable jump in states. Therefore the CoM dynamics can be modeled as a switched system which facilitates solving the optimal control problem. The CoM system has in total 12 states consisting of: 3 states for orientation, θ , 3 states for position, p, and 6 states for linear and angular velocities in body frame, v and ω. The control inputs of the CoM system are an input which triggers the mode switch and the contact forces of the stance legs {λ i(t)}4 
+i=1. The simplified CoM equation can be 
+derived from the Newton-Euler equation as 
+ 
+    
+    
+θ ̇ = R(θ )ω, ω ̇ = I−1( − ω × Iω + 
+4 
+i=∑0 
+σiJT 
+ω,iλ i 
+), 
+p ̇ = R(θ )v, v ̇ = 1 
+m 
+(mg + 
+4 
+i=∑0 
+σiJT 
+v,iλ i 
+) 
+where R(θ ) is the rotation matrix, g is gravitational acceleration in body frame, I and m are moment of inertia about the CoM and the total mass respectively. Jω,i and Jv,i are the Jacobian matrices of the ith foot with respect to CoM which depends on the foot position and CoM’s position and orientation (for technical specifications of this quadruped robot refer to Semini et al. (2011)). In this example, we study the trotting gait. 
+In a quadruped trotting gait, the pairwise alternating diagonal legs are the stance legs. In each phase of the motion only two opposing feet are on the ground. Since we assume that our robot has point feet, it looses controllability in one degree of freedom, namely the rotation around the connecting line between the two stance feet. Therefore, the subsystems in each phase of the trotting gait are not controllable individually. However, the ability to switch from one diagonal pair to the other, allows the robot for gaining control over that degree of freedom. Therefore, for a successful trot, the robot requires to plan and control the contact forces as well as the switching times. 
+step sequence [1] 
+12345678 
+switching times [s] 
+0 
+0.5 
+1 
+initial final 
+Fig. 2. Comparison between the initial (blue) and optimized (yellow) switching times sequence. After optimization mode 6 and 7 switching times are set to zero and the number of total steps reduced to 6 form the initial 8 steps. 
+The cost function in this example is defined as (8). The control effort weighting matrix is a diagonal matrix which penalizes all continuous control inputs (contact forces) equally. Furthermore, our cost function penalizes intermediate orientation and z-offsets during the entire trajectory. In the final cost, we penalize deviations from a target point p = [3, 0, 0]> which lies 3 m in front of the robot. For the following evaluation, we assume that the x direction points to the front, the y direction points to the left and the z direction is orthogonal to ground. Furthermore, we penalize the linear and angular velocities to ensure the robot comes to a stop towards the end of the trajectory. 
+Figure 2 shows the difference between the initial and optimized switching times. The initial switching times have been chosen uniformly over the three-second period. During optimization the controller both extends and shortens different switching times. More interestingly, it set the time periods of two phases to zero. Therefore, although we initially asked the robot to take 8 steps the optimized trot has 6 steps. 
+Figure 3 shows the optimized contact forces of the trotting experiment. The vertical contact force λz which needs to compensate for gravity is fairly equally distributed between the legs. However, we can see that the plots are not perfectly symmetric. This results from the quadruped being modeled after the hardware, which has unsymmetrical inertia. Additionally, we can see that the force profiles are non-trivial and thus would be difficult to derive manually. However, the contact forces are smooth within each step sequence which makes tracking easy. 
+Figure 4 shows a few snapshots of the quadruped during the optimized trotting gait. The CoM motion is controlled by the OCS2-designed controller. The swing feet’s trajectories (the ones that are not in contact) are designed based on a simple heuristic that the distance between the CoM and a swing foot at the moment of take off (breaking contact) and at the moment of touch down (establishing contact) should be the same. 
+6. CONCLUSIONS AND FUTURE WORK 
+In this paper, we have presented an efficient method to solve the optimal control problem for nonlinear switched systems with predefined mode sequence. The proposed method is based on a two-stage optimization scheme which optimizes the continuous inputs as well as the switching times. In order to obtain an accurate estimation of the cost function derivatives, Xu and Antsaklis (2004) have introduced a set of two-point BVPs. Although there exist many numerical methods for solving two-point BVP (e.g. collocation method), many of them do not scale properly to high dimensional problems such as controlling quadruped locomotion. To tackle this issue, we have proposed the OCS2 algorithm which is based on an SLQ algorithm. In order to obtain cost function derivatives, OCS2 takes into account the sensitivity of the approximated LQ models with respect to the switching times. OCS2 obtains an approximation of the LQ 
+ 
+ 
+ time [s] 
+0123 
+LF Contact Forces [N] 
+-5 
+0 
+5 
+6x 6y 6z/100 
+time [s] 
+0123 
+RF Contact Forces [N] 
+-5 
+0 
+5 
+6x 6y 6z/100 
+time [s] 
+0123 
+LH Contact Forces [N] 
+-5 
+0 
+5 
+6x 6y 6z/100 
+time [s] 
+0123 
+RH Contact Forces [N] 
+-5 
+0 
+5 
+6x 6y 6z/100 
+Fig. 3. Contact forces as optimized by the trotting gait controller. For visibility, contact forces in z-direction have been scaled by a factor of 1/100. The gray dotted vertical lines indicate the switching times. The non-symmetric pattern results from the fact, that the quadruped is not perfectly symmetric and thus also not modeled as such. 
+Fig. 4. Few snapshots of the modeled quadruped during optimized trotting gait. The CoM motion is controlled by the controller synthesized by OCS2 algorithm. The swing foot trajectories (the ones that are not in contact) are designed based on a simple heuristic over the CoM linear velocity. 
+model sensitivity, only by using the LQ approximation of the problem which has been already calculated by SLQ. Therefore, the algorithm can calculate values of the derivatives with no further computational cost for evaluating the higher order derivatives of the system dynamics and cost function. This feature increases the proposed algorithm efficiency in comparison to other methods such as direct collocation which rely on higher order derivatives. 
+In order to demonstrate the computational efficiency of the algorithm, we have compared the CPU time used by the OCS2 algorithm with the baseline method introduced by Xu and Antsaklis (2004). We observe that as the dimensions of state and input spaces increase, the difference in computational time between the algorithms becomes significant to the point that for the quadruped CoM control task, the run-time of the baseline algorithm becomes prohibitively long. 
+REFERENCES 
+Armijo, L. (1966). Minimization of functions having lipschitz continuous first partial derivatives. Pacific Journal of mathematics. 
+Bemporad, A. and Morari, M. (1999). Control of systems integrating logic, dynamics, and constraints. Automatica. Bengea, S. and DeCarlo, R. (2005). Optimal control of switching systems. Automatica. Borrelli, F., Baotic ́, M., Bemporad, A., and Morari, M. (2005). Dynamic programming for constrained optimal control of discrete-time linear hybrid systems. Automatica. Branicky, M.S., Borkar, V.S., and Mitter, S.K. (1998). A unified framework for hybrid control: model and optimal control theory. IEEE Transactions on Automatic Control. 
+Bryson, A.E. (1975). Applied optimal control: optimization, estimation and control. CRC Press. 
+Egerstedt, M., Wardi, Y., and Delmotte, F. (2003). Optimal control of switching times in switched dynamical systems. In 42nd IEEE Conference on Decision and Control (CDC). Giua, A., Seatzu, C., and der Mee, C.V. (2001). Optimal control of switched autonomous linear systems. In 40th IEEE Conference on Decision and Control (CDC). 
+Jaggi, M. (2013). Revisiting frank-wolfe: Projection-free sparse convex optimization. In ICML. Johnson, E.R. and Murphey, T.D. (2011). Second-order switching time optimization for nonlinear time-varying dynamic systems. IEEE Transactions on Automatic Control. 
+Kamgarpour, M. and Tomlin, C. (2012). On optimal control of non-autonomous switched systems with a fixed mode sequence. Automatica. 
+Mayne, D. (1966). A second-order gradient method for determining optimal trajectories of non-linear discrete-time systems. International Journal of Control. 
+Neunert, M., de Crousaz, C., Furrer, F., Kamel, M., Farshidian, F., Siegwart, R., and Buchli, J. (2016). Fast nonlinear model predictive control for unified trajectory optimization and tracking. In IEEE International Conference on Robotics and Automation (ICRA). 
+Pakniyat, A. and Caines, P.E. (2014). On the relation between the minimum principle and dynamic programming for hybrid systems. In 53rd IEEE Conference on Decision and Control. Riedinger, P., Iung, C., and Kratz, F. (2003). An optimal control approach for hybrid systems. European Journal of Control. Riedinger, P., Kratz, F., Iung, C., and Zanne, C. (1999). Linear quadratic optimization for hybrid systems. In 38th IEEE Conference on Decision and Control (CDC). 
+Semini, C., Tsagarakis, N.G., Guglielmino, E., Focchi, M., Cannella, F., and Caldwell, D.G. (2011). Design of hyqa hydraulically and electrically actuated quadruped robot. Proceedings of the Institution of Mechanical Engineers, Part I: Journal of Systems and Control Engineering. 
+Shaikh, M.S. and Caines, P.E. (2007). On the hybrid optimal control problem: theory and algorithms. IEEE Transactions on Automatic Control. 
+Sideris, A. and Bobrow, J. (2005). An efficient sequential linear quadratic algorithm for solving nonlinear optimal control problems. IEEE Transactions on Automatic Control. 
+Sideris, A. and Rodriguez, L.A. (2010). A riccati approach to equality constrained linear quadratic optimal control. In Proceedings of the 2010 American Control Conference. 
+Soler, M., Kamgarpour, M., Tomlin, C., and Staffetti, E. (2012). Multiphase mixed-integer optimal control framework for aircraft conflict avoidance. In 51st IEEE Conference on Decision and Control (CDC). 
+Sussmann, H.J. (1999). A maximum principle for hybrid optimal control problems. In 38th IEEE Conference on Decision and Control (CDC). 
+Todorov, E. and Li, W. (2005). A generalized iterative lqg method for locally-optimal feedback control of constrained nonlinear stochastic systems. In Proceedings of the 2005 American Control Conference. 
+Wardi, Y., Egerstedt, M., and Twu, P. (2012). A controlledprecision algorithm for mode-switching optimization. In 51st IEEE Conference on Decision and Control (CDC). 
 Xu, X. and Antsaklis, P.J. (2004). Optimal control of switched systems based on parameterization of the switching instants. IEEE Transactions on Automatic Control.
